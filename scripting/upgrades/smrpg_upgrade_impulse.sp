@@ -35,6 +35,13 @@ public Plugin:myinfo =
 public OnPluginStart()
 {
 	HookEvent("round_start", Event_OnRoundStart);
+	
+	// Account for late loading
+	for(new i=1;i<=MaxClients;i++)
+	{
+		if(IsClientInGame(i))
+			OnClientPutInServer(i);
+	}
 }
 
 public OnPluginEnd()

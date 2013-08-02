@@ -28,6 +28,13 @@ public OnPluginStart()
 {
 	HookEvent("player_spawn", Event_OnResetEffect);
 	HookEvent("player_death", Event_OnResetEffect);
+	
+	// Account for late loading
+	for(new i=1;i<=MaxClients;i++)
+	{
+		if(IsClientInGame(i))
+			OnClientPutInServer(i);
+	}
 }
 
 public OnPluginEnd()
@@ -46,9 +53,17 @@ public OnLibraryAdded(const String:name[])
 	// Register this upgrade in SM:RPG
 	if(StrEqual(name, "smrpg"))
 	{
-		SMRPG_RegisterUpgradeType("FrostPistol", UPGRADE_SHORTNAME, 10, true, 10, 20, 15, SMRPG_BuySell, SMRPG_ActiveQuery);
+		SMRPG_RegisterUpgradeType("Frost Pistol", UPGRADE_SHORTNAME, 10, true, 10, 20, 15, SMRPG_BuySell, SMRPG_ActiveQuery);
 		SMRPG_SetUpgradeResetCallback(UPGRADE_SHORTNAME, SMRPG_ResetEffect);
 	}
+}
+
+public OnMapStart()
+{
+	PrecacheSound("physics/surfaces/tile_impact_bullet1.wav", true);
+	PrecacheSound("physics/surfaces/tile_impact_bullet2.wav", true);
+	PrecacheSound("physics/surfaces/tile_impact_bullet3.wav", true);
+	PrecacheSound("physics/surfaces/tile_impact_bullet4.wav", true);
 }
 
 public OnClientPutInServer(client)
@@ -81,7 +96,6 @@ public SMRPG_BuySell(client, UpgradeQueryType:type)
 
 public bool:SMRPG_ActiveQuery(client)
 {
-	// This is a passive effect, so it's always active, if the player got at least level 1
 	new upgrade[UpgradeInfo];
 	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
 	return SMRPG_IsEnabled() && upgrade[UI_enabled] && SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME) > 0 && g_hFPistolResetSpeed[client] != INVALID_HANDLE;

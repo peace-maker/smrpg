@@ -80,8 +80,8 @@ public Native_RegisterUpgradeType(Handle:plugin, numParams)
 	new iDefaultMaxLevel = GetNativeCell(5);
 	new iDefaultStartCost = GetNativeCell(6);
 	new iDefaultCostInc = GetNativeCell(7);
-	new Function:queryCallback = SMRPG_UpgradeQuery:GetNativeCell(8);
-	new Function:activeCallback = SMRPG_ActiveQuery:GetNativeCell(9);
+	new Function:queryCallback = Function:GetNativeCell(8);
+	new Function:activeCallback = Function:GetNativeCell(9);
 	
 	if(!bAlreadyLoaded)
 		upgrade[UPGR_index] = GetArraySize(g_hUpgrades);
@@ -281,7 +281,7 @@ public Native_ResetUpgradeEffectOnClient(Handle:plugin, numParams)
 	if(client < 0 || client > MaxClients)
 	{
 		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
-		return false;
+		return;
 	}
 	
 	new len;
@@ -323,7 +323,7 @@ public Native_RunUpgradeEffect(Handle:plugin, numParams)
 	if(!GetUpgradeByShortname(sShortName, upgrade) || !IsValidUpgrade(upgrade))
 	{
 		ThrowNativeError(SP_ERROR_NATIVE, "No upgrade named \"%s\" loaded.", sShortName);
-		return;
+		return false;
 	}
 
 	new Action:result;
