@@ -17,9 +17,9 @@ new Handle:g_hFPistolResetSpeed[MAXPLAYERS+1];
 
 public Plugin:myinfo = 
 {
-	name = "SM:RPG Upgrade > Impulse",
+	name = "SM:RPG Upgrade > Frost Pistol",
 	author = "Jannik \"Peace-Maker\" Hartung",
-	description = "Impulse upgrade for SM:RPG. Gain speed shortly when being shot.",
+	description = "Frost Pistol upgrade for SM:RPG. Slow down players hit with a pistol.",
 	version = PLUGIN_VERSION,
 	url = "http://www.wcfan.de/"
 }

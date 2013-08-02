@@ -16,9 +16,9 @@ new Handle:g_hExtinguishTimer[MAXPLAYERS+1];
 
 public Plugin:myinfo = 
 {
-	name = "SM:RPG Upgrade > Vampire",
+	name = "SM:RPG Upgrade > Fire Grenade",
 	author = "Jannik \"Peace-Maker\" Hartung",
-	description = "Vampire upgrade for SM:RPG. Steal HP from players when damaging them.",
+	description = "Fire Grenade upgrade for SM:RPG. Ignites players damaged by your grenade.",
 	version = PLUGIN_VERSION,
 	url = "http://www.wcfan.de/"
 }
