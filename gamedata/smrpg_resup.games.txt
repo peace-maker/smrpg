@@ -1,0 +1,27 @@
+"Games"
+{
+	"cstrike"
+	{
+		"Offsets"
+		{
+			"GiveAmmo"
+			{
+				"windows"		"250"
+				"linux"			"251"
+				"mac"			"251"
+			}
+		}
+	}
+	"csgo"
+	{
+		"Offsets"
+		{
+			"GiveAmmo"
+			{
+				"windows"		"270"
+				"linux"			"271"
+				"mac"			"271"
+			}
+		}
+	}
+}
