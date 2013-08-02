@@ -1,0 +1,151 @@
+"Phrases"
+{
+	"greeting"
+	{
+		"en"			"Type \"rpgmenu\" to bring up your options."
+	}
+	
+	//New Level Text
+	"new_lvl1"
+	{
+		"#format"	"{1:N},{2:d}"
+		"en"			"{1} is now Level {2}"
+	}
+	
+	"new_lvl2"
+	{
+		"#format"	"{1:d}"
+		"en"			"You have new credits ({1} total). Type \"rpgmenu\" to buy upgrades."
+	}
+	
+	//Newbie Text
+	"newbie_lvl1"
+	{
+		"en"			"You have gained a new Level! This means you can buy Upgrades which give you an advantage over your opponents."
+	}
+	
+	"newbie_lvl2"
+	{
+		"en"			"Type \"rpgmenu\" in chat, or type it into the console to bring up a menu from which you can buy Upgrades."
+	}
+	
+	//Experience Hintbox
+	"exp_hint"
+	{
+		"#format"	"{1:d},{2:d},{3:d}"
+		"en"			"Experience Gained: {1}+\nExperience Quota: {2}/{3}"
+	}
+	
+	"rpgrank"
+	{
+		"#format"	"{1:N},{2:d},{3:d},{4:d},{5:d},{6:d},{7:d}"
+		"en"			"{1} is Level {2}, ranked {3}/{4} with {5}/{6} Experience and {7} Credits"
+	}
+	
+	"top10_title"
+	{
+		"en"			"Top 10 SM:RPG Players"
+	}
+	
+	// Menu text
+	"menu_txt.level"
+	{
+		"en"			"Level"
+	}
+	
+	"menu_txt.exp_short"
+	{
+		"en"			"Exp"
+	}
+	
+	"menu_txt.exp_long"
+	{
+		"en"			"Experience"
+	}
+	
+	"menu_txt.credits"
+	{
+		"en"			"Credits"
+	}
+	
+	"menu_txt.rank"
+	{
+		"en"			"Rank"
+	}
+	
+	"menu_txt.cost"
+	{
+		"en"			"Cost"
+	}
+	
+	"menu_txt.sale"
+	{
+		"en"			"Sale"
+	}
+	
+	// Menu Options
+	"menu_opt.upgrades"
+	{
+		"en"			"Upgrades"
+	}
+	
+	"menu_opt.sell"
+	{
+		"en"			"Sell"
+	}
+	
+	"menu_opt.stats"
+	{
+		"en"			"Stats"
+	}
+	
+	"menu_opt.settings"
+	{
+		"en"			"Settings"
+	}
+	
+	"menu_opt.reset_stats"
+	{
+		"en"			"Reset Stats"
+	}
+	
+	// Menu selection result
+	"menu_result.stats_reset"
+	{
+		"en"			"Your stats have been successfully reset."
+	}
+	
+	"menu_result.max_lvl"
+	{
+		"en"			"You have reached the maximum level for this item."
+	}
+	
+	"menu_result.not_enough_credits"
+	{
+		"#format"	"{1:s},{2:d},{3:d}"
+		"en"			"You do not have enough credits to buy {1} Lvl {2}. (Requires {3} Credits)"
+	}
+	
+	"menu_result.item_bought"
+	{
+		"#format"	"{1:s},{2:d}"
+		"en"			"{1} Level {2} successfully purchased."
+	}
+	
+	"menu_result.item_sold"
+	{
+		"#format"	"{1:s},{2:d}"
+		"en"			"{1} Level {2} has been sold."
+	}
+	
+	//Menu Confirm
+	"menu_confirm.sell_confirm"
+	{
+		"en"			"Are you sure?"
+	}
+	
+	"menu_confirm.reset_confirm"
+	{
+		"en"			"WARNING: You will lose all Levels, Credits, and Experience.\nReset stats permanently?"
+	}
+}
