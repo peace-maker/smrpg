@@ -14,6 +14,7 @@ enum InternalUpgradeInfo
 	Function:UPGR_queryCallback, // callback called, when a player bought/sold the upgrade
 	Function:UPGR_activeCallback, // callback called, to see, if a player is currently under the effect of that upgrade
 	Function:UPGR_translationCallback, // callback called, when the upgrade's name is about to get displayed.
+	Function:UPGR_resetCallback, // callback called, when the upgrade's effect should be removed.
 	Handle:UPGR_plugin, // The plugin which registered the upgrade
 	// Convar handles to track changes and upgrade the right value in the cache
 	Handle:UPGR_enableConvar,
@@ -26,14 +27,20 @@ enum InternalUpgradeInfo
 };
 
 new Handle:g_hUpgrades;
+new Handle:g_hfwdOnUpgradeEffect;
 
 RegisterUpgradeNatives()
 {
+	g_hfwdOnUpgradeEffect = CreateGlobalForward("SMRPG_OnUpgradeEffect", ET_Hook, Param_Cell, Param_String);
+	
 	CreateNative("SMRPG_RegisterUpgradeType", Native_RegisterUpgradeType);
 	CreateNative("SMRPG_UnregisterUpgradeType", Native_UnregisterUpgradeType);
 	CreateNative("SMRPG_SetUpgradeTranslationCallback", Native_SetUpgradeTranslationCallback);
+	CreateNative("SMRPG_SetUpgradeResetCallback", Native_SetUpgradeResetCallback);
 	CreateNative("SMRPG_UpgradeExists", Native_UpgradeExists);
 	CreateNative("SMRPG_GetUpgradeInfo", Native_GetUpgradeInfo);
+	CreateNative("SMRPG_ResetUpgradeEffectOnClient", Native_ResetUpgradeEffectOnClient);
+	CreateNative("SMRPG_RunUpgradeEffect", Native_RunUpgradeEffect);
 }
 
 InitUpgrades()
@@ -87,6 +94,7 @@ public Native_RegisterUpgradeType(Handle:plugin, numParams)
 	upgrade[UPGR_queryCallback] = queryCallback;
 	upgrade[UPGR_activeCallback] = activeCallback;
 	upgrade[UPGR_translationCallback] = INVALID_FUNCTION;
+	upgrade[UPGR_resetCallback] = INVALID_FUNCTION;
 	upgrade[UPGR_plugin] = plugin;
 	strcopy(upgrade[UPGR_name], MAX_UPGRADE_NAME_LENGTH, sName);
 	strcopy(upgrade[UPGR_shortName], MAX_UPGRADE_SHORTNAME_LENGTH, sShortName);
@@ -234,12 +242,97 @@ public Native_SetUpgradeTranslationCallback(Handle:plugin, numParams)
 	
 	if(upgrade[UPGR_plugin] != plugin)
 	{
+		ThrowNativeError(SP_ERROR_NATIVE, "ResetEffect callback has to be from the same plugin the upgrade was registered in.");
+		return;
+	}
+	
+	upgrade[UPGR_resetCallback] = Function:GetNativeCell(2);
+	SaveUpgradeConfig(upgrade);
+}
+
+// native SMRPG_SetUpgradeResetCallback(const String:shortname[], SMRPG_ResetEffectCB:cb);
+public Native_SetUpgradeResetCallback(Handle:plugin, numParams)
+{
+	new len;
+	GetNativeStringLength(1, len);
+	new String:sShortName[len+1];
+	GetNativeString(1, sShortName, len+1);
+	
+	new upgrade[InternalUpgradeInfo];
+	if(!GetUpgradeByShortname(sShortName, upgrade) || !IsValidUpgrade(upgrade))
+	{
+		ThrowNativeError(SP_ERROR_NATIVE, "No upgrade named \"%s\" loaded.", sShortName);
+		return;
+	}
+	
+	if(upgrade[UPGR_plugin] != plugin)
+	{
 		ThrowNativeError(SP_ERROR_NATIVE, "Translation callback has to be from the same plugin the upgrade was registered in.");
 		return;
 	}
 	
 	upgrade[UPGR_translationCallback] = Function:GetNativeCell(2);
 	SaveUpgradeConfig(upgrade);
+}
+
+public Native_ResetUpgradeEffectOnClient(Handle:plugin, numParams)
+{
+	new client = GetNativeCell(1);
+	if(client < 0 || client > MaxClients)
+	{
+		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
+		return false;
+	}
+	
+	new len;
+	GetNativeStringLength(2, len);
+	new String:sShortName[len+1];
+	GetNativeString(2, sShortName, len+1);
+	
+	new upgrade[InternalUpgradeInfo];
+	if(!GetUpgradeByShortname(sShortName, upgrade) || !IsValidUpgrade(upgrade))
+	{
+		ThrowNativeError(SP_ERROR_NATIVE, "No upgrade named \"%s\" loaded.", sShortName);
+		return;
+	}
+	
+	// If there is no reset callback registered, we can't do anything here.
+	if(upgrade[UPGR_resetCallback] == INVALID_FUNCTION)
+		return;
+	
+	Call_StartFunction(upgrade[UPGR_plugin], upgrade[UPGR_resetCallback]);
+	Call_PushCell(client);
+	Call_Finish();
+}
+
+public Native_RunUpgradeEffect(Handle:plugin, numParams)
+{
+	new client = GetNativeCell(1);
+	if(client < 0 || client > MaxClients)
+	{
+		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
+		return false;
+	}
+	
+	new len;
+	GetNativeStringLength(2, len);
+	new String:sShortName[len+1];
+	GetNativeString(2, sShortName, len+1);
+	
+	new upgrade[InternalUpgradeInfo];
+	if(!GetUpgradeByShortname(sShortName, upgrade) || !IsValidUpgrade(upgrade))
+	{
+		ThrowNativeError(SP_ERROR_NATIVE, "No upgrade named \"%s\" loaded.", sShortName);
+		return;
+	}
+
+	new Action:result;
+	Call_StartForward(g_hfwdOnUpgradeEffect);
+	Call_PushCell(client);
+	Call_PushString(sShortName);
+	Call_Finish(result);
+	
+	return result < Plugin_Handled;
 }
 
 /**

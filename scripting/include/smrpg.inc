@@ -24,15 +24,18 @@ enum UpgradeQueryType
 	UpgradeQueryType_Sell
 };
 
-functag public SMRPG_UpgradeQuery(client, UpgradeQueryType:type);
-functag public bool:SMRPG_ActiveQuery(client);
-functag public SMRPG_TranslateUpgrade(client, String:translation[], maxlen);
+functag public SMRPG_UpgradeQueryCB(client, UpgradeQueryType:type);
+functag public bool:SMRPG_ActiveQueryCB(client);
+functag public SMRPG_TranslateUpgradeCB(client, String:translation[], maxlen);
+functag public SMRPG_ResetEffectCB(client);
 
-native SMRPG_RegisterUpgradeType(const String:name[], const String:shortname[], maxlevelbarrier, bool:bDefaultEnable, iDefaultMaxLevel, iDefaultStartCost, iDefaultCostInc, SMRPG_UpgradeQuery:querycb, SMRPG_ActiveQuery:activecb);
+native SMRPG_RegisterUpgradeType(const String:name[], const String:shortname[], maxlevelbarrier, bool:bDefaultEnable, iDefaultMaxLevel, iDefaultStartCost, iDefaultCostInc, SMRPG_UpgradeQueryCB:querycb, SMRPG_ActiveQueryCB:activecb);
 native SMRPG_UnregisterUpgradeType(const String:shortname[]);
-native SMRPG_SetUpgradeTranslationCallback(const String:shortname[], SMRPG_TranslateUpgrade:cb);
+native SMRPG_SetUpgradeTranslationCallback(const String:shortname[], SMRPG_TranslateUpgradeCB:cb);
+native SMRPG_SetUpgradeResetCallback(const String:shortname[], SMRPG_ResetEffectCB:cb);
 
 native bool:SMRPG_UpgradeExists(const String:shortname[]);
+native SMRPG_ResetUpgradeEffectOnClient(client, const String:shortname[]);
 
 #define MAX_UPGRADE_NAME_LENGTH 64
 #define MAX_UPGRADE_SHORTNAME_LENGTH 32
@@ -49,6 +52,8 @@ enum UpgradeInfo
 };
 native SMRPG_GetUpgradeInfo(const String:shortname[], upgrade[UpgradeInfo]);
 
+native bool:SMRPG_RunUpgradeEffect(client, const String:shortname[]);
+
 native SMRPG_GetClientUpgradeLevel(client, const String:shortname[]);
 native bool:SMRPG_ClientBuyUpgrade(client, const String:shortname[]);
 native bool:SMRPG_ClientSellUpgrade(client, const String:shortname[]);
@@ -63,6 +68,8 @@ forward Action:SMRPG_OnClientCredits(client, oldcredits, newcredits);
 
 forward Action:SMRPG_OnBuyUpgrade(client, const String:shortname[], newlevel);
 forward Action:SMRPG_OnSellUpgrade(client, const String:shortname[], newlevel);
+
+forward Action:SMRPG_OnUpgradeEffect(client, const String:shortname[]);
 
 enum ExperienceReason
 {
