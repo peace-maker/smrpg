@@ -19,12 +19,13 @@ public Plugin:myinfo =
 
 public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
 {
-	CreateNative("SMRPG_Health_GetMaxHealth", Native_GetMaxHealth);
+	RegPluginLibrary("smrpg_health");
+	CreateNative("SMRPG_Health_GetClientMaxHealthEx", Native_GetMaxHealth);
 }
 
 public OnPluginStart()
 {
-	g_hCVMaxIncrease = CreateConVar("smrpg_upgr_health_inc", "25", "Health max increase for each level", 0, true, 1.0);
+	g_hCVMaxIncrease = CreateConVar("smrpg_upgrade_health_inc", "25", "Health max increase for each level", 0, true, 1.0);
 	
 	HookEvent("player_spawn", Event_OnPlayerSpawn);
 }
@@ -108,7 +109,9 @@ public SMRPG_BuySell(client, UpgradeQueryType:type)
 
 public bool:SMRPG_ActiveQuery(client)
 {
-	return false;
+	new upgrade[UpgradeInfo];
+	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
+	return SMRPG_IsEnabled() && upgrade[UI_enabled] && SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME) > 0;
 }
 
 public SMRPG_OnTranslateUpgrade(client, String:translation[], maxlen)

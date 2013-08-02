@@ -55,7 +55,9 @@ public SMRPG_BuySell(client, UpgradeQueryType:type)
 
 public bool:SMRPG_ActiveQuery(client)
 {
-	return false;
+	new upgrade[UpgradeInfo];
+	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
+	return SMRPG_IsEnabled() && upgrade[UI_enabled] && SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME) > 0;
 }
 
 public OnClientDisconnect(client)

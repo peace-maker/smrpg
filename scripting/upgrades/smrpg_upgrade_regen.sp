@@ -51,7 +51,9 @@ public SMRPG_BuySell(client, UpgradeQueryType:type)
 
 public bool:SMRPG_ActiveQuery(client)
 {
-	return false;
+	new upgrade[UpgradeInfo];
+	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
+	return SMRPG_IsEnabled() && upgrade[UI_enabled] && SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME) > 0;
 }
 
 public Action:Timer_IncreaseHealth(Handle:timer)
@@ -82,7 +84,7 @@ public Action:Timer_IncreaseHealth(Handle:timer)
 			continue;
 		
 		new iNewHealth = GetClientHealth(i)+iLevel;
-		new iMaxHealth = GetClientMaxHealth(i);
+		new iMaxHealth = SMRPG_Health_GetClientMaxHealth(i);
 		// Limit the regeneration to the maxhealth.
 		if(iNewHealth > iMaxHealth)
 			SetEntityHealth(i, iMaxHealth);
@@ -91,13 +93,4 @@ public Action:Timer_IncreaseHealth(Handle:timer)
 	}
 	
 	return Plugin_Continue;
-}
-
-GetClientMaxHealth(client)
-{
-	// Use Health+ maxlevel, if available.
-	if(GetFeatureStatus(FeatureType_Native, "SMRPG_Health_GetMaxHealth") == FeatureStatus_Available)
-		return SMRPG_Health_GetMaxHealth(client);
-	
-	return GetEntProp(client, Prop_Data, "m_iMaxHealth");
 }
