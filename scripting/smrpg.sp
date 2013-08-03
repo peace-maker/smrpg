@@ -218,6 +218,7 @@ public OnClientDisconnect(client)
 {
 	SaveData(client);
 	ClearClientRankCache(client);
+	RemovePlayer(client);
 }
 
 public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagetype, weapon, const Float:damageForce[3], const Float:damagePosition[3])

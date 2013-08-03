@@ -147,17 +147,26 @@ SaveData(client)
 	// Save item levels
 	new iSize = GetUpgradeCount();
 	new upgrade[InternalUpgradeInfo];
+	new iAdded;
 	for(new i=0;i<iSize;i++)
 	{
 		GetUpgradeByIndex(i, upgrade);
 		
-		if(i)
+		if(!IsValidUpgrade(upgrade))
+			continue;
+		
+		if(iAdded)
 			Format(sQuery, sizeof(sQuery), "%s, %s = '%d'", sQuery, upgrade[UPGR_shortName], GetClientUpgradeLevel(client, i));
 		else
 			Format(sQuery, sizeof(sQuery), "%s = '%d'", upgrade[UPGR_shortName], GetClientUpgradeLevel(client, i));
+		
+		iAdded++;
 	}
-	Format(sQuery, sizeof(sQuery), "UPDATE %s SET %s WHERE upgrades_id = '%d'", TBL_UPGRADES, sQuery, g_iPlayerInfo[client][PLR_dbUpgradeId]);
-	SQL_TQuery(g_hDatabase, SQL_DoNothing, sQuery);
+	if(iAdded > 0)
+	{
+		Format(sQuery, sizeof(sQuery), "UPDATE %s SET %s WHERE upgrades_id = '%d'", TBL_UPGRADES, sQuery, g_iPlayerInfo[client][PLR_dbUpgradeId]);
+		SQL_TQuery(g_hDatabase, SQL_DoNothing, sQuery);
+	}
 }
 
 SaveAllPlayers()
@@ -200,6 +209,7 @@ ResetStats(client)
 RemovePlayer(client)
 {
 	ResetStats(client);
+	ClearHandle(g_iPlayerInfo[client][PLR_upgradesLevel]);
 	g_iPlayerInfo[client][PLR_dbUpgradeId] = -1;
 	g_iPlayerInfo[client][PLR_dbId] = -1;
 	g_iPlayerInfo[client][PLR_triedToLoadData] = false;
