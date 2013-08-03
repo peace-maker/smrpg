@@ -1,6 +1,7 @@
 #pragma semicolon 1
 #include <sourcemod>
 #include <sdktools>
+#include <cstrike>
 #include <smrpg>
 
 #define PLUGIN_VERSION "1.0"
@@ -113,7 +114,7 @@ public Event_OnPlayerDeath(Handle:event, const String:error[], bool:dontBroadcas
 	if(GetClientTeam(attacker) == GetClientTeam(victim))
 		return;
 	
-	new iExp = SMRPG_GetClientLevel(victim) * GetConVarInt(g_hCVExpKill);
+	new iExp = RoundToCeil(SMRPG_GetClientLevel(victim) * GetConVarFloat(g_hCVExpKill));
 	if(GetEventBool(event, "headshot"))
 		iExp += GetConVarInt(g_hCVExpHeadshot);
 	
@@ -121,25 +122,25 @@ public Event_OnPlayerDeath(Handle:event, const String:error[], bool:dontBroadcas
 }
 
 /* Experience given to the team for one of these reasons:
-	1   Target Successfully Bombed!
-	2   The VIP has escaped!
-	3   VIP has been assassinated!
-	7   The bomb has been defused!
-	11   All Hostages have been rescued!
-	12   Target has been saved!
-	13   Hostages have not been rescued!
+	0   Target Successfully Bombed!
+	1   The VIP has escaped!
+	2   VIP has been assassinated!
+	6   The bomb has been defused!
+	10   All Hostages have been rescued!
+	11   Target has been saved!
+	12   Hostages have not been rescued!
 */
 public Event_OnRoundEnd(Handle:event, const String:error[], bool:dontBroadcast)
 {
 	new iTeam = GetEventInt(event, "winner");
-	new iReason = GetEventInt(event, "reason");
+	new CSRoundEndReason:iReason = CSRoundEndReason:GetEventInt(event, "reason");
 	
 	if(!SMRPG_IsEnabled())
 		return;
 	
 	switch(iReason)
 	{
-		case 1, 2, 3, 7, 11, 12, 13:
+		case CSRoundEnd_TargetBombed, CSRoundEnd_VIPEscaped, CSRoundEnd_VIPKilled, CSRoundEnd_BombDefused, CSRoundEnd_HostagesRescued, CSRoundEnd_TargetSaved, CSRoundEnd_HostagesNotRescued:
 		{
 		}
 		default:
@@ -175,7 +176,7 @@ public Event_OnBombPlanted(Handle:event, const String:error[], bool:dontBroadcas
 		return;
 	
 	new Float:fTeamRatio = SMRPG_TeamRatio(iTeam == 2 ? 3 : 2);
-	SMRPG_AddClientExperience(client, RoundToCeil(float(SMRPG_LevelToExperience(SMRPG_GetClientLevel(client))) * GetConVarInt(g_hCVExpBombPlanted) * fTeamRatio), false);
+	SMRPG_AddClientExperience(client, RoundToCeil(float(SMRPG_LevelToExperience(SMRPG_GetClientLevel(client))) * GetConVarFloat(g_hCVExpBombPlanted) * fTeamRatio), false);
 }
 
 public Event_OnBombDefused(Handle:event, const String:error[], bool:dontBroadcast)
@@ -192,7 +193,7 @@ public Event_OnBombDefused(Handle:event, const String:error[], bool:dontBroadcas
 		return;
 	
 	new Float:fTeamRatio = SMRPG_TeamRatio(iTeam == 2 ? 3 : 2);
-	SMRPG_AddClientExperience(client, RoundToCeil(float(SMRPG_LevelToExperience(SMRPG_GetClientLevel(client))) * GetConVarInt(g_hCVExpBombDefused) * fTeamRatio), false);
+	SMRPG_AddClientExperience(client, RoundToCeil(float(SMRPG_LevelToExperience(SMRPG_GetClientLevel(client))) * GetConVarFloat(g_hCVExpBombDefused) * fTeamRatio), false);
 }
 
 public Event_OnBombExploded(Handle:event, const String:error[], bool:dontBroadcast)
@@ -209,7 +210,7 @@ public Event_OnBombExploded(Handle:event, const String:error[], bool:dontBroadca
 		return;
 	
 	new Float:fTeamRatio = SMRPG_TeamRatio(iTeam == 2 ? 3 : 2);
-	SMRPG_AddClientExperience(client, RoundToCeil(float(SMRPG_LevelToExperience(SMRPG_GetClientLevel(client))) * GetConVarInt(g_hCVExpBombExploded) * fTeamRatio), false);
+	SMRPG_AddClientExperience(client, RoundToCeil(float(SMRPG_LevelToExperience(SMRPG_GetClientLevel(client))) * GetConVarFloat(g_hCVExpBombExploded) * fTeamRatio), false);
 }
 
 public Event_OnHostageRescued(Handle:event, const String:error[], bool:dontBroadcast)
@@ -226,7 +227,7 @@ public Event_OnHostageRescued(Handle:event, const String:error[], bool:dontBroad
 		return;
 	
 	new Float:fTeamRatio = SMRPG_TeamRatio(iTeam == 2 ? 3 : 2);
-	SMRPG_AddClientExperience(client, RoundToCeil(float(SMRPG_LevelToExperience(SMRPG_GetClientLevel(client))) * GetConVarInt(g_hCVExpHostage) * fTeamRatio), false);
+	SMRPG_AddClientExperience(client, RoundToCeil(float(SMRPG_LevelToExperience(SMRPG_GetClientLevel(client))) * GetConVarFloat(g_hCVExpHostage) * fTeamRatio), false);
 }
 
 public Event_OnVIPEscaped(Handle:event, const String:error[], bool:dontBroadcast)
@@ -243,5 +244,5 @@ public Event_OnVIPEscaped(Handle:event, const String:error[], bool:dontBroadcast
 		return;
 	
 	new Float:fTeamRatio = SMRPG_TeamRatio(iTeam == 2 ? 3 : 2);
-	SMRPG_AddClientExperience(client, RoundToCeil(float(SMRPG_LevelToExperience(SMRPG_GetClientLevel(client))) * GetConVarInt(g_hCVExpVIPEscaped) * fTeamRatio), false);
+	SMRPG_AddClientExperience(client, RoundToCeil(float(SMRPG_LevelToExperience(SMRPG_GetClientLevel(client))) * GetConVarFloat(g_hCVExpVIPEscaped) * fTeamRatio), false);
 }
