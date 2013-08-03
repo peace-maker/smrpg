@@ -246,7 +246,7 @@ public Native_SetUpgradeTranslationCallback(Handle:plugin, numParams)
 		return;
 	}
 	
-	upgrade[UPGR_resetCallback] = Function:GetNativeCell(2);
+	upgrade[UPGR_translationCallback] = Function:GetNativeCell(2);
 	SaveUpgradeConfig(upgrade);
 }
 
@@ -271,7 +271,7 @@ public Native_SetUpgradeResetCallback(Handle:plugin, numParams)
 		return;
 	}
 	
-	upgrade[UPGR_translationCallback] = Function:GetNativeCell(2);
+	upgrade[UPGR_resetCallback] = Function:GetNativeCell(2);
 	SaveUpgradeConfig(upgrade);
 }
 
