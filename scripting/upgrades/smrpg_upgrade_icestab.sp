@@ -154,9 +154,9 @@ public Action:Hook_OnTakeDamage(victim, &attacker, &inflictor, &Float:damage, &d
 	if(fLimitDmg <= 0.0)
 		return Plugin_Continue;
 	
-	// This effect only applies to knifes.
+	// All weapons except for the knife do less damage.
 	// TODO: Add support for more games
-	if(GetPlayerWeaponSlot(attacker, KNIFE_SLOT) != weapon)
+	if(attacker <= 0 || attacker > MaxClients || GetPlayerWeaponSlot(attacker, KNIFE_SLOT) == weapon)
 		return Plugin_Continue;
 	
 	// This was less than the limit. It's ok.
@@ -175,7 +175,7 @@ public Action:Hook_OnTakeDamage(victim, &attacker, &inflictor, &Float:damage, &d
 
 public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagetype, weapon, const Float:damageForce[3], const Float:damagePosition[3])
 {
-	if(attacker <= 0 || victim <= 0)
+	if(attacker <= 0 || attacker > MaxClients || victim <= 0 || victim > MaxClients)
 		return;
 	
 	if(damage < ICESTAB_DMG_MIN)

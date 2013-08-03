@@ -310,7 +310,7 @@ public SQL_GetTop10(Handle:owner, Handle:hndl, const String:error[], any:userid)
 			continue;
 		
 		SQL_FetchString(hndl, 0, sBuffer, sizeof(sBuffer));
-		Format(sBuffer, sizeof(sBuffer), "-->%d. %s Lvl: %d Exp: %d Cr: %d", iIndex++, sBuffer, SQL_FetchInt(hndl, 1), SQL_FetchInt(hndl, 2), SQL_FetchInt(hndl, 3));
+		Format(sBuffer, sizeof(sBuffer), "%d. %s Lvl: %d Exp: %d Cr: %d", iIndex++, sBuffer, SQL_FetchInt(hndl, 1), SQL_FetchInt(hndl, 2), SQL_FetchInt(hndl, 3));
 		DrawPanelText(hPanel, sBuffer);
 	}
 	

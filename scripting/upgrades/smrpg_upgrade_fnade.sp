@@ -83,7 +83,7 @@ public SMRPG_ResetEffect(client)
  */
 public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagetype, weapon, const Float:damageForce[3], const Float:damagePosition[3])
 {
-	if(attacker <= 0 || victim <= 0)
+	if(attacker <= 0 || attacker > MaxClients || victim <= 0 || victim > MaxClients)
 		return;
 	
 	// Enough damage?
