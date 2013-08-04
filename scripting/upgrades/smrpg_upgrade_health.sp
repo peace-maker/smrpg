@@ -72,7 +72,12 @@ public Event_OnPlayerSpawn(Handle:event, const String:name[], bool:dontBroadcast
 	if(IsFakeClient(client) && SMRPG_IgnoreBots())
 		return;
 	
-	SetEntityHealth(client, GetClientMaxHealth(client));
+	// Player didn't buy this upgrade yet.
+	new iLevel = SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME);
+	if(iLevel <= 0)
+		return;
+	
+	SetClientHealth(client, GetClientMaxHealth(client));
 }
 
 /**
@@ -97,14 +102,14 @@ public SMRPG_BuySell(client, UpgradeQueryType:type)
 			// Set him to his new higher maxhealth immediately.
 			// Don't touch his health, if he were already damaged.
 			if(iHealth >= (iMaxHealth - GetConVarInt(g_hCVMaxIncrease)))
-				SetEntityHealth(client, iMaxHealth);
+				SetClientHealth(client, iMaxHealth);
 		}
 		case UpgradeQueryType_Sell:
 		{
 			// Client had more health than his new maxhealth?
 			// Decrease it.
 			if(GetClientHealth(client) > iMaxHealth)
-				SetEntityHealth(client, iMaxHealth);
+				SetClientHealth(client, iMaxHealth);
 		}
 	}
 }
@@ -144,6 +149,15 @@ GetClientMaxHealth(client)
 		return iDefaultMaxHealth;
 	
 	return iDefaultMaxHealth + GetConVarInt(g_hCVMaxIncrease) * iLevel;
+}
+
+// Check if the other plugins are ok with setting the health before doing it.
+SetClientHealth(client, health)
+{
+	if(!SMRPG_RunUpgradeEffect(client, UPGRADE_SHORTNAME))
+		return; // Some other plugin doesn't want this effect to run
+	
+	SetEntityHealth(client, health);
 }
 
 /**

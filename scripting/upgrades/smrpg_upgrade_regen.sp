@@ -100,6 +100,9 @@ public Action:Timer_IncreaseHealth(Handle:timer)
 		if(iLevel <= 0)
 			continue;
 		
+		if(!SMRPG_RunUpgradeEffect(i, UPGRADE_SHORTNAME))
+			continue; // Some other plugin doesn't want this effect to run
+		
 		new iNewHealth = GetClientHealth(i)+iLevel;
 		new iMaxHealth = SMRPG_Health_GetClientMaxHealth(i);
 		// Limit the regeneration to the maxhealth.

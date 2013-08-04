@@ -99,6 +99,9 @@ public Action:Timer_Resupply(Handle:timer)
 		if(iLevel <= 0)
 			continue;
 		
+		if(!SMRPG_RunUpgradeEffect(i, UPGRADE_SHORTNAME))
+			continue; // Some other plugin doesn't want this effect to run
+		
 		iOffset = Client_GetWeaponsOffset(i) - 4;
 		iWeapon = INVALID_ENT_REFERENCE;
 		for (new w=0; w < MAX_WEAPONS; w++) {

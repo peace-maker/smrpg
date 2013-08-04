@@ -104,6 +104,9 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 	if(iLevel <= 0)
 		return;
 	
+	if(!SMRPG_RunUpgradeEffect(attacker, UPGRADE_SHORTNAME))
+		return; // Some other plugin doesn't want this effect to run
+	
 	new Float:fIncrease = float(iLevel) * VAMP_INC;
 	fIncrease *= damage;
 	fIncrease += 0.5;

@@ -130,6 +130,9 @@ LJump_HasJumped(client, Float:vVelocity[3])
 	if(iLevel <= 0)
 		return;
 	
+	if(!SMRPG_RunUpgradeEffect(client, UPGRADE_SHORTNAME))
+		return; // Some other plugin doesn't want this effect to run
+	
 	new Float:fIncrease = LJUMP_INC * float(iLevel) + 1.0;
 	vVelocity[0] *= fIncrease;
 	vVelocity[1] *= fIncrease;

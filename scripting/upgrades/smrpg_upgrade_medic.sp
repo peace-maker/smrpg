@@ -153,6 +153,9 @@ public Action:Timer_ApplyMedic(Handle:timer, any:data)
 		if(iLevel <= 0)
 			continue;
 		
+		if(!SMRPG_RunUpgradeEffect(i, UPGRADE_SHORTNAME))
+			continue; // Some other plugin doesn't want this effect to run
+		
 		/* Medic found, now search for teammates */
 		for(new m=1;m<=MaxClients;m++)
 		{
