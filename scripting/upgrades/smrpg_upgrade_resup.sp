@@ -17,6 +17,11 @@ public Plugin:myinfo =
 	url = "http://www.wcfan.de/"
 }
 
+public OnPluginStart()
+{
+	LoadTranslations("smrpg_stock_upgrades.phrases");
+}
+
 public OnPluginEnd()
 {
 	if(SMRPG_UpgradeExists(UPGRADE_SHORTNAME))
@@ -32,7 +37,10 @@ public OnLibraryAdded(const String:name[])
 {
 	// Register this upgrade in SM:RPG
 	if(StrEqual(name, "smrpg"))
+	{
 		SMRPG_RegisterUpgradeType("Resupply", UPGRADE_SHORTNAME, 20, true, 5, 5, 15, SMRPG_BuySell, SMRPG_ActiveQuery);
+		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
+	}
 }
 
 public OnMapStart()
@@ -54,6 +62,11 @@ public bool:SMRPG_ActiveQuery(client)
 	new upgrade[UpgradeInfo];
 	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
 	return SMRPG_IsEnabled() && upgrade[UI_enabled] && SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME) > 0;
+}
+
+public SMRPG_TranslateUpgrade(client, String:translation[], maxlen)
+{
+	Format(translation, maxlen, "%T", UPGRADE_SHORTNAME, client);
 }
 
 public Action:Timer_Resupply(Handle:timer)

@@ -35,6 +35,8 @@ public OnPluginStart()
 	HookEvent("player_spawn", Event_OnResetEffect);
 	HookEvent("player_death", Event_OnResetEffect);
 	
+	LoadTranslations("smrpg_stock_upgrades.phrases");
+	
 	// Account for late loading
 	for(new i=1;i<=MaxClients;i++)
 	{
@@ -61,6 +63,7 @@ public OnLibraryAdded(const String:name[])
 	{
 		SMRPG_RegisterUpgradeType("Ice Stab", UPGRADE_SHORTNAME, 10, true, 20, 30, 10, SMRPG_BuySell, SMRPG_ActiveQuery);
 		SMRPG_SetUpgradeResetCallback(UPGRADE_SHORTNAME, SMRPG_ResetEffect);
+		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
 	}
 }
 
@@ -137,6 +140,11 @@ public SMRPG_ResetEffect(client)
 		TriggerTimer(g_hIceStabUnfreeze[client]);
 	ClearHandle(g_hIceStabUnfreeze[client]);
 	g_iIceStabFade[client] = 255;
+}
+
+public SMRPG_TranslateUpgrade(client, String:translation[], maxlen)
+{
+	Format(translation, maxlen, "%T", UPGRADE_SHORTNAME, client);
 }
 
 /**

@@ -33,6 +33,8 @@ public OnPluginStart()
 	HookEvent("player_death", Event_OnPlayerDeath);
 	HookEvent("player_team", Event_OnPlayerTeam);
 	
+	LoadTranslations("smrpg_stock_upgrades.phrases");
+	
 	// Account for late loading
 	for(new i=1;i<=MaxClients;i++)
 	{
@@ -59,6 +61,7 @@ public OnLibraryAdded(const String:name[])
 	{
 		SMRPG_RegisterUpgradeType("Denial", UPGRADE_SHORTNAME, 2, true, 2, 75, 50, SMRPG_BuySell, SMRPG_ActiveQuery);
 		SMRPG_SetUpgradeResetCallback(UPGRADE_SHORTNAME, SMRPG_ResetEffect);
+		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
 	}
 }
 
@@ -149,6 +152,11 @@ public SMRPG_ResetEffect(client)
 	g_sDenialPrimary[client][0] = '\0';
 	g_sDenialSecondary[client][0] = '\0';
 	ClearHandle(g_hDenialStripTimer[client]);
+}
+
+public SMRPG_TranslateUpgrade(client, String:translation[], maxlen)
+{
+	Format(translation, maxlen, "%T", UPGRADE_SHORTNAME, client);
 }
 
 /**

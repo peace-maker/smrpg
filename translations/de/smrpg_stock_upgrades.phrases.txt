@@ -1,0 +1,62 @@
+"Phrases"
+{
+	"regen"
+	{
+		"de"			"Regenerierung"
+	}
+	
+	"hbonus"
+	{
+		"de"			"Gesundheit+"
+	}
+	
+	"resup"
+	{
+		"de"			"Munitionserhöhung"
+	}
+	
+	"vamp"
+	{
+		"de"			"Vampier"
+	}
+	
+	"stealth"
+	{
+		"de"			"Unsichtbarkeit"
+	}
+	
+	"ljump"
+	{
+		"de"			"Weitsprung"
+	}
+	
+	"fnade"
+	{
+		"de"			"Feuergranate"
+	}
+	
+	"icestab"
+	{
+		"de"			"Eisstich"
+	}
+	
+	"fpistol"
+	{
+		"de"			"Frostpistole"
+	}
+	
+	"denial"
+	{
+		"de"			"Ablehnung"
+	}
+	
+	"impulse"
+	{
+		"de"			"Impulse"
+	}
+	
+	"medic"
+	{
+		"de"			"Medic"
+	}
+}

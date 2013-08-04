@@ -28,6 +28,8 @@ public OnPluginStart()
 	g_hCVMaxIncrease = CreateConVar("smrpg_upgrade_health_inc", "25", "Health max increase for each level", 0, true, 1.0);
 	
 	HookEvent("player_spawn", Event_OnPlayerSpawn);
+	
+	LoadTranslations("smrpg_stock_upgrades.phrases");
 }
 
 public OnPluginEnd()
@@ -47,7 +49,7 @@ public OnLibraryAdded(const String:name[])
 	if(StrEqual(name, "smrpg"))
 	{
 		SMRPG_RegisterUpgradeType("Health+", UPGRADE_SHORTNAME, 16, true, 16, 10, 10, SMRPG_BuySell, SMRPG_ActiveQuery);
-		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_OnTranslateUpgrade);
+		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
 	}
 }
 
@@ -115,9 +117,9 @@ public bool:SMRPG_ActiveQuery(client)
 	return SMRPG_IsEnabled() && upgrade[UI_enabled] && SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME) > 0;
 }
 
-public SMRPG_OnTranslateUpgrade(client, String:translation[], maxlen)
+public SMRPG_TranslateUpgrade(client, String:translation[], maxlen)
 {
-	strcopy(translation, maxlen, "Gesundheit+");
+	Format(translation, maxlen, "%T", UPGRADE_SHORTNAME, client);
 }
 
 GetClientMaxHealth(client)

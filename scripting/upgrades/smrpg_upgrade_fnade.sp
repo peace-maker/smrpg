@@ -23,6 +23,11 @@ public Plugin:myinfo =
 	url = "http://www.wcfan.de/"
 }
 
+public OnPluginStart()
+{
+	LoadTranslations("smrpg_stock_upgrades.phrases");
+}
+
 public OnPluginEnd()
 {
 	if(SMRPG_UpgradeExists(UPGRADE_SHORTNAME))
@@ -41,6 +46,7 @@ public OnLibraryAdded(const String:name[])
 	{
 		SMRPG_RegisterUpgradeType("Fire Grenade", UPGRADE_SHORTNAME, 10, true, 5, 15, 10, SMRPG_BuySell, SMRPG_ActiveQuery);
 		SMRPG_SetUpgradeResetCallback(UPGRADE_SHORTNAME, SMRPG_ResetEffect);
+		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
 	}
 }
 
@@ -76,6 +82,11 @@ public SMRPG_ResetEffect(client)
 	if(g_hExtinguishTimer[client] != INVALID_HANDLE && IsClientInGame(client))
 		TriggerTimer(g_hExtinguishTimer[client]);
 	ClearHandle(g_hExtinguishTimer[client]);
+}
+
+public SMRPG_TranslateUpgrade(client, String:translation[], maxlen)
+{
+	Format(translation, maxlen, "%T", UPGRADE_SHORTNAME, client);
 }
 
 /**

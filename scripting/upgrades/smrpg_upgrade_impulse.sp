@@ -36,6 +36,8 @@ public OnPluginStart()
 {
 	HookEvent("round_start", Event_OnRoundStart);
 	
+	LoadTranslations("smrpg_stock_upgrades.phrases");
+	
 	// Account for late loading
 	for(new i=1;i<=MaxClients;i++)
 	{
@@ -62,6 +64,7 @@ public OnLibraryAdded(const String:name[])
 	{
 		SMRPG_RegisterUpgradeType("Impulse", UPGRADE_SHORTNAME, 10, true, 5, 20, 20, SMRPG_BuySell, SMRPG_ActiveQuery);
 		SMRPG_SetUpgradeResetCallback(UPGRADE_SHORTNAME, SMRPG_ResetEffect);
+		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
 	}
 }
 
@@ -115,6 +118,11 @@ public SMRPG_ResetEffect(client)
 	if(g_hImpulseResetSpeed[client] != INVALID_HANDLE && IsClientInGame(client))
 		TriggerTimer(g_hImpulseResetSpeed[client]);
 	ClearHandle(g_hImpulseResetSpeed[client]);
+}
+
+public SMRPG_TranslateUpgrade(client, String:translation[], maxlen)
+{
+	Format(translation, maxlen, "%T", UPGRADE_SHORTNAME, client);
 }
 
 /**

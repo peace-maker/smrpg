@@ -28,7 +28,9 @@ public OnPluginStart()
 {
 	HookEvent("player_spawn", Event_OnResetEffect);
 	HookEvent("player_death", Event_OnResetEffect);
-	
+
+	LoadTranslations("smrpg_stock_upgrades.phrases");
+
 	// Account for late loading
 	for(new i=1;i<=MaxClients;i++)
 	{
@@ -55,6 +57,7 @@ public OnLibraryAdded(const String:name[])
 	{
 		SMRPG_RegisterUpgradeType("Frost Pistol", UPGRADE_SHORTNAME, 10, true, 10, 20, 15, SMRPG_BuySell, SMRPG_ActiveQuery);
 		SMRPG_SetUpgradeResetCallback(UPGRADE_SHORTNAME, SMRPG_ResetEffect);
+		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
 	}
 }
 
@@ -107,6 +110,11 @@ public SMRPG_ResetEffect(client)
 	if(g_hFPistolResetSpeed[client] != INVALID_HANDLE && IsClientInGame(client))
 		TriggerTimer(g_hFPistolResetSpeed[client]);
 	ClearHandle(g_hFPistolResetSpeed[client]);
+}
+
+public SMRPG_TranslateUpgrade(client, String:translation[], maxlen)
+{
+	Format(translation, maxlen, "%T", UPGRADE_SHORTNAME, client);
 }
 
 /**

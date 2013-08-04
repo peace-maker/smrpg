@@ -1,0 +1,62 @@
+"Phrases"
+{
+	"regen"
+	{
+		"en"			"Regeneration"
+	}
+	
+	"health"
+	{
+		"en"			"Health+"
+	}
+	
+	"resup"
+	{
+		"en"			"Resupply"
+	}
+	
+	"vamp"
+	{
+		"en"			"Vampire"
+	}
+	
+	"stealth"
+	{
+		"en"			"Stealth"
+	}
+	
+	"ljump"
+	{
+		"en"			"LongJump"
+	}
+	
+	"fnade"
+	{
+		"en"			"FireGrenade"
+	}
+	
+	"icestab"
+	{
+		"en"			"IceStab"
+	}
+	
+	"fpistol"
+	{
+		"en"			"FrostPistol"
+	}
+	
+	"denial"
+	{
+		"en"			"Denial"
+	}
+	
+	"impulse"
+	{
+		"en"			"Impulse"
+	}
+	
+	"medic"
+	{
+		"en"			"Medic"
+	}
+}

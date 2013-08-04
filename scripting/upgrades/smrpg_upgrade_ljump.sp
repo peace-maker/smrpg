@@ -27,6 +27,8 @@ public OnPluginStart()
 	HookEvent("player_spawn", Event_OnResetJump);
 	HookEvent("player_death", Event_OnResetJump);
 	HookEvent("player_jump", Event_OnPlayerJump);
+	
+	LoadTranslations("smrpg_stock_upgrades.phrases");
 }
 
 public OnPluginEnd()
@@ -44,7 +46,10 @@ public OnLibraryAdded(const String:name[])
 {
 	// Register this upgrade in SM:RPG
 	if(StrEqual(name, "smrpg"))
+	{
 		SMRPG_RegisterUpgradeType("Long Jump", UPGRADE_SHORTNAME, 10, true, 5, 20, 15, SMRPG_BuySell, SMRPG_ActiveQuery);
+		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
+	}
 }
 
 
@@ -58,6 +63,11 @@ public bool:SMRPG_ActiveQuery(client)
 	new upgrade[UpgradeInfo];
 	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
 	return SMRPG_IsEnabled() && upgrade[UI_enabled] && SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME) > 0;
+}
+
+public SMRPG_TranslateUpgrade(client, String:translation[], maxlen)
+{
+	Format(translation, maxlen, "%T", UPGRADE_SHORTNAME, client);
 }
 
 public OnClientDisconnect(client)
