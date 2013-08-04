@@ -85,10 +85,10 @@ public OnPluginStart()
 	g_hCVBotMaxlevel = CreateConVar("smrpg_bot_maxlevel", "250", "The maximum level a bot can reach until its stats are reset (0 = infinite)", 0, true, 0.0);
 	g_hCVAnnounceNewLvl = CreateConVar("smrpg_announce_newlvl", "1", "Global announcement when a player reaches a new level (1 = enable, 0 = disable)", 0, true, 0.0, true, 1.0);
 	
-	g_hCVExpNotice = CreateConVar("smrpg_exp_notice", "1", "Sets notifications to players when they gain Experience", 0, true, 0.0, true, 1.0);
+	g_hCVExpNotice = CreateConVar("smrpg_exp_notice", "1", "Sends notifications to players when they gain Experience", 0, true, 0.0, true, 1.0);
 	g_hCVExpMax = CreateConVar("smrpg_exp_max", "50000", "Maximum experience that will ever be required", 0, true, 0.0);
 	g_hCVExpStart = CreateConVar("smrpg_exp_start", "250", "Experience required for Level 1", 0, true, 0.0);
-	g_hCVExpInc = CreateConVar("smrpg_exp_inc", "50", "Incriment experience requied for each level (until smrpg_exp_max)", 0, true, 0.0);
+	g_hCVExpInc = CreateConVar("smrpg_exp_inc", "50", "Increment experience required for each level (until smrpg_exp_max)", 0, true, 0.0);
 	
 	g_hCVExpDamage = CreateConVar("smrpg_exp_damage", "1.0", "Experience for hurting an enemy multiplied by the damage done", 0, true, 0.0);
 	g_hCVExpKill = CreateConVar("smrpg_exp_kill", "15.0", "Experience for a kill multiplied by the victim's level", 0, true, 0.0);
@@ -107,6 +107,7 @@ public OnPluginStart()
 	RegConsoleCmd("rpg", Cmd_RPGMenu, "Opens the rpg main menu");
 	RegConsoleCmd("rpgrank", Cmd_RPGRank, "Shows your rank or the rank of the target person. rpgrank [name|steamid|#userid]");
 	RegConsoleCmd("rpgtop10", Cmd_RPGTop10, "Show the SM:RPG top 10");
+	RegConsoleCmd("rpghelp", Cmd_RPGHelp, "Show the SM:RPG help menu");
 	
 	RegisterAdminCommands();
 	
@@ -117,8 +118,8 @@ public OnPluginStart()
 	LoadTranslations("common.phrases");
 	LoadTranslations("smrpg.phrases");
 	
-	HookEvent("player_death", Event_OnPlayerDeath);
-	HookEvent("round_end", Event_OnRoundEnd);
+	HookEventEx("player_death", Event_OnPlayerDeath);
+	HookEventEx("round_end", Event_OnRoundEnd);
 	HookEvent("player_say", Event_OnPlayerSay);
 	
 	if(g_bLateLoaded)
@@ -331,6 +332,19 @@ public Action:Cmd_RPGTop10(client, args)
 	}
 	
 	DisplayTop10Menu(client);
+	
+	return Plugin_Handled;
+}
+
+public Action:Cmd_RPGHelp(client, args)
+{
+	if(!client)
+	{
+		ReplyToCommand(client, "SM:RPG: This command is ingame only.");
+		return Plugin_Handled;
+	}
+	
+	DisplayHelpMenu(client, 0);
 	
 	return Plugin_Handled;
 }
