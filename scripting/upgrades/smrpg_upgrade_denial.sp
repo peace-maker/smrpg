@@ -27,8 +27,6 @@ public Plugin:myinfo =
 
 public OnPluginStart()
 {
-	g_hCVDenialRestrict = CreateConVar("smrpg_denial_restrict", "", "Space delimited list of restricted weapons (e.g. awp g3sg1 m249)");
-	
 	HookEvent("player_spawn", Event_OnPlayerSpawn);
 	HookEvent("player_death", Event_OnPlayerDeath);
 	HookEvent("player_team", Event_OnPlayerTeam);
@@ -62,6 +60,8 @@ public OnLibraryAdded(const String:name[])
 		SMRPG_RegisterUpgradeType("Denial", UPGRADE_SHORTNAME, 2, true, 2, 75, 50, SMRPG_BuySell, SMRPG_ActiveQuery);
 		SMRPG_SetUpgradeResetCallback(UPGRADE_SHORTNAME, SMRPG_ResetEffect);
 		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
+		
+		g_hCVDenialRestrict = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_denial_restrict", "", "Space delimited list of restricted weapons (e.g. awp g3sg1 m249)");
 	}
 }
 

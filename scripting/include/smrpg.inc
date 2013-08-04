@@ -31,6 +31,8 @@ functag public SMRPG_ResetEffectCB(client);
 
 native SMRPG_RegisterUpgradeType(const String:name[], const String:shortname[], maxlevelbarrier, bool:bDefaultEnable, iDefaultMaxLevel, iDefaultStartCost, iDefaultCostInc, SMRPG_UpgradeQueryCB:querycb, SMRPG_ActiveQueryCB:activecb);
 native SMRPG_UnregisterUpgradeType(const String:shortname[]);
+native Handle:SMRPG_CreateUpgradeConVar(const String:shortname[], const String:name[], const String:defaultValue[], const String:description[]="", flags=0, bool:hasMin=false, Float:min=0.0, bool:hasMax=false, Float:max=0.0);
+
 native SMRPG_SetUpgradeTranslationCallback(const String:shortname[], SMRPG_TranslateUpgradeCB:cb);
 native SMRPG_SetUpgradeResetCallback(const String:shortname[], SMRPG_ResetEffectCB:cb);
 
@@ -120,8 +122,11 @@ public __pl_smrpg_SetNTVOptional()
 	MarkNativeAsOptional("SMRPG_LevelToExperience");
 	MarkNativeAsOptional("SMRPG_RegisterUpgradeType");
 	MarkNativeAsOptional("SMRPG_UnregisterUpgradeType");
+	MarkNativeAsOptional("SMRPG_CreateUpgradeConVar");
 	MarkNativeAsOptional("SMRPG_UpgradeExists");
+	MarkNativeAsOptional("SMRPG_ResetUpgradeEffectOnClient");
 	MarkNativeAsOptional("SMRPG_GetUpgradeInfo");
+	MarkNativeAsOptional("SMRPG_RunUpgradeEffect");
 	MarkNativeAsOptional("SMRPG_GetClientUpgradeLevel");
 	MarkNativeAsOptional("SMRPG_ClientBuyUpgrade");
 	MarkNativeAsOptional("SMRPG_ClientSellUpgrade");

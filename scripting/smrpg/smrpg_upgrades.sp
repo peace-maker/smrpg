@@ -1,6 +1,7 @@
 #pragma semicolon 1
 #include <sourcemod>
 #include <smlib>
+#include <autoexecconfig> // https://github.com/Impact123/AutoExecConfig
 
 enum InternalUpgradeInfo
 {
@@ -35,6 +36,8 @@ RegisterUpgradeNatives()
 	
 	CreateNative("SMRPG_RegisterUpgradeType", Native_RegisterUpgradeType);
 	CreateNative("SMRPG_UnregisterUpgradeType", Native_UnregisterUpgradeType);
+	CreateNative("SMRPG_CreateUpgradeConVar", Native_CreateUpgradeConVar);
+	
 	CreateNative("SMRPG_SetUpgradeTranslationCallback", Native_SetUpgradeTranslationCallback);
 	CreateNative("SMRPG_SetUpgradeResetCallback", Native_SetUpgradeResetCallback);
 	CreateNative("SMRPG_UpgradeExists", Native_UpgradeExists);
@@ -101,35 +104,46 @@ public Native_RegisterUpgradeType(Handle:plugin, numParams)
 	
 	decl String:sCvarName[64], String:sCvarDescription[256], String:sValue[16];
 	
+	Format(sCvarName, sizeof(sCvarName), "smrpg_upgrade_%s", sShortName);
+	AutoExecConfig_SetFile(sCvarName, "sourcemod/smrpg");
+	AutoExecConfig_SetCreateFile(true);
+	AutoExecConfig_SetPlugin(plugin);
+	
 	// Register convars
-	Format(sCvarName, sizeof(sCvarName), "cssrpg_%s_enable", sShortName);
+	Format(sCvarName, sizeof(sCvarName), "smrpg_%s_enable", sShortName);
 	Format(sCvarDescription, sizeof(sCvarDescription), "Sets the %s item to enabled (1) or disabled (0)", sName);
 	IntToString(_:bDefaultEnable, sValue, sizeof(sValue));
-	new Handle:hCvar = CreateConVar(sCvarName, sValue, sCvarDescription, 0, true, 0.0, true, 1.0);
+	new Handle:hCvar = AutoExecConfig_CreateConVar(sCvarName, sValue, sCvarDescription, 0, true, 0.0, true, 1.0);
 	HookConVarChange(hCvar, ConVar_UpgradeChanged);
 	upgrade[UPGR_enableConvar] = hCvar;
 	
 	// TODO: Handle maxlevel > maxlevelbarrier etc. rpgi.cpp CVARItemMaxLvl!
-	Format(sCvarName, sizeof(sCvarName), "cssrpg_%s_maxlevel", sShortName);
+	Format(sCvarName, sizeof(sCvarName), "smrpg_%s_maxlevel", sShortName);
 	Format(sCvarDescription, sizeof(sCvarDescription), "%s item maximum level", sName);
 	IntToString(iDefaultMaxLevel, sValue, sizeof(sValue));
-	hCvar = CreateConVar(sCvarName, sValue, sCvarDescription, 0, true, 1.0);
+	hCvar = AutoExecConfig_CreateConVar(sCvarName, sValue, sCvarDescription, 0, true, 1.0);
 	HookConVarChange(hCvar, ConVar_UpgradeMaxLevelChanged);
 	upgrade[UPGR_maxLevelConvar] = hCvar;
 	
-	Format(sCvarName, sizeof(sCvarName), "cssrpg_%s_cost", sShortName);
+	Format(sCvarName, sizeof(sCvarName), "smrpg_%s_cost", sShortName);
 	Format(sCvarDescription, sizeof(sCvarDescription), "%s item start cost", sName);
 	IntToString(iDefaultStartCost, sValue, sizeof(sValue));
-	hCvar = CreateConVar(sCvarName, sValue, sCvarDescription, 0, true, 0.0);
+	hCvar = AutoExecConfig_CreateConVar(sCvarName, sValue, sCvarDescription, 0, true, 0.0);
 	HookConVarChange(hCvar, ConVar_UpgradeChanged);
 	upgrade[UPGR_startCostConvar] = hCvar;
 	
-	Format(sCvarName, sizeof(sCvarName), "cssrpg_%s_icost", sShortName);
+	Format(sCvarName, sizeof(sCvarName), "smrpg_%s_icost", sShortName);
 	Format(sCvarDescription, sizeof(sCvarDescription), "%s item cost increment for each level", sName);
 	IntToString(iDefaultCostInc, sValue, sizeof(sValue));
-	hCvar = CreateConVar(sCvarName, sValue, sCvarDescription, 0, true, 0.0);
+	hCvar = AutoExecConfig_CreateConVar(sCvarName, sValue, sCvarDescription, 0, true, 0.0);
 	HookConVarChange(hCvar, ConVar_UpgradeChanged);
 	upgrade[UPGR_incCostConvar] = hCvar;
+	
+	//Format(sCvarName, sizeof(sCvarName), "smrpg_upgrade_%s", sShortName);
+	//AutoExecConfig(true, sCvarName, "sourcemod/smrpg");
+	ServerCommand("exec sourcemod/smrpg/smrpg_upgrade_%s.cfg", sShortName);
+	
+	//AutoExecConfig_CleanFile();
 	
 	// We already got info about this. Don't insert it a second time.
 	if(bAlreadyLoaded)
@@ -181,6 +195,54 @@ public Native_UnregisterUpgradeType(Handle:plugin, numParams)
 	}
 	
 	ThrowNativeError(SP_ERROR_NATIVE, "No upgrade named \"%s\" loaded.", sShortName);
+}
+
+// native Handle:SMRPG_CreateUpgradeConVar(const String:shortname[], const String:name[], const String:defaultValue[], const String:description[]="", flags=0, bool:hasMin=false, Float:min=0.0, bool:hasMax=false, Float:max=0.0);
+public Native_CreateUpgradeConVar(Handle:plugin, numParams)
+{
+	new len;
+	GetNativeStringLength(1, len);
+	new String:sShortName[len+1];
+	GetNativeString(1, sShortName, len+1);
+	
+	new upgrade[InternalUpgradeInfo];
+	if(!GetUpgradeByShortname(sShortName, upgrade) || !IsValidUpgrade(upgrade))
+	{
+		ThrowNativeError(SP_ERROR_NATIVE, "No upgrade named \"%s\" loaded.", sShortName);
+		return _:INVALID_HANDLE;
+	}
+	
+	GetNativeStringLength(2, len);
+	new String:name[len+1];
+	GetNativeString(2, name, len+1);
+	
+	GetNativeStringLength(3, len);
+	new String:defaultValue[len+1];
+	GetNativeString(3, defaultValue, len+1);
+	
+	GetNativeStringLength(4, len);
+	new String:description[len+1];
+	GetNativeString(4, description, len+1);
+	
+	new flags = GetNativeCell(5);
+	new bool:hasMin = bool:GetNativeCell(6);
+	new Float:min = Float:GetNativeCell(7);
+	new bool:hasMax = bool:GetNativeCell(8);
+	new Float:max = Float:GetNativeCell(9);
+	
+	decl String:sFileName[PLATFORM_MAX_PATH];
+	Format(sFileName, sizeof(sFileName), "smrpg_upgrade_%s", sShortName);
+	AutoExecConfig_SetFile(sFileName, "sourcemod/smrpg");
+	AutoExecConfig_SetCreateFile(true);
+	AutoExecConfig_SetPlugin(plugin);
+	
+	new Handle:hCvar = AutoExecConfig_CreateConVar(name, defaultValue, description, flags, hasMin, min, hasMax, max);
+	
+	ServerCommand("exec sourcemod/smrpg/smrpg_upgrade_%s.cfg", sShortName);
+	
+	//AutoExecConfig_CleanFile();
+	
+	return _:hCvar;
 }
 
 // native bool:SMRPG_UpgradeExists(const String:shortname[]);

@@ -30,8 +30,6 @@ public Plugin:myinfo =
 
 public OnPluginStart()
 {
-	g_hCVIceStabLimitDmg = CreateConVar("smrpg_icestab_limit_dmg", "10", "Maximum damage that can be done upon icestabbed victims (0 = disable)", 0, true, 0.0);
-	
 	HookEvent("player_spawn", Event_OnResetEffect);
 	HookEvent("player_death", Event_OnResetEffect);
 	
@@ -64,6 +62,8 @@ public OnLibraryAdded(const String:name[])
 		SMRPG_RegisterUpgradeType("Ice Stab", UPGRADE_SHORTNAME, 10, true, 20, 30, 10, SMRPG_BuySell, SMRPG_ActiveQuery);
 		SMRPG_SetUpgradeResetCallback(UPGRADE_SHORTNAME, SMRPG_ResetEffect);
 		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
+		
+		g_hCVIceStabLimitDmg = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_icestab_limit_dmg", "10", "Maximum damage that can be done upon icestabbed victims (0 = disable)", 0, true, 0.0);
 	}
 }
 
