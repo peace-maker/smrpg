@@ -190,7 +190,7 @@ ResetStats(client)
 	for(new i=0;i<iSize;i++)
 	{
 		// Reset upgrade to level 0
-		SetArrayCell(GetClientUpgradeLevels(i), i, 0);
+		SetArrayCell(GetClientUpgradeLevels(client), i, 0);
 		
 		if(!IsValidUpgrade(upgrade))
 			continue;
