@@ -79,6 +79,10 @@ public Menu_HandleMainMenu(Handle:menu, MenuAction:action, param1, param2)
 		{
 			DisplaySettingsMenu(param1);
 		}
+		else if(StrEqual(sInfo, "help"))
+		{
+			DisplayHelpMenu(param1, 0);
+		}
 	}
 	else if(action == MenuAction_Display)
 	{
@@ -484,4 +488,83 @@ public Menu_ConfirmResetStats(Handle:menu, MenuAction:action, param1, param2)
 			DisplaySettingsMenu(param1);
 	}
 	return 0;
+}
+
+DisplayHelpMenu(client, position)
+{
+	new Handle:hMenu = CreateMenu(Menu_HandleHelp, MENU_ACTIONS_DEFAULT|MenuAction_Display);
+	SetMenuExitBackButton(hMenu, true);
+	
+	SetMenuTitle(hMenu, "credits_display");
+	
+	new iSize = GetUpgradeCount();
+	new upgrade[InternalUpgradeInfo];
+	new String:sTranslatedName[MAX_UPGRADE_NAME_LENGTH], String:sIndex[8];
+	for(new i=0;i<iSize;i++)
+	{
+		GetUpgradeByIndex(i, upgrade);
+		
+		// Don't show disabled items in the menu.
+		if(!IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled])
+			continue;
+		
+		GetUpgradeTranslatedName(client, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
+		
+		IntToString(i, sIndex, sizeof(sIndex));
+
+		AddMenuItem(hMenu, sIndex, sTranslatedName);
+	}
+	
+	if(position > 0)
+		DisplayMenuAtItem(hMenu, client, position, MENU_TIME_FOREVER);
+	else
+		DisplayMenu(hMenu, client, MENU_TIME_FOREVER);
+}
+
+public Menu_HandleHelp(Handle:menu, MenuAction:action, param1, param2)
+{
+	if(action == MenuAction_Select)
+	{
+		decl String:sInfo[16];
+		GetMenuItem(menu, param2, sInfo, sizeof(sInfo));
+		
+		new iItemIndex = StringToInt(sInfo);
+		new upgrade[InternalUpgradeInfo];
+		GetUpgradeByIndex(iItemIndex, upgrade);
+		
+		// Bad upgrade?
+		if(!IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled])
+		{
+			DisplayHelpMenu(param1, GetMenuSelectionPosition());
+			return;
+		}
+		
+		new String:sTranslatedName[MAX_UPGRADE_NAME_LENGTH], String:sTranslatedDescription[MAX_UPGRADE_DESCRIPTION_LENGTH];
+		GetUpgradeTranslatedName(param1, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
+		GetUpgradeTranslatedDescription(param1, upgrade[UPGR_index], sTranslatedDescription, sizeof(sTranslatedDescription));
+		
+		PrintToChat(param1, "%s: %s", sTranslatedName, sTranslatedDescription);
+		
+		DisplayHelpMenu(param1, GetMenuSelectionPosition());
+	}
+	else if(action == MenuAction_Display)
+	{
+		// Change the title
+		new Handle:hPanel = Handle:param2;
+		
+		// Display the current credits in the title
+		decl String:sBuffer[256];
+		Format(sBuffer, sizeof(sBuffer), "%T %d\n-----\n", "menu_txt.credits", param1, GetClientCredits(param1));
+		
+		SetPanelTitle(hPanel, sBuffer);
+	}
+	else if(action == MenuAction_Cancel)
+	{
+		if(param2 == MenuCancel_ExitBack)
+			DisplayMainMenu(param1);
+	}
+	else if(action == MenuAction_End)
+	{
+		CloseHandle(menu);
+	}
 }

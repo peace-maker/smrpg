@@ -23,7 +23,7 @@ public Plugin:myinfo =
 {
 	name = "SM:RPG Upgrade > Ice Stab",
 	author = "Jannik \"Peace-Maker\" Hartung",
-	description = "Impulse upgrade for SM:RPG. Gain speed shortly when being shot.",
+	description = "Ice Stab upgrade for SM:RPG. Freeze a player in place when knifing him.",
 	version = PLUGIN_VERSION,
 	url = "http://www.wcfan.de/"
 }
@@ -59,7 +59,7 @@ public OnLibraryAdded(const String:name[])
 	// Register this upgrade in SM:RPG
 	if(StrEqual(name, "smrpg"))
 	{
-		SMRPG_RegisterUpgradeType("Ice Stab", UPGRADE_SHORTNAME, 10, true, 20, 30, 10, SMRPG_BuySell, SMRPG_ActiveQuery);
+		SMRPG_RegisterUpgradeType("Ice Stab", UPGRADE_SHORTNAME, "Freeze a player in place when knifing him.", 10, true, 20, 30, 10, SMRPG_BuySell, SMRPG_ActiveQuery);
 		SMRPG_SetUpgradeResetCallback(UPGRADE_SHORTNAME, SMRPG_ResetEffect);
 		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
 		
@@ -142,9 +142,12 @@ public SMRPG_ResetEffect(client)
 	g_iIceStabFade[client] = 255;
 }
 
-public SMRPG_TranslateUpgrade(client, String:translation[], maxlen)
+public SMRPG_TranslateUpgrade(client, TranslationType:type, String:translation[], maxlen)
 {
-	Format(translation, maxlen, "%T", UPGRADE_SHORTNAME, client);
+	if(type == TranslationType_Name)
+		Format(translation, maxlen, "%T", UPGRADE_SHORTNAME, client);
+	else if(type == TranslationType_Description)
+		return;
 }
 
 /**

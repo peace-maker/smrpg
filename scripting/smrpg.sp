@@ -274,6 +274,8 @@ public Event_OnPlayerSay(Handle:event, const String:error[], bool:dontBroadcast)
 	}
 	else if(StrEqual(sText, "rpgtop10"))
 		DisplayTop10Menu(client);
+	else if(StrEqual(sText, "rpghelp"))
+		DisplayHelpMenu(client, 0);
 }
 
 /**

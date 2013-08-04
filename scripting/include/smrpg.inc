@@ -24,12 +24,18 @@ enum UpgradeQueryType
 	UpgradeQueryType_Sell
 };
 
+enum TranslationType
+{
+  TranslationType_Name,
+  TranslationType_Description
+};
+
 functag public SMRPG_UpgradeQueryCB(client, UpgradeQueryType:type);
 functag public bool:SMRPG_ActiveQueryCB(client);
-functag public SMRPG_TranslateUpgradeCB(client, String:translation[], maxlen);
+functag public SMRPG_TranslateUpgradeCB(client, TranslationType:type, String:translation[], maxlen);
 functag public SMRPG_ResetEffectCB(client);
 
-native SMRPG_RegisterUpgradeType(const String:name[], const String:shortname[], maxlevelbarrier, bool:bDefaultEnable, iDefaultMaxLevel, iDefaultStartCost, iDefaultCostInc, SMRPG_UpgradeQueryCB:querycb, SMRPG_ActiveQueryCB:activecb);
+native SMRPG_RegisterUpgradeType(const String:name[], const String:shortname[], const String:description[], maxlevelbarrier, bool:bDefaultEnable, iDefaultMaxLevel, iDefaultStartCost, iDefaultCostInc, SMRPG_UpgradeQueryCB:querycb, SMRPG_ActiveQueryCB:activecb);
 native SMRPG_UnregisterUpgradeType(const String:shortname[]);
 native Handle:SMRPG_CreateUpgradeConVar(const String:shortname[], const String:name[], const String:defaultValue[], const String:description[]="", flags=0, bool:hasMin=false, Float:min=0.0, bool:hasMax=false, Float:max=0.0);
 
@@ -41,6 +47,7 @@ native SMRPG_ResetUpgradeEffectOnClient(client, const String:shortname[]);
 
 #define MAX_UPGRADE_NAME_LENGTH 64
 #define MAX_UPGRADE_SHORTNAME_LENGTH 32
+#define MAX_UPGRADE_DESCRIPTION_LENGTH 128
 
 enum UpgradeInfo
 {

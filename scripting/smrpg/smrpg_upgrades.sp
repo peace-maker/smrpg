@@ -24,7 +24,8 @@ enum InternalUpgradeInfo
 	Handle:UPGR_incCostConvar,
 	
 	String:UPGR_name[MAX_UPGRADE_NAME_LENGTH],
-	String:UPGR_shortName[MAX_UPGRADE_SHORTNAME_LENGTH]
+	String:UPGR_shortName[MAX_UPGRADE_SHORTNAME_LENGTH],
+	String:UPGR_description[MAX_UPGRADE_DESCRIPTION_LENGTH]
 };
 
 new Handle:g_hUpgrades;
@@ -78,13 +79,17 @@ public Native_RegisterUpgradeType(Handle:plugin, numParams)
 		bAlreadyLoaded = true;
 	}
 	
-	new iMaxLevelBarrier = GetNativeCell(3);
-	new bool:bDefaultEnable = bool:GetNativeCell(4);
-	new iDefaultMaxLevel = GetNativeCell(5);
-	new iDefaultStartCost = GetNativeCell(6);
-	new iDefaultCostInc = GetNativeCell(7);
-	new Function:queryCallback = Function:GetNativeCell(8);
-	new Function:activeCallback = Function:GetNativeCell(9);
+	GetNativeStringLength(3, len);
+	new String:sDescription[len+1];
+	GetNativeString(3, sDescription, len+1);
+	
+	new iMaxLevelBarrier = GetNativeCell(4);
+	new bool:bDefaultEnable = bool:GetNativeCell(5);
+	new iDefaultMaxLevel = GetNativeCell(6);
+	new iDefaultStartCost = GetNativeCell(7);
+	new iDefaultCostInc = GetNativeCell(8);
+	new Function:queryCallback = Function:GetNativeCell(9);
+	new Function:activeCallback = Function:GetNativeCell(10);
 	
 	if(!bAlreadyLoaded)
 		upgrade[UPGR_index] = GetArraySize(g_hUpgrades);
@@ -101,6 +106,7 @@ public Native_RegisterUpgradeType(Handle:plugin, numParams)
 	upgrade[UPGR_plugin] = plugin;
 	strcopy(upgrade[UPGR_name], MAX_UPGRADE_NAME_LENGTH, sName);
 	strcopy(upgrade[UPGR_shortName], MAX_UPGRADE_SHORTNAME_LENGTH, sShortName);
+	strcopy(upgrade[UPGR_description], MAX_UPGRADE_DESCRIPTION_LENGTH, sDescription);
 	
 	decl String:sCvarName[64], String:sCvarDescription[256], String:sValue[16];
 	
@@ -139,9 +145,7 @@ public Native_RegisterUpgradeType(Handle:plugin, numParams)
 	HookConVarChange(hCvar, ConVar_UpgradeChanged);
 	upgrade[UPGR_incCostConvar] = hCvar;
 	
-	//Format(sCvarName, sizeof(sCvarName), "smrpg_upgrade_%s", sShortName);
-	//AutoExecConfig(true, sCvarName, "sourcemod/smrpg");
-	ServerCommand("exec sourcemod/smrpg/smrpg_upgrade_%s.cfg", sShortName);
+	AutoExecConfig_ExecuteFile();
 	
 	//AutoExecConfig_CleanFile();
 	
@@ -238,6 +242,8 @@ public Native_CreateUpgradeConVar(Handle:plugin, numParams)
 	
 	new Handle:hCvar = AutoExecConfig_CreateConVar(name, defaultValue, description, flags, hasMin, min, hasMax, max);
 	
+	// AutoExecConfig_ExecuteFile(); // No need to call AutoExecConfig again. The file is already in the list.
+	// Just execute the config again, to get the values?
 	ServerCommand("exec sourcemod/smrpg/smrpg_upgrade_%s.cfg", sShortName);
 	
 	//AutoExecConfig_CleanFile();
@@ -501,16 +507,35 @@ GetUpgradeTranslatedName(client, iUpgradeIndex, String:name[], maxlen)
 	new upgrade[InternalUpgradeInfo];
 	GetUpgradeByIndex(iUpgradeIndex, upgrade);
 	
+	strcopy(name, maxlen, upgrade[UPGR_name]);
+	
 	// No translation callback registered? Fall back to the name set when registering the upgrade.
 	if(upgrade[UPGR_translationCallback] == INVALID_FUNCTION)
-	{
-		strcopy(name, maxlen, upgrade[UPGR_name]);
 		return;
-	}
 	
 	Call_StartFunction(upgrade[UPGR_plugin], upgrade[UPGR_translationCallback]);
 	Call_PushCell(client);
-	Call_PushStringEx(name, maxlen, SM_PARAM_STRING_UTF8, SM_PARAM_COPYBACK);
+	Call_PushCell(TranslationType_Name);
+	Call_PushStringEx(name, maxlen, SM_PARAM_STRING_UTF8|SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
+	Call_PushCell(maxlen);
+	Call_Finish();
+}
+
+GetUpgradeTranslatedDescription(client, iUpgradeIndex, String:description[], maxlen)
+{
+	new upgrade[InternalUpgradeInfo];
+	GetUpgradeByIndex(iUpgradeIndex, upgrade);
+	
+	strcopy(description, maxlen, upgrade[UPGR_description]);
+	
+	// No translation callback registered? Fall back to the name set when registering the upgrade.
+	if(upgrade[UPGR_translationCallback] == INVALID_FUNCTION)
+		return;
+	
+	Call_StartFunction(upgrade[UPGR_plugin], upgrade[UPGR_translationCallback]);
+	Call_PushCell(client);
+	Call_PushCell(TranslationType_Description);
+	Call_PushStringEx(description, maxlen, SM_PARAM_STRING_UTF8|SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
 	Call_PushCell(maxlen);
 	Call_Finish();
 }

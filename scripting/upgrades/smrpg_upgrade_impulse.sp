@@ -62,7 +62,7 @@ public OnLibraryAdded(const String:name[])
 	// Register this upgrade in SM:RPG
 	if(StrEqual(name, "smrpg"))
 	{
-		SMRPG_RegisterUpgradeType("Impulse", UPGRADE_SHORTNAME, 10, true, 5, 20, 20, SMRPG_BuySell, SMRPG_ActiveQuery);
+		SMRPG_RegisterUpgradeType("Impulse", UPGRADE_SHORTNAME, "Gain speed for a short time when being shot.", 10, true, 5, 20, 20, SMRPG_BuySell, SMRPG_ActiveQuery);
 		SMRPG_SetUpgradeResetCallback(UPGRADE_SHORTNAME, SMRPG_ResetEffect);
 		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
 	}
@@ -120,9 +120,12 @@ public SMRPG_ResetEffect(client)
 	ClearHandle(g_hImpulseResetSpeed[client]);
 }
 
-public SMRPG_TranslateUpgrade(client, String:translation[], maxlen)
+public SMRPG_TranslateUpgrade(client, TranslationType:type, String:translation[], maxlen)
 {
-	Format(translation, maxlen, "%T", UPGRADE_SHORTNAME, client);
+	if(type == TranslationType_Name)
+		Format(translation, maxlen, "%T", UPGRADE_SHORTNAME, client);
+	else if(type == TranslationType_Description)
+		return;
 }
 
 /**

@@ -40,7 +40,7 @@ public OnLibraryAdded(const String:name[])
 	// Register this upgrade in SM:RPG
 	if(StrEqual(name, "smrpg"))
 	{
-		SMRPG_RegisterUpgradeType("Stealth", UPGRADE_SHORTNAME, 5, true, 5, 15, 10, SMRPG_BuySell, SMRPG_ActiveQuery);
+		SMRPG_RegisterUpgradeType("Stealth", UPGRADE_SHORTNAME, "Renders yourself more and more invisible.", 5, true, 5, 15, 10, SMRPG_BuySell, SMRPG_ActiveQuery);
 		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
 	}
 }
@@ -92,9 +92,12 @@ public bool:SMRPG_ActiveQuery(client)
 	return SMRPG_IsEnabled() && upgrade[UI_enabled] && SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME) > 0;
 }
 
-public SMRPG_TranslateUpgrade(client, String:translation[], maxlen)
+public SMRPG_TranslateUpgrade(client, TranslationType:type, String:translation[], maxlen)
 {
-	Format(translation, maxlen, "%T", UPGRADE_SHORTNAME, client);
+	if(type == TranslationType_Name)
+		Format(translation, maxlen, "%T", UPGRADE_SHORTNAME, client);
+	else if(type == TranslationType_Description)
+		return;
 }
 
 /**
