@@ -63,6 +63,12 @@ public Native_RegisterUpgradeType(Handle:plugin, numParams)
 	GetNativeStringLength(2, len);
 	new String:sShortName[len+1];
 	GetNativeString(2, sShortName, len+1);
+	
+	if(StrContains(sShortName, " ") != -1)
+	{
+		ThrowNativeError(SP_ERROR_NATIVE, "Whitespace is not allowed in the shortname of an upgrade.");
+		return;
+	}
 
 	// There already is an upgrade with that name loaded. Don't load it twice. shortnames have to be unique.
 	new upgrade[InternalUpgradeInfo], bool:bAlreadyLoaded;

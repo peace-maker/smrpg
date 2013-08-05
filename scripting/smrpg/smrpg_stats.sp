@@ -127,7 +127,7 @@ Stats_PlayerKill(attacker, victim)
 	if(GetClientTeam(attacker) == GetClientTeam(victim))
 		return;
 	
-	new iExp = GetClientLevel(victim) * GetConVarFloat(g_hCVExpKill);
+	new iExp = RoundToCeil(GetClientLevel(victim) * GetConVarFloat(g_hCVExpKill));
 	
 	if(Stats_CallOnExperienceForward(attacker, ER_PlayerKill, iExp) <= Plugin_Changed)
 		Stats_AddExperience(attacker, iExp, false);
