@@ -63,7 +63,7 @@ public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
 	CreateNative("SMRPG_IgnoreBots", Native_IgnoreBots);
 	RegisterUpgradeNatives();
 	RegisterPlayerNatives();
-	InitStatsNatives();
+	RegisterStatsNatives();
 }
 
 public OnPluginStart()

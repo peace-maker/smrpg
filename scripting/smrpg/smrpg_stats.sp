@@ -6,7 +6,7 @@ new g_iCachedRankCount = 0;
 
 new Handle:g_hfwdOnAddExperience;
 
-InitStatsNatives()
+RegisterStatsNatives()
 {
 	// forward Action:SMRPG_OnAddExperience(client, ExperienceReason:reason, &iExperience);
 	g_hfwdOnAddExperience = CreateGlobalForward("SMRPG_OnAddExperience", ET_Hook, Param_Cell, Param_Cell, Param_CellByRef);
@@ -127,7 +127,7 @@ Stats_PlayerKill(attacker, victim)
 	if(GetClientTeam(attacker) == GetClientTeam(victim))
 		return;
 	
-	new iExp = GetClientLevel(victim) * GetConVarInt(g_hCVExpKill);
+	new iExp = GetClientLevel(victim) * GetConVarFloat(g_hCVExpKill);
 	
 	if(Stats_CallOnExperienceForward(attacker, ER_PlayerKill, iExp) <= Plugin_Changed)
 		Stats_AddExperience(attacker, iExp, false);
