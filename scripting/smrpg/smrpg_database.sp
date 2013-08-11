@@ -41,7 +41,7 @@ InitDatabase()
 		}
 		
 		Format(sQuery, sizeof(sQuery), "CREATE TABLE %s (%s)", TBL_PLAYERS, sQuery);
-		SQL_FastQuery(g_hDatabase, sQuery);
+		SQL_LockedFastQuery(g_hDatabase, sQuery);
 	}
 	else if(result == 1)
 	{
@@ -51,7 +51,7 @@ InitDatabase()
 			if(!SQLiteColumnExists(player_col_types[i], TBL_PLAYERS))
 			{
 				Format(sQuery, sizeof(sQuery), "ALTER TABLE %s ADD COLUMN %s", TBL_PLAYERS, player_cols[i]);
-				SQL_FastQuery(g_hDatabase, sQuery);
+				SQL_LockedFastQuery(g_hDatabase, sQuery);
 			}
 		}
 	}
@@ -70,7 +70,7 @@ InitDatabase()
 		}
 		
 		Format(sQuery, sizeof(sQuery), "CREATE TABLE %s (%s)", TBL_UPGRADES, sQuery);
-		SQL_FastQuery(g_hDatabase, sQuery);
+		SQL_LockedFastQuery(g_hDatabase, sQuery);
 	}
 	else if(result == 1)
 	{
@@ -93,7 +93,7 @@ CheckUpgradeDatabaseField(String:sShortName[])
 	if(!result)
 	{
 		Format(sQuery, sizeof(sQuery), "ALTER TABLE %s ADD COLUMN %s INTEGER DEFAULT '0'", TBL_UPGRADES, sShortName);
-		SQL_FastQuery(g_hDatabase, sQuery);
+		SQL_LockedFastQuery(g_hDatabase, sQuery);
 	}
 	// This one is already there. Load the data for all connected players
 	else if(result == 1)
@@ -118,21 +118,23 @@ DatabaseMaid()
 	
 	/* Delete players who are Level 1 and haven't played for 3 days */
 	Format(sQuery, sizeof(sQuery), "DELETE FROM %s WHERE level <= '1' AND lastseen <= '%d'", TBL_PLAYERS, GetTime()-259200);
-	SQL_FastQuery(g_hDatabase, sQuery);
+	SQL_LockedFastQuery(g_hDatabase, sQuery);
 	
 	if(GetConVarInt(g_hCVPlayerExpire) > 0)
 	{
 		Format(sQuery, sizeof(sQuery), "SELECT upgrades_id FROM %s WHERE lastseen <= '%d'", TBL_PLAYERS, GetTime()-(86400*GetConVarInt(g_hCVPlayerExpire)));
+		SQL_LockDatabase(g_hDatabase);
 		new Handle:hResult = SQL_Query(g_hDatabase, sQuery);
+		SQL_UnlockDatabase(g_hDatabase);
 		if(hResult != INVALID_HANDLE)
 		{
 			while(SQL_MoreRows(hResult))
 			{
 				SQL_FetchRow(hResult);
 				Format(sQuery, sizeof(sQuery), "DELETE FROM %s WHERE upgrades_id = '%d'", TBL_UPGRADES, SQL_FetchInt(hResult, 0));
-				SQL_FastQuery(g_hDatabase, sQuery);
+				SQL_LockedFastQuery(g_hDatabase, sQuery);
 				Format(sQuery, sizeof(sQuery), "DELETE FROM %s WHERE upgrades_id = '%d'", TBL_PLAYERS, SQL_FetchInt(hResult, 0));
-				SQL_FastQuery(g_hDatabase, sQuery);
+				SQL_LockedFastQuery(g_hDatabase, sQuery);
 			}
 			CloseHandle(hResult);
 		}
@@ -143,9 +145,9 @@ DatabaseMaid()
 	}
 	
 	Format(sQuery, sizeof(sQuery), "VACUUM %s", TBL_PLAYERS);
-	SQL_FastQuery(g_hDatabase, sQuery);
+	SQL_LockedFastQuery(g_hDatabase, sQuery);
 	Format(sQuery, sizeof(sQuery), "VACUUM %s", TBL_UPGRADES);
-	SQL_FastQuery(g_hDatabase, sQuery);
+	SQL_LockedFastQuery(g_hDatabase, sQuery);
 }
 
 /* A very cheap way of doing things but there is no other alternative */
@@ -154,7 +156,7 @@ SQLiteTableExists(String:table[])
 {
 	decl String:sQuery[64];
 	Format(sQuery, sizeof(sQuery), "SELECT * FROM %s", table);
-	if(SQL_FastQuery(g_hDatabase, sQuery))
+	if(SQL_LockedFastQuery(g_hDatabase, sQuery))
 		return 1;
 	
 	decl String:sError[256];
@@ -171,7 +173,7 @@ SQLiteColumnExists(String:col[], String:table[])
 {
 	decl String:sQuery[64];
 	Format(sQuery, sizeof(sQuery), "SELECT %s FROM %s", col, table);
-	if(SQL_FastQuery(g_hDatabase, sQuery))
+	if(SQL_LockedFastQuery(g_hDatabase, sQuery))
 		return 1;
 	
 	decl String:sError[256];
@@ -189,4 +191,25 @@ public SQL_DoNothing(Handle:owner, Handle:hndl, const String:error[], any:data)
 	{
 		LogError("Error executing query: %s", error);
 	}
+}
+
+/**
+ * Executes a query and ignores the result set.
+ * Locks the database connection to avoid problems with threaded queries ran at the same time.
+ *
+ * @param database		A database Handle.
+ * @param query			Query string.
+ * @param len			Optional parameter to specify the query length, in 
+ *						bytes.  This can be used to send binary queries that 
+ * 						have a premature terminator.
+ * @return				True if query succeeded, false otherwise.  Use
+ *						SQL_GetError to find the last error.
+ * @error				Invalid database Handle.
+ */
+stock bool:SQL_LockedFastQuery(Handle:database, const String:query[], len=-1)
+{
+	SQL_LockDatabase(database);
+	new bool:bSuccess = SQL_FastQuery(database, query, len);
+	SQL_UnlockDatabase(database);
+	return bSuccess;
 }
