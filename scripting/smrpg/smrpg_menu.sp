@@ -16,11 +16,11 @@ InitMenu()
 	
 	SetMenuTitle(g_hMainMenu, "credits_display");
 	
-	AddMenuItem(g_hMainMenu, "upgrades", "menu_opt.upgrades");
-	AddMenuItem(g_hMainMenu, "sell", "menu_opt.sell");
-	AddMenuItem(g_hMainMenu, "stats", "menu_opt.stats");
-	AddMenuItem(g_hMainMenu, "settings", "menu_opt.settings");
-	AddMenuItem(g_hMainMenu, "help", "menu_opt.help");
+	AddMenuItem(g_hMainMenu, "upgrades", "Upgrades");
+	AddMenuItem(g_hMainMenu, "sell", "Sell");
+	AddMenuItem(g_hMainMenu, "stats", "Stats");
+	AddMenuItem(g_hMainMenu, "settings", "Settings");
+	AddMenuItem(g_hMainMenu, "help", "Help");
 	
 	// Stats Menu
 	g_hStatsMenu = CreateMenu(Menu_HandleStats, MENU_ACTIONS_DEFAULT|MenuAction_DisplayItem|MenuAction_Display);
@@ -39,7 +39,7 @@ InitMenu()
 	
 	SetMenuTitle(g_hSettingsMenu, "credits_display");
 	
-	AddMenuItem(g_hSettingsMenu, "resetstats", "menu_opt.reset_stats");
+	AddMenuItem(g_hSettingsMenu, "resetstats", "Reset Stats");
 	
 	// Reset Stats Confirmation
 	g_hConfirmResetStatsMenu = CreateMenu(Menu_ConfirmResetStats, MENU_ACTIONS_DEFAULT|MenuAction_Display|MenuAction_DisplayItem);
@@ -91,7 +91,7 @@ public Menu_HandleMainMenu(Handle:menu, MenuAction:action, param1, param2)
 		
 		// Display the current credits in the title
 		decl String:sBuffer[256];
-		Format(sBuffer, sizeof(sBuffer), "%T %d\n-----\n", "menu_txt.credits", param1, GetClientCredits(param1));
+		Format(sBuffer, sizeof(sBuffer), "%T\n-----\n", "Credits", param1, GetClientCredits(param1));
 		
 		SetPanelTitle(hPanel, sBuffer);
 	}
@@ -135,12 +135,12 @@ DisplayUpgradesMenu(client, position)
 		IntToString(i, sIndex, sizeof(sIndex));
 		if(iCurrentLevel >= upgrade[UPGR_maxLevel])
 		{
-			Format(sLine, sizeof(sLine), "%s Lvl MAX [%T: MAX]", sTranslatedName, "menu_txt.cost", client);
+			Format(sLine, sizeof(sLine), "%s Lvl MAX [%T: MAX]", sTranslatedName, "Cost", client);
 			AddMenuItem(hMenu, sIndex, sLine, ITEMDRAW_DISABLED);
 		}
 		else
 		{
-			Format(sLine, sizeof(sLine), "%s Lvl %d [%T: %d]", sTranslatedName, iCurrentLevel+1, "menu_txt.cost", client, GetUpgradeCost(i, iCurrentLevel+1));
+			Format(sLine, sizeof(sLine), "%s Lvl %d [%T: %d]", sTranslatedName, iCurrentLevel+1, "Cost", client, GetUpgradeCost(i, iCurrentLevel+1));
 			AddMenuItem(hMenu, sIndex, sLine);
 		}
 	}
@@ -176,13 +176,13 @@ public Menu_HandleUpgrades(Handle:menu, MenuAction:action, param1, param2)
 		GetUpgradeTranslatedName(param1, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
 		
 		if(iItemLevel >= upgrade[UPGR_maxLevel])
-			PrintToChat(param1, "%t", "menu_result.max_lvl");
+			Client_PrintToChat(param1, false, "%t", "Maximum level reached");
 		else if(GetClientCredits(param1) < iCost)
-			PrintToChat(param1, "%t", "menu_result.not_enough_credits", sTranslatedName, iItemLevel+1, iCost);
+			Client_PrintToChat(param1, false, "%t", "Not enough credits", sTranslatedName, iItemLevel+1, iCost);
 		else
 		{
 			if(BuyClientUpgrade(param1, iItemIndex))
-				PrintToChat(param1, "%t", "menu_result.item_bought", sTranslatedName, iItemLevel+1);
+				PrintToChat(param1, "%t", "Upgrade bought", sTranslatedName, iItemLevel+1);
 		}
 		
 		
@@ -195,7 +195,7 @@ public Menu_HandleUpgrades(Handle:menu, MenuAction:action, param1, param2)
 		
 		// Display the current credits in the title
 		decl String:sBuffer[256];
-		Format(sBuffer, sizeof(sBuffer), "%T %d\n-----\n", "menu_txt.credits", param1, GetClientCredits(param1));
+		Format(sBuffer, sizeof(sBuffer), "%T\n-----\n", "Credits", param1, GetClientCredits(param1));
 		
 		SetPanelTitle(hPanel, sBuffer);
 	}
@@ -233,7 +233,7 @@ DisplaySellMenu(client)
 		
 		IntToString(i, sIndex, sizeof(sIndex));
 
-		Format(sLine, sizeof(sLine), "%s Lvl %d [%T: %d]", sTranslatedName, iCurrentLevel, "menu_txt.sale", client, GetUpgradeSale(i, iCurrentLevel));
+		Format(sLine, sizeof(sLine), "%s Lvl %d [%T: %d]", sTranslatedName, iCurrentLevel, "Sale", client, GetUpgradeSale(i, iCurrentLevel));
 		AddMenuItem(hMenu, sIndex, sLine, (iCurrentLevel > 0?ITEMDRAW_DEFAULT:ITEMDRAW_DISABLED));
 	}
 	
@@ -268,7 +268,7 @@ public Menu_HandleSell(Handle:menu, MenuAction:action, param1, param2)
 		
 		// Display the current credits in the title
 		decl String:sBuffer[256];
-		Format(sBuffer, sizeof(sBuffer), "%T %d\n-----\n", "menu_txt.credits", param1, GetClientCredits(param1));
+		Format(sBuffer, sizeof(sBuffer), "%T\n-----\n", "Credits", param1, GetClientCredits(param1));
 		
 		SetPanelTitle(hPanel, sBuffer);
 	}
@@ -300,7 +300,7 @@ public Menu_ConfirmSell(Handle:menu, MenuAction:action, param1, param2)
 		
 		new String:sTranslatedName[MAX_UPGRADE_NAME_LENGTH];
 		GetUpgradeTranslatedName(param1, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
-		PrintToChat(param1, "%t", "menu_result.item_sold", sTranslatedName, GetClientUpgradeLevel(param1, iItemIndex)+1);
+		Client_PrintToChat(param1, false, "%t", "Upgrade sold", sTranslatedName, GetClientUpgradeLevel(param1, iItemIndex)+1);
 		
 		DisplaySellMenu(param1);
 	}
@@ -311,7 +311,7 @@ public Menu_ConfirmSell(Handle:menu, MenuAction:action, param1, param2)
 		
 		// Display the current credits in the title
 		decl String:sBuffer[256];
-		Format(sBuffer, sizeof(sBuffer), "%T %d\n-----\n%T\n", "menu_txt.credits", param1, GetClientCredits(param1), "menu_confirm.sell_confirm", param1);
+		Format(sBuffer, sizeof(sBuffer), "%T\n-----\n%T\n", "Credits", param1, GetClientCredits(param1), "Are you sure?", param1);
 		
 		SetPanelTitle(hPanel, sBuffer);
 	}
@@ -355,7 +355,7 @@ public Menu_HandleStats(Handle:menu, MenuAction:action, param1, param2)
 		
 		// Display the current credits in the title
 		decl String:sBuffer[256];
-		Format(sBuffer, sizeof(sBuffer), "%T %d\n-----\n", "menu_txt.credits", param1, GetClientCredits(param1));
+		Format(sBuffer, sizeof(sBuffer), "%T\n-----\n", "Credits", param1, GetClientCredits(param1));
 		
 		SetPanelTitle(hPanel, sBuffer);
 	}
@@ -367,19 +367,19 @@ public Menu_HandleStats(Handle:menu, MenuAction:action, param1, param2)
 		decl String:sBuffer[255];
 		if(StrEqual(sDisplay, "level"))
 		{
-			Format(sBuffer, sizeof(sBuffer), "%T: %d", "menu_txt.level", param1, GetClientLevel(param1));
+			Format(sBuffer, sizeof(sBuffer), "%T", "Level", param1, GetClientLevel(param1));
 		}
 		else if(StrEqual(sDisplay, "exp"))
 		{
-			Format(sBuffer, sizeof(sBuffer), "%T: %d/%d", "menu_txt.exp_short", param1, GetClientExperience(param1), Stats_LvlToExp(GetClientLevel(param1)));
+			Format(sBuffer, sizeof(sBuffer), "%T", "Experience short", param1, GetClientExperience(param1), Stats_LvlToExp(GetClientLevel(param1)));
 		}
 		else if(StrEqual(sDisplay, "credits"))
 		{
-			Format(sBuffer, sizeof(sBuffer), "%T: %d", "menu_txt.credits", param1, GetClientCredits(param1));
+			Format(sBuffer, sizeof(sBuffer), "%T", "Credits", param1, GetClientCredits(param1));
 		}
 		else if(StrEqual(sDisplay, "rank"))
 		{
-			Format(sBuffer, sizeof(sBuffer), "%T: %d/%d", "menu_txt.rank", param1, GetClientRank(param1), GetRankCount());
+			Format(sBuffer, sizeof(sBuffer), "%T", "Rank", param1, GetClientRank(param1), GetRankCount());
 		}
 
 		/* Override the text */
@@ -417,7 +417,7 @@ public Menu_HandleSettings(Handle:menu, MenuAction:action, param1, param2)
 		
 		// Display the current credits in the title
 		decl String:sBuffer[256];
-		Format(sBuffer, sizeof(sBuffer), "%T %d\n-----\n", "menu_txt.credits", param1, GetClientCredits(param1));
+		Format(sBuffer, sizeof(sBuffer), "%T\n-----\n", "Credits", param1, GetClientCredits(param1));
 		
 		SetPanelTitle(hPanel, sBuffer);
 	}
@@ -454,7 +454,7 @@ public Menu_ConfirmResetStats(Handle:menu, MenuAction:action, param1, param2)
 		
 		ResetStats(param1);
 		
-		PrintToChat(param1, "%t", "menu_result.stats_reset");
+		Client_PrintToChat(param1, false, "%t", "Stats have been reset");
 		
 		DisplaySettingsMenu(param1);
 	}
@@ -465,7 +465,7 @@ public Menu_ConfirmResetStats(Handle:menu, MenuAction:action, param1, param2)
 		
 		// Display the current credits in the title
 		decl String:sBuffer[256];
-		Format(sBuffer, sizeof(sBuffer), "%T %d\n-----\n%T\n", "menu_txt.credits", param1, GetClientCredits(param1), "menu_confirm.reset_confirm", param1);
+		Format(sBuffer, sizeof(sBuffer), "%T\n-----\n%T\n", "Credits", param1, GetClientCredits(param1), "Confirm stats reset", param1);
 		
 		SetPanelTitle(hPanel, sBuffer);
 	}
@@ -543,7 +543,7 @@ public Menu_HandleHelp(Handle:menu, MenuAction:action, param1, param2)
 		GetUpgradeTranslatedName(param1, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
 		GetUpgradeTranslatedDescription(param1, upgrade[UPGR_index], sTranslatedDescription, sizeof(sTranslatedDescription));
 		
-		PrintToChat(param1, "%s: %s", sTranslatedName, sTranslatedDescription);
+		Client_PrintToChat(param1, false, "%s: %s", sTranslatedName, sTranslatedDescription);
 		
 		DisplayHelpMenu(param1, GetMenuSelectionPosition());
 	}
@@ -554,7 +554,7 @@ public Menu_HandleHelp(Handle:menu, MenuAction:action, param1, param2)
 		
 		// Display the current credits in the title
 		decl String:sBuffer[256];
-		Format(sBuffer, sizeof(sBuffer), "%T %d\n-----\n", "menu_txt.credits", param1, GetClientCredits(param1));
+		Format(sBuffer, sizeof(sBuffer), "%T\n-----\n", "Credits", param1, GetClientCredits(param1));
 		
 		SetPanelTitle(hPanel, sBuffer);
 	}

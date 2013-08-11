@@ -65,7 +65,7 @@ Stats_PlayerNewLevel(client, iLevelIncrease)
 	DebugMsg("%N is now level %d (%d level increase(s))", client, GetClientLevel(client), iLevelIncrease);
 	
 	if(GetConVarBool(g_hCVAnnounceNewLvl))
-		PrintToChatAll("%t", "new_lvl1", client, GetClientLevel(client));
+		Client_PrintToChatAll(false, "%t", "Client level changed", client, GetClientLevel(client));
 	
 	if(!IsFakeClient(client))
 	{
@@ -73,12 +73,12 @@ Stats_PlayerNewLevel(client, iLevelIncrease)
 		if((GetClientLevel(client) - iLevelIncrease) <= 1)
 		{
 			/* for newbies */
-			PrintToChat(client, "%t", "newbie_lvl1");
-			PrintToChat(client, "%t", "newbie_lvl2");
+			Client_PrintToChat(client, false, "%t", "Newbie instructions new level");
+			Client_PrintToChat(client, false, "%t", "Newbie instructions use rpgmenu");
 		}
 		else
 		{
-			PrintToChat(client, "%t", "new_lvl2", GetClientCredits(client));
+			Client_PrintToChat(client, false, "%t", "You have new credits", GetClientCredits(client));
 		}
 	}
 	else if(GetConVarBool(g_hCVBotEnable))
@@ -97,7 +97,7 @@ Stats_AddExperience(client, iExperience, bool:bHideNotice)
 	new iExpRequired = Stats_LvlToExp(GetClientLevel(client));
 	
 	if(!bHideNotice && GetConVarBool(g_hCVExpNotice))
-		PrintHintText(client, "%t", "exp_hint", iExperience, GetClientExperience(client), iExpRequired);
+		PrintHintText(client, "%t", "Experience Gained Hintbox", iExperience, GetClientExperience(client), iExpRequired);
 	
 	if(GetClientExperience(client) >= iExpRequired)
 		Stats_PlayerNewLevel(client, Stats_CalcLvlInc(GetClientLevel(client), GetClientExperience(client)));
@@ -197,7 +197,7 @@ public Native_LevelToExperience(Handle:plugin, numParams)
 UpdateClientRank(client)
 {
 	decl String:sQuery[128];
-	Format(sQuery, sizeof(sQuery), "SELECT COUNT(*) FROM %s WHERE level > '%d' OR (level == '%d' AND experience > '%d')", TBL_PLAYERS, GetClientLevel(client), GetClientLevel(client), GetClientExperience(client));
+	Format(sQuery, sizeof(sQuery), "SELECT COUNT(*) FROM %s WHERE level > '%d' OR (level = '%d' AND experience > '%d')", TBL_PLAYERS, GetClientLevel(client), GetClientLevel(client), GetClientExperience(client));
 	SQL_TQuery(g_hDatabase, SQL_GetClientRank, sQuery, GetClientUserId(client));
 }
 
@@ -250,7 +250,7 @@ public SQL_GetRankCount(Handle:owner, Handle:hndl, const String:error[], any:dat
 {
 	if(hndl == INVALID_HANDLE || strlen(error) > 0)
 	{
-		LogError("Unable to get player rank (%s)", error);
+		LogError("Unable to get player rank count (%s)", error);
 		return;
 	}
 	
@@ -273,9 +273,9 @@ public SQL_GetRankCount(Handle:owner, Handle:hndl, const String:error[], any:dat
 PrintRankToChat(client, sendto)
 {
 	if(sendto == -1)
-		PrintToChatAll("%t", "rpgrank", client, GetClientLevel(client), GetClientRank(client), GetRankCount(), GetClientExperience(client), Stats_LvlToExp(GetClientLevel(client)), GetClientCredits(client));
+		Client_PrintToChatAll(false, "%t", "rpgrank", client, GetClientLevel(client), GetClientRank(client), GetRankCount(), GetClientExperience(client), Stats_LvlToExp(GetClientLevel(client)), GetClientCredits(client));
 	else
-		PrintToChat(sendto, "%t", "rpgrank", client, GetClientLevel(client), GetClientRank(client), GetRankCount(), GetClientExperience(client), Stats_LvlToExp(GetClientLevel(client)), GetClientCredits(client));
+		Client_PrintToChat(sendto, false, "%t", "rpgrank", client, GetClientLevel(client), GetClientRank(client), GetRankCount(), GetClientExperience(client), Stats_LvlToExp(GetClientLevel(client)), GetClientCredits(client));
 }
 
 stock DisplayTop10Menu(client)
@@ -298,7 +298,7 @@ public SQL_GetTop10(Handle:owner, Handle:hndl, const String:error[], any:userid)
 	}
 	
 	decl String:sBuffer[128];
-	Format(sBuffer, sizeof(sBuffer), "%T\n-----\n", "top10_title", client);
+	Format(sBuffer, sizeof(sBuffer), "%T\n-----\n", "Top 10 Players", client);
 	
 	new Handle:hPanel = CreatePanel();
 	SetPanelTitle(hPanel, sBuffer);

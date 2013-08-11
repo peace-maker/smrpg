@@ -1,150 +1,191 @@
 "Phrases"
 {
-	"greeting"
+	"Inform about plugin"
 	{
-		"en"			"Type \"rpgmenu\" to bring up your options."
+		// 1: Running SM:RPG plugin version (e.g. 1.0)
+		"#format" "{1:s}"
+		"en"			"This server is running SM:RPG v{1}."
 	}
 	
-	//New Level Text
-	"new_lvl1"
+	"Advertise rpgmenu command"
 	{
+		"en"			"{G}Type \"{N}rpgmenu{G}\" to bring up your options."
+	}
+	
+	"Client level changed"
+	{
+		// 1: Name of the client which level has changed.
+		// 2: New rpg level of the client
 		"#format"	"{1:N},{2:d}"
-		"en"			"{1} is now Level {2}"
+		"en"			"{1} is now level {2}."
 	}
 	
-	"new_lvl2"
+	"You have new credits"
 	{
+		// 1: Total amount of credits the player currently has.
 		"#format"	"{1:d}"
 		"en"			"You have new credits ({1} total). Type \"rpgmenu\" to buy upgrades."
 	}
 	
 	//Newbie Text
-	"newbie_lvl1"
+	"Newbie instructions new level"
 	{
-		"en"			"You have gained a new Level! This means you can buy Upgrades which give you an advantage over your opponents."
+		"en"			"{G}You have gained a {N}new level{G}! This means you can {N}buy upgrades{G} which give you an advantage over your opponents."
 	}
 	
-	"newbie_lvl2"
+	"Newbie instructions use rpgmenu"
 	{
-		"en"			"Type \"rpgmenu\" in chat, or type it into the console to bring up a menu from which you can buy Upgrades."
+		"en"			"{G}Type \"{L}rpgmenu{G}\" in chat, or type it into the console to bring up a menu from which you can buy upgrades."
 	}
 	
 	//Experience Hintbox
-	"exp_hint"
+	"Experience Gained Hintbox"
 	{
+		// 1: Amount of experience the client just gained.
+		// 2: Total amount of experience the client currently has on his level.
+		// 3: Amount of experience needed to reach the next level.
 		"#format"	"{1:d},{2:d},{3:d}"
 		"en"			"Experience Gained: {1}+\nExperience Quota: {2}/{3}"
 	}
 	
 	"rpgrank"
 	{
+		// 1: Name of the player whos rpgrank is being displayed.
+		// 2: RPG level of the player.
+		// 3: Current rpg rank of the player.
+		// 4: Total number of players ranked.
+		// 5: Amount of experience the player has on his level.
+		// 6: Amount of experience needed to reach the next level.
+		// 7: Amount of rpg credits of the player.
 		"#format"	"{1:N},{2:d},{3:d},{4:d},{5:d},{6:d},{7:d}"
-		"en"			"{1} is Level {2}, ranked {3}/{4} with {5}/{6} Experience and {7} Credits"
+		"en"			"{1} is level {2}, ranked {3}/{4} with {5}/{6} experience and {7} credits"
 	}
 	
-	"top10_title"
+	"Top 10 Players"
 	{
 		"en"			"Top 10 SM:RPG Players"
 	}
 	
 	// Menu text
-	"menu_txt.level"
+	"Level"
 	{
-		"en"			"Level"
+		// 1: Current rpg level of the player.
+		"#format" "{1:d}"
+		"en"			"Level: {1}"
 	}
 	
-	"menu_txt.exp_short"
+	"Experience short"
 	{
-		"en"			"Exp"
+		// 1: Current rpg rank of the player.
+		// 2: Total amount of ranked players.
+		"#format" "{1:d},{2:d}"
+		"en"			"Exp: {1}/{2}"
 	}
 	
-	"menu_txt.exp_long"
+	"Experience"
 	{
 		"en"			"Experience"
 	}
 	
-	"menu_txt.credits"
+	"Credits"
 	{
-		"en"			"Credits"
+		// 1: Amount of credits the player has.
+		"#format" "{1:d}"
+		"en"			"Credits: {1}"
 	}
 	
-	"menu_txt.rank"
+	"Rank"
 	{
-		"en"			"Rank"
+		// 1: Current rpg rank of the player.
+		// 2: Total amount of ranked players.
+		"#format" "{1:d},{2:d}"
+		"en"			"Rank: {1}/{2}"
 	}
 	
-	"menu_txt.cost"
+	"Cost"
 	{
 		"en"			"Cost"
 	}
 	
-	"menu_txt.sale"
+	"Sale"
 	{
 		"en"			"Sale"
 	}
 	
 	// Menu Options
-	"menu_opt.upgrades"
+	"Upgrades"
 	{
 		"en"			"Upgrades"
 	}
 	
-	"menu_opt.sell"
+	"Sell"
 	{
 		"en"			"Sell"
 	}
 	
-	"menu_opt.stats"
+	"Stats"
 	{
 		"en"			"Stats"
 	}
 	
-	"menu_opt.settings"
+	"Settings"
 	{
 		"en"			"Settings"
 	}
 	
-	"menu_opt.reset_stats"
+	"Help"
+	{
+		"en"			"Help"
+	}
+	
+	"Reset Stats"
 	{
 		"en"			"Reset Stats"
 	}
 	
 	// Menu selection result
-	"menu_result.stats_reset"
+	"Stats have been reset"
 	{
 		"en"			"Your stats have been successfully reset."
 	}
 	
-	"menu_result.max_lvl"
+	"Maximum level reached"
 	{
-		"en"			"You have reached the maximum level for this item."
+		"en"			"You have reached the maximum level for this upgrade."
 	}
 	
-	"menu_result.not_enough_credits"
+	"Not enough credits"
 	{
+		// 1: The name of the upgrade the player wanted to buy.
+		// 2: The level of the upgrade the player wanted to buy.
+		// 3: The amount of credits this level of the upgrade costs.
 		"#format"	"{1:s},{2:d},{3:d}"
-		"en"			"You do not have enough credits to buy {1} Lvl {2}. (Requires {3} Credits)"
+		"en"			"You do not have enough credits to buy {1} level {2}. (Requires {3} credits)"
 	}
 	
-	"menu_result.item_bought"
+	"Upgrade bought"
 	{
+		// 1: The name of the upgrade the player just bought.
+		// 2: The new level of this upgrade.
 		"#format"	"{1:s},{2:d}"
-		"en"			"{1} Level {2} successfully purchased."
+		"en"			"{1} level {2} successfully purchased."
 	}
 	
-	"menu_result.item_sold"
+	"Upgrade sold"
 	{
+		// 1: The name of the upgrade the player just sold.
+		// 2: The new level of this upgrade.
 		"#format"	"{1:s},{2:d}"
-		"en"			"{1} Level {2} has been sold."
+		"en"			"{1} level {2} has been sold."
 	}
 	
 	//Menu Confirm
-	"menu_confirm.sell_confirm"
+	"Are you sure?"
 	{
 		"en"			"Are you sure?"
 	}
 	
-	"menu_confirm.reset_confirm"
+	"Confirm stats reset"
 	{
 		"en"			"WARNING: You will lose all Levels, Credits, and Experience.\nReset stats permanently?"
 	}

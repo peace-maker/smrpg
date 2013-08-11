@@ -206,8 +206,8 @@ public OnClientPutInServer(client)
 	if(!GetConVarBool(g_hCVEnable))
 		return;
 	
-	PrintToChat(client, "\x01This server is running SM:RPG v%s.", PLUGIN_VERSION);
-	PrintToChat(client, "%t", "greeting");
+	Client_PrintToChat(client, false, "%t", "Inform about plugin", PLUGIN_VERSION);
+	Client_PrintToChat(client, false, "%t", "Advertise rpgmenu command");
 }
 
 public OnClientAuthorized(client, const String:auth[])
