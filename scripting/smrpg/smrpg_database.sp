@@ -1,188 +1,175 @@
 #pragma semicolon 1
 #include <sourcemod>
 
-#define CSSRPG_DB "cssrpg"
+#define SMRPG_DB "smrpg"
 #define TBL_PLAYERS "players"
 #define TBL_UPGRADES "upgrades"
 
-// CSSRPG Database stuff
 new Handle:g_hDatabase;
+new g_iSequence = -1;
 
-new String:player_cols[][] = {
-	"player_id INTEGER PRIMARY KEY AUTOINCREMENT",
-	"name TEXT DEFAULT ' '",
-	"steamid TEXT DEFAULT '0' UNIQUE",
-	"level INTEGER DEFAULT '1'",
-	"experience INTEGER DEFAULT '0'",
-	"credits INTEGER DEFAULT '0'",
-	"lastseen INTEGER DEFAULT '0'",
-	"upgrades_id INTEGER DEFAULT '-1'"
+enum DatabaseDriver {
+	Driver_None,
+	Driver_MySQL,
+	Driver_SQLite
 };
 
-new String:player_col_types[][] = {"player_id", "name", "steamid", "level", "experience", "credits", "lastseen", "upgrades_id"};
+new DatabaseDriver:g_DriverType;
 
 InitDatabase()
 {
-	decl String:sError[256];
-	g_hDatabase = SQLite_UseDatabase(CSSRPG_DB, sError, sizeof(sError));
-	if(g_hDatabase == INVALID_HANDLE)
-		SetFailState("Error initializing database: %s", sError);
-	
-	new result = SQLiteTableExists(TBL_PLAYERS);
-	if(!result)
-	{
-		decl String:sQuery[1024];
-		for(new i=0;i<sizeof(player_cols);i++)
-		{
-			if(i)
-				Format(sQuery, sizeof(sQuery), "%s, %s", sQuery, player_cols[i]);
-			else
-				Format(sQuery, sizeof(sQuery), "%s", player_cols[i]);
-		}
-		
-		Format(sQuery, sizeof(sQuery), "CREATE TABLE %s (%s)", TBL_PLAYERS, sQuery);
-		SQL_LockedFastQuery(g_hDatabase, sQuery);
-	}
-	else if(result == 1)
-	{
-		decl String:sQuery[256];
-		for(new i=0;i<sizeof(player_cols);i++)
-		{
-			if(!SQLiteColumnExists(player_col_types[i], TBL_PLAYERS))
-			{
-				Format(sQuery, sizeof(sQuery), "ALTER TABLE %s ADD COLUMN %s", TBL_PLAYERS, player_cols[i]);
-				SQL_LockedFastQuery(g_hDatabase, sQuery);
-			}
-		}
-	}
-	
-	result = SQLiteTableExists(TBL_UPGRADES);
-	if(!result)
-	{
-		decl String:sQuery[1024];
-		Format(sQuery, sizeof(sQuery), "upgrades_id INTEGER PRIMARY KEY AUTOINCREMENT");
-		new iSize = GetUpgradeCount();
-		new upgrade[InternalUpgradeInfo];
-		for(new i=0;i<iSize;i++)
-		{
-			GetUpgradeByIndex(i, upgrade);
-			Format(sQuery, sizeof(sQuery), "%s, %s INTEGER DEFAULT '0'", sQuery, upgrade[UPGR_shortName]);
-		}
-		
-		Format(sQuery, sizeof(sQuery), "CREATE TABLE %s (%s)", TBL_UPGRADES, sQuery);
-		SQL_LockedFastQuery(g_hDatabase, sQuery);
-	}
-	else if(result == 1)
-	{
-		
-		new iSize = GetUpgradeCount();
-		new upgrade[InternalUpgradeInfo];
-		for(new i=0;i<iSize;i++)
-		{
-			GetUpgradeByIndex(i, upgrade);
-			CheckUpgradeDatabaseField(upgrade[UPGR_shortName]);
-		}
-	}
+	if(SQL_CheckConfig(SMRPG_DB))
+		SQL_TConnect(SQL_OnConnect, SMRPG_DB, ++g_iSequence);
+	else
+		SQL_TConnect(SQL_OnConnect, "default", ++g_iSequence); // Default to 'default' section in the databases.cfg.
 }
 
-CheckUpgradeDatabaseField(String:sShortName[])
+public SQL_OnConnect(Handle:owner, Handle:hndl, const String:error[], any:data)
 {
-	new result = SQLiteColumnExists(sShortName, TBL_UPGRADES);
-	decl String:sQuery[512];
-	// That's a completely new upgrade! Add a column to the upgrade table
-	if(!result)
+	if(hndl == INVALID_HANDLE || strlen(error) > 0)
 	{
-		Format(sQuery, sizeof(sQuery), "ALTER TABLE %s ADD COLUMN %s INTEGER DEFAULT '0'", TBL_UPGRADES, sShortName);
-		SQL_LockedFastQuery(g_hDatabase, sQuery);
+		SetFailState("Error initializing database: %s", error);
+		return;
 	}
-	// This one is already there. Load the data for all connected players
-	else if(result == 1)
+	
+	// Ignore old connection attempts.
+	if(g_iSequence != data)
 	{
-		for(new i=1;i<=MaxClients;i++)
+		CloseHandle(hndl);
+		return;
+	}
+	
+	g_hDatabase = hndl;
+	
+	new String:sDriverIdent[16];
+	SQL_GetDriverIdent(owner, sDriverIdent, sizeof(sDriverIdent));
+	
+	// Set the right character set in mysql
+	if(StrEqual(sDriverIdent, "mysql", false))
+	{
+		g_DriverType = Driver_MySQL;
+		if(GetFeatureStatus(FeatureType_Native, "SQL_SetCharset") == FeatureStatus_Available)
+			SQL_SetCharset(g_hDatabase, "utf8");
+		else
+			SQL_LockedFastQuery(g_hDatabase, "SET NAMES 'UTF8'");
+	}
+	else
+		g_DriverType = Driver_SQLite;
+	
+	// Create the player table
+	decl String:sQuery[1024];
+	Format(sQuery, sizeof(sQuery), "CREATE TABLE IF NOT EXISTS %s (player_id INTEGER PRIMARY KEY %s, name VARCHAR(64) NOT NULL DEFAULT ' ', steamid VARCHAR(64) NOT NULL DEFAULT '0' UNIQUE, level INTEGER DEFAULT '1', experience INTEGER DEFAULT '0', credits INTEGER DEFAULT '0', lastseen INTEGER DEFAULT '0', upgrades_id INTEGER DEFAULT '-1')", TBL_PLAYERS, (g_DriverType == Driver_MySQL ? "AUTO_INCREMENT" : "AUTOINCREMENT"));
+	if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
+	{
+		decl String:sError[256];
+		SQL_GetError(g_hDatabase, sError, sizeof(sError));
+		SetFailState("Error creating %s table: %s", TBL_PLAYERS, sError);
+		return;
+	}
+	
+	// Create the upgrades table.
+	Format(sQuery, sizeof(sQuery), "CREATE TABLE IF NOT EXISTS %s (upgrades_id INTEGER PRIMARY KEY %s)", TBL_UPGRADES, (g_DriverType == Driver_MySQL ? "AUTO_INCREMENT" : "AUTOINCREMENT"));
+	if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
+	{
+		decl String:sError[256];
+		SQL_GetError(g_hDatabase, sError, sizeof(sError));
+		SetFailState("Error creating %s table: %s", TBL_UPGRADES, sError);
+		return;
+	}
+
+	// This is probably empty since no upgrades could have registered yet, but well..
+	// Add all columns for currently loaded upgrades.
+	new iSize = GetUpgradeCount();
+	new upgrade[InternalUpgradeInfo];
+	for(new i=0;i<iSize;i++)
+	{
+		GetUpgradeByIndex(i, upgrade);
+		if(!IsValidUpgrade(upgrade))
+			continue;
+		CheckUpgradeDatabaseField(upgrade[UPGR_shortName]);
+	}
+	
+	// Cleanup or database.
+	DatabaseMaid();
+}
+
+CheckUpgradeDatabaseField(const String:sShortName[])
+{
+	if(!g_hDatabase)
+		return;
+	
+	decl String:sQuery[512];
+	// If that's a completely new upgrade, add a column to the upgrades table
+	Format(sQuery, sizeof(sQuery), "ALTER TABLE %s ADD COLUMN %s INTEGER DEFAULT '0'", TBL_UPGRADES, sShortName);
+	SQL_LockedFastQuery(g_hDatabase, sQuery);
+	
+	
+	// Load the data for all connected players
+	for(new i=1;i<=MaxClients;i++)
+	{
+		if(IsClientInGame(i) && IsClientAuthorized(i) && GetClientDatabaseUpgradesId(i) != -1)
 		{
-			if(IsClientInGame(i) && IsClientAuthorized(i) && GetClientDatabaseUpgradesId(i) != -1)
-			{
-				Format(sQuery, sizeof(sQuery), "SELECT %s FROM %s WHERE upgrades_id = %d", sShortName, TBL_UPGRADES, GetClientDatabaseUpgradesId(i));
-				SQL_TQuery(g_hDatabase, SQL_GetPlayerItems, sQuery, GetClientUserId(i));
-			}
+			Format(sQuery, sizeof(sQuery), "SELECT %s FROM %s WHERE upgrades_id = %d", sShortName, TBL_UPGRADES, GetClientDatabaseUpgradesId(i));
+			SQL_TQuery(g_hDatabase, SQL_GetPlayerItems, sQuery, GetClientUserId(i));
 		}
 	}
 }
 
 DatabaseMaid()
 {
+	if(!g_hDatabase)
+		return;
+	
+	// Don't touch the database, if we don't want to save any data.
 	if(!GetConVarBool(g_hCVSaveData))
 		return;
 	
-	decl String:sQuery[256];
-	
-	/* Delete players who are Level 1 and haven't played for 3 days */
-	Format(sQuery, sizeof(sQuery), "DELETE FROM %s WHERE level <= '1' AND lastseen <= '%d'", TBL_PLAYERS, GetTime()-259200);
-	SQL_LockedFastQuery(g_hDatabase, sQuery);
-	
+	new String:sQuery[256];
+	// Have players expire after x days and delete them from the database?
 	if(GetConVarInt(g_hCVPlayerExpire) > 0)
 	{
-		Format(sQuery, sizeof(sQuery), "SELECT upgrades_id FROM %s WHERE lastseen <= '%d'", TBL_PLAYERS, GetTime()-(86400*GetConVarInt(g_hCVPlayerExpire)));
-		SQL_LockDatabase(g_hDatabase);
-		new Handle:hResult = SQL_Query(g_hDatabase, sQuery);
-		SQL_UnlockDatabase(g_hDatabase);
-		if(hResult != INVALID_HANDLE)
-		{
-			while(SQL_MoreRows(hResult))
-			{
-				SQL_FetchRow(hResult);
-				Format(sQuery, sizeof(sQuery), "DELETE FROM %s WHERE upgrades_id = '%d'", TBL_UPGRADES, SQL_FetchInt(hResult, 0));
-				SQL_LockedFastQuery(g_hDatabase, sQuery);
-				Format(sQuery, sizeof(sQuery), "DELETE FROM %s WHERE upgrades_id = '%d'", TBL_PLAYERS, SQL_FetchInt(hResult, 0));
-				SQL_LockedFastQuery(g_hDatabase, sQuery);
-			}
-			CloseHandle(hResult);
-		}
-		else
-		{
-			LogError("DatabaseMaid: player expire query failed");
-		}
+		Format(sQuery, sizeof(sQuery), "OR lastseen <= '%d'", GetTime()-(86400*GetConVarInt(g_hCVPlayerExpire)));
 	}
 	
-	Format(sQuery, sizeof(sQuery), "VACUUM %s", TBL_PLAYERS);
-	SQL_LockedFastQuery(g_hDatabase, sQuery);
-	Format(sQuery, sizeof(sQuery), "VACUUM %s", TBL_UPGRADES);
-	SQL_LockedFastQuery(g_hDatabase, sQuery);
-}
-
-/* A very cheap way of doing things but there is no other alternative */
-#define NO_SUCH_TBL "no such table"
-SQLiteTableExists(String:table[])
-{
-	decl String:sQuery[64];
-	Format(sQuery, sizeof(sQuery), "SELECT * FROM %s", table);
-	if(SQL_LockedFastQuery(g_hDatabase, sQuery))
-		return 1;
+	// Delete players who are Level 1 and haven't played for 3 days
+	Format(sQuery, sizeof(sQuery), "SELECT player_id, upgrades_id FROM %s WHERE (level <= '1' AND lastseen <= '%d') %s", TBL_PLAYERS, GetTime()-259200, sQuery);
+	SQL_LockDatabase(g_hDatabase);
+	new Handle:hResult = SQL_Query(g_hDatabase, sQuery);
+	SQL_UnlockDatabase(g_hDatabase);
+	if(hResult != INVALID_HANDLE)
+	{
+		
+		new iPlayerId, iUpgradeId;
+		while(SQL_MoreRows(hResult))
+		{
+			if(!SQL_FetchRow(hResult))
+				continue;
+			
+			iPlayerId = SQL_FetchInt(hResult, 0);
+			iUpgradeId = SQL_FetchInt(hResult, 1);
+			
+			Format(sQuery, sizeof(sQuery), "DELETE FROM %s WHERE player_id = '%d'", TBL_PLAYERS, iPlayerId);
+			SQL_LockedFastQuery(g_hDatabase, sQuery);
+			
+			if(iUpgradeId != -1)
+			{
+				Format(sQuery, sizeof(sQuery), "DELETE FROM %s WHERE upgrades_id = '%d'", TBL_UPGRADES, iUpgradeId);
+				SQL_LockedFastQuery(g_hDatabase, sQuery);
+			}
+		}
+		CloseHandle(hResult);
+	}
+	else
+	{
+		LogError("DatabaseMaid: player expire query failed");
+	}
 	
-	decl String:sError[256];
-	SQL_GetError(g_hDatabase, sError, sizeof(sError));
-	if(StrContains(sError, NO_SUCH_TBL, false) != -1)
-		return 0;
-	
-	LogError("Error checking if table \"%s\" exists: %s", table, sError);
-	return -1;
-}
-
-#define NO_SUCH_COL "no such column"
-SQLiteColumnExists(String:col[], String:table[])
-{
-	decl String:sQuery[64];
-	Format(sQuery, sizeof(sQuery), "SELECT %s FROM %s", col, table);
-	if(SQL_LockedFastQuery(g_hDatabase, sQuery))
-		return 1;
-	
-	decl String:sError[256];
-	SQL_GetError(g_hDatabase, sError, sizeof(sError));
-	if(StrContains(sError, NO_SUCH_COL, false) != -1)
-		return 0;
-	
-	LogError("Error checking if column \"%s\".\"%s\" exists: %s", table, col, sError);
-	return -1;
+	// Reduce sqlite database file size.
+	if(g_DriverType == Driver_SQLite)
+	{
+		Format(sQuery, sizeof(sQuery), "VACUUM");
+		SQL_LockedFastQuery(g_hDatabase, sQuery);
+	}
 }
 
 public SQL_DoNothing(Handle:owner, Handle:hndl, const String:error[], any:data)
