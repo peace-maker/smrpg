@@ -44,6 +44,7 @@ new Handle:g_hCVIgnoreLevelBarrier;
 #include "smrpg/smrpg_stats.sp"
 #include "smrpg/smrpg_menu.sp"
 #include "smrpg/smrpg_admincommands.sp"
+#include "smrpg/smrpg_adminmenu.sp"
 
 public Plugin:myinfo = 
 {
@@ -145,6 +146,14 @@ public OnPluginStart()
 			}
 		}
 	}
+	
+	// See if the menu plugin is already ready
+	new Handle:topmenu;
+	if (LibraryExists("adminmenu") && ((topmenu = GetAdminTopMenu()) != INVALID_HANDLE))
+	{
+		// If so, manually fire the callback
+		OnAdminMenuReady(topmenu);
+	}
 }
 
 /**
@@ -181,6 +190,15 @@ public OnConfigsExecuted()
 {
 	ClearHandle(g_hPlayerAutoSave);
 	g_hPlayerAutoSave = CreateTimer(GetConVarFloat(g_hCVSaveInterval), Timer_SavePlayers, _, TIMER_REPEAT);
+}
+
+public OnLibraryRemoved(const String:name[])
+{
+	if (StrEqual(name, "adminmenu"))
+	{
+		g_hTopMenu = INVALID_HANDLE;
+		g_TopMenuCategory = INVALID_TOPMENUOBJECT;
+	}
 }
 
 public OnMapStart()
