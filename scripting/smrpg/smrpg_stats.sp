@@ -58,8 +58,19 @@ Stats_PlayerNewLevel(client, iLevelIncrease)
 		}
 	}
 	
+	// Make sure to keep the experience he gained in addition to the needed exp for the levels.
+	new iExperience = GetClientExperience(client);
+	for(new i=0;i<iLevelIncrease;i++)
+	{
+		iExperience -= Stats_LvlToExp(GetClientLevel(client)+i);
+	}
+	
+	// Some admin gave him a level even though he didn't have enough exp? well well..
+	if(iExperience < 0)
+		iExperience = 0;
+	SetClientExperience(client, iExperience);
+	
 	SetClientLevel(client, GetClientLevel(client)+iLevelIncrease);
-	SetClientExperience(client, 0);
 	SetClientCredits(client, GetClientCredits(client) + iLevelIncrease * GetConVarInt(g_hCVCreditsInc));
 	
 	DebugMsg("%N is now level %d (%d level increase(s))", client, GetClientLevel(client), iLevelIncrease);
@@ -96,11 +107,11 @@ Stats_AddExperience(client, iExperience, bool:bHideNotice)
 	
 	new iExpRequired = Stats_LvlToExp(GetClientLevel(client));
 	
-	if(!bHideNotice && GetConVarBool(g_hCVExpNotice))
-		PrintHintText(client, "%t", "Experience Gained Hintbox", iExperience, GetClientExperience(client), iExpRequired);
-	
 	if(GetClientExperience(client) >= iExpRequired)
 		Stats_PlayerNewLevel(client, Stats_CalcLvlInc(GetClientLevel(client), GetClientExperience(client)));
+	
+	if(!bHideNotice && GetConVarBool(g_hCVExpNotice))
+		PrintHintText(client, "%t", "Experience Gained Hintbox", iExperience, GetClientExperience(client), Stats_LvlToExp(GetClientLevel(client)));
 }
 
 Stats_PlayerDamage(attacker, victim, Float:fDamage)
