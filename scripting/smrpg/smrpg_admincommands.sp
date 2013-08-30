@@ -666,7 +666,7 @@ public Action:Cmd_SellAll(client, args)
 		{
 			if(TakeClientUpgrade(iTarget, i))
 				break;
-			SetClientCredits(iTarget, GetClientCredits(iTarget) + GetUpgradeCost(i, GetClientUpgradeLevel(iTarget, i)));
+			SetClientCredits(iTarget, GetClientCredits(iTarget) + GetUpgradeCost(i, GetClientUpgradeLevel(iTarget, i)+1));
 		}
 	}
 	
