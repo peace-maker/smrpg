@@ -79,6 +79,9 @@ InitPlayer(client)
 
 AddPlayer(client, const String:auth[])
 {
+	if(!g_hDatabase)
+		return;
+	
 	if(!GetConVarBool(g_hCVEnable))
 		return;
 	

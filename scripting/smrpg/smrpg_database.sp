@@ -91,6 +91,16 @@ public SQL_OnConnect(Handle:owner, Handle:hndl, const String:error[], any:data)
 	
 	// Cleanup or database.
 	DatabaseMaid();
+	
+	// Add all already connected players now
+	decl String:sAuthId[32];
+	for(new i=1;i<=MaxClients;i++)
+	{
+		if(IsClientInGame(i) && !IsFakeClient(i) && IsClientAuthorized(i) && GetClientAuthString(i, sAuthId, sizeof(sAuthId)))
+		{
+			AddPlayer(i, sAuthId);
+		}
+	}
 }
 
 CheckUpgradeDatabaseField(const String:sShortName[])
