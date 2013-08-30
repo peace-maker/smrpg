@@ -39,6 +39,8 @@ public OnPluginStart()
 	g_hCVExpHostage = CreateConVar("smrpg_exp_hostage", "0.10", "Experience multipled by the experience required and the team ratio for rescuing a hostage", 0, true, 0.0);
 	g_hCVExpVIPEscaped = CreateConVar("smrpg_exp_vipescaped", "0.35", "Experience multipled by the experience required and the team ratio given to the vip when the vip escapes", 0, true, 0.0);
 	
+	AutoExecConfig(true, "plugin.smrpg_cstrike");
+	
 	HookEvent("player_hurt", Event_OnPlayerHurt);
 	HookEvent("player_death", Event_OnPlayerDeath);
 	HookEvent("round_end", Event_OnRoundEnd);

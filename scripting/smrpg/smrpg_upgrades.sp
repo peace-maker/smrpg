@@ -123,33 +123,37 @@ public Native_RegisterUpgradeType(Handle:plugin, numParams)
 	
 	// Register convars
 	Format(sCvarName, sizeof(sCvarName), "smrpg_%s_enable", sShortName);
-	Format(sCvarDescription, sizeof(sCvarDescription), "Sets the %s item to enabled (1) or disabled (0)", sName);
+	Format(sCvarDescription, sizeof(sCvarDescription), "Enables (1) or disables (0) the %s upgrade.", sName);
 	IntToString(_:bDefaultEnable, sValue, sizeof(sValue));
 	new Handle:hCvar = AutoExecConfig_CreateConVar(sCvarName, sValue, sCvarDescription, 0, true, 0.0, true, 1.0);
 	HookConVarChange(hCvar, ConVar_UpgradeChanged);
 	upgrade[UPGR_enableConvar] = hCvar;
+	upgrade[UPGR_enabled] = GetConVarBool(hCvar);
 	
 	// TODO: Handle maxlevel > maxlevelbarrier etc. rpgi.cpp CVARItemMaxLvl!
 	Format(sCvarName, sizeof(sCvarName), "smrpg_%s_maxlevel", sShortName);
-	Format(sCvarDescription, sizeof(sCvarDescription), "%s item maximum level", sName);
+	Format(sCvarDescription, sizeof(sCvarDescription), "%s upgrade maximum level. This is the maximum level players can reach for this upgrade.\nWhen changed, all players who bought a higher level before are refunded with the full upgrade costs and set down to the new maxlevel.", sName);
 	IntToString(iDefaultMaxLevel, sValue, sizeof(sValue));
 	hCvar = AutoExecConfig_CreateConVar(sCvarName, sValue, sCvarDescription, 0, true, 1.0);
 	HookConVarChange(hCvar, ConVar_UpgradeMaxLevelChanged);
 	upgrade[UPGR_maxLevelConvar] = hCvar;
+	upgrade[UPGR_maxLevel] = GetConVarInt(hCvar);
 	
 	Format(sCvarName, sizeof(sCvarName), "smrpg_%s_cost", sShortName);
-	Format(sCvarDescription, sizeof(sCvarDescription), "%s item start cost", sName);
+	Format(sCvarDescription, sizeof(sCvarDescription), "%s upgrade start cost. The initial amount of credits the first level of this upgrade costs.", sName);
 	IntToString(iDefaultStartCost, sValue, sizeof(sValue));
 	hCvar = AutoExecConfig_CreateConVar(sCvarName, sValue, sCvarDescription, 0, true, 0.0);
 	HookConVarChange(hCvar, ConVar_UpgradeChanged);
 	upgrade[UPGR_startCostConvar] = hCvar;
+	upgrade[UPGR_startCost] = GetConVarInt(hCvar);
 	
 	Format(sCvarName, sizeof(sCvarName), "smrpg_%s_icost", sShortName);
-	Format(sCvarDescription, sizeof(sCvarDescription), "%s item cost increment for each level", sName);
+	Format(sCvarDescription, sizeof(sCvarDescription), "%s upgrade cost increment for each level. The amount of credits added to the costs for each level: Buy upgrade level x -> startcost + x * incrementcost.", sName);
 	IntToString(iDefaultCostInc, sValue, sizeof(sValue));
 	hCvar = AutoExecConfig_CreateConVar(sCvarName, sValue, sCvarDescription, 0, true, 0.0);
 	HookConVarChange(hCvar, ConVar_UpgradeChanged);
 	upgrade[UPGR_incCostConvar] = hCvar;
+	upgrade[UPGR_incCost] = GetConVarInt(hCvar);
 	
 	AutoExecConfig_ExecuteFile();
 	

@@ -100,6 +100,8 @@ public OnPluginStart()
 	g_hCVSalePercent = CreateConVar("smrpg_sale_percent", "0.75", "Percentage of credits a player gets for selling an item", 0, true, 0.0);
 	g_hCVIgnoreLevelBarrier = CreateConVar("smrpg_ignore_level_barrier", "0", "Ignore the hardcoded maxlevels for the items and allow to set the maxlevel as high as you want.", 0, true, 0.0, true, 1.0);
 	
+	AutoExecConfig(true, "plugin.smrpg");
+	
 	HookConVarChange(g_hCVEnable, ConVar_EnableChanged);
 	HookConVarChange(g_hCVSaveInterval, ConVar_SaveIntervalChanged);
 	
