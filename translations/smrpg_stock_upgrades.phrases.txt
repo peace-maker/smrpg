@@ -59,4 +59,14 @@
 	{
 		"en"			"Medic"
 	}
+	
+	"speed"
+	{
+		"en"			"Speed+"
+	}
+  
+	"damage"
+	{
+		"en"			"Damage+"
+	}
 }
