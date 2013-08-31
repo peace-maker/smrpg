@@ -44,6 +44,7 @@ public OnAdminMenuReady(Handle:topmenu)
 	g_hTopMenu = topmenu;
 	
 	AddToTopMenu(topmenu, "Manage players", TopMenuObject_Item, TopMenu_HandlePlayers, g_TopMenuCategory, "smrpg_players_menu", ADMFLAG_CONFIG);
+	AddToTopMenu(topmenu, "Manage upgrades", TopMenuObject_Item, TopMenu_HandleUpgrades, g_TopMenuCategory, "smrpg_upgrades_menu", ADMFLAG_CONFIG);
 }
 
 public TopMenu_HandlePlayers(Handle:topmenu, TopMenuAction:action, TopMenuObject:object_id, param, String:buffer[], maxlength)
@@ -527,5 +528,166 @@ public Menu_HandlePlayerUpgradeLevelChange(Handle:menu, MenuAction:action, param
 		}
 		
 		ShowPlayerUpgradeLevelMenu(param1);
+	}
+}
+
+
+
+
+public TopMenu_HandleUpgrades(Handle:topmenu, TopMenuAction:action, TopMenuObject:object_id, param, String:buffer[], maxlength)
+{
+	if (action == TopMenuAction_DisplayOption)
+	{
+		Format(buffer, maxlength, "Manage upgrades");
+	}
+	else if (action == TopMenuAction_SelectOption)
+	{
+		ShowUpgradeListMenu(param);
+	}
+}
+
+ShowUpgradeListMenu(client)
+{
+	new Handle:hMenu = CreateMenu(Menu_HandleSelectUpgrade);
+	SetMenuExitBackButton(hMenu, true);
+	SetMenuTitle(hMenu, "SM:RPG > Manage upgrades");
+	
+	new iSize = GetUpgradeCount();
+	new upgrade[InternalUpgradeInfo];
+	new String:sTranslatedName[MAX_UPGRADE_NAME_LENGTH], String:sIndex[8];
+	for(new i=0;i<iSize;i++)
+	{
+		GetUpgradeByIndex(i, upgrade);
+		
+		// Don't show disabled items in the menu.
+		if(!IsValidUpgrade(upgrade))
+			continue;
+		
+		GetUpgradeTranslatedName(client, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
+		
+		IntToString(i, sIndex, sizeof(sIndex));
+		AddMenuItem(hMenu, sIndex, sTranslatedName);
+	}
+	
+	DisplayMenu(hMenu, client, MENU_TIME_FOREVER);
+}
+
+public Menu_HandleSelectUpgrade(Handle:menu, MenuAction:action, param1, param2)
+{
+	if(action == MenuAction_End)
+	{
+		CloseHandle(menu);
+	}
+	else if(action == MenuAction_Cancel)
+	{
+		if(param2 == MenuCancel_ExitBack)
+			RedisplayAdminMenu(g_hTopMenu, param1);
+	}
+	else if(action == MenuAction_Select)
+	{
+		decl String:sInfo[32];
+		GetMenuItem(menu, param2, sInfo, sizeof(sInfo));
+		
+		new iItemIndex = StringToInt(sInfo);
+		
+		g_iCurrentUpgradeTarget[param1] = iItemIndex;
+		ShowUpgradeManageMenu(param1);
+	}
+}
+
+ShowUpgradeManageMenu(client)
+{
+	new upgrade[InternalUpgradeInfo];
+	new iItemIndex = g_iCurrentUpgradeTarget[client];
+	GetUpgradeByIndex(iItemIndex, upgrade);
+	
+	// Bad upgrade?
+	if(!IsValidUpgrade(upgrade))
+	{
+		g_iCurrentUpgradeTarget[client] = -1;
+		RedisplayAdminMenu(g_hTopMenu, client);
+		return;
+	}
+	
+	new String:sTranslatedName[MAX_UPGRADE_NAME_LENGTH];
+	GetUpgradeTranslatedName(client, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
+	
+	new Handle:hMenu = CreateMenu(Menu_HandleUpgradeDetails);
+	SetMenuExitBackButton(hMenu, true);
+	SetMenuTitle(hMenu, "Manage upgrade > %s\nShort name: %s", sTranslatedName, upgrade[UPGR_shortName]);
+	
+	decl String:sBuffer[256];
+	if(upgrade[UPGR_enabled])
+		Format(sBuffer, sizeof(sBuffer), "Disable upgrade");
+	else
+		Format(sBuffer, sizeof(sBuffer), "Enable upgrade");
+	AddMenuItem(hMenu, "enable", sBuffer);
+	
+	if(!GetConVarBool(g_hCVIgnoreLevelBarrier))
+	{
+		Format(sBuffer, sizeof(sBuffer), "Maxlevel barrier: %d", upgrade[UPGR_maxLevelBarrier]);
+		AddMenuItem(hMenu, "", sBuffer, ITEMDRAW_DISABLED);
+	}
+	
+	Format(sBuffer, sizeof(sBuffer), "Maxlevel: %d", upgrade[UPGR_maxLevel]);
+	AddMenuItem(hMenu, "maxlevel", sBuffer, ITEMDRAW_DISABLED);
+	
+	Format(sBuffer, sizeof(sBuffer), "Cost: %d", upgrade[UPGR_startCost]);
+	AddMenuItem(hMenu, "cost", sBuffer, ITEMDRAW_DISABLED);
+	
+	Format(sBuffer, sizeof(sBuffer), "Increase Cost: %d", upgrade[UPGR_incCost]);
+	AddMenuItem(hMenu, "icost", sBuffer, ITEMDRAW_DISABLED);
+	
+	DisplayMenu(hMenu, client, MENU_TIME_FOREVER);
+}
+
+public Menu_HandleUpgradeDetails(Handle:menu, MenuAction:action, param1, param2)
+{
+	if(action == MenuAction_End)
+	{
+		CloseHandle(menu);
+	}
+	else if(action == MenuAction_Cancel)
+	{
+		g_iCurrentUpgradeTarget[param1] = -1;
+		if(param2 == MenuCancel_ExitBack)
+			ShowUpgradeListMenu(param1);
+	}
+	else if(action == MenuAction_Select)
+	{
+		new upgrade[InternalUpgradeInfo];
+		GetUpgradeByIndex(g_iCurrentUpgradeTarget[param1], upgrade);
+	
+		// Bad upgrade?
+		if(!IsValidUpgrade(upgrade))
+		{
+			g_iCurrentUpgradeTarget[param1] = -1;
+			ShowUpgradeListMenu(param1);
+			return;
+		}
+		
+		decl String:sInfo[32];
+		GetMenuItem(menu, param2, sInfo, sizeof(sInfo));
+		
+		if(StrEqual(sInfo, "enable"))
+		{
+			if(upgrade[UPGR_enabled])
+				SetConVarBool(upgrade[UPGR_enableConvar], false);
+			else
+				SetConVarBool(upgrade[UPGR_enableConvar], true);
+		}
+		else if(StrEqual(sInfo, "maxlevel"))
+		{
+			
+		}
+		else if(StrEqual(sInfo, "cost"))
+		{
+			
+		}
+		else if(StrEqual(sInfo, "icost"))
+		{
+			
+		}
+		ShowUpgradeManageMenu(param1);
 	}
 }
