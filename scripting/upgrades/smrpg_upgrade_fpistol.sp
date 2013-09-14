@@ -85,6 +85,8 @@ public OnClientDisconnect(client)
 public Event_OnResetEffect(Handle:event, const String:error[], bool:dontBroadcast)
 {
 	new client = GetClientOfUserId(GetEventInt(event, "userid"));
+	if(!client)
+		return;
 
 	SMRPG_ResetEffect(client);
 }
@@ -165,8 +167,12 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 	if(iLevel <= 0)
 		return;
 	
+	new iWeapon = inflictor;
+	if(inflictor > 0 && inflictor <= MaxClients)
+		iWeapon = Client_GetActiveWeapon(inflictor);
+	
 	// This effect only applies to pistols.
-	if(GetPlayerWeaponSlot(attacker, PISTOL_SLOT) != weapon)
+	if(GetPlayerWeaponSlot(attacker, PISTOL_SLOT) != iWeapon)
 		return;
 	
 	if(!SMRPG_RunUpgradeEffect(victim, UPGRADE_SHORTNAME))
@@ -203,6 +209,8 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 	decl String:sSound[PLATFORM_MAX_PATH];
 	Format(sSound, sizeof(sSound), "physics/surfaces/tile_impact_bullet%d.wav", GetRandomInt(1, 4));
 	EmitSoundToAll(sSound, SOUND_FROM_PLAYER, SNDCHAN_AUTO, SNDLEVEL_NORMAL, SND_NOFLAGS, 0.8, SNDPITCH_NORMAL, victim);
+	SetEntityRenderMode(victim, RENDER_TRANSCOLOR);
+	Entity_SetRenderColor(victim, 0, 0, 255, -1);
 	
 	ClearHandle(g_hFPistolResetSpeed[victim]);
 	
@@ -225,6 +233,7 @@ public Action:Timer_ResetSpeed(Handle:timer, any:data)
 	g_hFPistolResetSpeed[client] = INVALID_HANDLE;
 	
 	SetEntPropFloat(client, Prop_Send, "m_flLaggedMovementValue", fOldLaggedMovementValue);
+	Entity_SetRenderColor(client, 255, 255, 255, -1);
 	
 	return Plugin_Stop;
 }
