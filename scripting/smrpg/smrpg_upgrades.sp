@@ -482,16 +482,14 @@ stock GetUpgradeSale(iItemIndex, iLevel)
 
 stock bool:IsValidUpgrade(upgrade[InternalUpgradeInfo])
 {
-	if(upgrade[UPGR_unavailable])
-		return false;
-	
+	// This plugin is available (again)?
 	if(IsValidPlugin(upgrade[UPGR_plugin]))
-		return true;
+		upgrade[UPGR_unavailable] = false;
+	else
+		upgrade[UPGR_unavailable] = true;
 	
-	upgrade[UPGR_unavailable] = true;
-	upgrade[UPGR_plugin] = INVALID_HANDLE;
 	SaveUpgradeConfig(upgrade);
-	return false;
+	return !upgrade[UPGR_unavailable];
 }
 
 stock SaveUpgradeConfig(upgrade[InternalUpgradeInfo])

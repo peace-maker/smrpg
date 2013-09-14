@@ -401,7 +401,8 @@ public Native_IgnoreBots(Handle:plugin, numParams)
 // IsValidHandle() is deprecated, let's do a real check then...
 // By Thraaawn
 stock bool:IsValidPlugin(Handle:hPlugin) {
-	if(hPlugin == INVALID_HANDLE)return false;
+	if(hPlugin == INVALID_HANDLE)
+		return false;
 
 	new Handle:hIterator = GetPluginIterator();
 
