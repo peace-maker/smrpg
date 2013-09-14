@@ -26,6 +26,15 @@ public Plugin:myinfo =
 public OnPluginStart()
 {
 	LoadTranslations("smrpg_stock_upgrades.phrases");
+	
+	HookEvent("player_spawn", Event_OnEffectReset);
+	HookEvent("player_death", Event_OnEffectReset);
+	
+	for(new i=1;i<=MaxClients;i++)
+	{
+		if(IsClientInGame(i))
+			OnClientPutInServer(i);
+	}
 }
 
 public OnPluginEnd()
@@ -82,6 +91,7 @@ public SMRPG_ResetEffect(client)
 	if(g_hExtinguishTimer[client] != INVALID_HANDLE && IsClientInGame(client))
 		TriggerTimer(g_hExtinguishTimer[client]);
 	ClearHandle(g_hExtinguishTimer[client]);
+	g_hExtinguishTimer[client] = CreateTimer(0.2, Timer_Extinguish, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
 }
 
 public SMRPG_TranslateUpgrade(client, TranslationType:type, String:translation[], maxlen)
@@ -90,6 +100,18 @@ public SMRPG_TranslateUpgrade(client, TranslationType:type, String:translation[]
 		Format(translation, maxlen, "%T", UPGRADE_SHORTNAME, client);
 	else if(type == TranslationType_Description)
 		return;
+}
+
+/**
+ * Event callbacks
+ */
+public Event_OnEffectReset(Handle:event, const String:name[], bool:dontBroadcast)
+{
+	new client = GetClientOfUserId(GetEventInt(event, "userid"));
+	if(!client)
+		return;
+	
+	SMRPG_ResetEffect(client);
 }
 
 /**
@@ -102,6 +124,15 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 	
 	// Enough damage?
 	if(damage < FNADE_DMG_MIN)
+		return;
+	
+	decl String:sWeapon[40];
+	
+	// Only counts for hegrenades
+	if(inflictor > 0 
+	&& IsValidEdict(inflictor) 
+	&& GetEntityClassname(inflictor, sWeapon, sizeof(sWeapon))
+	&& StrContains(sWeapon, "hegrenade") == -1)
 		return;
 	
 	// This player is already burning.
@@ -145,6 +176,13 @@ public Action:Timer_Extinguish(Handle:timer, any:userid)
 	g_hExtinguishTimer[client] = INVALID_HANDLE;
 	
 	ExtinguishEntity(client);
+	// Extinguish the ragdoll too!
+	if(!IsPlayerAlive(client))
+	{
+		new iRagdoll = GetEntPropEnt(client, Prop_Send, "m_hRagdoll");
+		if(iRagdoll > 0)
+			ExtinguishEntity(iRagdoll);
+	}
 	
 	return Plugin_Stop;
 }
