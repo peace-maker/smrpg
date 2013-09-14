@@ -67,6 +67,7 @@ public OnClientPutInServer(client)
 public OnClientDisconnect(client)
 {
 	SMRPG_ResetEffect(client);
+	ClearHandle(g_hExtinguishTimer[client]);
 }
 
 /**
