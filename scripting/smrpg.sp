@@ -392,7 +392,7 @@ public Native_IsEnabled(Handle:plugin, numParams)
 
 public Native_IgnoreBots(Handle:plugin, numParams)
 {
-	return GetConVarBool(g_hCVBotEnable);
+	return !GetConVarBool(g_hCVBotEnable);
 }
 
 /**
