@@ -8,6 +8,7 @@ new Handle:g_hTopMenu;
 
 new g_iCurrentMenuTarget[MAXPLAYERS+1] = {-1,...};
 new g_iCurrentUpgradeTarget[MAXPLAYERS+1] = {-1,...};
+new g_iCurrentPage[MAXPLAYERS+1];
 
 public OnAdminMenuCreated(Handle:topmenu)
 {
@@ -388,7 +389,10 @@ ShowPlayerUpgradeManageMenu(client)
 		AddMenuItem(hMenu, sIndex, sLine);
 	}
 	
-	DisplayMenu(hMenu, client, MENU_TIME_FOREVER);
+	if(g_iCurrentPage[client] > 0)
+		DisplayMenuAtItem(hMenu, client, g_iCurrentPage[client], MENU_TIME_FOREVER);
+	else
+		DisplayMenu(hMenu, client, MENU_TIME_FOREVER);
 }
 
 public Menu_HandlePlayerUpgradeSelect(Handle:menu, MenuAction:action, param1, param2)
@@ -399,6 +403,7 @@ public Menu_HandlePlayerUpgradeSelect(Handle:menu, MenuAction:action, param1, pa
 	}
 	else if(action == MenuAction_Cancel)
 	{
+		g_iCurrentPage[param1] = 0;
 		if(param2 == MenuCancel_ExitBack)
 			ShowPlayerDetailMenu(param1);
 		else
@@ -411,6 +416,7 @@ public Menu_HandlePlayerUpgradeSelect(Handle:menu, MenuAction:action, param1, pa
 		
 		new iItemIndex = StringToInt(sInfo);
 		
+		g_iCurrentPage[param1] = GetMenuSelectionPosition();
 		g_iCurrentUpgradeTarget[param1] = iItemIndex;
 		ShowPlayerUpgradeLevelMenu(param1);
 	}
@@ -458,7 +464,10 @@ public Menu_HandlePlayerUpgradeLevelChange(Handle:menu, MenuAction:action, param
 		if(param2 == MenuCancel_ExitBack)
 			ShowPlayerUpgradeManageMenu(param1);
 		else
+		{
+			g_iCurrentPage[param1] = 0;
 			g_iCurrentMenuTarget[param1] = -1;
+		}
 	}
 	else if(action == MenuAction_Select)
 	{
@@ -586,7 +595,10 @@ ShowUpgradeListMenu(client)
 		AddMenuItem(hMenu, sIndex, sTranslatedName);
 	}
 	
-	DisplayMenu(hMenu, client, MENU_TIME_FOREVER);
+	if(g_iCurrentPage[client] > 0)
+		DisplayMenuAtItem(hMenu, client, g_iCurrentPage[client], MENU_TIME_FOREVER);
+	else
+		DisplayMenu(hMenu, client, MENU_TIME_FOREVER);
 }
 
 public Menu_HandleSelectUpgrade(Handle:menu, MenuAction:action, param1, param2)
@@ -599,6 +611,8 @@ public Menu_HandleSelectUpgrade(Handle:menu, MenuAction:action, param1, param2)
 	{
 		if(param2 == MenuCancel_ExitBack)
 			RedisplayAdminMenu(g_hTopMenu, param1);
+		else
+			g_iCurrentPage[param1] = 0;
 	}
 	else if(action == MenuAction_Select)
 	{
@@ -607,6 +621,7 @@ public Menu_HandleSelectUpgrade(Handle:menu, MenuAction:action, param1, param2)
 		
 		new iItemIndex = StringToInt(sInfo);
 		
+		g_iCurrentPage[param1] = GetMenuSelectionPosition();
 		g_iCurrentUpgradeTarget[param1] = iItemIndex;
 		ShowUpgradeManageMenu(param1);
 	}
@@ -669,6 +684,8 @@ public Menu_HandleUpgradeDetails(Handle:menu, MenuAction:action, param1, param2)
 		g_iCurrentUpgradeTarget[param1] = -1;
 		if(param2 == MenuCancel_ExitBack)
 			ShowUpgradeListMenu(param1);
+		else
+			g_iCurrentPage[param1] = 0;
 	}
 	else if(action == MenuAction_Select)
 	{
