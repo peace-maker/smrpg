@@ -485,7 +485,7 @@ public Menu_HandlePlayerUpgradeLevelChange(Handle:menu, MenuAction:action, param
 			new iCreditsReturned;
 			while(GetClientUpgradeLevel(iTarget, iItemIndex) > 0)
 			{
-				if(TakeClientUpgrade(iTarget, iItemIndex))
+				if(!TakeClientUpgrade(iTarget, iItemIndex))
 					break;
 				// Full refund
 				iCreditsReturned += GetUpgradeCost(iItemIndex, GetClientUpgradeLevel(iTarget, iItemIndex)+1);

@@ -683,7 +683,7 @@ public Action:Cmd_SellAll(client, args)
 		
 		while(GetClientUpgradeLevel(iTarget, i) > 0)
 		{
-			if(TakeClientUpgrade(iTarget, i))
+			if(!TakeClientUpgrade(iTarget, i))
 				break;
 			iCreditsReturned += GetUpgradeCost(i, GetClientUpgradeLevel(iTarget, i)+1);
 			SetClientCredits(iTarget, GetClientCredits(iTarget) + GetUpgradeCost(i, GetClientUpgradeLevel(iTarget, i)+1));
