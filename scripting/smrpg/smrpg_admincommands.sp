@@ -72,6 +72,7 @@ public Action:Cmd_ResetStats(client, args)
 	
 	ResetStats(iTarget);
 	
+	LogAction(client, iTarget, "Permanently reset all stats of player %N.", iTarget);
 	ReplyToCommand(client, "SM:RPG resetstats: %N's stats have been permanently reset", iTarget);
 	
 	return Plugin_Handled;
@@ -87,7 +88,10 @@ public Action:Cmd_ResetExp(client, args)
 		return Plugin_Handled;
 	
 	if(SetClientExperience(iTarget, 0))
+	{
+		LogAction(client, iTarget, "Reset experience of player %N.", iTarget);
 		ReplyToCommand(client, "SM:RPG resetexp: %N's experience has been reset", iTarget);
+	}
 	else
 		ReplyToCommand(client, "SM:RPG resetexp: Can't reset %N's experience. Some other plugin doesn't want this to happen.");
 	
@@ -98,7 +102,7 @@ public Action:Cmd_SetLvl(client, args)
 {
 	if(args < 2)
 	{
-		ReplyToCommand(client, "CSS:RPG: Usage: smrpg_setlvl <player name | #userid | steamid> <new level>");
+		ReplyToCommand(client, "SM:RPG: Usage: smrpg_setlvl <player name | #userid | steamid> <new level>");
 		return Plugin_Handled;
 	}
 	
@@ -133,9 +137,10 @@ public Action:Cmd_SetLvl(client, args)
 		SetClientExperience(iTarget, 0);
 		
 		if(GetConVarBool(g_hCVAnnounceNewLvl))
-			PrintToChatAll("%t", "new_lvl1", iTarget, GetClientLevel(iTarget));
+			Client_PrintToChatAll(false, "%t", "Client level changed", iTarget, GetClientLevel(iTarget));
 	}
 	
+	LogAction(client, iTarget, "Set level of %N from %d to %d.", iTarget, iOldLevel, GetClientLevel(iTarget));
 	ReplyToCommand(client, "SM:RPG setlvl: %N has been set to Level %d (previously Level %d)", iTarget, GetClientLevel(iTarget), iOldLevel);
 	
 	return Plugin_Handled;
@@ -170,6 +175,7 @@ public Action:Cmd_AddLvl(client, args)
 	
 	Stats_PlayerNewLevel(iTarget, iLevelIncrease);
 	
+	LogAction(client, iTarget, "Added %d levels to %N. He leveled up from level %d to %d.", iLevelIncrease, iTarget, iOldLevel, GetClientLevel(iTarget));
 	ReplyToCommand(client, "SM:RPG addlvl: %N has been set to Level %d (previously Level %d)", iTarget, GetClientLevel(iTarget), iOldLevel);
 	
 	return Plugin_Handled;
@@ -208,6 +214,7 @@ public Action:Cmd_SetExp(client, args)
 	else
 		SetClientExperience(iTarget, iExperience);
 	
+	LogAction(client, iTarget, "Set experience of %N to %d. He is now Level %d and has %d/%d Experience (previously Level %d with %d/%d Experience)", iTarget, iExperience, GetClientLevel(iTarget), GetClientExperience(iTarget), Stats_LvlToExp(GetClientLevel(iTarget)), iOldLevel, iOldExperience, Stats_LvlToExp(iOldLevel));
 	ReplyToCommand(client, "SM:RPG setexp: %N is now Level %d and has %d/%d Experience (previously Level %d with %d/%d Experience)", iTarget, GetClientLevel(iTarget), GetClientExperience(iTarget), Stats_LvlToExp(GetClientLevel(iTarget)), iOldLevel, iOldExperience, Stats_LvlToExp(iOldLevel));
 	
 	return Plugin_Handled;
@@ -243,6 +250,7 @@ public Action:Cmd_AddExp(client, args)
 	
 	Stats_AddExperience(iTarget, iExperienceIncrease, false);
 	
+	LogAction(client, iTarget, "Added %d experience to %N. He is now Level %d and has %d/%d Experience (previously Level %d with %d/%d Experience)", iExperienceIncrease, iTarget, GetClientLevel(iTarget), GetClientExperience(iTarget), Stats_LvlToExp(GetClientLevel(iTarget)), iOldLevel, iOldExperience, Stats_LvlToExp(iOldLevel));
 	ReplyToCommand(client, "SM:RPG setexp: %N is now Level %d and has %d/%d Experience (previously Level %d with %d/%d Experience)", iTarget, GetClientLevel(iTarget), GetClientExperience(iTarget), Stats_LvlToExp(GetClientLevel(iTarget)), iOldLevel, iOldExperience, Stats_LvlToExp(iOldLevel));
 	
 	return Plugin_Handled;
@@ -277,6 +285,7 @@ public Action:Cmd_SetCredits(client, args)
 	
 	SetClientCredits(iTarget, iCredits);
 	
+	LogAction(client, iTarget, "Set credits of %N from %d to %d.", iTarget, iOldCredits, GetClientCredits(iTarget));
 	ReplyToCommand(client, "SM:RPG setcredits: %N now has %d Credits (previously had %d Credits)", iTarget, GetClientCredits(iTarget), iOldCredits);
 	
 	return Plugin_Handled;
@@ -311,6 +320,7 @@ public Action:Cmd_AddCredits(client, args)
 	
 	SetClientCredits(iTarget, iOldCredits+iCredits);
 	
+	LogAction(client, iTarget, "Added %d credits to %N. The credits changed from %d to %d.", iCredits, iTarget, iOldCredits, GetClientCredits(iTarget));
 	ReplyToCommand(client, "SM:RPG addcredits: %N now has %d Credits (previously had %d Credits)", iTarget, GetClientCredits(iTarget), iOldCredits);
 	
 	return Plugin_Handled;
@@ -409,6 +419,7 @@ public Action:Cmd_SetUpgradeLvl(client, args)
 		}
 	}
 	
+	LogAction(client, iTarget, "Set %N's level of upgrade %s from %d to %d at no charge.", iTarget, upgrade[UPGR_name], iOldLevel, GetClientUpgradeLevel(iTarget, iIndex));
 	ReplyToCommand(client, "SM:RPG setupgradelvl: %N now has %s Level %d (previously Level %d)", iTarget, upgrade[UPGR_name], GetClientUpgradeLevel(iTarget, iIndex), iOldLevel);
 	
 	return Plugin_Handled;
@@ -455,6 +466,7 @@ public Action:Cmd_GiveUpgrade(client, args)
 		return Plugin_Handled;
 	}
 	
+	LogAction(client, iTarget, "Gave %N a level of upgrade %s at no charge. It changed from level %d to %d.", iTarget, upgrade[UPGR_name], iOldLevel, GetClientUpgradeLevel(iTarget, iIndex));
 	ReplyToCommand(client, "SM:RPG giveupgrade: %N now has %s Level %d (previously Level %d)", iTarget, upgrade[UPGR_name], GetClientUpgradeLevel(iTarget, iIndex), iOldLevel);
 	
 	return Plugin_Handled;
@@ -486,6 +498,7 @@ public Action:Cmd_GiveAll(client, args)
 		SetClientUpgradeLevel(iTarget, i, upgrade[UPGR_maxLevel]);
 	}
 	
+	LogAction(client, iTarget, "Set all upgrades of %N to the maximal level at no charge.", iTarget);
 	ReplyToCommand(client, "SM:RPG giveall: %N now has all Upgrades on max.", iTarget);
 	
 	return Plugin_Handled;
@@ -532,6 +545,7 @@ public Action:Cmd_TakeUpgrade(client, args)
 		return Plugin_Handled;
 	}
 	
+	LogAction(client, iTarget, "Took a level of upgrade %s from %N with no refund. Changed upgrade level from %d to %d.", upgrade[UPGR_name], iTarget, iOldLevel, GetClientUpgradeLevel(iTarget, iIndex));
 	ReplyToCommand(client, "SM:RPG takeupgrade: %N now has %s Level %d (previously Level %d)", iTarget, upgrade[UPGR_name], GetClientUpgradeLevel(iTarget, iIndex), iOldLevel);
 	
 	return Plugin_Handled;
@@ -585,6 +599,7 @@ public Action:Cmd_BuyUpgrade(client, args)
 		return Plugin_Handled;
 	}
 	
+	LogAction(client, iTarget, "Forced %N to buy a level of upgrade %s. The upgrade level changed from %d to %d", iTarget, upgrade[UPGR_name], iOldLevel, GetClientUpgradeLevel(iTarget, iIndex));
 	ReplyToCommand(client, "SM:RPG buyupgrade: %N now has %s Level %d (previously Level %d)", iTarget, upgrade[UPGR_name], GetClientUpgradeLevel(iTarget, iIndex), iOldLevel);
 	
 	return Plugin_Handled;
@@ -632,9 +647,11 @@ public Action:Cmd_SellUpgrade(client, args)
 	}
 	
 	// Full refund!
-	SetClientCredits(iTarget, GetClientCredits(iTarget) + GetUpgradeCost(iIndex, iOldLevel));
+	new iUpgradeCosts = GetUpgradeCost(iIndex, iOldLevel);
+	SetClientCredits(iTarget, GetClientCredits(iTarget) + iUpgradeCosts);
 	
-	ReplyToCommand(client, "SM:RPG sellupgrade: %N now has %s Level %d (previously Level %d)", iTarget, upgrade[UPGR_name], GetClientUpgradeLevel(iTarget, iIndex), iOldLevel);
+	LogAction(client, iTarget, "Forced %N to sell a level of upgrade %s with full refund of the costs. The upgrade level changed from %d to %d and he received %d credits.", iTarget, upgrade[UPGR_name], iOldLevel, GetClientUpgradeLevel(iTarget, iIndex), iUpgradeCosts);
+	ReplyToCommand(client, "SM:RPG sellupgrade: %N now has %s Level %d (previously Level %d) and received %d credits.", iTarget, upgrade[UPGR_name], GetClientUpgradeLevel(iTarget, iIndex), iOldLevel, iUpgradeCosts);
 	
 	return Plugin_Handled;
 }
@@ -656,6 +673,8 @@ public Action:Cmd_SellAll(client, args)
 	
 	new iSize = GetUpgradeCount();
 	new upgrade[InternalUpgradeInfo];
+	new iCreditsReturned;
+	
 	for(new i=0;i<iSize;i++)
 	{
 		GetUpgradeByIndex(i, upgrade);
@@ -666,11 +685,13 @@ public Action:Cmd_SellAll(client, args)
 		{
 			if(TakeClientUpgrade(iTarget, i))
 				break;
+			iCreditsReturned += GetUpgradeCost(i, GetClientUpgradeLevel(iTarget, i)+1);
 			SetClientCredits(iTarget, GetClientCredits(iTarget) + GetUpgradeCost(i, GetClientUpgradeLevel(iTarget, i)+1));
 		}
 	}
 	
-	ReplyToCommand(client, "CSS:RPG sellall: %N has sold all Upgrades and has %d Credits", iTarget, GetClientCredits(iTarget));
+	LogAction(client, iTarget, "Forced %N to sell all enabled upgrades with full refund of the costs for each level. He got %d credits and now has %d.", iTarget, iCreditsReturned, GetClientCredits(iTarget));
+	ReplyToCommand(client, "SM:RPG sellall: %N has sold all enabled Upgrades, got %d credits and now has %d.", iTarget, iCreditsReturned, GetClientCredits(iTarget));
 	
 	return Plugin_Handled;
 }
@@ -689,6 +710,10 @@ public Action:Cmd_DBDelPlayer(client, args)
 	StripQuotes(sTarget);
 	
 	decl String:sQuery[128], iPlayerID;
+	new Handle:hPack = CreateDataPack();
+	WritePackCell(hPack, client);
+	WritePackString(hPack, sTarget);
+	
 	// Match as steamid
 	if(IsValidSteamID(sTarget))
 	{
@@ -696,8 +721,9 @@ public Action:Cmd_DBDelPlayer(client, args)
 		if(iTarget != -1)
 			RemovePlayer(iTarget);
 		
+		WritePackCell(hPack, iTarget);
 		Format(sQuery, sizeof(sQuery), "SELECT upgrades_id, name FROM %s WHERE steamid = '%s'", TBL_PLAYERS, sTarget);
-		SQL_TQuery(g_hDatabase, SQL_CheckDeletePlayer, sQuery, client);
+		SQL_TQuery(g_hDatabase, SQL_CheckDeletePlayer, sQuery, hPack);
 	}
 	// Match as playerid
 	else if(StringToIntEx(sTarget, iPlayerID) && iPlayerID > 0)
@@ -706,8 +732,9 @@ public Action:Cmd_DBDelPlayer(client, args)
 		if(iTarget != -1)
 			RemovePlayer(iTarget);
 		
+		WritePackCell(hPack, iTarget);
 		Format(sQuery, sizeof(sQuery), "SELECT upgrades_id, name FROM %s WHERE player_id = '%d'", TBL_PLAYERS, iPlayerID);
-		SQL_TQuery(g_hDatabase, SQL_CheckDeletePlayer, sQuery, client);
+		SQL_TQuery(g_hDatabase, SQL_CheckDeletePlayer, sQuery, hPack);
 	}
 	// Match as name
 	else
@@ -716,8 +743,9 @@ public Action:Cmd_DBDelPlayer(client, args)
 		if(iTarget != -1)
 			RemovePlayer(iTarget);
 		
+		WritePackCell(hPack, iTarget);
 		Format(sQuery, sizeof(sQuery), "SELECT upgrades_id, name FROM %s WHERE name = '%s'", TBL_PLAYERS, sTarget);
-		SQL_TQuery(g_hDatabase, SQL_CheckDeletePlayer, sQuery, client);
+		SQL_TQuery(g_hDatabase, SQL_CheckDeletePlayer, sQuery, hPack);
 	}
 	return Plugin_Handled;
 }
@@ -789,6 +817,7 @@ public Action:Cmd_DebugPlayerlist(client, args)
 public Action:Cmd_DBWrite(client, args)
 {
 	SaveAllPlayers();
+	LogAction(client, -1, "Saved all player data to the database.");
 	ReplyToCommand(client, "SM:RPG db_write: All player data has been saved to the database.");
 	return Plugin_Handled;
 }
@@ -796,18 +825,31 @@ public Action:Cmd_DBWrite(client, args)
 /**
  * SQL callbacks
  */
-public SQL_CheckDeletePlayer(Handle:owner, Handle:hndl, const String:error[], any:client)
+public SQL_CheckDeletePlayer(Handle:owner, Handle:hndl, const String:error[], any:data)
 {
+	ResetPack(data);
+	new client = ReadPackCell(data);
+	new String:sTarget[64];
+	ReadPackString(data, sTarget, sizeof(sTarget));
+	new iTarget = ReadPackCell(data);
+	CloseHandle(data);
+	
 	if(hndl == INVALID_HANDLE || strlen(error) > 0)
 	{
 		LogError("Error while trying to find player for deletion (%s)", error);
+		if(iTarget != -1)
+			LogAction(client, iTarget, "Tried to delete player %N from the database using search phrase \"%s\", but the select query failed. The stats were reset ingame though.", iTarget, sTarget);
 		return;
 	}
 	
 	if(!SQL_GetRowCount(hndl))
 	{
 		if(client == 0 || IsClientInGame(client))
+		{
+			if(iTarget != -1)
+				LogAction(client, iTarget, "Tried to delete player %N from the database using search phrase \"%s\", but there was no matching entry. The stats were reset ingame though.", iTarget, sTarget);
 			ReplyToCommand(client, "SM:RPG db_delplayer: Unable to find the specified player in the database.");
+		}
 		return;
 	}
 	
@@ -819,20 +861,29 @@ public SQL_CheckDeletePlayer(Handle:owner, Handle:hndl, const String:error[], an
 		SQL_TQuery(g_hDatabase, SQL_DoNothing, sQuery);
 		Format(sQuery, sizeof(sQuery), "DELETE FROM %s WHERE upgrades_id = '%d'", TBL_PLAYERS, iUpgradeID);
 		SQL_TQuery(g_hDatabase, SQL_DoNothing, sQuery);
+		
+		decl String:sName[64];
+		SQL_FetchString(hndl, 1, sName, sizeof(sName));
+		if(client == 0 || IsClientInGame(client))
+		{
+			if(iTarget != -1)
+				LogAction(client, iTarget, "Player \"%s\" has been deleted from the database and his current ingame stats were reset. (search phrase: %s)", sName, sTarget);
+			else
+				LogAction(client, -1, "Player \"%s\" has been deleted from the database. (search phrase: %s)", sName, sTarget);
+			ReplyToCommand(client, "SM:RPG db_delplayer: Player '%s' has been deleted from the database.", sName);
+		}
 	}
 	else
 	{
 		if(client == 0 || IsClientInGame(client))
 		{
+			if(iTarget != -1)
+				LogAction(client, iTarget, "Tried to delete player %N from the database using search phrase \"%s\", but data saving is disabled (smrpg_save_data 0). The stats were reset ingame though.", iTarget, sTarget);
 			ReplyToCommand(client, "SM:RPG db_delplayer: Notice: smrpg_save_data is set to '0', command had no effect.");
-			ReplyToCommand(client, "SM:RPG db_delplayer: Ignore the proceeding message.");
 		}
 	}
 	
-	decl String:sName[64];
-	SQL_FetchString(hndl, 1, sName, sizeof(sName));
-	if(client == 0 || IsClientInGame(client))
-		ReplyToCommand(client, "SM:RPG db_delplayer: Player '%s' has been deleted from the database.", sName);
+	
 }
 
 public SQL_MassDeleteItem(Handle:owner, Handle:hndl, const String:error[], any:data)
@@ -842,19 +893,23 @@ public SQL_MassDeleteItem(Handle:owner, Handle:hndl, const String:error[], any:d
 	new iIndex = ReadPackCell(data);
 	CloseHandle(data);
 	
+	new upgrade[InternalUpgradeInfo];
+	GetUpgradeByIndex(iIndex, upgrade);
+	
 	if(hndl == INVALID_HANDLE || strlen(error) > 0)
 	{
+		LogAction(client, -1, "Tried to mass sell upgrade \"%s\", but the select query failed. It might have been reset on some players ingame though!", upgrade[UPGR_name]);
 		LogError("Error during mass deletion of item (%s)", error);
 		return;
 	}
 	
-	new upgrade[InternalUpgradeInfo];
-	GetUpgradeByIndex(iIndex, upgrade);
-	
 	if(SQL_GetRowCount(hndl) == 0)
 	{
 		if(client == 0 || IsClientInGame(client))
+		{
+			LogAction(client, -1, "Tried to mass sell upgrade \"%s\", but nobody has the upgrade purchased at any level.", upgrade[UPGR_name]);
 			ReplyToCommand(client, "SM:RPG db_mass_sell: Nobody has the Upgrade '%s' purchased at any level.", upgrade[UPGR_name]);
+		}
 		return;
 	}
 	
@@ -881,7 +936,7 @@ public SQL_MassDeleteItem(Handle:owner, Handle:hndl, const String:error[], any:d
 			}
 			
 			iAddCredits = 0;
-			while(iOldLevel)
+			while(iOldLevel > 0)
 				iAddCredits += GetUpgradeCost(iIndex, iOldLevel--);
 			
 			Format(sQuery, sizeof(sQuery), "UPDATE %s SET %s = '0' WHERE items_id = '%d'", TBL_UPGRADES, upgrade[UPGR_shortName], iItemsID);
@@ -889,15 +944,21 @@ public SQL_MassDeleteItem(Handle:owner, Handle:hndl, const String:error[], any:d
 			Format(sQuery, sizeof(sQuery), "UPDATE %s SET credits = (credits + %d) WHERE items_id = '%d'", TBL_UPGRADES, iAddCredits, iItemsID);
 			SQL_TQuery(g_hDatabase, SQL_DoNothing, sQuery);
 		}
+		
+		if(client == 0 || IsClientInGame(client))
+		{
+			LogAction(client, -1, "Mass sold upgrade \"%s\" on all players with full costs refunded. %d players in the database have been refunded their credits.", upgrade[UPGR_name], SQL_GetRowCount(hndl));
+			ReplyToCommand(client, "SM:RPG db_mass_sell: All (%d) players in the database with Upgrade '%s' have been refunded their credits", SQL_GetRowCount(hndl), upgrade[UPGR_name]);
+		}
 	}
 	else
 	{
 		if(client == 0 || IsClientInGame(client))
+		{
+			LogAction(client, -1, "Tried to mass sell upgrade \"%s\", but data saving is disabled (smrpg_save_data 0). It might have been reset on some players ingame though!", upgrade[UPGR_name]);
 			ReplyToCommand(client, "SM:RPG db_mass_sell: Notice: smrpg_save_data is set to '0', command had no effect");
+		}
 	}
-	
-	if(client == 0 || IsClientInGame(client))
-		ReplyToCommand(client, "SM:RPG db_mass_sell: All (%d) players in the database with Upgrade '%s' have been refunded their credits", SQL_GetRowCount(hndl), upgrade[UPGR_name]);
 }
 
 /**

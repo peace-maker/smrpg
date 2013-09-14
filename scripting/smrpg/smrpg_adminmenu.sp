@@ -237,10 +237,11 @@ public Menu_HandlePlayerChangeCredits(Handle:menu, MenuAction:action, param1, pa
 		
 		new iAmount = StringToInt(sInfo);
 		
-		new iCredits = GetClientCredits(g_iCurrentMenuTarget[param1]);
-		iCredits += iAmount;
+		new iOldCredits = GetClientCredits(g_iCurrentMenuTarget[param1]);
 		
-		SetClientCredits(g_iCurrentMenuTarget[param1], iCredits);
+		SetClientCredits(g_iCurrentMenuTarget[param1], iOldCredits + iAmount);
+		
+		LogAction(param1, g_iCurrentMenuTarget[param1], "Changed %N's credits by %d from %d to %d.", g_iCurrentMenuTarget[param1], iAmount, iOldCredits, GetClientCredits(g_iCurrentMenuTarget[param1]));
 		ShowPlayerCreditsManageMenu(param1);
 	}
 }
@@ -281,12 +282,16 @@ public Menu_HandlePlayerChangeExperience(Handle:menu, MenuAction:action, param1,
 		
 		new iAmount = StringToInt(sInfo);
 	
+		new iOldLevel = GetClientLevel(g_iCurrentMenuTarget[param1]);
+		new iOldExperience = GetClientExperience(g_iCurrentMenuTarget[param1]);
+		
 		// If we're adding experience, add it properly and level up if necassary.
 		if(iAmount > 0)
 			Stats_AddExperience(g_iCurrentMenuTarget[param1], iAmount, false);
 		else
 			SetClientExperience(g_iCurrentMenuTarget[param1], GetClientExperience(g_iCurrentMenuTarget[param1])+iAmount);
 		
+		LogAction(param1, g_iCurrentMenuTarget[param1], "Changed experience of %N by %d. He is now Level %d and has %d/%d Experience (previously Level %d with %d/%d Experience)", g_iCurrentMenuTarget[param1], iAmount, GetClientLevel(g_iCurrentMenuTarget[param1]), GetClientExperience(g_iCurrentMenuTarget[param1]), Stats_LvlToExp(GetClientLevel(g_iCurrentMenuTarget[param1])), iOldLevel, iOldExperience, Stats_LvlToExp(iOldLevel));
 		ShowPlayerExperienceManageMenu(param1);
 	}
 }
@@ -326,6 +331,7 @@ public Menu_HandlePlayerChangeLevel(Handle:menu, MenuAction:action, param1, para
 		GetMenuItem(menu, param2, sInfo, sizeof(sInfo));
 		
 		new iAmount = StringToInt(sInfo);
+		new iOldLevel = GetClientLevel(g_iCurrentMenuTarget[param1]);
 	
 		// Do a proper level up
 		if(iAmount > 0)
@@ -342,6 +348,7 @@ public Menu_HandlePlayerChangeLevel(Handle:menu, MenuAction:action, param1, para
 				PrintToChatAll("%t", "new_lvl1", g_iCurrentMenuTarget[param1], GetClientLevel(g_iCurrentMenuTarget[param1]));
 		}
 		
+		LogAction(param1, g_iCurrentMenuTarget[param1], "Changed level of %N by %d from %d to %d.", g_iCurrentMenuTarget[param1], iAmount, iOldLevel, GetClientLevel(g_iCurrentMenuTarget[param1]));
 		ShowPlayerLevelManageMenu(param1);
 	}
 }
@@ -474,13 +481,18 @@ public Menu_HandlePlayerUpgradeLevelChange(Handle:menu, MenuAction:action, param
 		
 		if(StrEqual(sInfo, "reset"))
 		{
+			new iOldLevel = GetClientUpgradeLevel(iTarget, iItemIndex);
+			new iCreditsReturned;
 			while(GetClientUpgradeLevel(iTarget, iItemIndex) > 0)
 			{
 				if(TakeClientUpgrade(iTarget, iItemIndex))
 					break;
 				// Full refund
+				iCreditsReturned += GetUpgradeCost(iItemIndex, GetClientUpgradeLevel(iTarget, iItemIndex)+1);
 				SetClientCredits(iTarget, GetClientCredits(iTarget) + GetUpgradeCost(iItemIndex, GetClientUpgradeLevel(iTarget, iItemIndex)+1));
 			}
+			LogAction(param1, iTarget, "Reset %N's upgrade %s with full refund of all upgrade costs. Upgrade level changed from %d to %d and player earned %d credits.", iTarget, upgrade[UPGR_name], iOldLevel, GetClientUpgradeLevel(iTarget, iItemIndex), iCreditsReturned);
+			Client_PrintToChat(param1, false, "SM:RPG > Reset %N's upgrade %s with full refund of all upgrade costs. Upgrade level changed from %d to %d and player earned %d credits.", iTarget, upgrade[UPGR_name], iOldLevel, GetClientUpgradeLevel(iTarget, iItemIndex), iCreditsReturned);
 		}
 		else if(StrEqual(sInfo, "give"))
 		{
@@ -488,6 +500,7 @@ public Menu_HandlePlayerUpgradeLevelChange(Handle:menu, MenuAction:action, param
 			if(iOldLevel < upgrade[UPGR_maxLevel])
 			{
 				GiveClientUpgrade(iTarget, iItemIndex);
+				LogAction(param1, iTarget, "Gave %N one level of upgrade %s at no charge. Upgrade level changed from %d to %d.", iTarget, upgrade[UPGR_name], iOldLevel, GetClientUpgradeLevel(iTarget, iItemIndex));
 			}
 		}
 		else if(StrEqual(sInfo, "buy"))
@@ -503,6 +516,7 @@ public Menu_HandlePlayerUpgradeLevelChange(Handle:menu, MenuAction:action, param
 				else
 				{
 					BuyClientUpgrade(iTarget, iItemIndex);
+					LogAction(param1, iTarget, "Forced %N to buy one level of upgrade %s. Upgrade level changed from %d to %d.", iTarget, upgrade[UPGR_name], iOldLevel, GetClientUpgradeLevel(iTarget, iItemIndex));
 				}
 			}
 		}
@@ -514,7 +528,9 @@ public Menu_HandlePlayerUpgradeLevelChange(Handle:menu, MenuAction:action, param
 				if(TakeClientUpgrade(iTarget, iItemIndex))
 				{
 					// Full refund
-					SetClientCredits(iTarget, GetClientCredits(iTarget) + GetUpgradeCost(iItemIndex, GetClientUpgradeLevel(iTarget, iItemIndex)+1));
+					new iCosts = GetUpgradeCost(iItemIndex, GetClientUpgradeLevel(iTarget, iItemIndex)+1);
+					SetClientCredits(iTarget, GetClientCredits(iTarget) + iCosts);
+					LogAction(param1, iTarget, "Took one level of upgrade %s from %N with full refund of the costs. Upgrade level changed from %d to %d and player got %d credits.", upgrade[UPGR_name], iTarget, iOldLevel, GetClientUpgradeLevel(iTarget, iItemIndex), iCosts);
 				}
 			}
 		}
@@ -524,6 +540,7 @@ public Menu_HandlePlayerUpgradeLevelChange(Handle:menu, MenuAction:action, param
 			if(iOldLevel > 0)
 			{
 				SellClientUpgrade(iTarget, iItemIndex);
+				LogAction(param1, iTarget, "Forced %N to sell one level of upgrade %s. Upgrade level changed from %d to %d.", iTarget, upgrade[UPGR_name], iOldLevel, GetClientUpgradeLevel(iTarget, iItemIndex));
 			}
 		}
 		
@@ -672,9 +689,15 @@ public Menu_HandleUpgradeDetails(Handle:menu, MenuAction:action, param1, param2)
 		if(StrEqual(sInfo, "enable"))
 		{
 			if(upgrade[UPGR_enabled])
+			{
 				SetConVarBool(upgrade[UPGR_enableConvar], false);
+				LogAction(param1, -1, "Disabled upgrade %s temporarily.", upgrade[UPGR_name]);
+			}
 			else
+			{
 				SetConVarBool(upgrade[UPGR_enableConvar], true);
+				LogAction(param1, -1, "Enabled upgrade %s temporarily.", upgrade[UPGR_name]);
+			}
 		}
 		else if(StrEqual(sInfo, "maxlevel"))
 		{
