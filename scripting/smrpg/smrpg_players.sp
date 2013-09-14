@@ -572,10 +572,10 @@ public SQL_GetPlayerInfo(Handle:owner, Handle:hndl, const String:error[], any:us
 	/* Player Items */
 	decl String:sQuery[128];
 	Format(sQuery, sizeof(sQuery), "SELECT * FROM %s WHERE upgrades_id = '%d'", TBL_UPGRADES, g_iPlayerInfo[client][PLR_dbUpgradeId]);
-	SQL_TQuery(g_hDatabase, SQL_GetPlayerItems, sQuery, userid);
+	SQL_TQuery(g_hDatabase, SQL_GetPlayerUpgrades, sQuery, userid);
 }
 
-public SQL_GetPlayerItems(Handle:owner, Handle:hndl, const String:error[], any:userid)
+public SQL_GetPlayerUpgrades(Handle:owner, Handle:hndl, const String:error[], any:userid)
 {
 	new client = GetClientOfUserId(userid);
 	if(!client)
@@ -591,7 +591,7 @@ public SQL_GetPlayerItems(Handle:owner, Handle:hndl, const String:error[], any:u
 	// Player isn't fully registred?!
 	if(SQL_GetRowCount(hndl) == 0 || !SQL_FetchRow(hndl))
 	{
-		LogError("Player %N is registred, but doesn't have an items table entry?", client);
+		LogError("Player %N is registered, but doesn't have an upgrades table entry?", client);
 		CallOnClientLoaded(client);
 		return;
 	}
@@ -646,7 +646,7 @@ public SQL_InsertPlayer(Handle:owner, Handle:hndl, const String:error[], any:use
 		Format(sValues, sizeof(sValues), "%s, '%d'", sValues, GetClientUpgradeLevel(client, i));
 	}
 	
-	decl String:sQuery[2048];
+	decl String:sQuery[8192];
 	Format(sQuery, sizeof(sQuery), "INSERT INTO %s (upgrades_id%s) VALUES (NULL%s)", TBL_UPGRADES, sFields, sValues);
 	SQL_TQuery(g_hDatabase, SQL_InsertPlayerUpgrades, sQuery, userid);
 }

@@ -120,7 +120,7 @@ CheckUpgradeDatabaseField(const String:sShortName[])
 		if(IsClientInGame(i) && IsClientAuthorized(i) && GetClientDatabaseUpgradesId(i) != -1)
 		{
 			Format(sQuery, sizeof(sQuery), "SELECT %s FROM %s WHERE upgrades_id = %d", sShortName, TBL_UPGRADES, GetClientDatabaseUpgradesId(i));
-			SQL_TQuery(g_hDatabase, SQL_GetPlayerItems, sQuery, GetClientUserId(i));
+			SQL_TQuery(g_hDatabase, SQL_GetPlayerUpgrades, sQuery, GetClientUserId(i));
 		}
 	}
 }
