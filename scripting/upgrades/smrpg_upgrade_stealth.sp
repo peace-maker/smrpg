@@ -48,7 +48,7 @@ public OnLibraryAdded(const String:name[])
 public OnMapStart()
 {
 	// Just to make sure there's nothing else messing with this effect.
-	CreateTimer(10.0, Timer_SetVisibilities, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
+	CreateTimer(5.0, Timer_SetVisibilities, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 }
 
 /**
