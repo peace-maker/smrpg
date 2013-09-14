@@ -35,6 +35,8 @@ public Plugin:myinfo =
 public OnPluginStart()
 {
 	HookEvent("round_start", Event_OnRoundStart);
+	HookEvent("player_spawn", Event_OnEffectReset);
+	HookEvent("player_death", Event_OnEffectReset);
 	
 	LoadTranslations("smrpg_stock_upgrades.phrases");
 	
@@ -94,6 +96,15 @@ public Event_OnRoundStart(Handle:event, const String:name[], bool:dontBroadcast)
 	// Reset all invisible entity indexes since the previous round's entities were all deleted on round start.
 	for(new i=1;i<=MaxClients;i++)
 		g_iImpulseTrailSprites[i] = -1;
+}
+
+public Event_OnEffectReset(Handle:event, const String:name[], bool:dontBroadcast)
+{
+	new client = GetClientOfUserId(GetEventInt(event, "userid"));
+	if(!client)
+		return;
+	
+	SMRPG_ResetEffect(client);
 }
 
 /**
