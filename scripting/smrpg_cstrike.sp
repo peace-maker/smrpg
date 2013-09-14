@@ -28,6 +28,17 @@ public Plugin:myinfo =
 	url = "http://www.wcfan.de/"
 }
 
+public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
+{
+	new EngineVersion:engine = GetEngineVersion();
+	if(engine != Engine_CSS)
+	{
+		Format(error, err_max, "This plugin is for use in Counter-Strike:Source only. Bad engine version %d.", engine);
+		return APLRes_SilentFailure;
+	}
+	return APLRes_Success;
+}
+
 public OnPluginStart()
 {
 	g_hCVExpKnifeDmg = CreateConVar("smrpg_exp_knifedmg", "8.0", "Experience for knifing an enemy multiplied by the damage done (must be higher than smrpg_exp_damage)", 0, true, 0.0);
