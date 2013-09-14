@@ -139,7 +139,7 @@ public SMRPG_ResetEffect(client)
 	if(g_hIceStabUnfreeze[client] != INVALID_HANDLE && IsClientInGame(client))
 		TriggerTimer(g_hIceStabUnfreeze[client]);
 	ClearHandle(g_hIceStabUnfreeze[client]);
-	g_iIceStabFade[client] = 255;
+	g_iIceStabFade[client] = 254;
 }
 
 public SMRPG_TranslateUpgrade(client, TranslationType:type, String:translation[], maxlen)
@@ -165,9 +165,13 @@ public Action:Hook_OnTakeDamage(victim, &attacker, &inflictor, &Float:damage, &d
 	if(fLimitDmg <= 0.0)
 		return Plugin_Continue;
 	
+	new iWeapon = inflictor;
+	if(inflictor > 0 && inflictor <= MaxClients)
+		iWeapon = Client_GetActiveWeapon(inflictor);
+	
 	// All weapons except for the knife do less damage.
 	// TODO: Add support for more games
-	if(attacker <= 0 || attacker > MaxClients || GetPlayerWeaponSlot(attacker, KNIFE_SLOT) == weapon)
+	if(attacker <= 0 || attacker > MaxClients || GetPlayerWeaponSlot(attacker, KNIFE_SLOT) == iWeapon)
 		return Plugin_Continue;
 	
 	// This was less than the limit. It's ok.
@@ -215,9 +219,13 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 	if(iLevel <= 0)
 		return;
 	
+	new iWeapon = inflictor;
+	if(inflictor > 0 && inflictor <= MaxClients)
+		iWeapon = Client_GetActiveWeapon(inflictor);
+	
 	// This effect only applies to knifes.
 	// TODO: Add support for more games
-	if(GetPlayerWeaponSlot(attacker, KNIFE_SLOT) != weapon)
+	if(GetPlayerWeaponSlot(attacker, KNIFE_SLOT) != iWeapon)
 		return;
 	
 	if(!SMRPG_RunUpgradeEffect(victim, UPGRADE_SHORTNAME))
@@ -236,7 +244,7 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 	
 	ClearHandle(g_hIceStabUnfreeze[victim]);
 	g_iIceStabFade[victim] = 0;
-	g_hIceStabUnfreeze[victim] = CreateTimer(float(iLevel), Timer_Unfreeze, GetClientUserId(victim), TIMER_FLAG_NO_MAPCHANGE);
+	g_hIceStabUnfreeze[victim] = CreateTimer(ICESTAB_INC*float(iLevel), Timer_Unfreeze, GetClientUserId(victim), TIMER_FLAG_NO_MAPCHANGE);
 }
 
 public Action:Timer_Unfreeze(Handle:timer, any:userid)
@@ -248,6 +256,6 @@ public Action:Timer_Unfreeze(Handle:timer, any:userid)
 	g_hIceStabUnfreeze[client] = INVALID_HANDLE;
 	if(GetEntityMoveType(client) == MOVETYPE_NONE)
 		SetEntityMoveType(client, MOVETYPE_WALK);
-	
+	g_iIceStabFade[client] = 254;
 	return Plugin_Stop;
 }
