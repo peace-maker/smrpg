@@ -5,9 +5,19 @@
 		"de"			"Regenerierung"
 	}
 	
-	"hbonus"
+	"regen description"
+	{
+		"de"			"Stellt jede Sekunde eine bestimmte Menge an HP wieder her."
+	}
+	
+	"health"
 	{
 		"de"			"Gesundheit+"
+	}
+	
+	"health description"
+	{
+		"de"			"Erhöht deine maximale Gesundheit."
 	}
 	
 	"resup"
@@ -15,9 +25,19 @@
 		"de"			"Munitionserhöhung"
 	}
 	
+	"resup description"
+	{
+		"de"			"Stellt jede dritte Sekunde etwas Munition wieder her."
+	}
+	
 	"vamp"
 	{
 		"de"			"Vampier"
+	}
+	
+	"vamp description"
+	{
+		"de"			"Klaue dir HP von den Spielern, denen du Schaden zufügst."
 	}
 	
 	"stealth"
@@ -25,9 +45,19 @@
 		"de"			"Unsichtbarkeit"
 	}
 	
+	"stealth description"
+	{
+		"de"			"Du wirst immer durchsichtiger."
+	}
+	
 	"ljump"
 	{
 		"de"			"Weitsprung"
+	}
+	
+	"ljump description"
+	{
+		"de"			"Erhöht deine Sprungweite bei jedem Sprung."
 	}
 	
 	"fnade"
@@ -35,9 +65,19 @@
 		"de"			"Feuergranate"
 	}
 	
+	"fnade description"
+	{
+		"de"			"Zündet Spieler an, die du mit einer Granate triffst."
+	}
+	
 	"icestab"
 	{
 		"de"			"Eisstich"
+	}
+	
+	"icestab description"
+	{
+		"de"			"Friert deinen Gegner ein, wenn du ihn mit dem Messer triffst."
 	}
 	
 	"fpistol"
@@ -45,9 +85,19 @@
 		"de"			"Frostpistole"
 	}
 	
+	"fpistol description"
+	{
+		"de"			"Verlangsame deine Gegner, wenn du sie mit einer Pistole triffst."
+	}
+	
 	"denial"
 	{
 		"de"			"Ablehnung"
+	}
+	
+	"denial description"
+	{
+		"de"			"Behalte deine Waffen wenn du das nächste mal spawnst, auch wenn du vorher gestorben bist."
 	}
 	
 	"impulse"
@@ -55,18 +105,38 @@
 		"de"			"Impulse"
 	}
 	
+	"impulse description"
+	{
+		"de"			"Erhöht kurzzeitig deine Geschwindigkeit, wenn du Schaden erleidest."
+	}
+	
 	"medic"
 	{
 		"de"			"Medic"
 	}
+	
+	"medic description"
+	{
+		"de"			"Heilt deine Teammitglieder in deiner Nähe."
+	}
   
 	"speed"
 	{
-		"en"			"Geschwindigkeit+"
+		"de"			"Geschwindigkeit+"
+	}
+	
+	"speed description"
+	{
+		"de"			"Erhöht deine durchschnittliche Bewegungsgeschwindigkeit."
 	}
   
 	"damage"
 	{
-		"en"			"Schaden+"
+		"de"			"Schaden+"
+	}
+  
+	"damage description"
+	{
+		"de"			"Füge deinen Gegnern etwas mehr Schaden zu, wenn du sie triffst."
 	}
 }

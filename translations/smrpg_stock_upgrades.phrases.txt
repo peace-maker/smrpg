@@ -5,9 +5,19 @@
 		"en"			"Regeneration"
 	}
 	
+	"regen description"
+	{
+		"en"			"Regenerates HP every second."
+	}
+	
 	"health"
 	{
 		"en"			"Health+"
+	}
+	
+	"health description"
+	{
+		"en"			"Increases your maximal health."
 	}
 	
 	"resup"
@@ -15,9 +25,19 @@
 		"en"			"Resupply"
 	}
 	
+	"resup description"
+	{
+		"en"			"Regenerates ammo every third second."
+	}
+	
 	"vamp"
 	{
 		"en"			"Vampire"
+	}
+	
+	"vamp description"
+	{
+		"en"			"Steal HP from players when damaging them."
 	}
 	
 	"stealth"
@@ -25,24 +45,49 @@
 		"en"			"Stealth"
 	}
 	
+	"stealth description"
+	{
+		"en"			"Renders yourself more and more invisible."
+	}
+	
 	"ljump"
 	{
-		"en"			"LongJump"
+		"en"			"Long Jump"
+	}
+	
+	"ljump description"
+	{
+		"en"			"Boosts your jump speed."
 	}
 	
 	"fnade"
 	{
-		"en"			"FireGrenade"
+		"en"			"Fire Grenade"
+	}
+	
+	"fnade description"
+	{
+		"en"			"Ignites players damaged by your grenade."
 	}
 	
 	"icestab"
 	{
-		"en"			"IceStab"
+		"en"			"Ice Stab"
+	}
+	
+	"icestab description"
+	{
+		"en"			"Freeze a player in place when knifing him."
 	}
 	
 	"fpistol"
 	{
-		"en"			"FrostPistol"
+		"en"			"Frost Pistol"
+	}
+	
+	"fpistol description"
+	{
+		"en"			"Slow down players hit with a pistol."
 	}
 	
 	"denial"
@@ -50,9 +95,19 @@
 		"en"			"Denial"
 	}
 	
+	"denial description"
+	{
+		"en"			"Keep your weapons the next time you spawn after you've died."
+	}
+	
 	"impulse"
 	{
 		"en"			"Impulse"
+	}
+	
+	"impulse description"
+	{
+		"en"			"Gain speed for a short time when being shot."
 	}
 	
 	"medic"
@@ -60,13 +115,28 @@
 		"en"			"Medic"
 	}
 	
+	"medic description"
+	{
+		"en"			"Heals team mates around you."
+	}
+	
 	"speed"
 	{
 		"en"			"Speed+"
+	}
+	
+	"speed description"
+	{
+		"en"			"Increase your average movement speed."
 	}
   
 	"damage"
 	{
 		"en"			"Damage+"
+	}
+  
+	"damage description"
+	{
+		"en"			"Deal additional damage on enemies."
 	}
 }

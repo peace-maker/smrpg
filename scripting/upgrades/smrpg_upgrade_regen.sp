@@ -70,7 +70,11 @@ public SMRPG_TranslateUpgrade(client, TranslationType:type, String:translation[]
 	if(type == TranslationType_Name)
 		Format(translation, maxlen, "%T", UPGRADE_SHORTNAME, client);
 	else if(type == TranslationType_Description)
-		return;
+	{
+		new String:sDescriptionKey[MAX_UPGRADE_SHORTNAME_LENGTH+12] = UPGRADE_SHORTNAME;
+		StrCat(sDescriptionKey, sizeof(sDescriptionKey), " description");
+		Format(translation, maxlen, "%T", sDescriptionKey, client);
+	}
 }
 
 public Action:Timer_IncreaseHealth(Handle:timer)
