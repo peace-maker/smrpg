@@ -143,7 +143,7 @@ SaveData(client)
 		return;
 	}
 	
-	decl String:sQuery[1024];
+	decl String:sQuery[8192];
 	Format(sQuery, sizeof(sQuery), "UPDATE %s SET level = '%d', experience = '%d', credits = '%d', lastseen = '%d' WHERE player_id = '%d'", TBL_PLAYERS, GetClientLevel(client), GetClientExperience(client), GetClientCredits(client), GetTime(), g_iPlayerInfo[client][PLR_dbId]);
 	SQL_TQuery(g_hDatabase, SQL_DoNothing, sQuery);
 	
@@ -636,12 +636,15 @@ public SQL_InsertPlayer(Handle:owner, Handle:hndl, const String:error[], any:use
 	UpdateRankCount();
 	
 	// Insert upgrade level info
-	new String:sFields[1024], String:sValues[1024];
+	new String:sFields[8192], String:sValues[2048];
 	new iSize = GetUpgradeCount();
 	new upgrade[InternalUpgradeInfo];
 	for(new i=0;i<iSize;i++)
 	{
 		GetUpgradeByIndex(i, upgrade);
+		if(!IsValidUpgrade(upgrade))
+			continue;
+		
 		Format(sFields, sizeof(sFields), "%s, %s", sFields, upgrade[UPGR_shortName]);
 		Format(sValues, sizeof(sValues), "%s, '%d'", sValues, GetClientUpgradeLevel(client, i));
 	}
