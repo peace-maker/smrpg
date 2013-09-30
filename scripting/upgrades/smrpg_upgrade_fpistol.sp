@@ -112,6 +112,7 @@ public SMRPG_ResetEffect(client)
 	if(g_hFPistolResetSpeed[client] != INVALID_HANDLE && IsClientInGame(client))
 		TriggerTimer(g_hFPistolResetSpeed[client]);
 	ClearHandle(g_hFPistolResetSpeed[client]);
+	g_fFPistolLastSpeed[client] = 0.0;
 }
 
 public SMRPG_TranslateUpgrade(client, TranslationType:type, String:translation[], maxlen)
@@ -185,7 +186,8 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 	// Don't have impulse going wonky
 	SMRPG_ResetUpgradeEffectOnClient(victim, "impulse");
 	
-	new Float:fOldLaggedMovementValue = GetEntPropFloat(victim, Prop_Send, "m_flLaggedMovementValue");
+	//new Float:fOldLaggedMovementValue = GetEntPropFloat(victim, Prop_Send, "m_flLaggedMovementValue");
+	new Float:fOldLaggedMovementValue = 1.0;
 	
 	// The more damage done, the slower the player gets.
 	// TODO: Add config option to set this slowdown rate per weapon.
@@ -205,6 +207,11 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 		{
 			g_fFPistolLastSpeed[victim] = fSpeed;
 			SetEntPropFloat(victim, Prop_Send, "m_flLaggedMovementValue", fSpeed);
+		}
+		// Don't extend the timer, if the player is already slowed down for that speed.
+		else
+		{
+			return;
 		}
 	}
 	
