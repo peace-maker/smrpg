@@ -19,6 +19,8 @@ new Handle:g_hCVExpBombExploded;
 new Handle:g_hCVExpHostage;
 new Handle:g_hCVExpVIPEscaped;
 
+new Handle:g_hCVShowMVPLevel;
+
 public Plugin:myinfo = 
 {
 	name = "SM:RPG > CSS Experience Module",
@@ -50,6 +52,8 @@ public OnPluginStart()
 	g_hCVExpHostage = CreateConVar("smrpg_exp_hostage", "0.10", "Experience multipled by the experience required and the team ratio for rescuing a hostage", 0, true, 0.0);
 	g_hCVExpVIPEscaped = CreateConVar("smrpg_exp_vipescaped", "0.35", "Experience multipled by the experience required and the team ratio given to the vip when the vip escapes", 0, true, 0.0);
 	
+	g_hCVShowMVPLevel = CreateConVar("smrpg_mvp_level", "1", "Show player level as MVP stars on the scoreboard?", 0, true, 0.0, true, 1.0);
+	
 	AutoExecConfig(true, "plugin.smrpg_cstrike");
 	
 	HookEvent("player_hurt", Event_OnPlayerHurt);
@@ -60,6 +64,9 @@ public OnPluginStart()
 	HookEvent("bomb_exploded", Event_OnBombExploded);
 	HookEvent("hostage_rescued", Event_OnHostageRescued);
 	HookEvent("vip_escaped", Event_OnVIPEscaped);
+	
+	HookEvent("player_spawn", Event_OnPlayerSpawn);
+	HookEvent("round_mvp", Event_OnRoundMVP);
 }
 
 public OnAllPluginsLoaded()
@@ -73,6 +80,35 @@ public Action:SMRPG_OnAddExperience(client, ExperienceReason:reason, &iExperienc
 {
 	// Don't let the normal experience calculation hit. We're doing some cstrike specific stuff here.
 	return Plugin_Handled;
+}
+
+public Action:SMRPG_OnClientLevel(client, oldlevel, newlevel)
+{
+	if(!GetConVarBool(g_hCVShowMVPLevel))
+		return Plugin_Continue;
+	
+	if(IsClientInGame(client))
+		CS_SetMVPCount(client, newlevel);
+	
+	return Plugin_Continue;
+}
+
+public Event_OnPlayerSpawn(Handle:event, const String:error[], bool:dontBroadcast)
+{
+	if(!GetConVarBool(g_hCVShowMVPLevel))
+		return;
+	
+	new client = GetClientOfUserId(GetEventInt(event, "userid"));
+	CS_SetMVPCount(client, SMRPG_GetClientLevel(client));
+}
+
+public Event_OnRoundMVP(Handle:event, const String:error[], bool:dontBroadcast)
+{
+	if(!GetConVarBool(g_hCVShowMVPLevel))
+		return;
+	
+	new client = GetClientOfUserId(GetEventInt(event, "userid"));
+	CS_SetMVPCount(client, SMRPG_GetClientLevel(client));
 }
 
 public Event_OnPlayerHurt(Handle:event, const String:error[], bool:dontBroadcast)
