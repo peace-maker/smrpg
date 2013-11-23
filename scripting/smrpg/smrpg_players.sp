@@ -195,6 +195,8 @@ ResetStats(client)
 		// Reset upgrade to level 0
 		SetArrayCell(GetClientUpgradeLevels(client), i, 0);
 		
+		GetUpgradeByIndex(i, upgrade);
+		
 		if(!IsValidUpgrade(upgrade))
 			continue;
 		
