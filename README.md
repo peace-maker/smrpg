@@ -22,6 +22,21 @@ Server admins can install a new upgrade simply by loading the upgrade plugin.
 * [smlib](https://github.com/bcserv/smlib)
 * (optional) [DHooks](https://forums.alliedmods.net/showthread.php?t=180114) for Speed+ upgrade
 
+# Installation
+* Compile the core plugin (see Compile requirements)
+* If there is a seperate experience module for your game (currently only cstrike), compile and upload that too.
+* Compile all the upgrades you want to use
+* Upload the .smx files as well as the gamedata and translations to your gameserver
+* Add a "smrpg" section to your databases.cfg. Both mysql and sqlite are supported.
+```
+	"smrpg"
+	{
+		"driver"			"sqlite"
+		"database"			"smrpg"
+	}
+```
+* Start your server. The core config files are generated in [mod]/cfg/sourcemod/ and the config files for the single upgrades in [mod]/cfg/sourcemod/smrpg.
+
 # API
 Developers can easily add new upgrades using the extensive API provided by the core.
 Have a look at the include file here: [smrpg.inc](https://github.com/peace-maker/smrpg/blob/master/scripting/include/smrpg.inc)
