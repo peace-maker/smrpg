@@ -20,6 +20,7 @@ Server admins can install a new upgrade simply by loading the upgrade plugin.
 
 # Compile requirements
 * [smlib](https://github.com/bcserv/smlib)
+* [AutoExecConfig](https://github.com/Impact123/AutoExecConfig)
 * (optional) [DHooks](https://forums.alliedmods.net/showthread.php?t=180114) for Speed+ upgrade
 
 # Installation
@@ -28,6 +29,7 @@ Server admins can install a new upgrade simply by loading the upgrade plugin.
 * Compile all the upgrades you want to use
 * Upload the .smx files as well as the gamedata and translations to your gameserver
 * Add a "smrpg" section to your databases.cfg. Both mysql and sqlite are supported.
+
 ```
 	"smrpg"
 	{
