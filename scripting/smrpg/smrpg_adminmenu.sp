@@ -10,6 +10,16 @@ new g_iCurrentMenuTarget[MAXPLAYERS+1] = {-1,...};
 new g_iCurrentUpgradeTarget[MAXPLAYERS+1] = {-1,...};
 new g_iCurrentPage[MAXPLAYERS+1];
 
+enum ChangeUpgradeProperty {
+	ChangeProp_None = 0,
+	ChangeProp_MaxlevelBarrier,
+	ChangeProp_Maxlevel,
+	ChangeProp_Cost,
+	ChangeProp_Icost
+};
+
+new ChangeUpgradeProperty:g_iClientChangesProperty[MAXPLAYERS+1];
+
 public OnAdminMenuCreated(Handle:topmenu)
 {
 	if(topmenu == g_hTopMenu && g_TopMenuCategory)
@@ -662,13 +672,13 @@ ShowUpgradeManageMenu(client)
 	}
 	
 	Format(sBuffer, sizeof(sBuffer), "Maxlevel: %d", upgrade[UPGR_maxLevel]);
-	AddMenuItem(hMenu, "maxlevel", sBuffer, ITEMDRAW_DISABLED);
+	AddMenuItem(hMenu, "maxlevel", sBuffer);
 	
 	Format(sBuffer, sizeof(sBuffer), "Cost: %d", upgrade[UPGR_startCost]);
-	AddMenuItem(hMenu, "cost", sBuffer, ITEMDRAW_DISABLED);
+	AddMenuItem(hMenu, "cost", sBuffer);
 	
 	Format(sBuffer, sizeof(sBuffer), "Increase Cost: %d", upgrade[UPGR_incCost]);
-	AddMenuItem(hMenu, "icost", sBuffer, ITEMDRAW_DISABLED);
+	AddMenuItem(hMenu, "icost", sBuffer);
 	
 	DisplayMenu(hMenu, client, MENU_TIME_FOREVER);
 }
@@ -715,19 +725,138 @@ public Menu_HandleUpgradeDetails(Handle:menu, MenuAction:action, param1, param2)
 				SetConVarBool(upgrade[UPGR_enableConvar], true);
 				LogAction(param1, -1, "Enabled upgrade %s temporarily.", upgrade[UPGR_name]);
 			}
+			ShowUpgradeManageMenu(param1);
 		}
 		else if(StrEqual(sInfo, "maxlevel"))
 		{
-			
+			ShowUpgradePropertyChangeMenu(param1, ChangeProp_Maxlevel);
 		}
 		else if(StrEqual(sInfo, "cost"))
 		{
-			
+			ShowUpgradePropertyChangeMenu(param1, ChangeProp_Cost);
 		}
 		else if(StrEqual(sInfo, "icost"))
 		{
-			
+			ShowUpgradePropertyChangeMenu(param1, ChangeProp_Icost);
 		}
-		ShowUpgradeManageMenu(param1);
+	}
+}
+
+ShowUpgradePropertyChangeMenu(client, ChangeUpgradeProperty:property)
+{
+	new upgrade[InternalUpgradeInfo];
+	new iItemIndex = g_iCurrentUpgradeTarget[client];
+	GetUpgradeByIndex(iItemIndex, upgrade);
+	
+	// Bad upgrade?
+	if(!IsValidUpgrade(upgrade))
+	{
+		g_iClientChangesProperty[client] = ChangeProp_None;
+		g_iCurrentUpgradeTarget[client] = -1;
+		RedisplayAdminMenu(g_hTopMenu, client);
+		return;
+	}
+	
+	new String:sTranslatedName[MAX_UPGRADE_NAME_LENGTH];
+	GetUpgradeTranslatedName(client, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
+	
+	new Handle:hMenu = CreateMenu(Menu_HandlePropertyChange);
+	SetMenuExitBackButton(hMenu, true);
+	
+	decl String:sBuffer[512];
+	Format(sBuffer, sizeof(sBuffer), "Manage upgrade > %s\nShort name: %s\n", sTranslatedName, upgrade[UPGR_shortName]);
+	switch(property)
+	{
+		case ChangeProp_Maxlevel:
+		{
+			Format(sBuffer, sizeof(sBuffer), "%sChange maxlevel temporarily: %d", sBuffer, upgrade[UPGR_maxLevel]);
+		}
+		case ChangeProp_Cost:
+		{
+			Format(sBuffer, sizeof(sBuffer), "%sChange start cost temporarily: %d", sBuffer, upgrade[UPGR_startCost]);
+		}
+		case ChangeProp_Icost:
+		{
+			Format(sBuffer, sizeof(sBuffer), "%sChange increasing cost temporarily: %d", sBuffer, upgrade[UPGR_incCost]);
+		}
+	}
+	
+	SetMenuTitle(hMenu, sBuffer);
+	
+	AddMenuItem(hMenu, "1", "+1");
+	AddMenuItem(hMenu, "-1", "-1");
+	
+	DisplayMenu(hMenu, client, MENU_TIME_FOREVER);
+	
+	g_iClientChangesProperty[client] = property;
+}
+
+public Menu_HandlePropertyChange(Handle:menu, MenuAction:action, param1, param2)
+{
+	if(action == MenuAction_End)
+	{
+		CloseHandle(menu);
+	}
+	else if(action == MenuAction_Cancel)
+	{
+		g_iClientChangesProperty[param1] = ChangeProp_None;
+		if(param2 == MenuCancel_ExitBack)
+			ShowUpgradeManageMenu(param1);
+		else
+		{
+			g_iCurrentUpgradeTarget[param1] = -1;
+			g_iCurrentPage[param1] = 0;
+		}
+	}
+	else if(action == MenuAction_Select)
+	{
+		new upgrade[InternalUpgradeInfo];
+		GetUpgradeByIndex(g_iCurrentUpgradeTarget[param1], upgrade);
+	
+		// Bad upgrade?
+		if(!IsValidUpgrade(upgrade))
+		{
+			g_iCurrentUpgradeTarget[param1] = -1;
+			g_iClientChangesProperty[param1] = ChangeProp_None;
+			ShowUpgradeListMenu(param1);
+			return;
+		}
+		
+		decl String:sInfo[32];
+		GetMenuItem(menu, param2, sInfo, sizeof(sInfo));
+		
+		new iChange = StringToInt(sInfo);
+		switch(g_iClientChangesProperty[param1])
+		{
+			case ChangeProp_Maxlevel:
+			{
+				new iValue = upgrade[UPGR_maxLevel] + iChange;
+				if(iValue > 0 && iValue <= upgrade[UPGR_maxLevelBarrier])
+				{
+					SetConVarInt(upgrade[UPGR_maxLevelConvar], iValue);
+					LogAction(param1, -1, "Changed maxlevel of upgrade %s temporarily from %d to %d.", upgrade[UPGR_name], upgrade[UPGR_maxLevel], iValue);
+				}
+			}
+			case ChangeProp_Cost:
+			{
+				new iValue = upgrade[UPGR_startCost] + iChange;
+				if(iValue >= 0)
+				{
+					SetConVarInt(upgrade[UPGR_startCostConvar], iValue);
+					LogAction(param1, -1, "Changed start costs of upgrade %s temporarily from %d to %d.", upgrade[UPGR_name], upgrade[UPGR_startCost], iValue);
+				}
+			}
+			case ChangeProp_Icost:
+			{
+				new iValue = upgrade[UPGR_incCost] + iChange;
+				if(iValue > 0)
+				{
+					SetConVarInt(upgrade[UPGR_incCostConvar], iValue);
+					LogAction(param1, -1, "Changed increasing costs of upgrade %s temporarily from %d to %d.", upgrade[UPGR_name], upgrade[UPGR_incCost], iValue);
+				}
+			}
+		}
+		
+		ShowUpgradePropertyChangeMenu(param1, g_iClientChangesProperty[param1]);
 	}
 }
