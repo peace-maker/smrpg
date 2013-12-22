@@ -292,7 +292,7 @@ public Event_OnPlayerSay(Handle:event, const String:error[], bool:dontBroadcast)
 		}
 		else
 		{
-			new iTarget = FindTarget(client, sText[7], true, false);
+			new iTarget = FindTarget(client, sText[8], true, false);
 			if(iTarget == -1)
 				return;
 			PrintRankToChat(iTarget, -1);
@@ -308,7 +308,7 @@ public Event_OnPlayerSay(Handle:event, const String:error[], bool:dontBroadcast)
 		}
 		else
 		{
-			new iTarget = FindTarget(client, sText[7], false, false);
+			new iTarget = FindTarget(client, sText[8], false, false);
 			if(iTarget == -1)
 				return;
 			DisplayOtherUpgradesMenu(client, iTarget);
