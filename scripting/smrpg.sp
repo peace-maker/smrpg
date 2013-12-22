@@ -113,6 +113,7 @@ public OnPluginStart()
 	RegConsoleCmd("rpgmenu", Cmd_RPGMenu, "Opens the rpg main menu");
 	RegConsoleCmd("rpg", Cmd_RPGMenu, "Opens the rpg main menu");
 	RegConsoleCmd("rpgrank", Cmd_RPGRank, "Shows your rank or the rank of the target person. rpgrank [name|steamid|#userid]");
+	RegConsoleCmd("rpginfo", Cmd_RPGInfo, "Shows the purchased upgrades of the target person. rpginfo <name|steamid|#userid>");
 	RegConsoleCmd("rpgtop10", Cmd_RPGTop10, "Show the SM:RPG top 10");
 	RegConsoleCmd("rpghelp", Cmd_RPGHelp, "Show the SM:RPG help menu");
 	
@@ -297,6 +298,22 @@ public Event_OnPlayerSay(Handle:event, const String:error[], bool:dontBroadcast)
 			PrintRankToChat(iTarget, -1);
 		}
 	}
+	else if(StrContains(sText, "rpginfo") == 0)
+	{
+		TrimString(sText);
+		if(!sText[7])
+		{
+			// Just display the normal upgrades menu, if self targetting with no target specified.
+			DisplayUpgradesMenu(client, 0);
+		}
+		else
+		{
+			new iTarget = FindTarget(client, sText[7], false, false);
+			if(iTarget == -1)
+				return;
+			DisplayOtherUpgradesMenu(client, iTarget);
+		}
+	}
 	else if(StrEqual(sText, "rpgtop10"))
 		DisplayTop10Menu(client);
 	else if(StrEqual(sText, "rpghelp"))
@@ -342,6 +359,34 @@ public Action:Cmd_RPGRank(client, args)
 		if(iTarget == -1)
 			return Plugin_Handled;
 		PrintRankToChat(iTarget, -1);
+	}
+	
+	return Plugin_Handled;
+}
+
+public Action:Cmd_RPGInfo(client, args)
+{
+	if(!client)
+	{
+		ReplyToCommand(client, "SM:RPG: This command is ingame only.");
+		return Plugin_Handled;
+	}
+	
+	decl String:sText[256];
+	GetCmdArgString(sText, sizeof(sText));
+	TrimString(sText);
+	
+	if(!sText[0])
+	{
+		// Just display the normal upgrades menu, if self targetting with no target specified.
+		DisplayUpgradesMenu(client, 0);
+	}
+	else
+	{
+		new iTarget = FindTarget(client, sText, false, false);
+		if(iTarget == -1)
+			return Plugin_Handled;
+		DisplayOtherUpgradesMenu(client, iTarget);
 	}
 	
 	return Plugin_Handled;

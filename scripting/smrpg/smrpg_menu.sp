@@ -578,3 +578,43 @@ public Menu_HandleHelp(Handle:menu, MenuAction:action, param1, param2)
 		CloseHandle(menu);
 	}
 }
+
+DisplayOtherUpgradesMenu(client, targetClient)
+{
+	new Handle:hMenu = CreateMenu(Menu_HandleOtherUpgrades);
+	SetMenuExitButton(hMenu, true);
+	
+	SetMenuTitle(hMenu, "%N\n%T\n-----\n", targetClient, "Credits", client, GetClientCredits(targetClient));
+	
+	new iSize = GetUpgradeCount();
+	new upgrade[InternalUpgradeInfo], iCurrentLevel;
+	new String:sTranslatedName[MAX_UPGRADE_NAME_LENGTH], String:sLine[128], String:sIndex[8];
+	for(new i=0;i<iSize;i++)
+	{
+		iCurrentLevel = GetClientUpgradeLevel(targetClient, i);
+		GetUpgradeByIndex(i, upgrade);
+		
+		// Don't show disabled items in the menu.
+		if(!IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled])
+			continue;
+		
+		GetUpgradeTranslatedName(client, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
+		
+		IntToString(i, sIndex, sizeof(sIndex));
+		if(iCurrentLevel >= upgrade[UPGR_maxLevel])
+			Format(sLine, sizeof(sLine), "%s Lvl MAX", sTranslatedName);
+		else
+			Format(sLine, sizeof(sLine), "%s Lvl %d", sTranslatedName, iCurrentLevel);
+		AddMenuItem(hMenu, sIndex, sLine, ITEMDRAW_DISABLED);
+	}
+	
+	DisplayMenu(hMenu, client, MENU_TIME_FOREVER);
+}
+
+public Menu_HandleOtherUpgrades(Handle:menu, MenuAction:action, param1, param2)
+{
+	if(action == MenuAction_End)
+	{
+		CloseHandle(menu);
+	}
+}
