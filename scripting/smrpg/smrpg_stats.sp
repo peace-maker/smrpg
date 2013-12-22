@@ -214,6 +214,9 @@ UpdateClientRank(client)
 
 GetClientRank(client)
 {
+	if(IsFakeClient(client))
+		return -1;
+	
 	UpdateClientRank(client);
 	return g_iCachedRank[client];
 }
