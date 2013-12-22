@@ -36,6 +36,8 @@ new Handle:g_hCVCreditsStart;
 new Handle:g_hCVSalePercent;
 new Handle:g_hCVIgnoreLevelBarrier;
 
+new Handle:g_hCVShowUpgradePurchase;
+
 #define IF_IGNORE_BOTS(%1) if(!GetConVarBool(g_hCVBotEnable) && IsFakeClient(%1))
 
 #include "smrpg/smrpg_upgrades.sp"
@@ -100,6 +102,8 @@ public OnPluginStart()
 	g_hCVCreditsStart = CreateConVar("smrpg_credits_start", "0", "Starting credits for Level 1", 0, true, 0.0);
 	g_hCVSalePercent = CreateConVar("smrpg_sale_percent", "0.75", "Percentage of credits a player gets for selling an item", 0, true, 0.0);
 	g_hCVIgnoreLevelBarrier = CreateConVar("smrpg_ignore_level_barrier", "0", "Ignore the hardcoded maxlevels for the items and allow to set the maxlevel as high as you want.", 0, true, 0.0, true, 1.0);
+	
+	g_hCVShowUpgradePurchase = CreateConVar("smrpg_show_upgrade_purchase_in_chat", "0", "Show a message to all in chat when a player buys an upgrade.", 0, true, 0.0, true, 1.0);
 	
 	AutoExecConfig(true, "plugin.smrpg");
 	

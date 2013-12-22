@@ -182,7 +182,17 @@ public Menu_HandleUpgrades(Handle:menu, MenuAction:action, param1, param2)
 		else
 		{
 			if(BuyClientUpgrade(param1, iItemIndex))
-				PrintToChat(param1, "%t", "Upgrade bought", sTranslatedName, iItemLevel+1);
+			{
+				Client_PrintToChat(param1, false, "%t", "Upgrade bought", sTranslatedName, iItemLevel+1);
+				if(GetConVarBool(g_hCVShowUpgradePurchase))
+				{
+					for(new i=1;i<=MaxClients;i++)
+					{
+						if(i != param1 && IsClientInGame(i) && !IsFakeClient(i))
+							Client_PrintToChat(i, false, "Upgrade purchase notification", param1, sTranslatedName, iItemLevel+1);
+					}
+				}
+			}
 		}
 		
 		

@@ -171,6 +171,15 @@
 		"en"			"{1} level {2} successfully purchased."
 	}
 	
+	"Upgrade purchase notification"
+	{
+		// 1: The name of the player who bought an upgrade.
+		// 2: The name of the upgrade the player just bought.
+		// 3: The new level of this upgrade.
+		"#format"	"{1:N},{2:s},{3:d}"
+		"en"			"{1} purchased {2} level {3}."
+	}
+	
 	"Upgrade sold"
 	{
 		// 1: The name of the upgrade the player just sold.
