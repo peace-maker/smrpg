@@ -62,6 +62,8 @@ public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
 	RegPluginLibrary("smrpg");
 	g_bLateLoaded = late;
 	
+	MarkNativeAsOptional("SQL_SetCharset");
+	
 	CreateNative("SMRPG_IsEnabled", Native_IsEnabled);
 	CreateNative("SMRPG_IgnoreBots", Native_IgnoreBots);
 	RegisterUpgradeNatives();
