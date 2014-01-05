@@ -116,6 +116,10 @@ public Native_RegisterUpgradeType(Handle:plugin, numParams)
 	
 	decl String:sCvarName[64], String:sCvarDescription[256], String:sValue[16];
 	
+	// Make sure the subfolder exists.
+	if(!DirExists("cfg/sourcemod/smrpg"))
+		CreateDirectory("cfg/sourcemod/smrpg", 0755);
+	
 	Format(sCvarName, sizeof(sCvarName), "smrpg_upgrade_%s", sShortName);
 	AutoExecConfig_SetFile(sCvarName, "sourcemod/smrpg");
 	AutoExecConfig_SetCreateFile(true);
