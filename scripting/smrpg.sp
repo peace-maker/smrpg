@@ -283,9 +283,9 @@ public Event_OnPlayerSay(Handle:event, const String:error[], bool:dontBroadcast)
 	decl String:sText[256];
 	GetEventString(event, "text", sText, sizeof(sText));
 	
-	if(StrEqual(sText, "rpgmenu") || StrEqual(sText, "rpg"))
+	if(StrEqual(sText, "rpgmenu", false) || StrEqual(sText, "rpg", false))
 		DisplayMainMenu(client);
-	else if(StrContains(sText, "rpgrank") == 0)
+	else if(StrContains(sText, "rpgrank", false) == 0)
 	{
 		TrimString(sText);
 		if(!sText[7])
@@ -300,7 +300,7 @@ public Event_OnPlayerSay(Handle:event, const String:error[], bool:dontBroadcast)
 			PrintRankToChat(iTarget, -1);
 		}
 	}
-	else if(StrContains(sText, "rpginfo") == 0)
+	else if(StrContains(sText, "rpginfo", false) == 0)
 	{
 		TrimString(sText);
 		if(!sText[7])
@@ -316,9 +316,9 @@ public Event_OnPlayerSay(Handle:event, const String:error[], bool:dontBroadcast)
 			DisplayOtherUpgradesMenu(client, iTarget);
 		}
 	}
-	else if(StrEqual(sText, "rpgtop10"))
+	else if(StrEqual(sText, "rpgtop10", false))
 		DisplayTop10Menu(client);
-	else if(StrEqual(sText, "rpghelp"))
+	else if(StrEqual(sText, "rpghelp", false))
 		DisplayHelpMenu(client, 0);
 }
 
