@@ -241,7 +241,7 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 	// TODO: Make this game independant
 	decl String:sSound[PLATFORM_MAX_PATH];
 	Format(sSound, sizeof(sSound), "physics/surfaces/tile_impact_bullet%d.wav", GetRandomInt(1, 4));
-	EmitSoundToAll(sSound, SOUND_FROM_PLAYER, SNDCHAN_AUTO, SNDLEVEL_NORMAL, SND_NOFLAGS, 0.8, SNDPITCH_NORMAL, victim);
+	EmitSoundToAll(sSound, victim, SNDCHAN_AUTO, SNDLEVEL_NORMAL, SND_NOFLAGS, 0.8, SNDPITCH_NORMAL, victim);
 	SetEntityRenderMode(victim, RENDER_TRANSCOLOR);
 	Entity_SetRenderColor(victim, 0, 0, 255, -1);
 	
