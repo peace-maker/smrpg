@@ -8,12 +8,12 @@
 #define UPGRADE_SHORTNAME "fpistol"
 #define PLUGIN_VERSION "1.0"
 
-#define FPISTOL_INC 0.1 /* FrostPistol speed time increase for each level */
-
-#define PISTOL_SLOT 1
+new Handle:g_hCVTimeIncrease;
 
 new Float:g_fFPistolLastSpeed[MAXPLAYERS+1];
 new Handle:g_hFPistolResetSpeed[MAXPLAYERS+1];
+
+new Handle:g_hWeaponSpeeds;
 
 public Plugin:myinfo = 
 {
@@ -22,6 +22,18 @@ public Plugin:myinfo =
 	description = "Frost Pistol upgrade for SM:RPG. Slow down players hit with a pistol.",
 	version = PLUGIN_VERSION,
 	url = "http://www.wcfan.de/"
+}
+
+public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
+{
+	g_hWeaponSpeeds = CreateTrie();
+	
+	if(!LoadWeaponConfig())
+	{
+		Format(error, err_max, "Can't read config file in configs/smrpg/frostpistol_weapons.cfg!");
+		return APLRes_Failure;
+	}
+	return APLRes_Success;
 }
 
 public OnPluginStart()
@@ -58,6 +70,8 @@ public OnLibraryAdded(const String:name[])
 		SMRPG_RegisterUpgradeType("Frost Pistol", UPGRADE_SHORTNAME, "Slow down players hit with a pistol.", 10, true, 10, 20, 15, SMRPG_BuySell, SMRPG_ActiveQuery);
 		SMRPG_SetUpgradeResetCallback(UPGRADE_SHORTNAME, SMRPG_ResetEffect);
 		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
+		
+		g_hCVTimeIncrease = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_upgrade_fpistol_inc", "0.1", "How many seconds are players slowed down multiplied by level?", 0, true, 0.0);
 	}
 }
 
@@ -67,6 +81,12 @@ public OnMapStart()
 	PrecacheSound("physics/surfaces/tile_impact_bullet2.wav", true);
 	PrecacheSound("physics/surfaces/tile_impact_bullet3.wav", true);
 	PrecacheSound("physics/surfaces/tile_impact_bullet4.wav", true);
+}
+
+public OnMapEnd()
+{
+	if(!LoadWeaponConfig())
+		SetFailState("Can't read config file in configs/smrpg/frostpistol_weapons.cfg!");
 }
 
 public OnClientPutInServer(client)
@@ -176,8 +196,16 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 	if(inflictor > 0 && inflictor <= MaxClients)
 		iWeapon = Client_GetActiveWeapon(inflictor);
 	
-	// This effect only applies to pistols.
-	if(GetPlayerWeaponSlot(attacker, PISTOL_SLOT) != iWeapon)
+	if(iWeapon == -1)
+		return;
+	
+	decl String:sWeapon[256];
+	GetEntityClassname(iWeapon, sWeapon, sizeof(sWeapon));
+	ReplaceString(sWeapon, sizeof(sWeapon), "weapon_", "", false);
+	
+	new Float:fSpeed;
+	// Don't process weapons, which aren't in the config file.
+	if(!GetTrieValue(g_hWeaponSpeeds, sWeapon, fSpeed))
 		return;
 	
 	if(!SMRPG_RunUpgradeEffect(victim, UPGRADE_SHORTNAME))
@@ -188,12 +216,6 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 	
 	//new Float:fOldLaggedMovementValue = GetEntPropFloat(victim, Prop_Send, "m_flLaggedMovementValue");
 	new Float:fOldLaggedMovementValue = 1.0;
-	
-	// The more damage done, the slower the player gets.
-	// TODO: Add config option to set this slowdown rate per weapon.
-	new Float:fSpeed = damage / 100.0;
-	if(fSpeed > 0.9)
-		fSpeed = 0.9;
 	
 	if(g_hFPistolResetSpeed[victim] == INVALID_HANDLE)
 	{
@@ -226,12 +248,15 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 	ClearHandle(g_hFPistolResetSpeed[victim]);
 	
 	new Handle:hData;
-	g_hFPistolResetSpeed[victim] = CreateDataTimer(float(iLevel)*FPISTOL_INC, Timer_ResetSpeed, hData, TIMER_FLAG_NO_MAPCHANGE);
+	g_hFPistolResetSpeed[victim] = CreateDataTimer(float(iLevel)*GetConVarFloat(g_hCVTimeIncrease), Timer_ResetSpeed, hData, TIMER_FLAG_NO_MAPCHANGE);
 	WritePackCell(hData, GetClientUserId(victim));
 	WritePackFloat(hData, fOldLaggedMovementValue);
 	ResetPack(hData);
 }
 
+/**
+ * Timer callbacks
+ */
 public Action:Timer_ResetSpeed(Handle:timer, any:data)
 {
 	new userid = ReadPackCell(data);
@@ -247,4 +272,40 @@ public Action:Timer_ResetSpeed(Handle:timer, any:data)
 	Entity_SetRenderColor(client, 255, 255, 255, -1);
 	
 	return Plugin_Stop;
+}
+
+/**
+ * Helpers
+ */
+bool:LoadWeaponConfig()
+{
+	ClearTrie(g_hWeaponSpeeds);
+	
+	decl String:sPath[PLATFORM_MAX_PATH];
+	BuildPath(Path_SM, sPath, sizeof(sPath), "configs/smrpg/frostpistol_weapons.cfg");
+	
+	if(!FileExists(sPath))
+		return false;
+	
+	new Handle:hKV = CreateKeyValues("FrostPistolWeapons");
+	if(!FileToKeyValues(hKV, sPath))
+	{
+		CloseHandle(hKV);
+		return false;
+	}
+	
+	decl String:sWeapon[64], Float:fSpeed;
+	if(KvGotoFirstSubKey(hKV, false))
+	{
+		do
+		{
+			KvGetSectionName(hKV, sWeapon, sizeof(sWeapon));
+			fSpeed = KvGetFloat(hKV, NULL_STRING, 1.0);
+			
+			SetTrieValue(g_hWeaponSpeeds, sWeapon, fSpeed);
+			
+		} while (KvGotoNextKey(hKV, false));
+	}
+	CloseHandle(hKV);
+	return true;
 }
