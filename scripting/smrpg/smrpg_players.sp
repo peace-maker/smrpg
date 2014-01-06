@@ -590,17 +590,32 @@ public SQL_GetPlayerUpgrades(Handle:owner, Handle:hndl, const String:error[], an
 		return;
 	}
 	
-	// Player isn't fully registred?!
+	new upgrade[InternalUpgradeInfo];
+	
+	// Player isn't fully registred?! He might have disconnected while the queries were still running last time?
 	if(SQL_GetRowCount(hndl) == 0 || !SQL_FetchRow(hndl))
 	{
-		LogError("Player %N is registered, but doesn't have an upgrades table entry?", client);
-		CallOnClientLoaded(client);
+		// Insert upgrade level info
+		new String:sFields[8192], String:sValues[2048];
+		new iSize = GetUpgradeCount();
+		for(new i=0;i<iSize;i++)
+		{
+			GetUpgradeByIndex(i, upgrade);
+			if(!IsValidUpgrade(upgrade))
+				continue;
+			
+			Format(sFields, sizeof(sFields), "%s, %s", sFields, upgrade[UPGR_shortName]);
+			Format(sValues, sizeof(sValues), "%s, '%d'", sValues, GetClientUpgradeLevel(client, i));
+		}
+		
+		decl String:sQuery[8192];
+		Format(sQuery, sizeof(sQuery), "INSERT INTO %s (upgrades_id%s) VALUES (NULL%s)", TBL_UPGRADES, sFields, sValues);
+		SQL_TQuery(g_hDatabase, SQL_InsertPlayerUpgrades, sQuery, userid);
 		return;
 	}
 	
 	new iNumFields = SQL_GetFieldCount(hndl);
 	decl String:sFieldName[MAX_UPGRADE_SHORTNAME_LENGTH];
-	new upgrade[InternalUpgradeInfo];
 	for(new i=0;i<iNumFields;i++)
 	{
 		SQL_FieldNumToName(hndl, i, sFieldName, sizeof(sFieldName));
