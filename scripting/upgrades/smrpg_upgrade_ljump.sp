@@ -6,8 +6,7 @@
 #define PLUGIN_VERSION "1.0"
 #define UPGRADE_SHORTNAME "ljump"
 
-/* Percent of player's jump to increase */
-#define LJUMP_INC 0.20
+new Handle:g_hCVIncrease;
 
 new Float:g_fLJumpPreviousVelocity[MAXPLAYERS+1][3];
 new bool:g_bLJumpPlayerJumped[MAXPLAYERS+1];
@@ -49,6 +48,8 @@ public OnLibraryAdded(const String:name[])
 	{
 		SMRPG_RegisterUpgradeType("Long Jump", UPGRADE_SHORTNAME, "Boosts your jump speed.", 10, true, 5, 20, 15, SMRPG_BuySell, SMRPG_ActiveQuery);
 		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
+		
+		g_hCVIncrease = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_ljump_inc", "0.20", "Percent of player's jump distance to increase per level.", 0, true, 0.01);
 	}
 }
 
@@ -137,7 +138,7 @@ LJump_HasJumped(client, Float:vVelocity[3])
 	if(!SMRPG_RunUpgradeEffect(client, UPGRADE_SHORTNAME))
 		return; // Some other plugin doesn't want this effect to run
 	
-	new Float:fIncrease = LJUMP_INC * float(iLevel) + 1.0;
+	new Float:fIncrease = GetConVarFloat(g_hCVIncrease) * float(iLevel) + 1.0;
 	vVelocity[0] *= fIncrease;
 	vVelocity[1] *= fIncrease;
 	

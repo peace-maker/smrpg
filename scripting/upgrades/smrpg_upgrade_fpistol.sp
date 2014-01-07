@@ -71,7 +71,7 @@ public OnLibraryAdded(const String:name[])
 		SMRPG_SetUpgradeResetCallback(UPGRADE_SHORTNAME, SMRPG_ResetEffect);
 		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
 		
-		g_hCVTimeIncrease = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_upgrade_fpistol_inc", "0.1", "How many seconds are players slowed down multiplied by level?", 0, true, 0.0);
+		g_hCVTimeIncrease = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_fpistol_inc", "0.1", "How many seconds are players slowed down multiplied by level?", 0, true, 0.0);
 	}
 }
 

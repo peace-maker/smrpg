@@ -8,9 +8,9 @@
 #define UPGRADE_SHORTNAME "fnade"
 #define PLUGIN_VERSION "1.0"
 
-/* Ignite duration increase for every level */
-#define FNADE_INC 2
-#define FNADE_DMG_MIN 5.0
+new Handle:g_hCVDurationIncrease;
+new Handle:g_hCVMinDamage;
+new Handle:g_hCVWeapon;
 
 new Handle:g_hExtinguishTimer[MAXPLAYERS+1];
 
@@ -56,6 +56,10 @@ public OnLibraryAdded(const String:name[])
 		SMRPG_RegisterUpgradeType("Fire Grenade", UPGRADE_SHORTNAME, "Ignites players damaged by your grenade.", 10, true, 5, 15, 10, SMRPG_BuySell, SMRPG_ActiveQuery);
 		SMRPG_SetUpgradeResetCallback(UPGRADE_SHORTNAME, SMRPG_ResetEffect);
 		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
+		
+		g_hCVDurationIncrease = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_fnade_inc", "2", "Ignite duration increase in seconds for every level", _, true, 0.1);
+		g_hCVMinDamage = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_fnade_mindmg", "5.0", "Minimum damage done with the grenade to trigger the effect", _, true, 0.0);
+		g_hCVWeapon = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_fnade_weapon", "hegrenade", "Entity name of the weapon which should trigger the effect. (e.g. hegrenade flashbang)");
 	}
 }
 
@@ -128,16 +132,17 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 		return;
 	
 	// Enough damage?
-	if(damage < FNADE_DMG_MIN)
+	if(damage < GetConVarFloat(g_hCVMinDamage))
 		return;
 	
-	decl String:sWeapon[40];
+	decl String:sWeapon[256], String:sTargetWeapon[128];
+	GetConVarString(g_hCVWeapon, sTargetWeapon, sizeof(sTargetWeapon));
 	
 	// Only counts for hegrenades
 	if(inflictor > 0 
 	&& IsValidEdict(inflictor) 
 	&& GetEntityClassname(inflictor, sWeapon, sizeof(sWeapon))
-	&& StrContains(sWeapon, "hegrenade") == -1)
+	&& StrContains(sWeapon, sTargetWeapon) == -1)
 		return;
 	
 	// This player is already burning.
@@ -167,7 +172,7 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 	if(!SMRPG_RunUpgradeEffect(victim, UPGRADE_SHORTNAME))
 		return; // Some other plugin doesn't want this effect to run
 	
-	new Float:fDuration = float(iLevel)*FNADE_INC;
+	new Float:fDuration = float(iLevel)*GetConVarFloat(g_hCVDurationIncrease);
 	IgniteEntity(victim, fDuration);
 	g_hExtinguishTimer[victim] = CreateTimer(fDuration, Timer_Extinguish, GetClientUserId(victim), TIMER_FLAG_NO_MAPCHANGE);
 }

@@ -49,7 +49,7 @@ public OnLibraryAdded(const String:name[])
 		SMRPG_RegisterUpgradeType("Health+", UPGRADE_SHORTNAME, "Increases your health.", 16, true, 16, 10, 10, SMRPG_BuySell, SMRPG_ActiveQuery);
 		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
 		
-		g_hCVMaxIncrease = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_upgrade_health_inc", "25", "Health max increase for each level", 0, true, 1.0);
+		g_hCVMaxIncrease = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_health_inc", "25", "Health max increase for each level", 0, true, 1.0);
 	}
 }
 

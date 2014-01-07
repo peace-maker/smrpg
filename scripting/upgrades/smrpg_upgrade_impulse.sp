@@ -8,15 +8,8 @@
 #define UPGRADE_SHORTNAME "impulse"
 #define PLUGIN_VERSION "1.0"
 
-/**
- * @brief Speed increase for each level when player is damaged.
- */
-#define IMPULSE_INC 0.2
-
-/**
- * @brief Duration of Impulse's effect.
- */
-#define IMPULSE_DURATION 0.8
+new Handle:g_hCVSpeedIncrease;
+new Handle:g_hCVDuration;
 
 new Handle:g_hImpulseResetSpeed[MAXPLAYERS+1] = {INVALID_HANDLE,...};
 new g_iImpulseTrailSprites[MAXPLAYERS+1] = {-1,...};
@@ -67,6 +60,9 @@ public OnLibraryAdded(const String:name[])
 		SMRPG_RegisterUpgradeType("Impulse", UPGRADE_SHORTNAME, "Gain speed for a short time when being shot.", 10, true, 5, 20, 20, SMRPG_BuySell, SMRPG_ActiveQuery);
 		SMRPG_SetUpgradeResetCallback(UPGRADE_SHORTNAME, SMRPG_ResetEffect);
 		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
+		
+		g_hCVSpeedIncrease = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_impulse_speed_inc", "0.2", "Speed increase for each level when player is damaged.", 0, true, 0.1);
+		g_hCVDuration = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_impulse_duration", "0.8", "Duration of Impulse's effect in seconds.", 0, true, 0.1);
 	}
 }
 
@@ -183,10 +179,10 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 	new Float:fOldLaggedMovementValue = GetEntPropFloat(victim, Prop_Send, "m_flLaggedMovementValue");
 	
 	/* Set player speed */
-	SetEntPropFloat(victim, Prop_Send, "m_flLaggedMovementValue", fOldLaggedMovementValue + float(iLevel) * IMPULSE_INC);
+	SetEntPropFloat(victim, Prop_Send, "m_flLaggedMovementValue", fOldLaggedMovementValue + float(iLevel) * GetConVarFloat(g_hCVSpeedIncrease));
 	
 	new Handle:hData;
-	g_hImpulseResetSpeed[victim] = CreateDataTimer(IMPULSE_DURATION, Timer_ResetSpeed, hData, TIMER_FLAG_NO_MAPCHANGE);
+	g_hImpulseResetSpeed[victim] = CreateDataTimer(GetConVarFloat(g_hCVDuration), Timer_ResetSpeed, hData, TIMER_FLAG_NO_MAPCHANGE);
 	WritePackCell(hData, GetClientUserId(victim));
 	WritePackFloat(hData, fOldLaggedMovementValue);
 	ResetPack(hData);
@@ -213,7 +209,7 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 	SetVariantString("!activator");
 	AcceptEntityInput(iSprite, "SetParent", victim);
 	
-	TE_SetupBeamFollow(iSprite, g_iRedTrailSprite, g_iRedTrailSprite, IMPULSE_DURATION, 10.0, 4.0, 2, {255,0,0,255});
+	TE_SetupBeamFollow(iSprite, g_iRedTrailSprite, g_iRedTrailSprite, GetConVarFloat(g_hCVDuration), 10.0, 4.0, 2, {255,0,0,255});
 	TE_SendToAll();
 }
 

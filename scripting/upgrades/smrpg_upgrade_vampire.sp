@@ -9,8 +9,7 @@
 #define UPGRADE_SHORTNAME "vamp"
 #define PLUGIN_VERSION "1.0"
 
-/* Percent of damage to convert to attacker's health for each level */
-#define VAMP_INC 0.075
+new Handle:g_hCVPercent;
 
 public Plugin:myinfo = 
 {
@@ -51,6 +50,8 @@ public OnLibraryAdded(const String:name[])
 	{
 		SMRPG_RegisterUpgradeType("Vampire", UPGRADE_SHORTNAME, "Steal HP from players when damaging them.", 15, true, 10, 15, 10, SMRPG_BuySell, SMRPG_ActiveQuery);
 		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
+		
+		g_hCVPercent = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_vamp_percent", "0.075", "Percent of damage to convert to attacker's health for each level.", 0, true, 0.001);
 	}
 }
 
@@ -118,7 +119,7 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 	if(!SMRPG_RunUpgradeEffect(attacker, UPGRADE_SHORTNAME))
 		return; // Some other plugin doesn't want this effect to run
 	
-	new Float:fIncrease = float(iLevel) * VAMP_INC;
+	new Float:fIncrease = float(iLevel) * GetConVarFloat(g_hCVPercent);
 	fIncrease *= damage;
 	fIncrease += 0.5;
 	

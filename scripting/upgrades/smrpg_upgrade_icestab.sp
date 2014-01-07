@@ -10,11 +10,12 @@
 
 #define KNIFE_SLOT 2
 
-#define ICESTAB_INC 1.0 /* IceStab freeze duration increase for each level */
-#define ICESTAB_DMG_MIN 50.0 /* Secondary knife attack is 50+ damage */
 #define ICESTAB_CLRFADE 1 /* Blue color fade amount for each frame */
 
 new Handle:g_hCVIceStabLimitDmg;
+new Handle:g_hCVTimeIncrease;
+new Handle:g_hCVWeapon;
+new Handle:g_hCVMinDamage;
 
 new Handle:g_hIceStabUnfreeze[MAXPLAYERS+1] = {INVALID_HANDLE,...};
 new g_iIceStabFade[MAXPLAYERS+1] = {255,...};
@@ -64,6 +65,9 @@ public OnLibraryAdded(const String:name[])
 		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
 		
 		g_hCVIceStabLimitDmg = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_icestab_limit_dmg", "10", "Maximum damage that can be done upon icestabbed victims (0 = disable)", 0, true, 0.0);
+		g_hCVTimeIncrease = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_icestab_inc", "1.0", "IceStab freeze duration increase for each level", 0, true, 0.1);
+		g_hCVWeapon = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_icestab_weapon", "knife", "Entity name of the weapon which should trigger the effect. (e.g. knife)");
+		g_hCVMinDamage = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_icestab_min_dmg", "50.0", "Minimum damage with the weapon to trigger the effect. (Secondary knife attack is 50+ damage in CS:S)", 0, true, 0.0);
 	}
 }
 
@@ -197,7 +201,7 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 	if(attacker <= 0 || attacker > MaxClients || victim <= 0 || victim > MaxClients)
 		return;
 	
-	if(damage < ICESTAB_DMG_MIN)
+	if(damage < GetConVarFloat(g_hCVMinDamage))
 		return;
 	
 	if(!SMRPG_IsEnabled())
@@ -227,9 +231,16 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 	if(inflictor > 0 && inflictor <= MaxClients)
 		iWeapon = Client_GetActiveWeapon(inflictor);
 	
-	// This effect only applies to knifes.
-	// TODO: Add support for more games
-	if(GetPlayerWeaponSlot(attacker, KNIFE_SLOT) != iWeapon)
+	if(iWeapon == -1)
+		return;
+	
+	decl String:sWeapon[256], String:sTargetWeapon[128];
+	GetConVarString(g_hCVWeapon, sTargetWeapon, sizeof(sTargetWeapon));
+	GetEntityClassname(iWeapon, sWeapon, sizeof(sWeapon));
+	ReplaceString(sWeapon, sizeof(sWeapon), "weapon_", "", false);
+	
+	// This effect only applies to the specified weapon.
+	if(StrContains(sWeapon, sTargetWeapon) == -1)
 		return;
 	
 	if(!SMRPG_RunUpgradeEffect(victim, UPGRADE_SHORTNAME))
@@ -248,7 +259,7 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 	
 	ClearHandle(g_hIceStabUnfreeze[victim]);
 	g_iIceStabFade[victim] = 0;
-	g_hIceStabUnfreeze[victim] = CreateTimer(ICESTAB_INC*float(iLevel), Timer_Unfreeze, GetClientUserId(victim), TIMER_FLAG_NO_MAPCHANGE);
+	g_hIceStabUnfreeze[victim] = CreateTimer(GetConVarFloat(g_hCVTimeIncrease)*float(iLevel), Timer_Unfreeze, GetClientUserId(victim), TIMER_FLAG_NO_MAPCHANGE);
 }
 
 public Action:Timer_Unfreeze(Handle:timer, any:userid)
