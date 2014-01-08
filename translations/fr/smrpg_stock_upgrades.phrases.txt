@@ -1,0 +1,142 @@
+"Phrases"
+{
+	"regen"
+	{
+		"fr"			"Regeneration"
+	}
+	
+	"regen description"
+	{
+		"fr"			"Regenerates HP every second."
+	}
+	
+	"health"
+	{
+		"fr"			"bonus de vie"
+	}
+	
+	"health description"
+	{
+		"fr"			"Increases your maximal health."
+	}
+	
+	"resup"
+	{
+		"fr"			"munitions"
+	}
+	
+	"resup description"
+	{
+		"fr"			"Regenerates ammo every third second."
+	}
+	
+	"vamp"
+	{
+		"fr"			"Vampire"
+	}
+	
+	"vamp description"
+	{
+		"fr"			"Steal HP from players when damaging them."
+	}
+	
+	"stealth"
+	{
+		"fr"			"invisibilité"
+	}
+	
+	"stealth description"
+	{
+		"fr"			"Renders yourself more and more invisible."
+	}
+	
+	"ljump"
+	{
+		"fr"			"saut long"
+	}
+	
+	"ljump description"
+	{
+		"fr"			"Boosts your jump speed."
+	}
+	
+	"fnade"
+	{
+		"fr"			"Grenade incendiaire"
+	}
+	
+	"fnade description"
+	{
+		"fr"			"Ignites players damaged by your grenade."
+	}
+	
+	"icestab"
+	{
+		"fr"			"freeze cut"
+	}
+	
+	"icestab description"
+	{
+		"fr"			"Freeze a player in place when knifing him."
+	}
+	
+	"fpistol"
+	{
+		"fr"			"gun freeze"
+	}
+	
+	"fpistol description"
+	{
+		"fr"			"Slow down players hit with a pistol."
+	}
+	
+	"denial"
+	{
+		"fr"			"Denial"
+	}
+	
+	"denial description"
+	{
+		"fr"			"Keep your weapons the next time you spawn after you've died."
+	}
+	
+	"impulse"
+	{
+		"fr"			"Impulse"
+	}
+	
+	"impulse description"
+	{
+		"fr"			"Gain speed for a short time when being shot."
+	}
+	
+	"medic"
+	{
+		"fr"			"Medic"
+	}
+	
+	"medic description"
+	{
+		"fr"			"Heals team mates around you."
+	}
+  
+	"speed"
+	{
+		"fr"			"vitesse+"
+	}
+	
+	"speed description"
+	{
+		"fr"			"Increase your average movement speed."
+	}
+  
+	"damage"
+	{
+		"fr"			"dommage+"
+	}
+  
+	"damage description"
+	{
+		"fr"			"Deal additional damage on enemies."
+	}
+}

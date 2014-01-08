@@ -1,0 +1,142 @@
+"Phrases"
+{
+	"regen"
+	{
+		"es"			"Regeneración"
+	}
+	
+	"regen description"
+	{
+		"es"			"Regenerates HP every second."
+	}
+	
+	"health"
+	{
+		"es"			"Vida+"
+	}
+	
+	"health description"
+	{
+		"es"			"Increases your maximal health."
+	}
+	
+	"resup"
+	{
+		"es"			"Más balas"
+	}
+	
+	"resup description"
+	{
+		"es"			"Regenerates ammo every third second."
+	}
+	
+	"vamp"
+	{
+		"es"			"Vampiro"
+	}
+	
+	"vamp description"
+	{
+		"es"			"Steal HP from players when damaging them."
+	}
+	
+	"stealth"
+	{
+		"es"			"Sígilo"
+	}
+	
+	"stealth description"
+	{
+		"es"			"Renders yourself more and more invisible."
+	}
+	
+	"ljump"
+	{
+		"es"			"Salto largo"
+	}
+	
+	"ljump description"
+	{
+		"es"			"Boosts your jump speed."
+	}
+	
+	"fnade"
+	{
+		"es"			"Granada Fuego"
+	}
+	
+	"fnade description"
+	{
+		"es"			"Ignites players damaged by your grenade."
+	}
+	
+	"icestab"
+	{
+		"es"			"Puñalada de hielo"
+	}
+	
+	"icestab description"
+	{
+		"es"			"Freeze a player in place when knifing him."
+	}
+	
+	"fpistol"
+	{
+		"es"			"Pistola de hielo"
+	}
+	
+	"fpistol description"
+	{
+		"es"			"Slow down players hit with a pistol."
+	}
+	
+	"denial"
+	{
+		"es"			"Denegación"
+	}
+	
+	"denial description"
+	{
+		"es"			"Keep your weapons the next time you spawn after you've died."
+	}
+	
+	"impulse"
+	{
+		"es"			"Impulse"
+	}
+	
+	"impulse description"
+	{
+		"es"			"Gain speed for a short time when being shot."
+	}
+	
+	"medic"
+	{
+		"es"			"Medic"
+	}
+	
+	"medic description"
+	{
+		"es"			"Heals team mates around you."
+	}
+	
+	"speed"
+	{
+		"es"			"Speed+"
+	}
+	
+	"speed description"
+	{
+		"es"			"Increase your average movement speed."
+	}
+  
+	"damage"
+	{
+		"es"			"Damage+"
+	}
+  
+	"damage description"
+	{
+		"es"			"Deal additional damage on enemies."
+	}
+}

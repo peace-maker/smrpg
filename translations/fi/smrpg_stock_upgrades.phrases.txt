@@ -1,0 +1,142 @@
+"Phrases"
+{
+	"regen"
+	{
+		"fi"			"Energian latautuminen"
+	}
+	
+	"regen description"
+	{
+		"fi"			"Regenerates HP every second."
+	}
+	
+	"health"
+	{
+		"fi"			"Energia Bonus"
+	}
+	
+	"health description"
+	{
+		"fi"			"Increases your maximal health."
+	}
+	
+	"resup"
+	{
+		"fi"			"Ammuksien latautuminen"
+	}
+	
+	"resup description"
+	{
+		"fi"			"Regenerates ammo every third second."
+	}
+	
+	"vamp"
+	{
+		"fi"			"Vampirismi"
+	}
+	
+	"vamp description"
+	{
+		"fi"			"Steal HP from players when damaging them."
+	}
+	
+	"stealth"
+	{
+		"fi"			"Näkymättömyys"
+	}
+	
+	"stealth description"
+	{
+		"fi"			"Renders yourself more and more invisible."
+	}
+	
+	"ljump"
+	{
+		"fi"			"Pituushyppy"
+	}
+	
+	"ljump description"
+	{
+		"fi"			"Boosts your jump speed."
+	}
+	
+	"fnade"
+	{
+		"fi"			"Tulikranaatti"
+	}
+	
+	"fnade description"
+	{
+		"fi"			"Ignites players damaged by your grenade."
+	}
+	
+	"icestab"
+	{
+		"fi"			"Jääpuukotus"
+	}
+	
+	"icestab description"
+	{
+		"fi"			"Freeze a player in place when knifing him."
+	}
+	
+	"fpistol"
+	{
+		"fi"			"Jäädytyspistooli"
+	}
+	
+	"fpistol description"
+	{
+		"fi"			"Slow down players hit with a pistol."
+	}
+	
+	"denial"
+	{
+		"fi"			"Denial"
+	}
+	
+	"denial description"
+	{
+		"fi"			"Keep your weapons the next time you spawn after you've died."
+	}
+	
+	"impulse"
+	{
+		"fi"			"Impulse"
+	}
+	
+	"impulse description"
+	{
+		"fi"			"Gain speed for a short time when being shot."
+	}
+	
+	"medic"
+	{
+		"fi"			"Medic"
+	}
+	
+	"medic description"
+	{
+		"fi"			"Heals team mates around you."
+	}
+	
+	"speed"
+	{
+		"fi"			"Speed+"
+	}
+	
+	"speed description"
+	{
+		"fi"			"Increase your average movement speed."
+	}
+  
+	"damage"
+	{
+		"fi"			"Damage+"
+	}
+  
+	"damage description"
+	{
+		"fi"			"Deal additional damage on enemies."
+	}
+}

@@ -1,0 +1,142 @@
+"Phrases"
+{
+	"regen"
+	{
+		"no"			"Regenerasjon"
+	}
+	
+	"regen description"
+	{
+		"no"			"Regenerates HP every second."
+	}
+	
+	"health"
+	{
+		"no"			"Helse+"
+	}
+	
+	"health description"
+	{
+		"no"			"Increases your maximal health."
+	}
+	
+	"resup"
+	{
+		"no"			"Reforsyne"
+	}
+	
+	"resup description"
+	{
+		"no"			"Regenerates ammo every third second."
+	}
+	
+	"vamp"
+	{
+		"no"			"Vampyr"
+	}
+	
+	"vamp description"
+	{
+		"no"			"Steal HP from players when damaging them."
+	}
+	
+	"stealth"
+	{
+		"no"			"Usynlighet"
+	}
+	
+	"stealth description"
+	{
+		"no"			"Renders yourself more and more invisible."
+	}
+	
+	"ljump"
+	{
+		"no"			"Lang Hopp"
+	}
+	
+	"ljump description"
+	{
+		"no"			"Boosts your jump speed."
+	}
+	
+	"fnade"
+	{
+		"no"			"Flamme Granat"
+	}
+	
+	"fnade description"
+	{
+		"no"			"Ignites players damaged by your grenade."
+	}
+	
+	"icestab"
+	{
+		"no"			"Is Stikk"
+	}
+	
+	"icestab description"
+	{
+		"no"			"Freeze a player in place when knifing him."
+	}
+	
+	"fpistol"
+	{
+		"no"			"Frost Pistol"
+	}
+	
+	"fpistol description"
+	{
+		"no"			"Slow down players hit with a pistol."
+	}
+	
+	"denial"
+	{
+		"no"			"Fornektelse"
+	}
+	
+	"denial description"
+	{
+		"no"			"Keep your weapons the next time you spawn after you've died."
+	}
+	
+	"impulse"
+	{
+		"no"			"Impulse"
+	}
+	
+	"impulse description"
+	{
+		"no"			"Gain speed for a short time when being shot."
+	}
+	
+	"medic"
+	{
+		"no"			"Medic"
+	}
+	
+	"medic description"
+	{
+		"no"			"Heals team mates around you."
+	}
+	
+	"speed"
+	{
+		"no"			"Speed+"
+	}
+	
+	"speed description"
+	{
+		"no"			"Increase your average movement speed."
+	}
+  
+	"damage"
+	{
+		"no"			"Damage+"
+	}
+  
+	"damage description"
+	{
+		"no"			"Deal additional damage on enemies."
+	}
+}

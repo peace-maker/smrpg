@@ -3,36 +3,36 @@
 	"Inform about plugin"
 	{
 		// 1: Running SM:RPG plugin version (e.g. 1.0)
-		"de"			"Auf diesem Server läuft SM:RPG v{1}."
+		"fi"			"This server is running SM:RPG v{1}."
 	}
 	
 	"Advertise rpgmenu command"
 	{
-		"de"			"{G}Schreibe \"{N}rpgmenu{G}\" im Chat für das RPG-Menü."
+		"fi"			"{G}Kirjoita \"{N}rpgmenu{G}\" pää chätissä avataksesi RPG-menun"
 	}
 	
 	"Client level changed"
 	{
 		// 1: Name of the client which level has changed.
 		// 2: New rpg level of the client
-		"de"			"{1} ist nun auf Level {2}."
+		"fi"			"{1} on nyt level {2}."
 	}
 	
 	"You have new credits"
 	{
 		// 1: Total amount of credits the player currently has.
-		"de"			"Du hast neue Kredite ({1} insgesamt). Schreibe \"rpgmenu\" um Upgrades einzukaufen."
+		"fi"			"sinulla on uusia krediittejä ({1} gesamt). Kirjoita RPGMENU avataksesi RPG-menun."
 	}
 	
 	//Newbie Text
 	"Newbie instructions new level"
 	{
-		"de"			"{G}Du bist nun einen {N}Level höher{G}! Das bedeutet, dass du dir {N}Upgrades kaufen{G} kannst, die dir einen Vorteil gegenüber der Gegner geben."
+		"fi"			"{G}Sinä kehityit! se tarkoittaa että voit ostaa uusia upgradeja."
 	}
 	
 	"Newbie instructions use rpgmenu"
 	{
-		"de"			"{G}Schreibe \"{L}rpgmenu{G}\" in den Chat oder die Konsole, um das RPG-Menü zu öffnen und Upgrades zu kaufen."
+		"fi"			"{G}Kirjoita \"{L}rpgmenu{G}\" avataksesi RPG-menun."
 	}
 	
 	//Experience Hintbox
@@ -41,7 +41,7 @@
 		// 1: Amount of experience the client just gained.
 		// 2: Total amount of experience the client currently has on his level.
 		// 3: Amount of experience needed to reach the next level.
-		"de"			"Neue Erfahrung (EXP): {1}+\nErfahrung: {2}/{3}"
+		"fi"			"Sait XP:tä: {1}+\n: {2}/{3}"
 	}
 	
 	"rpgrank"
@@ -53,96 +53,96 @@
 		// 5: Amount of experience the player has on his level.
 		// 6: Amount of experience needed to reach the next level.
 		// 7: Amount of rpg credits of the player.
-		"de"			"{1} ist Level {2}, gerankt {3}/{4} mit {5}/{6} Erfahrung und {7} Krediten"
+		"fi"			"{1} On level {2}, Rank {3}/{4} with {5}/{6} XP:llä ja {7} krediitillä"
 	}
 	
 	"Top 10 Players"
 	{
-		"de"			"Top 10 SM:RPG Spieler"
+		"fi"			"Top 10 SM:RPG Pelaajat"
 	}
 	
 	// Menu text
 	"Level"
 	{
 		// 1: Current rpg level of the player.
-		"de"			"Level: {1}"
+		"fi"			"Level: {1}"
 	}
 	
 	"Experience short"
 	{
 		// 1: Current rpg rank of the player.
 		// 2: Total amount of ranked players.
-		"de"			"Exp: {1}/{2}"
+		"fi"			"Xp: {1}/{2}"
 	}
 	
 	"Experience"
 	{
-		"de"			"Erfahrung"
+		"fi"			"Experience"
 	}
 	
 	"Credits"
 	{
 		// 1: Amount of credits the player has.
-		"de"			"Kredite: {1}"
+		"fi"			"Krediittejä: {1}"
 	}
 	
 	"Rank"
 	{
 		// 1: Current rpg rank of the player.
 		// 2: Total amount of ranked players.
-		"de"			"Rank: {1}/{2}"
+		"fi"			"Rank: {1}/{2}"
 	}
 	
 	"Cost"
 	{
-		"de"			"Kosten"
+		"fi"			"Maksaa"
 	}
 	
 	"Sale"
 	{
-		"de"			"Verkaufen"
+		"fi"			"Antaa"
 	}
 	
 	// Menu Options
 	"Upgrades"
 	{
-		"de"			"Upgrades"
+		"fi"			"Kehitys"
 	}
 	
 	"Sell"
 	{
-		"de"			"Verkaufen"
+		"fi"			"Myynti"
 	}
 	
 	"Stats"
 	{
-		"de"			"Statistik"
+		"fi"			"Statsit"
 	}
 	
 	"Settings"
 	{
-		"de"			"Einstellungen"
+		"fi"			"Asetukset"
 	}
 	
 	"Help"
 	{
-		"de"			"Hilfe"
+		"fi"			"Apua"
 	}
 	
 	"Reset Stats"
 	{
-		"de"			"Statistik zurücksetzen"
+		"fi"			"Tasojen resetointi"
 	}
 	
 	// Menu selection result
 	"Stats have been reset"
 	{
-		"de"			"Deine Statistik wurde erfolgreich zurückgesetzt!"
+		"fi"			"Sinun Statsit on resetoitu."
 	}
 	
 	"Maximum level reached"
 	{
-		"de"			"Du hast das maximale Level dieses Upgrades erreicht."
+		"fi"			"Olet saavuttanut maximi tason tässä upgradessa."
 	}
 	
 	"Not enough credits"
@@ -150,14 +150,14 @@
 		// 1: The name of the upgrade the player wanted to buy.
 		// 2: The level of the upgrade the player wanted to buy.
 		// 3: The amount of credits this level of the upgrade costs.
-		"de"			"Du hast zu wenig Kredite um {1} Level {2} zu kaufen. (Benötigt {3} Kredite)"
+		"fi"			"Sinulla ei ole trapeeksi krediittejä {1} Lvl {2}. (Vaatii {3} Krediittiä)"
 	}
 	
 	"Upgrade bought"
 	{
 		// 1: The name of the upgrade the player just bought.
 		// 2: The new level of this upgrade.
-		"de"			"{1} Level {2} erfolgreich erworben."
+		"fi"			"{1} Lvl {2} Ostettu."
 	}
 	
 	"Upgrade purchase notification"
@@ -165,24 +165,24 @@
 		// 1: The name of the player who bought an upgrade.
 		// 2: The name of the upgrade the player just bought.
 		// 3: The new level of this upgrade.
-		"de"			"{1} hat {2} Level {3} gekauft."
+		"fi"			"{1} purchased {2} level {3}."
 	}
 	
 	"Upgrade sold"
 	{
 		// 1: The name of the upgrade the player just sold.
 		// 2: The new level of this upgrade.
-		"de"			"{1} Level {2} wurde verkauft."
+		"fi"			"{1} Lvl {2} Myyty."
 	}
 	
 	//Menu Confirm
 	"Are you sure?"
 	{
-		"de"			"Bist du sicher?"
+		"fi"			"Oletko varma?"
 	}
 	
 	"Confirm stats reset"
 	{
-		"de"			"WARNUNG: Du verliertst alle Kredite, Level und Erfahrung!\nWillst du das wirklich?"
+		"fi"			"Varoitus: Sinä menetät kaikki Xp:si ja statsisi\nResetoi statsisi täydellisesti?"
 	}
 }

@@ -3,36 +3,36 @@
 	"Inform about plugin"
 	{
 		// 1: Running SM:RPG plugin version (e.g. 1.0)
-		"de"			"Auf diesem Server läuft SM:RPG v{1}."
+		"it"			"This server is running SM:RPG v{1}."
 	}
 	
 	"Advertise rpgmenu command"
 	{
-		"de"			"{G}Schreibe \"{N}rpgmenu{G}\" im Chat für das RPG-Menü."
+		"it"			"{G}Scrivi \"{N}rpgmenu{G}\" per far comparire il menu delle opzioni."
 	}
 	
 	"Client level changed"
 	{
 		// 1: Name of the client which level has changed.
 		// 2: New rpg level of the client
-		"de"			"{1} ist nun auf Level {2}."
+		"it"			"{1} è salito al livello {2}."
 	}
 	
 	"You have new credits"
 	{
 		// 1: Total amount of credits the player currently has.
-		"de"			"Du hast neue Kredite ({1} insgesamt). Schreibe \"rpgmenu\" um Upgrades einzukaufen."
+		"it"			"Hai dei nuovi crediti ({1} totali). Scrivi \"rpgmenu\" per comprare potenziamenti."
 	}
 	
 	//Newbie Text
 	"Newbie instructions new level"
 	{
-		"de"			"{G}Du bist nun einen {N}Level höher{G}! Das bedeutet, dass du dir {N}Upgrades kaufen{G} kannst, die dir einen Vorteil gegenüber der Gegner geben."
+		"it"			"{G}Sei salito di livello! Questo vuol dire che puoi comprare dei Potenziamenti che ti daranno un vantaggio rispetto ai tuoi avversari."
 	}
 	
 	"Newbie instructions use rpgmenu"
 	{
-		"de"			"{G}Schreibe \"{L}rpgmenu{G}\" in den Chat oder die Konsole, um das RPG-Menü zu öffnen und Upgrades zu kaufen."
+		"it"			"{G}Scrivi \"{L}rpgmenu{G}\" nella chat, o scrivilo in console per far apparire un menu nel quale puoi comprare Potenziamenti."
 	}
 	
 	//Experience Hintbox
@@ -41,7 +41,7 @@
 		// 1: Amount of experience the client just gained.
 		// 2: Total amount of experience the client currently has on his level.
 		// 3: Amount of experience needed to reach the next level.
-		"de"			"Neue Erfahrung (EXP): {1}+\nErfahrung: {2}/{3}"
+		"it"			"Esperienza guadagnata: {1}+\nQuota di esperienza: {2}/{3}"
 	}
 	
 	"rpgrank"
@@ -53,96 +53,96 @@
 		// 5: Amount of experience the player has on his level.
 		// 6: Amount of experience needed to reach the next level.
 		// 7: Amount of rpg credits of the player.
-		"de"			"{1} ist Level {2}, gerankt {3}/{4} mit {5}/{6} Erfahrung und {7} Krediten"
+		"it"			"{1} è di livello {2}, rankato {3}/{4} con {5}/{6} Esperienza e {7} Crediti"
 	}
 	
 	"Top 10 Players"
 	{
-		"de"			"Top 10 SM:RPG Spieler"
+		"it"			"Top 10 Giocatori di SM:RPG"
 	}
 	
 	// Menu text
 	"Level"
 	{
 		// 1: Current rpg level of the player.
-		"de"			"Level: {1}"
+		"it"			"Livello: {1}"
 	}
 	
 	"Experience short"
 	{
 		// 1: Current rpg rank of the player.
 		// 2: Total amount of ranked players.
-		"de"			"Exp: {1}/{2}"
+		"it"			"Esp.: {1}/{2}"
 	}
 	
 	"Experience"
 	{
-		"de"			"Erfahrung"
+		"it"			"Esperienza"
 	}
 	
 	"Credits"
 	{
 		// 1: Amount of credits the player has.
-		"de"			"Kredite: {1}"
+		"it"			"Crediti: {1}"
 	}
 	
 	"Rank"
 	{
 		// 1: Current rpg rank of the player.
 		// 2: Total amount of ranked players.
-		"de"			"Rank: {1}/{2}"
+		"it"			"Rank: {1}/{2}"
 	}
 	
 	"Cost"
 	{
-		"de"			"Kosten"
+		"it"			"Costo"
 	}
 	
 	"Sale"
 	{
-		"de"			"Verkaufen"
+		"it"			"Vendita"
 	}
 	
 	// Menu Options
 	"Upgrades"
 	{
-		"de"			"Upgrades"
+		"it"			"Potenziamenti"
 	}
 	
 	"Sell"
 	{
-		"de"			"Verkaufen"
+		"it"			"Vendi"
 	}
 	
 	"Stats"
 	{
-		"de"			"Statistik"
+		"it"			"Statistiche"
 	}
 	
 	"Settings"
 	{
-		"de"			"Einstellungen"
+		"it"			"Impostazioni"
 	}
 	
 	"Help"
 	{
-		"de"			"Hilfe"
+		"it"			"Aiuto"
 	}
 	
 	"Reset Stats"
 	{
-		"de"			"Statistik zurücksetzen"
+		"it"			"Cancella statistiche"
 	}
 	
 	// Menu selection result
 	"Stats have been reset"
 	{
-		"de"			"Deine Statistik wurde erfolgreich zurückgesetzt!"
+		"it"			"Le tue statistiche sono state cancellate con successo."
 	}
 	
 	"Maximum level reached"
 	{
-		"de"			"Du hast das maximale Level dieses Upgrades erreicht."
+		"it"			"Hai raggiunto il massimo livello con questo Potenziamento."
 	}
 	
 	"Not enough credits"
@@ -150,14 +150,14 @@
 		// 1: The name of the upgrade the player wanted to buy.
 		// 2: The level of the upgrade the player wanted to buy.
 		// 3: The amount of credits this level of the upgrade costs.
-		"de"			"Du hast zu wenig Kredite um {1} Level {2} zu kaufen. (Benötigt {3} Kredite)"
+		"it"			"Non hai abbastanza crediti per comprare {1} Lvl {2}. (Richiede {3} Crediti)"
 	}
 	
 	"Upgrade bought"
 	{
 		// 1: The name of the upgrade the player just bought.
 		// 2: The new level of this upgrade.
-		"de"			"{1} Level {2} erfolgreich erworben."
+		"it"			"{1} Lvl {2} acquistata con successo."
 	}
 	
 	"Upgrade purchase notification"
@@ -165,24 +165,24 @@
 		// 1: The name of the player who bought an upgrade.
 		// 2: The name of the upgrade the player just bought.
 		// 3: The new level of this upgrade.
-		"de"			"{1} hat {2} Level {3} gekauft."
+		"it"			"{1} purchased {2} level {3}."
 	}
 	
 	"Upgrade sold"
 	{
 		// 1: The name of the upgrade the player just sold.
 		// 2: The new level of this upgrade.
-		"de"			"{1} Level {2} wurde verkauft."
+		"it"			"{1} Lvl {2} è stata venduta."
 	}
 	
 	//Menu Confirm
 	"Are you sure?"
 	{
-		"de"			"Bist du sicher?"
+		"it"			"Sei sicuro?"
 	}
 	
 	"Confirm stats reset"
 	{
-		"de"			"WARNUNG: Du verliertst alle Kredite, Level und Erfahrung!\nWillst du das wirklich?"
+		"it"			"WARNING: Perderai tutti i livelli, i crediti, e l'esperienza.\nCancelli le statistiche permanentemente?"
 	}
 }

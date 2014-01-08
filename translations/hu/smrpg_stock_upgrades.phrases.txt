@@ -1,0 +1,142 @@
+"Phrases"
+{
+	"regen"
+	{
+		"hu"			"Regeneráció"
+	}
+	
+	"regen description"
+	{
+		"hu"			"Regenerates HP every second."
+	}
+	
+	"health"
+	{
+		"hu"			"+25 élet"
+	}
+	
+	"health description"
+	{
+		"hu"			"Increases your maximal health."
+	}
+	
+	"resup"
+	{
+		"hu"			"Töltény bónusz"
+	}
+	
+	"resup description"
+	{
+		"hu"			"Regenerates ammo every third second."
+	}
+	
+	"vamp"
+	{
+		"hu"			"Élet lopás"
+	}
+	
+	"vamp description"
+	{
+		"hu"			"Steal HP from players when damaging them."
+	}
+	
+	"stealth"
+	{
+		"hu"			"Láthatalnaság"
+	}
+	
+	"stealth description"
+	{
+		"hu"			"Renders yourself more and more invisible."
+	}
+	
+	"ljump"
+	{
+		"hu"			"Hosszú ugrás"
+	}
+	
+	"ljump description"
+	{
+		"hu"			"Boosts your jump speed."
+	}
+	
+	"fnade"
+	{
+		"hu"			"Égeto gránát"
+	}
+	
+	"fnade description"
+	{
+		"hu"			"Ignites players damaged by your grenade."
+	}
+	
+	"icestab"
+	{
+		"hu"			"Fagyasztó kés"
+	}
+	
+	"icestab description"
+	{
+		"hu"			"Freeze a player in place when knifing him."
+	}
+	
+	"fpistol"
+	{
+		"hu"			"Fagypisztoly"
+	}
+	
+	"fpistol description"
+	{
+		"hu"			"Slow down players hit with a pistol."
+	}
+	
+	"denial"
+	{
+		"hu"			"Visszaszerzés"
+	}
+	
+	"denial description"
+	{
+		"hu"			"Keep your weapons the next time you spawn after you've died."
+	}
+	
+	"impulse"
+	{
+		"hu"			"Impulse"
+	}
+	
+	"impulse description"
+	{
+		"hu"			"Gain speed for a short time when being shot."
+	}
+	
+	"medic"
+	{
+		"hu"			"Medic"
+	}
+	
+	"medic description"
+	{
+		"hu"			"Heals team mates around you."
+	}
+	
+	"speed"
+	{
+		"hu"			"Speed+"
+	}
+	
+	"speed description"
+	{
+		"hu"			"Increase your average movement speed."
+	}
+  
+	"damage"
+	{
+		"hu"			"Damage+"
+	}
+  
+	"damage description"
+	{
+		"hu"			"Deal additional damage on enemies."
+	}
+}

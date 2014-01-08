@@ -3,36 +3,36 @@
 	"Inform about plugin"
 	{
 		// 1: Running SM:RPG plugin version (e.g. 1.0)
-		"de"			"Auf diesem Server läuft SM:RPG v{1}."
+		"no"			"This server is running SM:RPG v{1}."
 	}
 	
 	"Advertise rpgmenu command"
 	{
-		"de"			"{G}Schreibe \"{N}rpgmenu{G}\" im Chat für das RPG-Menü."
+		"no"			"{G}Skriv \"{N}rpgmenu{G}\" for å åpne menyen."
 	}
 	
 	"Client level changed"
 	{
 		// 1: Name of the client which level has changed.
 		// 2: New rpg level of the client
-		"de"			"{1} ist nun auf Level {2}."
+		"no"			"{1} er nå Level {2}."
 	}
 	
 	"You have new credits"
 	{
 		// 1: Total amount of credits the player currently has.
-		"de"			"Du hast neue Kredite ({1} insgesamt). Schreibe \"rpgmenu\" um Upgrades einzukaufen."
+		"no"			"Du har ({1} total) Kreditter. Skriv \"rpgmenu\" for å kjøpe oppgraderinger."
 	}
 	
 	//Newbie Text
 	"Newbie instructions new level"
 	{
-		"de"			"{G}Du bist nun einen {N}Level höher{G}! Das bedeutet, dass du dir {N}Upgrades kaufen{G} kannst, die dir einen Vorteil gegenüber der Gegner geben."
+		"no"			"{G}Du har {N}steget opp et Level{G}! Dette betyr at du kan {N}kjøpe oppgraderinger{G} og få fordeler."
 	}
 	
 	"Newbie instructions use rpgmenu"
 	{
-		"de"			"{G}Schreibe \"{L}rpgmenu{G}\" in den Chat oder die Konsole, um das RPG-Menü zu öffnen und Upgrades zu kaufen."
+		"no"			"{G}Skriv \"{L}rpgmenu{G}\" i chatten, eller skriv det i konsollen for å få opp en meny hvor du kan kjøpe oppgraderinger."
 	}
 	
 	//Experience Hintbox
@@ -41,7 +41,7 @@
 		// 1: Amount of experience the client just gained.
 		// 2: Total amount of experience the client currently has on his level.
 		// 3: Amount of experience needed to reach the next level.
-		"de"			"Neue Erfahrung (EXP): {1}+\nErfahrung: {2}/{3}"
+		"no"			"Erfarings Poeng: {1}+\nErfaring Gjenstående: {2}/{3}"
 	}
 	
 	"rpgrank"
@@ -53,96 +53,96 @@
 		// 5: Amount of experience the player has on his level.
 		// 6: Amount of experience needed to reach the next level.
 		// 7: Amount of rpg credits of the player.
-		"de"			"{1} ist Level {2}, gerankt {3}/{4} mit {5}/{6} Erfahrung und {7} Krediten"
+		"no"			"{1} er Level {2}, på rank {3}/{4} med {5}/{6} Erfaring og {7} Kreditter"
 	}
 	
 	"Top 10 Players"
 	{
-		"de"			"Top 10 SM:RPG Spieler"
+		"no"			"Top 10 SM:RPG Spillere"
 	}
 	
 	// Menu text
 	"Level"
 	{
 		// 1: Current rpg level of the player.
-		"de"			"Level: {1}"
+		"no"			"Level: {1}"
 	}
 	
 	"Experience short"
 	{
 		// 1: Current rpg rank of the player.
 		// 2: Total amount of ranked players.
-		"de"			"Exp: {1}/{2}"
+		"no"			"EP: {1}/{2}"
 	}
 	
 	"Experience"
 	{
-		"de"			"Erfahrung"
+		"no"			"Erfaring"
 	}
 	
 	"Credits"
 	{
 		// 1: Amount of credits the player has.
-		"de"			"Kredite: {1}"
+		"no"			"Kreditter: {1}"
 	}
 	
 	"Rank"
 	{
 		// 1: Current rpg rank of the player.
 		// 2: Total amount of ranked players.
-		"de"			"Rank: {1}/{2}"
+		"no"			"Rank: {1}/{2}"
 	}
 	
 	"Cost"
 	{
-		"de"			"Kosten"
+		"no"			"Pris"
 	}
 	
 	"Sale"
 	{
-		"de"			"Verkaufen"
+		"no"			"Selg"
 	}
 	
 	// Menu Options
 	"Upgrades"
 	{
-		"de"			"Upgrades"
+		"no"			"Oppgraderinger"
 	}
 	
 	"Sell"
 	{
-		"de"			"Verkaufen"
+		"no"			"Selg"
 	}
 	
 	"Stats"
 	{
-		"de"			"Statistik"
+		"no"			"Status"
 	}
 	
 	"Settings"
 	{
-		"de"			"Einstellungen"
+		"no"			"Alternativer"
 	}
 	
 	"Help"
 	{
-		"de"			"Hilfe"
+		"no"			"Hjelp"
 	}
 	
 	"Reset Stats"
 	{
-		"de"			"Statistik zurücksetzen"
+		"no"			"Reset Oppgraderingene"
 	}
 	
 	// Menu selection result
 	"Stats have been reset"
 	{
-		"de"			"Deine Statistik wurde erfolgreich zurückgesetzt!"
+		"no"			"Oppgraderingene er resatt."
 	}
 	
 	"Maximum level reached"
 	{
-		"de"			"Du hast das maximale Level dieses Upgrades erreicht."
+		"no"			"Du har nådd maksimum Level for denne oppgraderingen."
 	}
 	
 	"Not enough credits"
@@ -150,14 +150,14 @@
 		// 1: The name of the upgrade the player wanted to buy.
 		// 2: The level of the upgrade the player wanted to buy.
 		// 3: The amount of credits this level of the upgrade costs.
-		"de"			"Du hast zu wenig Kredite um {1} Level {2} zu kaufen. (Benötigt {3} Kredite)"
+		"no"			"Du har ikke nok Kreditter til å kjøpe {1} Level {2}. (Krever {3} Kreditter)"
 	}
 	
 	"Upgrade bought"
 	{
 		// 1: The name of the upgrade the player just bought.
 		// 2: The new level of this upgrade.
-		"de"			"{1} Level {2} erfolgreich erworben."
+		"no"			"{1} Level {2} ble kjøpt vellykket."
 	}
 	
 	"Upgrade purchase notification"
@@ -165,24 +165,24 @@
 		// 1: The name of the player who bought an upgrade.
 		// 2: The name of the upgrade the player just bought.
 		// 3: The new level of this upgrade.
-		"de"			"{1} hat {2} Level {3} gekauft."
+		"no"			"{1} purchased {2} level {3}."
 	}
 	
 	"Upgrade sold"
 	{
 		// 1: The name of the upgrade the player just sold.
 		// 2: The new level of this upgrade.
-		"de"			"{1} Level {2} wurde verkauft."
+		"no"			"{1} Level {2} har blitt solgt."
 	}
 	
 	//Menu Confirm
 	"Are you sure?"
 	{
-		"de"			"Bist du sicher?"
+		"no"			"Er du sikker?"
 	}
 	
 	"Confirm stats reset"
 	{
-		"de"			"WARNUNG: Du verliertst alle Kredite, Level und Erfahrung!\nWillst du das wirklich?"
+		"no"			"ADVARSEL: Du vil miste alle Levler, Kreditter, og all Erfaring.\nReset status permanent?"
 	}
 }

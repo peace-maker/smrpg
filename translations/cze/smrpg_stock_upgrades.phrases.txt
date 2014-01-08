@@ -1,0 +1,142 @@
+"Phrases"
+{
+	"regen"
+	{
+		"cze"			"Regenerace"
+	}
+	
+	"regen description"
+	{
+		"cze"			"Regenerates HP every second."
+	}
+	
+	"health"
+	{
+		"cze"			"Životy+"
+	}
+	
+	"health description"
+	{
+		"cze"			"Increases your maximal health."
+	}
+	
+	"resup"
+	{
+		"cze"			"Doplňování nábojů"
+	}
+	
+	"resup description"
+	{
+		"cze"			"Regenerates ammo every third second."
+	}
+	
+	"vamp"
+	{
+		"cze"			"Vampírismus"
+	}
+	
+	"vamp description"
+	{
+		"cze"			"Steal HP from players when damaging them."
+	}
+	
+	"stealth"
+	{
+		"cze"			"Neviditelnost"
+	}
+	
+	"stealth description"
+	{
+		"cze"			"Renders yourself more and more invisible."
+	}
+	
+	"ljump"
+	{
+		"cze"			"Dlouhý skok"
+	}
+	
+	"ljump description"
+	{
+		"cze"			"Boosts your jump speed."
+	}
+	
+	"fnade"
+	{
+		"cze"			"Ohnivý granát"
+	}
+	
+	"fnade description"
+	{
+		"cze"			"Ignites players damaged by your grenade."
+	}
+	
+	"icestab"
+	{
+		"cze"			"Zmrazování nožem"
+	}
+	
+	"icestab description"
+	{
+		"cze"			"Freeze a player in place when knifing him."
+	}
+	
+	"fpistol"
+	{
+		"cze"			"Zpomalování pistolí"
+	}
+	
+	"fpistol description"
+	{
+		"cze"			"Slow down players hit with a pistol."
+	}
+	
+	"denial"
+	{
+		"cze"			"Denial"
+	}
+	
+	"denial description"
+	{
+		"cze"			"Keep your weapons the next time you spawn after you've died."
+	}
+	
+	"impulse"
+	{
+		"cze"			"Impulse"
+	}
+	
+	"impulse description"
+	{
+		"cze"			"Gain speed for a short time when being shot."
+	}
+	
+	"medic"
+	{
+		"cze"			"Medic"
+	}
+	
+	"medic description"
+	{
+		"cze"			"Heals team mates around you."
+	}
+	
+	"speed"
+	{
+		"cze"			"Speed+"
+	}
+	
+	"speed description"
+	{
+		"cze"			"Increase your average movement speed."
+	}
+  
+	"damage"
+	{
+		"cze"			"Damage+"
+	}
+  
+	"damage description"
+	{
+		"cze"			"Deal additional damage on enemies."
+	}
+}
