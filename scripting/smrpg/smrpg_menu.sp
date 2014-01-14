@@ -465,6 +465,7 @@ public Menu_ConfirmResetStats(Handle:menu, MenuAction:action, param1, param2)
 		ResetStats(param1);
 		
 		Client_PrintToChat(param1, false, "%t", "Stats have been reset");
+		LogMessage("%L reset his own rpg stats on purpose.", param1);
 		
 		DisplaySettingsMenu(param1);
 	}
