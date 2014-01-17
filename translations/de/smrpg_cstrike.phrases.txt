@@ -1,0 +1,9 @@
+"Phrases"
+{
+	"Player is knifeleveling"
+	{
+		// 1: Name of player who is earning levels
+    // 2: Name of the player who gets knifed, so the other player gets experience
+		"de"			"{N}{1}{G} steht im Verdacht mit {N}{2}{G} zu knifeleveln."
+	}
+}
