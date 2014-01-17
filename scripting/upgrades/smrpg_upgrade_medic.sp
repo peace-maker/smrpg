@@ -229,7 +229,7 @@ public Action:Timer_ApplyMedic(Handle:timer, any:data)
 			else
 				TE_Send(iSecondTeam, iSecondCount);
 			
-			EmitSoundToAll("weapons/physcannon/physcannon_charge.wav", SOUND_FROM_PLAYER, SNDCHAN_AUTO, SNDLEVEL_NORMAL, SND_NOFLAGS, 0.2, SNDPITCH_NORMAL, i);
+			EmitSoundToAll("weapons/physcannon/physcannon_charge.wav", i, SNDCHAN_AUTO, SNDLEVEL_NORMAL, SND_NOFLAGS, 0.2, SNDPITCH_NORMAL, i);
 		}
 	}
 	

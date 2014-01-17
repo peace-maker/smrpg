@@ -191,7 +191,7 @@ public Action:Hook_OnTakeDamage(victim, &attacker, &inflictor, &Float:damage, &d
 	
 	decl String:sSound[PLATFORM_MAX_PATH];
 	Format(sSound, sizeof(sSound), "physics/glass/glass_sheet_impact_hard%d.wav", GetRandomInt(1, 3));
-	EmitSoundToAll(sSound, SOUND_FROM_PLAYER, SNDCHAN_AUTO, SNDLEVEL_NORMAL, SND_NOFLAGS, SNDVOL_NORMAL, SNDPITCH_NORMAL, victim);
+	EmitSoundToAll(sSound, victim, SNDCHAN_AUTO, SNDLEVEL_NORMAL, SND_NOFLAGS, SNDVOL_NORMAL, SNDPITCH_NORMAL, victim);
 	
 	return Plugin_Changed;
 }
@@ -252,7 +252,7 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 	
 	decl String:sSound[PLATFORM_MAX_PATH];
 	Format(sSound, sizeof(sSound), "physics/glass/glass_impact_bullet%d.wav", GetRandomInt(1, 3));
-	EmitSoundToAll(sSound, SOUND_FROM_PLAYER, SNDCHAN_AUTO, SNDLEVEL_NORMAL, SND_NOFLAGS, SNDVOL_NORMAL, SNDPITCH_NORMAL, victim);
+	EmitSoundToAll(sSound, victim, SNDCHAN_AUTO, SNDLEVEL_NORMAL, SND_NOFLAGS, SNDVOL_NORMAL, SNDPITCH_NORMAL, victim);
 
 	SetEntityRenderMode(victim, RENDER_TRANSCOLOR);
 	Entity_SetRenderColor(victim, 0, 0, 255, -1);
