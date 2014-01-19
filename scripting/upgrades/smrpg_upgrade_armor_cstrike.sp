@@ -2,20 +2,28 @@
 #include <sourcemod>
 #include <smrpg>
 
-#undef REQUIRE_PLUGIN
-#include <smrpg_health>
-
-#define UPGRADE_SHORTNAME "regen"
+#define UPGRADE_SHORTNAME "armor"
 
 #define PLUGIN_VERSION "1.0"
 
 public Plugin:myinfo = 
 {
-	name = "SM:RPG Upgrade > Health regeneration",
+	name = "SM:RPG Upgrade > Armor regeneration",
 	author = "Jannik \"Peace-Maker\" Hartung",
-	description = "Regeneration upgrade for SM:RPG. Regenerates HP every second.",
+	description = "Armor upgrade for SM:RPG. Regenerates armor every second.",
 	version = PLUGIN_VERSION,
 	url = "http://www.wcfan.de/"
+}
+
+public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
+{
+	new EngineVersion:engine = GetEngineVersion();
+	if(engine != Engine_CSS && engine != Engine_CSGO)
+	{
+		Format(error, err_max, "This plugin is for use in Counter-Strike games only. Bad engine version %d.", engine);
+		return APLRes_SilentFailure;
+	}
+	return APLRes_Success;
 }
 
 public OnPluginStart()
@@ -39,14 +47,14 @@ public OnLibraryAdded(const String:name[])
 	// Register this upgrade in SM:RPG
 	if(StrEqual(name, "smrpg"))
 	{
-		SMRPG_RegisterUpgradeType("HP Regeneration", UPGRADE_SHORTNAME, "Regenerates HP every second.", 15, true, 5, 5, 10, SMRPG_BuySell, SMRPG_ActiveQuery);
+		SMRPG_RegisterUpgradeType("Armor regeneration", UPGRADE_SHORTNAME, "Regenerates armor every second.", 15, true, 5, 5, 10, SMRPG_BuySell, SMRPG_ActiveQuery);
 		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
 	}
 }
 
 public OnMapStart()
 {
-	CreateTimer(1.0, Timer_IncreaseHealth, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
+	CreateTimer(1.0, Timer_IncreaseArmor, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 }
 
 /**
@@ -77,7 +85,7 @@ public SMRPG_TranslateUpgrade(client, TranslationType:type, String:translation[]
 	}
 }
 
-public Action:Timer_IncreaseHealth(Handle:timer)
+public Action:Timer_IncreaseArmor(Handle:timer)
 {
 	if(!SMRPG_IsEnabled())
 		return Plugin_Continue;
@@ -107,13 +115,10 @@ public Action:Timer_IncreaseHealth(Handle:timer)
 		if(!SMRPG_RunUpgradeEffect(i, UPGRADE_SHORTNAME))
 			continue; // Some other plugin doesn't want this effect to run
 		
-		new iNewHealth = GetClientHealth(i)+iLevel;
-		new iMaxHealth = SMRPG_Health_GetClientMaxHealth(i);
-		// Limit the regeneration to the maxhealth.
-		if(iNewHealth > iMaxHealth)
-			SetEntityHealth(i, iMaxHealth);
-		else
-			SetEntityHealth(i, iNewHealth);
+		new iNewArmor = GetClientArmor(i)+iLevel;
+		if(iNewArmor > 100)
+			iNewArmor = 100;
+		SetEntProp(i, Prop_Send, "m_ArmorValue", iNewArmor);
 	}
 	
 	return Plugin_Continue;

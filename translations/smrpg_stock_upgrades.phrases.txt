@@ -2,7 +2,7 @@
 {
 	"regen"
 	{
-		"en"			"Regeneration"
+		"en"			"HP Regeneration"
 	}
 	
 	"regen description"
@@ -134,9 +134,19 @@
 	{
 		"en"			"Damage+"
 	}
-  
+	
 	"damage description"
 	{
 		"en"			"Deal additional damage on enemies."
+	}
+	
+	"armor"
+	{
+		"en"			"Armor Regeneration"
+	}
+	
+	"armor description"
+	{
+		"en"			"Regenerates armor every second."
 	}
 }
