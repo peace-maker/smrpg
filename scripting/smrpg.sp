@@ -13,6 +13,7 @@ new Handle:g_hPlayerAutoSave;
 // Convars
 new Handle:g_hCVEnable;
 new Handle:g_hCVBotEnable;
+new Handle:g_hCVBotNeedHuman;
 new Handle:g_hCVDebug;
 new Handle:g_hCVSaveData;
 new Handle:g_hCVSteamIDSave;
@@ -39,7 +40,7 @@ new Handle:g_hCVIgnoreLevelBarrier;
 
 new Handle:g_hCVShowUpgradePurchase;
 
-#define IF_IGNORE_BOTS(%1) if(!GetConVarBool(g_hCVBotEnable) && IsFakeClient(%1))
+#define IF_IGNORE_BOTS(%1) if(IsFakeClient(%1) && (!GetConVarBool(g_hCVBotEnable) || (GetConVarBool(g_hCVBotNeedHuman) && Client_GetCount(true, false) == 0)))
 
 #include "smrpg/smrpg_upgrades.sp"
 #include "smrpg/smrpg_database.sp"
@@ -83,6 +84,7 @@ public OnPluginStart()
 	
 	g_hCVEnable = CreateConVar("smrpg_enable", "1", "If set to 1, SM:RPG is enabled, if 0, SM:RPG is disabled", 0, true, 0.0, true, 1.0);
 	g_hCVBotEnable = CreateConVar("smrpg_bot_enable", "1", "If set to 1, bots will be able to use the SM:RPG plugin", 0, true, 0.0, true, 1.0);
+	g_hCVBotNeedHuman = CreateConVar("smrpg_bot_need_human", "1", "Don't allow bots to gain experience while no human player is on the server?", 0, true, 0.0, true, 1.0);
 	g_hCVDebug = CreateConVar("smrpg_debug", "0", "Turns on debug mode for this plugin", 0, true, 0.0, true, 1.0);
 	g_hCVSaveData = CreateConVar("smrpg_save_data", "1", "If disabled, the database won't be updated (this means player data won't be saved!)", 0, true, 0.0, true, 1.0);
 	g_hCVSteamIDSave = CreateConVar("smrpg_steamid_save", "1", "Save by SteamID instead of by SteamID and name", 0, true, 0.0, true, 1.0);
