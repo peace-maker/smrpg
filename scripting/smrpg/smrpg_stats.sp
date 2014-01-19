@@ -139,6 +139,10 @@ Stats_PlayerKill(attacker, victim)
 		return;
 	
 	new iExp = RoundToCeil(GetClientLevel(victim) * GetConVarFloat(g_hCVExpKill));
+	new iExpMax = GetConVarInt(g_hCVExpKillMax);
+	// Limit the possible experience to this.
+	if(iExpMax > 0 && iExp > iExpMax)
+		iExp = iExpMax;
 	
 	if(Stats_CallOnExperienceForward(attacker, ER_PlayerKill, iExp) <= Plugin_Changed)
 		Stats_AddExperience(attacker, iExp, false);

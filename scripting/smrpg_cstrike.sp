@@ -8,6 +8,7 @@
 #define PLUGIN_VERSION "1.0"
 
 new Handle:g_hCVExpKill;
+new Handle:g_hCVExpKillMax;
 new Handle:g_hCVExpDamage;
 new Handle:g_hCVExpTeamwin;
 
@@ -88,6 +89,7 @@ public OnPluginStart()
 public OnAllPluginsLoaded()
 {
 	g_hCVExpKill = FindConVar("smrpg_exp_kill");
+	g_hCVExpKillMax = FindConVar("smrpg_exp_kill_max");
 	g_hCVExpDamage = FindConVar("smrpg_exp_damage");
 	g_hCVExpTeamwin = FindConVar("smrpg_exp_teamwin");
 }
@@ -238,6 +240,11 @@ public Event_OnPlayerDeath(Handle:event, const String:error[], bool:dontBroadcas
 	new iExp = RoundToCeil(SMRPG_GetClientLevel(victim) * GetConVarFloat(g_hCVExpKill));
 	if(GetEventBool(event, "headshot"))
 		iExp += GetConVarInt(g_hCVExpHeadshot);
+	
+	new iExpMax = GetConVarInt(g_hCVExpKillMax);
+	// Limit the possible experience to this.
+	if(iExpMax > 0 && iExp > iExpMax)
+		iExp = iExpMax;
 	
 	SMRPG_AddClientExperience(attacker, iExp, false);
 }

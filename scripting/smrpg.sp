@@ -28,6 +28,7 @@ new Handle:g_hCVExpInc;
 
 new Handle:g_hCVExpDamage;
 new Handle:g_hCVExpKill;
+new Handle:g_hCVExpKillMax;
 
 new Handle:g_hCVExpTeamwin;
 
@@ -97,13 +98,14 @@ public OnPluginStart()
 	
 	g_hCVExpDamage = CreateConVar("smrpg_exp_damage", "1.0", "Experience for hurting an enemy multiplied by the damage done", 0, true, 0.0);
 	g_hCVExpKill = CreateConVar("smrpg_exp_kill", "15.0", "Experience for a kill multiplied by the victim's level", 0, true, 0.0);
+	g_hCVExpKillMax = CreateConVar("smrpg_exp_kill_max", "0.0", "Maximum experience a player can ever earn for killing someone. (0 = unlimited)", 0, true, 0.0);
 	
 	g_hCVExpTeamwin = CreateConVar("smrpg_exp_teamwin", "0.15", "Experience multipled by the experience required and the team ratio given to a team for completing the objective", 0, true, 0.0);
 	
 	g_hCVCreditsInc = CreateConVar("smrpg_credits_inc", "5", "Credits given to each new level", 0, true, 0.0);
 	g_hCVCreditsStart = CreateConVar("smrpg_credits_start", "0", "Starting credits for Level 1", 0, true, 0.0);
-	g_hCVSalePercent = CreateConVar("smrpg_sale_percent", "0.75", "Percentage of credits a player gets for selling an item", 0, true, 0.0);
-	g_hCVIgnoreLevelBarrier = CreateConVar("smrpg_ignore_level_barrier", "0", "Ignore the hardcoded maxlevels for the items and allow to set the maxlevel as high as you want.", 0, true, 0.0, true, 1.0);
+	g_hCVSalePercent = CreateConVar("smrpg_sale_percent", "0.75", "Percentage of credits a player gets for selling an upgrade", 0, true, 0.0);
+	g_hCVIgnoreLevelBarrier = CreateConVar("smrpg_ignore_level_barrier", "0", "Ignore the hardcoded maxlevels for the upgrades and allow to set the maxlevel as high as you want.", 0, true, 0.0, true, 1.0);
 	
 	g_hCVShowUpgradePurchase = CreateConVar("smrpg_show_upgrade_purchase_in_chat", "0", "Show a message to all in chat when a player buys an upgrade.", 0, true, 0.0, true, 1.0);
 	
