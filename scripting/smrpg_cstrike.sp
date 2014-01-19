@@ -32,6 +32,7 @@ enum KnifeLeveling {
 new g_iKnifeDamage[MAXPLAYERS+1][MAXPLAYERS+1][KnifeLeveling];
 new bool:g_bKnifeLeveled[MAXPLAYERS+1];
 new Handle:g_hKnifeLevelCooldown[MAXPLAYERS+1];
+new g_iKnifeLevelDetections[MAXPLAYERS+1];
 
 public Plugin:myinfo = 
 {
@@ -96,6 +97,7 @@ public OnClientDisconnect(client)
 {
 	g_bKnifeLeveled[client] = false;
 	ClearHandle(g_hKnifeLevelCooldown[client]);
+	g_iKnifeLevelDetections[client] = 0;
 	
 	for(new i=1;i<=MaxClients;i++)
 	{
@@ -188,13 +190,17 @@ public Event_OnPlayerHurt(Handle:event, const String:error[], bool:dontBroadcast
 			//PrintToServer("%N is knifeleveling on %N. hits %d, time since first attack: %d", attacker, victim, g_iKnifeDamage[attacker][victim][KL_Hits], (g_iKnifeDamage[attacker][victim][KL_LastAttack] - g_iKnifeDamage[attacker][victim][KL_FirstAttack]));
 			if(GetConVarBool(g_hCVEnableAntiKnifeleveling) && !g_bKnifeLeveled[attacker])
 			{
-				LogMessage("%L is knifeleveling with %L.", attacker, victim);
+				LogMessage("%L (lvl %d) is knifeleveling with %L (lvl %d).", attacker, SMRPG_GetClientLevel(attacker), victim, SMRPG_GetClientLevel(victim));
 				Client_PrintToChatAll(false, "%t", "Player is knifeleveling", attacker, victim);
 			}
-				
+			
+			// Keep track on how often that player tried to powerlevel.
+			if(!g_bKnifeLeveled[attacker])
+				g_iKnifeLevelDetections[attacker]++;
+			
 			g_bKnifeLeveled[attacker] = true;
 			ClearHandle(g_hKnifeLevelCooldown[attacker]);
-			g_hKnifeLevelCooldown[attacker] = CreateTimer(60.0, Timer_ResetKnifeLeveling, GetClientUserId(attacker), TIMER_FLAG_NO_MAPCHANGE);
+			g_hKnifeLevelCooldown[attacker] = CreateTimer(60.0*g_iKnifeLevelDetections[attacker], Timer_ResetKnifeLeveling, GetClientUserId(attacker), TIMER_FLAG_NO_MAPCHANGE);
 		}
 		
 		// Don't give any experience at all for knife leveling.
