@@ -4,7 +4,7 @@
 #include <smlib>
 
 #define UPGRADE_SHORTNAME "stealth"
-#define STEALTH_INC 40
+#define STEALTH_INC 27
 
 #define PLUGIN_VERSION "1.0"
 
@@ -156,5 +156,29 @@ SetClientVisibility(client)
 	new iLevel = SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME);
 	
 	SetEntityRenderMode(client, RENDER_TRANSCOLOR);
-	Entity_SetRenderColor(client, -1, -1, -1, 255 - iLevel * STEALTH_INC);
+	new iAlpha = 255 - iLevel * STEALTH_INC;
+	// Keep the player visible enough, even if we break the maxlevel barrier.
+	if(iAlpha < 120)
+		iAlpha = 120;
+	Entity_SetRenderColor(client, -1, -1, -1, iAlpha);
+	
+	// Render his weapons opaque too.
+	new iWeapon = -1, iIndex;
+	while((iWeapon = Client_GetNextWeapon(client, iIndex)) != -1)
+	{
+		SetEntityRenderMode(iWeapon, RENDER_TRANSCOLOR);
+		Entity_SetRenderColor(iWeapon, -1, -1, -1, iAlpha);
+	}
+	
+	// Take care of any props attachted to him like hats.
+	decl String:sBuffer[64];
+	LOOP_CHILDREN(client, child)
+	{
+		if(GetEntityClassname(child, sBuffer, sizeof(sBuffer))
+		&& StrContains(sBuffer, "prop_", false) == 0)
+		{
+			SetEntityRenderMode(child, RENDER_TRANSCOLOR);
+			Entity_SetRenderColor(child, -1, -1, -1, iAlpha);
+		}
+	}
 }
