@@ -138,7 +138,6 @@ public OnPluginStart()
 	
 	if(g_bLateLoaded)
 	{
-		decl String:sAuth[40];
 		for(new i=1;i<=MaxClients;i++)
 		{
 			if(!IsClientConnected(i))
@@ -151,10 +150,7 @@ public OnPluginStart()
 			
 			OnClientPutInServer(i);
 			
-			if(IsClientAuthorized(i) && GetClientAuthString(i, sAuth, sizeof(sAuth)))
-			{
-				OnClientAuthorized(i, sAuth);
-			}
+			// Query info from db, when the connection is established.
 		}
 	}
 	
@@ -243,6 +239,9 @@ public OnClientPutInServer(client)
 
 public OnClientAuthorized(client, const String:auth[])
 {
+	if(IsFakeClient(client))
+		return;
+	
 	AddPlayer(client, auth);
 }
 
