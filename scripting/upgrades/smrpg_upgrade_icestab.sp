@@ -118,6 +118,8 @@ public OnGameFrame()
 public Event_OnResetEffect(Handle:event, const String:error[], bool:dontBroadcast)
 {
 	new client = GetClientOfUserId(GetEventInt(event, "userid"));
+	if(!client)
+		return;
 
 	SMRPG_ResetEffect(client);
 }

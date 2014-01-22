@@ -57,6 +57,8 @@ public OnMapStart()
 public Event_OnPlayerSpawn(Handle:event, const String:name[], bool:dontBroadcast)
 {
 	new client = GetClientOfUserId(GetEventInt(event, "userid"));
+	if(!client)
+		return;
 	
 	if(!SMRPG_IsEnabled())
 		return;

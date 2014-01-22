@@ -106,6 +106,8 @@ public OnGameFrame()
 public Event_OnPlayerJump(Handle:event, const String:error[], bool:dontBroadcast)
 {
 	new client = GetClientOfUserId(GetEventInt(event, "userid"));
+	if(!client)
+		return;
 	GetEntPropVector(client, Prop_Data, "m_vecVelocity", g_fLJumpPreviousVelocity[client]);
 	g_bLJumpPlayerJumped[client] = true;
 }
@@ -113,6 +115,8 @@ public Event_OnPlayerJump(Handle:event, const String:error[], bool:dontBroadcast
 public Event_OnResetJump(Handle:event, const String:error[], bool:dontBroadcast)
 {
 	new client = GetClientOfUserId(GetEventInt(event, "userid"));
+	if(!client)
+		return;
 	g_bLJumpPlayerJumped[client] = false;
 }
 

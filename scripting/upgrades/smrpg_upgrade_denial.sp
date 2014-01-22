@@ -81,6 +81,8 @@ public OnClientDisconnect(client)
 public Event_OnPlayerSpawn(Handle:event, const String:name[], bool:dontBroadcast)
 {
 	new client = GetClientOfUserId(GetEventInt(event, "userid"));
+	if(!client)
+		return;
 	
 	new upgrade[UpgradeInfo];
 	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
@@ -109,6 +111,8 @@ public Event_OnPlayerSpawn(Handle:event, const String:name[], bool:dontBroadcast
 public Event_OnPlayerDeath(Handle:event, const String:name[], bool:dontBroadcast)
 {
 	new client = GetClientOfUserId(GetEventInt(event, "userid"));
+	if(!client)
+		return;
 	
 	new upgrade[UpgradeInfo];
 	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
@@ -126,6 +130,8 @@ public Event_OnPlayerDeath(Handle:event, const String:name[], bool:dontBroadcast
 public Event_OnPlayerTeam(Handle:event, const String:name[], bool:dontBroadcast)
 {
 	new client = GetClientOfUserId(GetEventInt(event, "userid"));
+	if(!client)
+		return;
 	
 	SMRPG_ResetEffect(client);
 }
