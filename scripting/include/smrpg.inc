@@ -252,8 +252,10 @@ native SMRPG_SetUpgradeResetCallback(const String:shortname[], SMRPG_ResetEffect
  * Signal other plugins that this upgrade is about to do its effects on a client.
  * This calls the SMRPG_OnUpgradeEffect forward, which allows other plugins to block the effect of this upgrade.
  *
- * The should be checked before applying any effects on a client, to see, if some other plugin doesn't want the effects to happen.
+ * This should be checked before applying any effects on a client, to see, if some other plugin doesn't want the effects to happen.
  * That way you can e.g. avoid interferences between upgrades that change the same prop.
+ *
+ * This also returns false, if the client doesn't have the required admin permissions (smrpg_[shortname]_adminflag convar) for this upgrade. (see SMRPG_CheckUpgradeAccess)
  *
  * @param client         The client which is about to get some effect applied.
  * @param shortname      The shortname of the upgrade that is about to apply its effect on the client.
@@ -293,6 +295,7 @@ enum UpgradeInfo
 	UI_maxLevel, // Maximal level a player can get for this upgrade
 	UI_startCost, // The amount of credits the first level costs
 	UI_incCost, // The amount of credits each level costs more
+	UI_adminFlag, // The admin flag(s) (ADMFLAG_*) this upgrade is restricted to. (See SMRPG_CheckUpgradeAccess and SMRPG_RunUpgradeEffect)
 	String:UI_name[MAX_UPGRADE_NAME_LENGTH],
 	String:UI_shortName[MAX_UPGRADE_SHORTNAME_LENGTH], // shortname used as unique identifier in all commands and database
 	String:UI_description[MAX_UPGRADE_DESCRIPTION_LENGTH]
@@ -331,7 +334,19 @@ native SMRPG_ResetUpgradeEffectOnClient(client, const String:shortname[]);
  */
 native bool:SMRPG_IsUpgradeActiveOnClient(client, const String:shortname[]);
 
-
+/**
+ * Checks if a client has access to an upgrade.
+ * This checks for the admin flag(s) set in the smrpg_[shortname]_adminflag convar created for the plugin
+ * and can be overwritten using an "smrpg_upgrade_[shortname]" like "smrpg_upgrade_health" admin override.
+ *
+ * ATTENTION: You don't have to check the access manually when running an upgrade effect. SMRPG_RunUpgradeEffect handles this for you.
+ *
+ * @param client         The client to check for access to an upgrade.
+ * @param shortname      The shortname of the upgrade to check the client's access for.
+ * @return True, if the client is allowed to use this upgrade, false otherwise.
+ * @error Invalid client index, unknown upgrade shortname.
+ */
+native bool:SMRPG_CheckUpgradeAccess(client, const String:shortname[]);
 
 /**
  * Get the level of an upgrade of a client.

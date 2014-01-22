@@ -51,10 +51,25 @@ public Action:Cmd_PlayerInfo(client, args)
 	ReplyToCommand(client, "SM:RPG Upgrades: ");
 	new iSize = GetUpgradeCount();
 	new upgrade[InternalUpgradeInfo];
+	decl String:sPermission[30];
 	for(new i=0;i<iSize;i++)
 	{
 		GetUpgradeByIndex(i, upgrade);
-		ReplyToCommand(client, "SM:RPG -: %s Level %d", upgrade[UPGR_name], GetClientUpgradeLevel(iTarget, i));
+		if(!IsValidUpgrade(upgrade))
+			continue;
+		
+		sPermission[0] = 0;
+		if(upgrade[UPGR_adminFlag] > 0)
+		{
+			GetAdminFlagStringFromBits(upgrade[UPGR_adminFlag], sPermission, sizeof(sPermission));
+			Format(sPermission, sizeof(sPermission), " (admflag: %s)", sPermission);
+		}
+		
+		if(!HasAccessToUpgrade(iTarget, upgrade))
+			Format(sPermission, sizeof(sPermission), " NO ACCESS:");
+		else if(upgrade[UPGR_adminFlag] > 0)
+			Format(sPermission, sizeof(sPermission), " OK:");
+		ReplyToCommand(client, "SM:RPG - %s%s Level %d", upgrade[UPGR_name], sPermission, GetClientUpgradeLevel(iTarget, i));
 	}
 	ReplyToCommand(client, "SM:RPG: ----------");
 	
@@ -331,7 +346,7 @@ public Action:Cmd_ListUpgrades(client, args)
 	new iSize = GetUpgradeCount();
 	ReplyToCommand(client, "There are %d upgrades registered.", iSize);
 	new upgrade[InternalUpgradeInfo];
-	new iUnavailableCount, String:sPluginFile[64];
+	new iUnavailableCount, String:sPluginFile[64], String:sPermissions[30];
 	for(new i=0;i<iSize;i++)
 	{
 		GetUpgradeByIndex(i, upgrade);
@@ -342,8 +357,9 @@ public Action:Cmd_ListUpgrades(client, args)
 		}
 		
 		GetPluginFilename(upgrade[UPGR_plugin], sPluginFile, sizeof(sPluginFile));
+		GetAdminFlagStringFromBits(upgrade[UPGR_adminFlag], sPermissions, sizeof(sPermissions));
 		
-		ReplyToCommand(client, "%d. [%s] %s (%s). Maxlevel: %d, maxlevel barrier: %d, start cost: %d, increasing cost: %d, plugin: %s", i-iUnavailableCount, (upgrade[UPGR_enabled] ? "ON" : "OFF"), upgrade[UPGR_name], upgrade[UPGR_shortName], upgrade[UPGR_maxLevel], upgrade[UPGR_maxLevelBarrier], upgrade[UPGR_startCost], upgrade[UPGR_incCost], sPluginFile);
+		ReplyToCommand(client, "%d. [%s] %s (%s). Maxlevel: %d, maxlevel barrier: %d, start cost: %d, increasing cost: %d, adminflag: %s, plugin: %s", i-iUnavailableCount, (upgrade[UPGR_enabled] ? "ON" : "OFF"), upgrade[UPGR_name], upgrade[UPGR_shortName], upgrade[UPGR_maxLevel], upgrade[UPGR_maxLevelBarrier], upgrade[UPGR_startCost], upgrade[UPGR_incCost], sPermissions, sPluginFile);
 	}
 	if(iUnavailableCount > 0)
 	{
@@ -1030,4 +1046,17 @@ stock FindClientByExactName(const String:sName[])
 		}
 	}
 	return -1;
+}
+
+stock GetAdminFlagStringFromBits(flags, String:flagstring[], maxlen)
+{
+	new AdminFlag:iAdmFlags[AdminFlags_TOTAL];
+	new iNumFlags = FlagBitsToArray(flags, iAdmFlags, AdminFlags_TOTAL);
+	new iChar;
+	flagstring[0] = 0;
+	for(new f=0;f<iNumFlags;f++)
+	{
+		if(FindFlagChar(iAdmFlags[f], iChar))
+			Format(flagstring, maxlen, "%s%c", flagstring, iChar);
+	}
 }

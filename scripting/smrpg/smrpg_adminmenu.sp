@@ -374,7 +374,7 @@ ShowPlayerUpgradeManageMenu(client)
 	
 	new iSize = GetUpgradeCount();
 	new upgrade[InternalUpgradeInfo], iCurrentLevel;
-	new String:sTranslatedName[MAX_UPGRADE_NAME_LENGTH], String:sLine[128], String:sIndex[8];
+	new String:sTranslatedName[MAX_UPGRADE_NAME_LENGTH], String:sLine[128], String:sIndex[8], String:sPermissions[30];
 	for(new i=0;i<iSize;i++)
 	{
 		iCurrentLevel = GetClientUpgradeLevel(iTarget, i);
@@ -386,14 +386,30 @@ ShowPlayerUpgradeManageMenu(client)
 		
 		GetUpgradeTranslatedName(client, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
 		
+		sPermissions[0] = 0;
+		
+		// Print the required adminflags in a readable way
+		if(upgrade[UPGR_adminFlag] > 0)
+		{
+			GetAdminFlagStringFromBits(upgrade[UPGR_adminFlag], sPermissions, sizeof(sPermissions));
+			Format(sPermissions, sizeof(sPermissions), " (adminflags: %s)", sPermissions);
+		}
+		
+		// Warn the admin, that this player won't be able to use this upgrade.
+		if(!HasAccessToUpgrade(g_iCurrentMenuTarget[client], upgrade))
+			Format(sPermissions, sizeof(sPermissions), "%s NO ACCESS", sPermissions);
+		// Or if there are some permission restrictions specified, show the player is able to use it.
+		else if(upgrade[UPGR_adminFlag] > 0)
+			Format(sPermissions, sizeof(sPermissions), "%s OK", sPermissions);
+		
 		IntToString(i, sIndex, sizeof(sIndex));
 		if(iCurrentLevel >= upgrade[UPGR_maxLevel])
 		{
-			Format(sLine, sizeof(sLine), "%s Lvl MAX %d/%d", sTranslatedName, iCurrentLevel, upgrade[UPGR_maxLevel]);
+			Format(sLine, sizeof(sLine), "%s Lvl MAX %d/%d%s", sTranslatedName, iCurrentLevel, upgrade[UPGR_maxLevel], sPermissions);
 		}
 		else
 		{
-			Format(sLine, sizeof(sLine), "%s Lvl %d/%d", sTranslatedName, iCurrentLevel, upgrade[UPGR_maxLevel]);
+			Format(sLine, sizeof(sLine), "%s Lvl %d/%d%s", sTranslatedName, iCurrentLevel, upgrade[UPGR_maxLevel], sPermissions);
 		}
 		
 		AddMenuItem(hMenu, sIndex, sLine);

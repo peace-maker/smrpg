@@ -12,6 +12,7 @@ enum InternalUpgradeInfo
 	UPGR_maxLevel, // Maximal level a player can get for this upgrade
 	UPGR_startCost, // The amount of credits the first level costs
 	UPGR_incCost, // The amount of credits each level costs more
+	UPGR_adminFlag, // Admin flag(s) this upgrade is restricted to
 	Function:UPGR_queryCallback, // callback called, when a player bought/sold the upgrade
 	Function:UPGR_activeCallback, // callback called, to see, if a player is currently under the effect of that upgrade
 	Function:UPGR_translationCallback, // callback called, when the upgrade's name is about to get displayed.
@@ -22,6 +23,7 @@ enum InternalUpgradeInfo
 	Handle:UPGR_maxLevelConvar,
 	Handle:UPGR_startCostConvar,
 	Handle:UPGR_incCostConvar,
+	Handle:UPGR_adminFlagConvar,
 	
 	String:UPGR_name[MAX_UPGRADE_NAME_LENGTH],
 	String:UPGR_shortName[MAX_UPGRADE_SHORTNAME_LENGTH],
@@ -45,6 +47,8 @@ RegisterUpgradeNatives()
 	CreateNative("SMRPG_GetUpgradeInfo", Native_GetUpgradeInfo);
 	CreateNative("SMRPG_ResetUpgradeEffectOnClient", Native_ResetUpgradeEffectOnClient);
 	CreateNative("SMRPG_RunUpgradeEffect", Native_RunUpgradeEffect);
+	
+	CreateNative("SMRPG_CheckUpgradeAccess", Native_CheckUpgradeAccess);
 }
 
 InitUpgrades()
@@ -158,6 +162,14 @@ public Native_RegisterUpgradeType(Handle:plugin, numParams)
 	HookConVarChange(hCvar, ConVar_UpgradeChanged);
 	upgrade[UPGR_incCostConvar] = hCvar;
 	upgrade[UPGR_incCost] = GetConVarInt(hCvar);
+	
+	Format(sCvarName, sizeof(sCvarName), "smrpg_%s_adminflag", sShortName);
+	Format(sCvarDescription, sizeof(sCvarDescription), "Required admin flag to use this upgrade. Leave blank to allow everyone to use this upgrade. This also checks for a \"smrpg_upgrade_%s\" admin override for permissions.", sShortName);
+	hCvar = AutoExecConfig_CreateConVar(sCvarName, "", sCvarDescription, 0, true, 0.0);
+	HookConVarChange(hCvar, ConVar_UpgradeChanged);
+	upgrade[UPGR_adminFlagConvar] = hCvar;
+	GetConVarString(hCvar, sValue, sizeof(sValue));
+	upgrade[UPGR_adminFlag] = ReadFlagString(sValue);
 	
 	AutoExecConfig_ExecuteFile();
 	
@@ -301,6 +313,7 @@ public Native_GetUpgradeInfo(Handle:plugin, numParams)
 	publicUpgrade[UI_maxLevel] = upgrade[UPGR_maxLevel];
 	publicUpgrade[UI_startCost] = upgrade[UPGR_startCost];
 	publicUpgrade[UI_incCost] = upgrade[UPGR_incCost];
+	publicUpgrade[UI_adminFlag] = upgrade[UPGR_adminFlag];
 	strcopy(publicUpgrade[UI_name], MAX_UPGRADE_NAME_LENGTH, upgrade[UPGR_name]);
 	strcopy(publicUpgrade[UI_shortName], MAX_UPGRADE_SHORTNAME_LENGTH, upgrade[UPGR_shortName]);
 	
@@ -408,6 +421,11 @@ public Native_RunUpgradeEffect(Handle:plugin, numParams)
 		return false;
 	}
 
+	// Don't allow this client to use the upgrade, if he doesn't have the required admin flag.
+	// Don't inform the other plugins at all.
+	if(!HasAccessToUpgrade(client, upgrade))
+		return false;
+	
 	new Action:result;
 	Call_StartForward(g_hfwdOnUpgradeEffect);
 	Call_PushCell(client);
@@ -415,6 +433,30 @@ public Native_RunUpgradeEffect(Handle:plugin, numParams)
 	Call_Finish(result);
 	
 	return result < Plugin_Handled;
+}
+
+public Native_CheckUpgradeAccess(Handle:plugin, numParams)
+{
+	new client = GetNativeCell(1);
+	if(client < 0 || client > MaxClients)
+	{
+		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
+		return false;
+	}
+	
+	new len;
+	GetNativeStringLength(2, len);
+	new String:sShortName[len+1];
+	GetNativeString(2, sShortName, len+1);
+	
+	new upgrade[InternalUpgradeInfo];
+	if(!GetUpgradeByShortname(sShortName, upgrade) || !IsValidUpgrade(upgrade))
+	{
+		ThrowNativeError(SP_ERROR_NATIVE, "No upgrade named \"%s\" loaded.", sShortName);
+		return false;
+	}
+	
+	return HasAccessToUpgrade(client, upgrade);
 }
 
 /**
@@ -514,6 +556,15 @@ stock bool:IsUpgradeEffectActive(client, upgrade[InternalUpgradeInfo])
 	return bActive;
 }
 
+stock bool:HasAccessToUpgrade(client, upgrade[InternalUpgradeInfo])
+{
+	decl String:sFlag[MAX_UPGRADE_SHORTNAME_LENGTH+15];
+	Format(sFlag, sizeof(sFlag), "smrpg_upgrade_%s", upgrade[UPGR_shortName]);
+	
+	// Don't allow this client to use the upgrade, if he doesn't have the required admin flag.
+	return CheckCommandAccess(client, sFlag, upgrade[UPGR_adminFlag], true);
+}
+
 GetUpgradeTranslatedName(client, iUpgradeIndex, String:name[], maxlen)
 {
 	new upgrade[InternalUpgradeInfo];
@@ -579,6 +630,14 @@ public ConVar_UpgradeChanged(Handle:convar, const String:oldValue[], const Strin
 		else if(upgrade[UPGR_incCostConvar] == convar)
 		{
 			upgrade[UPGR_incCost] = GetConVarInt(convar);
+			SaveUpgradeConfig(upgrade);
+			break;
+		}
+		else if(upgrade[UPGR_adminFlagConvar] == convar)
+		{
+			decl String:sValue[30];
+			GetConVarString(convar, sValue, sizeof(sValue));
+			upgrade[UPGR_adminFlag] = ReadFlagString(sValue);
 			SaveUpgradeConfig(upgrade);
 			break;
 		}

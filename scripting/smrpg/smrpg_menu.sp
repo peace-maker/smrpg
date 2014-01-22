@@ -127,7 +127,8 @@ DisplayUpgradesMenu(client, position)
 		GetUpgradeByIndex(i, upgrade);
 		
 		// Don't show disabled items in the menu.
-		if(!IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled])
+		// Hide upgrades the player doesn't have access to too.
+		if(!IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled] || !HasAccessToUpgrade(client, upgrade))
 			continue;
 		
 		GetUpgradeTranslatedName(client, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
@@ -163,7 +164,7 @@ public Menu_HandleUpgrades(Handle:menu, MenuAction:action, param1, param2)
 		GetUpgradeByIndex(iItemIndex, upgrade);
 		
 		// Bad upgrade?
-		if(!IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled])
+		if(!IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled] || !HasAccessToUpgrade(param1, upgrade))
 		{
 			DisplayUpgradesMenu(param1, GetMenuSelectionPosition());
 			return;
@@ -237,6 +238,10 @@ DisplaySellMenu(client)
 		
 		// Don't show disabled items in the menu.
 		if(!IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled])
+			continue;
+		
+		// Allow clients to sell upgrades they no longer have access to, but don't show them, if they never bought it.
+		if(!HasAccessToUpgrade(client, upgrade) && iCurrentLevel <= 0)
 			continue;
 		
 		GetUpgradeTranslatedName(client, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
@@ -596,7 +601,7 @@ DisplayOtherUpgradesMenu(client, targetClient)
 		GetUpgradeByIndex(i, upgrade);
 		
 		// Don't show disabled items in the menu.
-		if(!IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled])
+		if(!IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled] || !HasAccessToUpgrade(targetClient, upgrade))
 			continue;
 		
 		GetUpgradeTranslatedName(client, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
