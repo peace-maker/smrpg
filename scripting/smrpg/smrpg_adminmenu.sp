@@ -583,7 +583,18 @@ public Menu_HandlePlayerUpgradeLevelChange(Handle:menu, MenuAction:action, param
 	}
 }
 
-
+// client disconnected. Reset all open admin menus so we don't try to change stuff on a different user out of a sudden.
+ResetAdminMenu(client)
+{
+	for(new i=1;i<=MaxClients;i++)
+	{
+		if(g_iCurrentMenuTarget[i] == client && client != i)
+		{
+			g_iCurrentMenuTarget[i] = -1;
+			ShowPlayerListMenu(i);
+		}
+	}
+}
 
 
 public TopMenu_HandleUpgrades(Handle:topmenu, TopMenuAction:action, TopMenuObject:object_id, param, String:buffer[], maxlength)
