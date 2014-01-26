@@ -7,6 +7,7 @@
 #define PLUGIN_VERSION "1.0"
 
 new Handle:g_hCVPercent;
+new Handle:g_hCVMaxDamage;
 
 public Plugin:myinfo = 
 {
@@ -48,6 +49,7 @@ public OnLibraryAdded(const String:name[])
 		SMRPG_RegisterUpgradeType("Damage+", UPGRADE_SHORTNAME, "Deal additional damage on enemies.", 10, true, 5, 5, 10, SMRPG_BuySell, SMRPG_ActiveQuery);
 		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
 		g_hCVPercent = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_damage_percent", "0.05", "Percentage of damage done the victim loses additionally (multiplied by level)", _, true, 0.0, true, 1.0);
+		g_hCVMaxDamage = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_damage_max", "25", "Maximum damage a player could deal additionally ignoring higher percentual values. (0 = disable)", _, true, 0.0);
 	}
 }
 
@@ -115,6 +117,14 @@ public Action:Hook_OnTakeDamage(victim, &attacker, &inflictor, &Float:damage, &d
 		return Plugin_Continue; // Some other plugin doesn't want this effect to run
 	
 	// Increase the damage
-	damage += RoundToNearest(damage * GetConVarFloat(g_hCVPercent) * float(iLevel));
+	new Float:fDmgInc = damage * GetConVarFloat(g_hCVPercent) * float(iLevel);
+	
+	
+	// Cap it at the upper limit
+	new Float:fMaxDmg = GetConVarFloat(g_hCVMaxDamage);
+	if(fMaxDmg > 0.0 && fDmgInc > fMaxDmg)
+		fDmgInc = fMaxDmg;
+	
+	damage += fDmgInc;
 	return Plugin_Changed;
 }
