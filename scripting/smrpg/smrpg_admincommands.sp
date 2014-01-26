@@ -776,7 +776,7 @@ public Action:Cmd_DBMassSell(client, args)
 	
 	// TODO: check database for column instead of only currently loaded upgrades?
 	decl String:sUpgrade[MAX_UPGRADE_SHORTNAME_LENGTH];
-	GetCmdArg(2, sUpgrade, sizeof(sUpgrade));
+	GetCmdArg(1, sUpgrade, sizeof(sUpgrade));
 	TrimString(sUpgrade);
 	StripQuotes(sUpgrade);
 	new upgrade[InternalUpgradeInfo];
