@@ -23,6 +23,7 @@ RegisterAdminCommands()
 	RegAdminCmd("smrpg_db_delplayer", Cmd_DBDelPlayer, ADMFLAG_ROOT, "Delete a player entry from both tables in the database (this cannot be undone!). Usage: smrpg_db_delplayer <full name | player db id | steamid>", "smrpg");
 	RegAdminCmd("smrpg_db_mass_sell", Cmd_DBMassSell, ADMFLAG_ROOT, "Force everyone in the database (and playing) to sell a specific upgrade. Usage: smrpg_db_mass_sell <upgrade>", "smrpg");
 	RegAdminCmd("smrpg_db_write", Cmd_DBWrite, ADMFLAG_ROOT, "Write current player data to the database", "smrpg");
+	RegAdminCmd("smrpg_db_stats", Cmd_DBStats, ADMFLAG_ROOT, "Show general stats about player base and upgrade usage.", "smrpg");
 	
 	RegAdminCmd("smrpg_debug_playerlist", Cmd_DebugPlayerlist, ADMFLAG_ROOT, "List all RPG players", "smrpg");
 }
@@ -838,6 +839,17 @@ public Action:Cmd_DBWrite(client, args)
 	return Plugin_Handled;
 }
 
+public Action:Cmd_DBStats(client, args)
+{
+	decl String:sQuery[512];
+	Format(sQuery, sizeof(sQuery), "SELECT COUNT(*) AS total, (SELECT COUNT(*) FROM %s WHERE lastseen > %d) AS recent, AVG(level) FROM %s", TBL_PLAYERS, GetTime()-432000, TBL_PLAYERS);
+	new Handle:hPack = CreateDataPack();
+	WritePackCell(hPack, client?GetClientSerial(client):0);
+	WritePackCell(hPack, _:GetCmdReplySource());
+	SQL_TQuery(g_hDatabase, SQL_PrintPlayerStats, sQuery, hPack);
+	return Plugin_Handled;
+}
+
 /**
  * SQL callbacks
  */
@@ -975,6 +987,103 @@ public SQL_MassDeleteItem(Handle:owner, Handle:hndl, const String:error[], any:d
 			ReplyToCommand(client, "SM:RPG db_mass_sell: Notice: smrpg_save_data is set to '0', command had no effect");
 		}
 	}
+}
+
+public SQL_PrintPlayerStats(Handle:owner, Handle:hndl, const String:error[], any:data)
+{
+	ResetPack(data);
+	new client = GetClientFromSerial(ReadPackCell(data));
+	new ReplySource:source = ReplySource:ReadPackCell(data);
+	
+	if(hndl == INVALID_HANDLE || strlen(error) > 0)
+	{
+		LogError("Error getting player stats in smrpg_db_stats: %s", error);
+		CloseHandle(data);
+		return;
+	}
+
+	if(SQL_FetchRow(hndl))
+	{
+		new ReplySource:oldSource = SetCmdReplySource(source);
+		new iPlayerCount = SQL_FetchInt(hndl, 0);
+		new iRecentPlayers = SQL_FetchInt(hndl, 1);
+		ReplyToCommand(client, "There are %d players in the database with an average level of %.2f. %d (%.2f%%) connected in the last 5 days.", iPlayerCount, SQL_FetchFloat(hndl, 2), iRecentPlayers, float(iRecentPlayers)/float(iPlayerCount)*100.0);
+		SetCmdReplySource(oldSource);
+	}
+	
+	decl String:sQuery[64];
+	Format(sQuery, sizeof(sQuery), "SELECT * FROM %s LIMIT 1", TBL_UPGRADES);
+	SQL_TQuery(g_hDatabase, SQL_PrintUpgradeStats, sQuery, data);
+}
+
+public SQL_PrintUpgradeStats(Handle:owner, Handle:hndl, const String:error[], any:data)
+{
+	ResetPack(data);
+	new serial = ReadPackCell(data);
+	new client = GetClientFromSerial(serial);
+	new ReplySource:source = ReplySource:ReadPackCell(data);
+	
+	if(hndl == INVALID_HANDLE || strlen(error) > 0)
+	{
+		LogError("Error getting upgrade names in smrpg_db_stats: %s", error);
+		CloseHandle(data);
+		return;
+	}
+
+	if(!SQL_FetchRow(hndl))
+	{
+		CloseHandle(data);
+		return;
+	}
+
+	new iFields = SQL_GetFieldCount(hndl);
+	
+	new ReplySource:oldSource = SetCmdReplySource(source);
+	ReplyToCommand(client, "Listing %d registered upgrades:", iFields-1);
+	ReplyToCommand(client, "%-15s%-8s%-10s%-8s", "Upgrade", "#bought", "AVG LVL", "Loaded");
+	SetCmdReplySource(oldSource);
+
+	decl String:sFieldName[MAX_UPGRADE_SHORTNAME_LENGTH];
+	decl String:sQuery[512];
+	new Handle:hPack;
+	for(new i=1;i<iFields;i++)
+	{
+		hPack = CreateDataPack();
+		WritePackCell(hPack, serial);
+		WritePackCell(hPack, _:source);
+		
+		SQL_FieldNumToName(hndl, i, sFieldName, sizeof(sFieldName));
+		Format(sQuery, sizeof(sQuery), "SELECT %s, COUNT(%s), AVG(%s) FROM %s WHERE %s > 0", sFieldName, sFieldName, sFieldName, TBL_UPGRADES, sFieldName);
+		SQL_TQuery(g_hDatabase, SQL_PrintUpgradeUsage, sQuery, hPack);
+	}
+	CloseHandle(data);
+}
+
+public SQL_PrintUpgradeUsage(Handle:owner, Handle:hndl, const String:error[], any:data)
+{
+	ResetPack(data);
+	new client = GetClientFromSerial(ReadPackCell(data));
+	new ReplySource:source = ReplySource:ReadPackCell(data);
+	CloseHandle(data);
+	
+	if(hndl == INVALID_HANDLE || strlen(error) > 0)
+	{
+		LogError("Error getting upgrade stats in smrpg_db_stats: %s", error);
+		return;
+	}
+
+	new upgrade[InternalUpgradeInfo];
+	decl String:sFieldName[MAX_UPGRADE_SHORTNAME_LENGTH];
+	new ReplySource:oldSource = SetCmdReplySource(source);
+	while(SQL_MoreRows(hndl))
+	{
+		if(!SQL_FetchRow(hndl))
+			continue;
+		
+		SQL_FieldNumToName(hndl, 0, sFieldName, sizeof(sFieldName));
+		ReplyToCommand(client, "%-15s%-8d%-10.2f%-8s", sFieldName, SQL_FetchInt(hndl, 1), SQL_FetchFloat(hndl, 2), (GetUpgradeByShortname(sFieldName, upgrade)?"Yes":"No"));
+	}
+	SetCmdReplySource(oldSource);
 }
 
 /**
