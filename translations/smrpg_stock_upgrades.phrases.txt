@@ -149,4 +149,14 @@
 	{
 		"en"			"Regenerates armor every second."
 	}
+	
+	"clipsize"
+	{
+		"en"			"Increase Clipsize"
+	}
+	
+	"clipsize description"
+	{
+		"en"			"Increases the size of a weapon's clip."
+	}
 }

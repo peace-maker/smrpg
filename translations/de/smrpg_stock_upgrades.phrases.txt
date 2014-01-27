@@ -149,4 +149,14 @@
 	{
 		"de"			"Stellt jede Sekunde eine bestimmte Menge an Rüstung wieder her."
 	}
+	
+	"clipsize"
+	{
+		"de"			"Magazin vergrößern"
+	}
+	
+	"clipsize description"
+	{
+		"de"			"Erhöht die Kapazität des aktiven Magazins der Waffen."
+	}
 }
