@@ -219,7 +219,7 @@ public Hook_OnWeaponEquipPost(client, weapon)
 	
 	new iClip1 = Weapon_GetPrimaryClip(weapon);
 	if(iClip1 == g_iGameMaxClip1[weapon])
-		CreateTimer(0.1, Timer_SetEquipAmmo, weapon, TIMER_FLAG_NO_MAPCHANGE);
+		CreateTimer(0.1, Timer_SetEquipAmmo, EntIndexToEntRef(weapon), TIMER_FLAG_NO_MAPCHANGE);
 }
 
 public Action:Hook_OnReload(weapon)
@@ -309,7 +309,7 @@ public Hook_OnReloadPost(weapon, bool:bSuccessful)
 		return; // Some other plugin doesn't want this effect to run
 	
 	new Handle:hPack = CreateDataPack();
-	WritePackCell(hPack, weapon);
+	WritePackCell(hPack, EntIndexToEntRef(weapon));
 	WritePackCell(hPack, Weapon_GetPrimaryClip(weapon));
 	CreateTimer(0.1, Timer_CheckReloadFinish, hPack, TIMER_FLAG_NO_MAPCHANGE|TIMER_REPEAT|TIMER_DATA_HNDL_CLOSE);
 }
@@ -336,6 +336,10 @@ public Event_OnPlayerSpawn(Handle:event, const String:name[], bool:dontBroadcast
 
 public Action:Timer_SetEquipAmmo(Handle:timer, any:weapon)
 {
+	weapon = EntRefToEntIndex(weapon);
+	if(weapon == INVALID_ENT_REFERENCE)
+		return Plugin_Stop;
+	
 	new client = Weapon_GetOwner(weapon);
 	if(client <= 0)
 		return Plugin_Stop;
@@ -365,7 +369,7 @@ public Action:Timer_SetEquipAmmo(Handle:timer, any:weapon)
 public Action:Timer_CheckReloadFinish(Handle:timer, any:data)
 {
 	ResetPack(data);
-	new weapon = ReadPackCell(data);
+	new weapon = EntRefToEntIndex(ReadPackCell(data));
 	new iPreReloadClip1 = ReadPackCell(data);
 	
 	if(!IsValidEntity(weapon))
