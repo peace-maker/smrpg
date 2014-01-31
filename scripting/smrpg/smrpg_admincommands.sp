@@ -829,6 +829,7 @@ public Action:Cmd_DebugPlayerlist(client, args)
 		
 		ReplyToCommand(client, "Player: %N, UserID: %d, Level: %d, Experience: %d/%d", i, GetClientUserId(i), GetClientLevel(i), GetClientExperience(i), Stats_LvlToExp(GetClientLevel(i)));
 	}
+	return Plugin_Handled;
 }
 
 public Action:Cmd_DBWrite(client, args)
