@@ -1,0 +1,37 @@
+"Phrases"
+{
+  "Don't give yourself a gift"
+  {
+    "en"  "There is no point in giving yourself a gift.."
+  }
+  "Need at least 1 credit"
+  {
+    "en"  "You need to give at least 1 credit!"
+  }
+  "You don't have enough credits"
+  {
+    "en"  "You don't have enough credits."
+  }
+  "Failed to give credits"
+  {
+    // 1: The amount of credits the player tried to give as a gift.
+    // 2: The name of the receiver.
+    "#format" "{1:d},{2:N}"
+    "en"  "Failed to give {1} credits to {2}."
+  }
+  "Fatal Error giving credits. Credits lost."
+  {
+    // 1: The amount of credits the player tried to give as a gift.
+    // 2: The name of the receiver.
+    "#format" "{1:d},{2:N}"
+    "en"  "Failed to give {1} credits to {2} and I'm unable to give you your credits back. Contact an admin!"
+  }
+  "Gave credits as a gift"
+  {
+    // 1: The name of the generous player giving some credits.
+    // 2: The amount of credits the player gave as a gift.
+    // 3: The name of the receiver.
+    "#format" "{1:N},{2:d},{3:N}"
+    "en"  "{1} gave {2} credits to {3} as a present!"
+  }
+}

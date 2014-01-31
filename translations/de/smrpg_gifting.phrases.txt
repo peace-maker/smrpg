@@ -1,0 +1,34 @@
+"Phrases"
+{
+  "Don't give yourself a gift"
+  {
+    "de"  "Wieso solltest du dir selbst etwas schenken wollen?"
+  }
+  "Need at least 1 credit"
+  {
+    "de"  "Du musst mindestens 1 Kredit schenken!"
+  }
+  "You don't have enough credits"
+  {
+    "de"  "Du hast nicht genug Kredite."
+  }
+  "Failed to give credits"
+  {
+    // 1: The amount of credits the player tried to give as a gift.
+    // 2: The name of the receiver.
+    "de"  "Konnte {2} keine {1} Kredite schenken."
+  }
+  "Fatal Error giving credits. Credits lost."
+  {
+    // 1: The amount of credits the player tried to give as a gift.
+    // 2: The name of the receiver.
+    "de"  "Konnte {2} keine {1} Kredite schenken und es ist nicht möglich dir deine Kredite zurück zu geben. Kontaktiere einen Admin!"
+  }
+  "Gave credits as a gift"
+  {
+    // 1: The name of the generous player giving some credits.
+    // 2: The amount of credits the player gave as a gift.
+    // 3: The name of the receiver.
+    "de"  "{1} hat {3} {2} Kredite geschenkt!"
+  }
+}
