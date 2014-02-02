@@ -527,7 +527,7 @@ public Menu_HandlePlayerUpgradeLevelChange(Handle:menu, MenuAction:action, param
 				SetClientCredits(iTarget, GetClientCredits(iTarget) + GetUpgradeCost(iItemIndex, GetClientUpgradeLevel(iTarget, iItemIndex)+1));
 			}
 			LogAction(param1, iTarget, "Reset %N's upgrade %s with full refund of all upgrade costs. Upgrade level changed from %d to %d and player earned %d credits.", iTarget, upgrade[UPGR_name], iOldLevel, GetClientUpgradeLevel(iTarget, iItemIndex), iCreditsReturned);
-			Client_PrintToChat(param1, false, "SM:RPG > Reset %N's upgrade %s with full refund of all upgrade costs. Upgrade level changed from %d to %d and player earned %d credits.", iTarget, upgrade[UPGR_name], iOldLevel, GetClientUpgradeLevel(iTarget, iItemIndex), iCreditsReturned);
+			Client_PrintToChat(param1, false, "{OG}SM:RPG{N} > {G}Reset %N's upgrade %s with full refund of all upgrade costs. Upgrade level changed from %d to %d and player earned %d credits.", iTarget, upgrade[UPGR_name], iOldLevel, GetClientUpgradeLevel(iTarget, iItemIndex), iCreditsReturned);
 		}
 		else if(StrEqual(sInfo, "give"))
 		{
@@ -546,7 +546,7 @@ public Menu_HandlePlayerUpgradeLevelChange(Handle:menu, MenuAction:action, param
 				new iCost = GetUpgradeCost(iItemIndex, iOldLevel+1);
 				if(iCost > GetClientCredits(iTarget))
 				{
-					Client_PrintToChat(param1, false, "SM:RPG > %N doesn't have enough credits to purchase %s (%d/%d)", iTarget, upgrade[UPGR_name], GetClientCredits(iTarget), iCost);
+					Client_PrintToChat(param1, false, "{OG}SM:RPG{N} > {G}%N doesn't have enough credits to purchase %s (%d/%d)", iTarget, upgrade[UPGR_name], GetClientCredits(iTarget), iCost);
 				}
 				else
 				{

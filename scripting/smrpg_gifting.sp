@@ -110,27 +110,27 @@ HandleGifting(client, String:sTarget[], String:sCredits[])
 
 	if(iTarget == client)
 	{
-		Client_PrintToChat(client, false, "SM:RPG > %t", "Don't give yourself a gift");
+		Client_PrintToChat(client, false, "{OG}SM:RPG{N} > {G}%t", "Don't give yourself a gift");
 		return;
 	}
 	
 	new iCredits = StringToInt(sCredits);
 	if(iCredits <= 0)
 	{
-		Client_PrintToChat(client, false, "SM:RPG > %t", "Need at least 1 credit");
+		Client_PrintToChat(client, false, "{OG}SM:RPG{N} > {G}%t", "Need at least 1 credit");
 		return;
 	}
 	
 	new iPlayerCredits = SMRPG_GetClientCredits(client);
 	if(iPlayerCredits < iCredits)
 	{
-		Client_PrintToChat(client, false, "SM:RPG > %t", "You don't have enough credits");
+		Client_PrintToChat(client, false, "{OG}SM:RPG{N} > {G}%t", "You don't have enough credits");
 		return;
 	}
 	
 	if(!SMRPG_SetClientCredits(client, iPlayerCredits-iCredits))
 	{
-		Client_PrintToChat(client, false, "SM:RPG > %t", "Failed to give credits", iCredits, iTarget);
+		Client_PrintToChat(client, false, "{OG}SM:RPG{N} > {G}%t", "Failed to give credits", iCredits, iTarget);
 		return;
 	}
 	
@@ -139,14 +139,14 @@ HandleGifting(client, String:sTarget[], String:sCredits[])
 		// Reset the credits
 		if(!SMRPG_SetClientCredits(client, iPlayerCredits))
 		{
-			Client_PrintToChat(client, false, "SM:RPG > %t", "Fatal Error giving credits. Credits lost.", iCredits, iTarget);
+			Client_PrintToChat(client, false, "{OG}SM:RPG{N} > {G}%t", "Fatal Error giving credits. Credits lost.", iCredits, iTarget);
 			LogMessage("%L tried to give %L %d credits. That failed and we weren't able to give %N his credits back.", client, iTarget, iCredits, client);
 		}
 		else
-			Client_PrintToChat(client, false, "SM:RPG > %t", "Failed to give credits", iCredits, iTarget);
+			Client_PrintToChat(client, false, "{OG}SM:RPG{N} > {G}%t", "Failed to give credits", iCredits, iTarget);
 		return;
 	}
 	
 	LogAction(client, iTarget, "Gave %d credits as a gift.", iCredits);
-	Client_PrintToChatAll(false, "SM:RPG > %t", "Gave credits as a gift", client, iCredits, iTarget);
+	Client_PrintToChatAll(false, "{OG}SM:RPG{N} > {G}%t", "Gave credits as a gift", client, iCredits, iTarget);
 }
