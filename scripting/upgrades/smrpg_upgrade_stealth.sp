@@ -17,6 +17,16 @@ public Plugin:myinfo =
 	url = "http://www.wcfan.de/"
 }
 
+public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
+{
+	if(GetEngineVersion() == Engine_CSGO)
+	{
+		Format(error, err_max, "CS:GO doesn't support setting the alpha of a player :(");
+		return APLRes_SilentFailure;
+	}
+	return APLRes_Success;
+}
+
 public OnPluginStart()
 {
 	HookEvent("player_spawn", Event_OnPlayerSpawn);
