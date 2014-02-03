@@ -204,12 +204,13 @@ enum TranslationType
  * The translation defaults to the strings that were passed when registering the upgrade.
  *
  * @param client         The client, to which language you should translate to.
+ * @param shortname      The shortname of the upgrade.
  * @param type           The requested TranslationType (name or description).
  * @param translation    The translation buffer.
  * @param maxlen         The maximal length of the buffer.
  * @noreturn
  */
-functag public SMRPG_TranslateUpgradeCB(client, TranslationType:type, String:translation[], maxlen);
+functag public SMRPG_TranslateUpgradeCB(client, const String:shortname[], TranslationType:type, String:translation[], maxlen);
 
 /**
  * Set a translation callback for the named upgrade.

@@ -160,7 +160,7 @@ public SMRPG_ResetEffect(client)
 	ClearHandle(g_hDenialStripTimer[client]);
 }
 
-public SMRPG_TranslateUpgrade(client, TranslationType:type, String:translation[], maxlen)
+public SMRPG_TranslateUpgrade(client, const String:shortname[], TranslationType:type, String:translation[], maxlen)
 {
 	if(type == TranslationType_Name)
 		Format(translation, maxlen, "%T", UPGRADE_SHORTNAME, client);

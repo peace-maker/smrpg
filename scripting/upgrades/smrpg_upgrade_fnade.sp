@@ -99,7 +99,7 @@ public SMRPG_ResetEffect(client)
 	g_hExtinguishTimer[client] = CreateTimer(0.2, Timer_Extinguish, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
 }
 
-public SMRPG_TranslateUpgrade(client, TranslationType:type, String:translation[], maxlen)
+public SMRPG_TranslateUpgrade(client, const String:shortname[], TranslationType:type, String:translation[], maxlen)
 {
 	if(type == TranslationType_Name)
 		Format(translation, maxlen, "%T", UPGRADE_SHORTNAME, client);

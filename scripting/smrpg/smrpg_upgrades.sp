@@ -578,6 +578,7 @@ GetUpgradeTranslatedName(client, iUpgradeIndex, String:name[], maxlen)
 	
 	Call_StartFunction(upgrade[UPGR_plugin], upgrade[UPGR_translationCallback]);
 	Call_PushCell(client);
+	Call_PushString(upgrade[UPGR_shortName]);
 	Call_PushCell(TranslationType_Name);
 	Call_PushStringEx(name, maxlen, SM_PARAM_STRING_UTF8|SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
 	Call_PushCell(maxlen);
@@ -597,6 +598,7 @@ GetUpgradeTranslatedDescription(client, iUpgradeIndex, String:description[], max
 	
 	Call_StartFunction(upgrade[UPGR_plugin], upgrade[UPGR_translationCallback]);
 	Call_PushCell(client);
+	Call_PushString(upgrade[UPGR_shortName]);
 	Call_PushCell(TranslationType_Description);
 	Call_PushStringEx(description, maxlen, SM_PARAM_STRING_UTF8|SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
 	Call_PushCell(maxlen);

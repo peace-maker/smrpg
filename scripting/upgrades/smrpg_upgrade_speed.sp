@@ -86,7 +86,7 @@ public bool:SMRPG_ActiveQuery(client)
 	return SMRPG_IsEnabled() && upgrade[UI_enabled] && SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME) > 0;
 }
 
-public SMRPG_TranslateUpgrade(client, TranslationType:type, String:translation[], maxlen)
+public SMRPG_TranslateUpgrade(client, const String:shortname[], TranslationType:type, String:translation[], maxlen)
 {
 	if(type == TranslationType_Name)
 		Format(translation, maxlen, "%T", UPGRADE_SHORTNAME, client);
