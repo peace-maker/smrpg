@@ -467,7 +467,7 @@ ShowPlayerUpgradeLevelMenu(client)
 	
 	new Handle:hMenu = CreateMenu(Menu_HandlePlayerUpgradeLevelChange);
 	SetMenuExitBackButton(hMenu, true);
-	SetMenuTitle(hMenu, "Change %N's upgrade level\n%s: %d", g_iCurrentMenuTarget[client], sTranslatedName, GetClientUpgradeLevel(g_iCurrentMenuTarget[client], iItemIndex));
+	SetMenuTitle(hMenu, "Change %N's upgrade level\n%s: %d/%d", g_iCurrentMenuTarget[client], sTranslatedName, GetClientUpgradeLevel(g_iCurrentMenuTarget[client], iItemIndex), upgrade[UPGR_maxLevel]);
 	
 	AddMenuItem(hMenu, "reset", "Reset upgrade to 0 with full refund\n");
 	AddMenuItem(hMenu, "give", "Give level at no costs");
