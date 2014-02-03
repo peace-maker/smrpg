@@ -159,4 +159,14 @@
 	{
 		"de"			"Erhöht die Kapazität des aktiven Magazins der Waffen."
 	}
+	
+	"shrinking"
+	{
+		"de"			"Schrumpfen"
+	}
+	
+	"shrinking description"
+	{
+		"de"			"Verkleinert deine Spielfigur und erschwert es damit dich zu treffen."
+	}
 }

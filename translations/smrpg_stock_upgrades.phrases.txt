@@ -159,4 +159,14 @@
 	{
 		"en"			"Increases the size of a weapon's clip."
 	}
+	
+	"shrinking"
+	{
+		"en"			"Shrinking"
+	}
+	
+	"shrinking description"
+	{
+		"en"			"Makes your player model smaller and harder to hit."
+	}
 }
