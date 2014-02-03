@@ -68,7 +68,12 @@ public OnLibraryAdded(const String:name[])
 
 public OnMapStart()
 {
-	g_iRedTrailSprite = PrecacheModel("sprites/combineball_trail_red_1.vmt", true);
+	if(FileExists("materials/sprites/combineball_trail_red_1.vmt", true))
+		g_iRedTrailSprite = PrecacheModel("sprites/combineball_trail_red_1.vmt", true);
+	else if(FileExists("materials/sprites/purplelaser1.vmt", true))
+		g_iRedTrailSprite = PrecacheModel("sprites/purplelaser1.vmt", true);
+	else
+		LogError("Can't find a sprite texture for the beam effect. Contact the plugin author with the game you're using.");
 }
 
 public OnClientPutInServer(client)
@@ -186,6 +191,10 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 	WritePackCell(hData, GetClientUserId(victim));
 	WritePackFloat(hData, fOldLaggedMovementValue);
 	ResetPack(hData);
+	
+	// No effect for this game:(
+	if(g_iRedTrailSprite == -1)
+		return;
 	
 	decl Float:vOrigin[3];
 	GetClientEyePosition(victim, vOrigin);
