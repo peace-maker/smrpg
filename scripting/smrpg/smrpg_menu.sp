@@ -450,7 +450,7 @@ public Menu_HandleCommands(Handle:menu, MenuAction:action, param1, param2)
 		
 		decl String:sDescription[256];
 		if(GetCommandTranslation(param1, sInfo, CommandTranslationType_Description, sDescription, sizeof(sDescription)))
-			Client_PrintToChat(param1, false, "%s: %s", sInfo, sDescription);
+			Client_PrintToChat(param1, false, "{OG}SM:RPG{N} > {G}%s{N}: %s", sInfo, sDescription);
 		
 		DisplayCommandsMenu(param1, GetMenuSelectionPosition());
 	}
@@ -627,7 +627,7 @@ public Menu_HandleHelp(Handle:menu, MenuAction:action, param1, param2)
 		GetUpgradeTranslatedName(param1, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
 		GetUpgradeTranslatedDescription(param1, upgrade[UPGR_index], sTranslatedDescription, sizeof(sTranslatedDescription));
 		
-		Client_PrintToChat(param1, false, "%s: %s", sTranslatedName, sTranslatedDescription);
+		Client_PrintToChat(param1, false, "{OG}SM:RPG{N} > {G}%s{N}: %s", sTranslatedName, sTranslatedDescription);
 		
 		DisplayHelpMenu(param1, GetMenuSelectionPosition());
 	}
