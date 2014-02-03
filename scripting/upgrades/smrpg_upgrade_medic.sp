@@ -28,6 +28,7 @@
 #define MEDIC_ARMOR_BEAM_COLOR {5, 255, 10, 50}
 
 new g_iBeamRingSprite = -1;
+new bool:g_bIsCstrike;
 
 public Plugin:myinfo = 
 {
@@ -41,6 +42,7 @@ public Plugin:myinfo =
 public OnPluginStart()
 {
 	LoadTranslations("smrpg_stock_upgrades.phrases");
+	g_bIsCstrike = GetEngineVersion() == Engine_CSS || GetEngineVersion() == Engine_CSGO;
 }
 
 public OnPluginEnd()
@@ -69,9 +71,14 @@ public OnMapStart()
 	CreateTimer(MEDIC_DELAY, Timer_ApplyMedic, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 
 	// TODO: Make game independant
-	PrecacheSound("weapons/physcannon/physcannon_charge.wav", true);
+	PrecacheSound("items/battery_pickup.wav", true);
 	
-	g_iBeamRingSprite = PrecacheModel("sprites/lgtning.vmt", true);
+	if(FileExists("materials/sprites/lgtning.vmt", true))
+		g_iBeamRingSprite = PrecacheModel("sprites/lgtning.vmt", true);
+	else if(FileExists("materials/sprites/physbeam.vmt", true))
+		g_iBeamRingSprite = PrecacheModel("sprites/physbeam.vmt", true);
+	else
+		LogError("Unable to find a nice sprite texture for the beam ring effect. Contact the author with the game you're running this on.");
 }
 
 /**
@@ -116,7 +123,7 @@ public Action:Timer_ApplyMedic(Handle:timer, any:data)
 	if(!upgrade[UI_enabled])
 		return Plugin_Continue;
 	
-	new bool:bBotEnable = SMRPG_IgnoreBots();
+	new bool:bIgnoreBots = SMRPG_IgnoreBots();
 	
 	// Build origin cache and team targets for beam rings
 	decl Float:vCacheOrigin[MaxClients+1][3];
@@ -127,7 +134,7 @@ public Action:Timer_ApplyMedic(Handle:timer, any:data)
 		if(!IsClientInGame(i))
 			continue;
 		
-		if(!bBotEnable && IsFakeClient(i))
+		if(bIgnoreBots && IsFakeClient(i))
 			continue;
 		
 		if(GetClientTeam(i) == 2)
@@ -150,7 +157,7 @@ public Action:Timer_ApplyMedic(Handle:timer, any:data)
 		if(!IsClientInGame(i) || !IsPlayerAlive(i))
 			continue;
 		
-		if(!bBotEnable && IsFakeClient(i))
+		if(bIgnoreBots && IsFakeClient(i))
 			continue;
 		
 		iLevel = SMRPG_GetClientUpgradeLevel(i, UPGRADE_SHORTNAME);
@@ -168,7 +175,7 @@ public Action:Timer_ApplyMedic(Handle:timer, any:data)
 			if(m == i || !IsClientInGame(m) || !IsPlayerAlive(m) || GetClientTeam(m) != GetClientTeam(i))
 				continue;
 			
-			if(!bBotEnable && IsFakeClient(m))
+			if(bIgnoreBots && IsFakeClient(m))
 				continue;
 			
 			/* A suitable player has been found */
@@ -177,7 +184,8 @@ public Action:Timer_ApplyMedic(Handle:timer, any:data)
 				continue;
 			
 			iNewHP = GetClientHealth(m);
-			iNewArmor = GetClientArmor(m);
+			if(g_bIsCstrike)
+				iNewArmor = GetClientArmor(m);
 			
 			bMedicDidHisJob = false;
 			
@@ -197,7 +205,7 @@ public Action:Timer_ApplyMedic(Handle:timer, any:data)
 				bMedicDidHisJob = true;
 			}
 			/* Else if player is not at maximum armor, repair him */
-			else if(iNewArmor < 100)
+			else if(g_bIsCstrike && iNewArmor < 100)
 			{
 				if(iLevel*MEDIC_INC > 25)
 					iNewArmor += 25;
@@ -222,14 +230,17 @@ public Action:Timer_ApplyMedic(Handle:timer, any:data)
 			vRingOrigin = vCacheOrigin[i];
 			vRingOrigin[2] -= 25.0;
 			
-			TE_SetupBeamRingPoint(vRingOrigin, 8.0, MEDIC_RADIUS+300.0, g_iBeamRingSprite, g_iBeamRingSprite, 0, 1, 1.5, 10.0, 0.0, iBeamRingColor, 0, FBEAM_FADEOUT);
+			if(g_iBeamRingSprite != -1)
+			{
+				TE_SetupBeamRingPoint(vRingOrigin, 8.0, MEDIC_RADIUS+300.0, g_iBeamRingSprite, g_iBeamRingSprite, 0, 1, 1.5, 10.0, 0.0, iBeamRingColor, 0, FBEAM_FADEOUT);
+				
+				if(GetClientTeam(i) == 2)
+					TE_Send(iFirstTeam, iFirstCount);
+				else
+					TE_Send(iSecondTeam, iSecondCount);
+			}
 			
-			if(GetClientTeam(i) == 2)
-				TE_Send(iFirstTeam, iFirstCount);
-			else
-				TE_Send(iSecondTeam, iSecondCount);
-			
-			EmitSoundToAll("weapons/physcannon/physcannon_charge.wav", i, SNDCHAN_AUTO, SNDLEVEL_NORMAL, SND_NOFLAGS, 0.2, SNDPITCH_NORMAL, i);
+			EmitSoundToAll("items/battery_pickup.wav", i, SNDCHAN_AUTO, SNDLEVEL_NORMAL, SND_NOFLAGS, 0.2, SNDPITCH_NORMAL, i);
 		}
 	}
 	
