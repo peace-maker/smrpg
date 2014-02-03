@@ -20,6 +20,8 @@ new g_iGameMaxClip1[2048];
 new bool:g_bWeaponReloadOnFull[2048];
 new Handle:g_hWeaponTrie;
 
+new bool:g_bLateLoaded;
+
 public Plugin:myinfo = 
 {
 	name = "SM:RPG Upgrade > Increase Clipsize",
@@ -32,6 +34,7 @@ public Plugin:myinfo =
 public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
 {
 	g_hWeaponTrie = CreateTrie();
+	g_bLateLoaded = late;
 	
 	if(!LoadWeaponAmmoConfig())
 	{
@@ -45,6 +48,27 @@ public OnPluginStart()
 {
 	LoadTranslations("smrpg_stock_upgrades.phrases");
 	HookEvent("player_spawn", Event_OnPlayerSpawn);
+	
+	if(g_bLateLoaded)
+	{
+		for(new i=1;i<=MaxClients;i++)
+		{
+			if(IsClientInGame(i))
+				OnClientPutInServer(i);
+		}
+		
+		new iEntities = GetMaxEntities();
+		decl String:sClassname[64], iClipIncrease;
+		for(new i=MaxClients+1;i<=iEntities;i++)
+		{
+			if(IsValidEntity(i) && GetEntityClassname(i, sClassname, sizeof(sClassname)) && GetTrieValue(g_hWeaponTrie, sClassname, iClipIncrease))
+			{
+				SDKHook(i, SDKHook_Reload, Hook_OnReload);
+				SDKHook(i, SDKHook_ReloadPost, Hook_OnReloadPost);
+				// TODO: Apply new maxclips directly for weapons being held by players.
+			}
+		}
+	}
 }
 
 public OnPluginEnd()
@@ -182,7 +206,7 @@ public SMRPG_TranslateUpgrade(client, TranslationType:type, String:translation[]
 
 public Hook_OnSpawnPost(entity)
 {
-	g_iGameMaxClip1[entity] = Weapon_GetPrimaryClip(entity);
+	CreateTimer(0.1, Timer_GetGameMaxClip1, EntIndexToEntRef(entity), TIMER_FLAG_NO_MAPCHANGE);
 	SDKHook(entity, SDKHook_Reload, Hook_OnReload);
 	SDKHook(entity, SDKHook_ReloadPost, Hook_OnReloadPost);
 }
@@ -334,6 +358,17 @@ public Event_OnPlayerSpawn(Handle:event, const String:name[], bool:dontBroadcast
  * Timer callbacks
  */
 
+public Action:Timer_GetGameMaxClip1(Handle:timer, any:entity)
+{
+	entity = EntRefToEntIndex(entity);
+	if(entity == INVALID_ENT_REFERENCE)
+		return Plugin_Handled;
+	
+	g_iGameMaxClip1[entity] = Weapon_GetPrimaryClip(entity);
+	
+	return Plugin_Handled;
+}
+
 public Action:Timer_SetEquipAmmo(Handle:timer, any:weapon)
 {
 	weapon = EntRefToEntIndex(weapon);
@@ -384,6 +419,10 @@ public Action:Timer_CheckReloadFinish(Handle:timer, any:data)
 		return Plugin_Stop;
 	
 	new iClip1 = Weapon_GetPrimaryClip(weapon);
+	// Support for learning new maxclip value for late-loading.
+	if(g_iGameMaxClip1[weapon] == 0)
+		g_iGameMaxClip1[weapon] = iClip1;
+	
 	// Weapon still had more ammo than the default max.
 	if(iClip1 < iPreReloadClip1)
 		iClip1 = iPreReloadClip1;
