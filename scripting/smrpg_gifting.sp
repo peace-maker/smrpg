@@ -29,12 +29,42 @@ public OnPluginStart()
 	AddCommandListener(CmdLstnr_Say, "say");
 	AddCommandListener(CmdLstnr_Say, "say_team");
 	
-	RegConsoleCmd("sm_rpggift", Cmd_RPGGift, "Give your credits to some other player. Usage: sm_rpggift <#userid|authid|name> <credits>");
+	RegConsoleCmd("rpggift", Cmd_RPGGift, "Give your credits to some other player. Usage: rpggift <#userid|authid|name> <credits>");
 }
 
 public ConVar_VersionChanged(Handle:convar, const String:oldValue[], const String:newValue[])
 {
 	SetConVarString(convar, PLUGIN_VERSION);
+}
+
+public OnPluginEnd()
+{
+	SMRPG_UnregisterCommand("rpggift");
+}
+
+public OnAllPluginsLoaded()
+{
+	OnLibraryAdded("smrpg");
+}
+
+public OnLibraryAdded(const String:name[])
+{
+	// Register the command in SM:RPG
+	if(StrEqual(name, "smrpg"))
+	{
+		SMRPG_RegisterCommand("rpggift", SMRPG_TranslateCommand);
+	}
+}
+
+public Action:SMRPG_TranslateCommand(client, const String:command[], CommandTranslationType:type, String:translation[], maxlen)
+{
+	if(type == CommandTranslationType_ShortDescription)
+		Format(translation, maxlen, "Give your credits to some other player.");
+	else if(type == CommandTranslationType_Description)
+		Format(translation, maxlen, "Give your credits to some other player. Usage: rpggift <#userid|authid|name> <credits>");
+	else if(type == CommandTranslationType_Advert)
+		Format(translation, maxlen, "{G}Type {N}rpggift{G} to give credits to other players as a {N}present{G}!");
+	return Plugin_Continue;
 }
 
 public Action:Cmd_RPGGift(client, args)
@@ -47,7 +77,7 @@ public Action:Cmd_RPGGift(client, args)
 	
 	if(args < 2)
 	{
-		ReplyToCommand(client, "SM:RPG > Usage: sm_rpggift <#userid|authid|name> <credits>");
+		ReplyToCommand(client, "SM:RPG > Usage: rpggift <#userid|authid|name> <credits>");
 		return Plugin_Handled;
 	}
 	
@@ -94,7 +124,7 @@ public Action:CmdLstnr_Say(client, const String:command[], argc)
 	
 	if(iArgCount != 3)
 	{
-		Client_PrintToChat(client, false, "SM:RPG > Usage: sm_rpggift <#userid|authid|name> <credits>");
+		Client_PrintToChat(client, false, "SM:RPG > Usage: rpggift <#userid|authid|name> <credits>");
 		return Plugin_Handled;
 	}
 	

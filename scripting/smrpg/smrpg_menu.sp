@@ -19,6 +19,7 @@ InitMenu()
 	AddMenuItem(g_hMainMenu, "upgrades", "Upgrades");
 	AddMenuItem(g_hMainMenu, "sell", "Sell");
 	AddMenuItem(g_hMainMenu, "stats", "Stats");
+	AddMenuItem(g_hMainMenu, "commands", "Commands");
 	AddMenuItem(g_hMainMenu, "settings", "Settings");
 	AddMenuItem(g_hMainMenu, "help", "Help");
 	
@@ -74,6 +75,10 @@ public Menu_HandleMainMenu(Handle:menu, MenuAction:action, param1, param2)
 		else if(StrEqual(sInfo, "stats"))
 		{
 			DisplayStatsMenu(param1);
+		}
+		else if(StrEqual(sInfo, "commands"))
+		{
+			DisplayCommandsMenu(param1, 0);
 		}
 		else if(StrEqual(sInfo, "settings"))
 		{
@@ -406,6 +411,69 @@ public Menu_HandleStats(Handle:menu, MenuAction:action, param1, param2)
 			DisplayMainMenu(param1);
 	}
 	return 0;
+}
+
+DisplayCommandsMenu(client, position)
+{
+	new Handle:hMenu = CreateMenu(Menu_HandleCommands, MENU_ACTIONS_DEFAULT|MenuAction_Display);
+	SetMenuExitBackButton(hMenu, true);
+	SetMenuTitle(hMenu, "credits_display");
+	
+	decl String:sLine[64];
+	new Handle:hCommandlist = GetCommandList();
+	new iSize = GetArraySize(hCommandlist);
+	new iCommand[RPGCommand];
+	for(new i=0;i<iSize;i++)
+	{
+		GetArrayArray(hCommandlist, i, iCommand[0], _:RPGCommand);
+		
+		if(!GetCommandTranslation(client, iCommand[c_command], CommandTranslationType_ShortDescription, sLine, sizeof(sLine)))
+			continue;
+		
+		Format(sLine, sizeof(sLine), "%s: %s", iCommand[c_command], sLine);
+		
+		AddMenuItem(hMenu, iCommand[c_command], sLine);
+	}
+	
+	if(position > 0)
+		DisplayMenuAtItem(hMenu, client, position, MENU_TIME_FOREVER);
+	else
+		DisplayMenu(hMenu, client, MENU_TIME_FOREVER);
+}
+
+public Menu_HandleCommands(Handle:menu, MenuAction:action, param1, param2)
+{
+	if(action == MenuAction_Select)
+	{
+		decl String:sInfo[16];
+		GetMenuItem(menu, param2, sInfo, sizeof(sInfo));
+		
+		decl String:sDescription[256];
+		if(GetCommandTranslation(param1, sInfo, CommandTranslationType_Description, sDescription, sizeof(sDescription)))
+			Client_PrintToChat(param1, false, "%s: %s", sInfo, sDescription);
+		
+		DisplayCommandsMenu(param1, GetMenuSelectionPosition());
+	}
+	else if(action == MenuAction_Display)
+	{
+		// Change the title
+		new Handle:hPanel = Handle:param2;
+		
+		// Display the current credits in the title
+		decl String:sBuffer[256];
+		Format(sBuffer, sizeof(sBuffer), "%T\n-----\n", "Credits", param1, GetClientCredits(param1));
+		
+		SetPanelTitle(hPanel, sBuffer);
+	}
+	else if(action == MenuAction_Cancel)
+	{
+		if(param2 == MenuCancel_ExitBack)
+			DisplayMainMenu(param1);
+	}
+	else if(action == MenuAction_End)
+	{
+		CloseHandle(menu);
+	}
 }
 
 DisplaySettingsMenu(client)

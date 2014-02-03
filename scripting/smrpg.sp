@@ -46,6 +46,7 @@ new Handle:g_hCVShowUpgradePurchase;
 #include "smrpg/smrpg_database.sp"
 #include "smrpg/smrpg_players.sp"
 #include "smrpg/smrpg_stats.sp"
+#include "smrpg/smrpg_commandlist.sp"
 #include "smrpg/smrpg_menu.sp"
 #include "smrpg/smrpg_admincommands.sp"
 #include "smrpg/smrpg_adminmenu.sp"
@@ -71,6 +72,7 @@ public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
 	RegisterUpgradeNatives();
 	RegisterPlayerNatives();
 	RegisterStatsNatives();
+	RegisterCommandlistNatives();
 }
 
 public OnPluginStart()
@@ -128,6 +130,14 @@ public OnPluginStart()
 	InitUpgrades();
 	InitDatabase();
 	InitMenu();
+	InitCommandList();
+	
+	// Register the default rpg commands
+	SMRPG_RegisterCommand("rpgmenu", CommandList_DefaultTranslations);
+	SMRPG_RegisterCommand("rpgrank", CommandList_DefaultTranslations);
+	SMRPG_RegisterCommand("rpginfo", CommandList_DefaultTranslations);
+	SMRPG_RegisterCommand("rpgtop10", CommandList_DefaultTranslations);
+	SMRPG_RegisterCommand("rpghelp", CommandList_DefaultTranslations);
 	
 	LoadTranslations("common.phrases");
 	LoadTranslations("smrpg.phrases");

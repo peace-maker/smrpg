@@ -128,6 +128,11 @@
 		"en"			"Stats"
 	}
 	
+	"Commands"
+	{
+		"en"			"Commands"
+	}
+	
 	"Settings"
 	{
 		"en"			"Settings"
