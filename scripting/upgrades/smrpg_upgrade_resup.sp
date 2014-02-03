@@ -86,7 +86,7 @@ public Action:Timer_Resupply(Handle:timer)
 	if(!upgrade[UI_enabled])
 		return Plugin_Continue;
 	
-	new bool:bBotEnable = SMRPG_IgnoreBots();
+	new bool:bIgnoreBots = SMRPG_IgnoreBots();
 	
 	new iLevel, iPrimaryAmmo;
 	for(new i=1;i<=MaxClients;i++)
@@ -95,7 +95,7 @@ public Action:Timer_Resupply(Handle:timer)
 			continue;
 		
 		// Are bots allowed to use this upgrade?
-		if(!bBotEnable && IsFakeClient(i))
+		if(bIgnoreBots && IsFakeClient(i))
 			continue;
 		
 		// Player didn't buy this upgrade yet.
