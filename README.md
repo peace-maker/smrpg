@@ -27,7 +27,7 @@ Server admins can install a new upgrade simply by loading the upgrade plugin.
 * Compile the core plugin (see Compile requirements)
 * If there is a seperate experience module for your game (currently only cstrike), compile and upload that too.
 * Compile all the upgrades you want to use
-* Upload the .smx files as well as the gamedata and translations to your gameserver
+* Upload the .smx files as well as the configs, gamedata and translations to your gameserver
 * Add a "smrpg" section to your databases.cfg. Both mysql and sqlite are supported.
 
 ```
@@ -45,6 +45,7 @@ Have a look at the include file here: [smrpg.inc](https://github.com/peace-maker
 See the available upgrade plugins for examples.
 
 # Available upgrades
+* Armor Regeneration (Counter-Strike only) - Regenerates armor every second.
 * Damage+ - Deal additional damage on enemies.
 * Denial - Keep your weapons the next time you spawn after you've died.
 * Fire Grenade - Ignites players damaged by your grenade.
@@ -52,9 +53,10 @@ See the available upgrade plugins for examples.
 * Health+ - Increases your health.
 * Ice Stab - Freeze a player in place when knifing him.
 * Impulse - Gain speed for a short time when being shot.
+* Increase Clipsize - Increases the size of a weapon's clip.
 * Long Jump - Boosts your jump speed.
 * Medic - Heals team mates around you.
-* Regeneration - Regenerates HP every second.
+* HP Regeneration - Regenerates HP every second.
 * Resupply - Regenerates ammo every third second.
 * Speed+ - Increase your average movement speed.
 * Stealth - Renders yourself more and more invisible.
