@@ -9,7 +9,7 @@
 new Handle:g_hCVIncrease;
 
 new Float:g_fLJumpPreviousVelocity[MAXPLAYERS+1][3];
-new bool:g_bLJumpPlayerJumped[MAXPLAYERS+1];
+new Float:g_fLJumpPlayerJumped[MAXPLAYERS+1];
 
 public Plugin:myinfo = 
 {
@@ -22,10 +22,9 @@ public Plugin:myinfo =
 
 public OnPluginStart()
 {
-	HookEvent("player_footstep", Event_OnResetJump);
+	HookEventEx("player_footstep", Event_OnResetJump);
 	HookEvent("player_spawn", Event_OnResetJump);
 	HookEvent("player_death", Event_OnResetJump);
-	HookEvent("player_jump", Event_OnPlayerJump);
 	
 	LoadTranslations("smrpg_stock_upgrades.phrases");
 }
@@ -80,36 +79,40 @@ public SMRPG_TranslateUpgrade(client, TranslationType:type, String:translation[]
 
 public OnClientDisconnect(client)
 {
-	g_bLJumpPlayerJumped[client] = false;
+	g_fLJumpPlayerJumped[client] = -1.0;
 }
 
-public OnGameFrame()
+public Action:OnPlayerRunCmd(client, &buttons, &impulse, Float:vel[3], Float:angles[3], &weapon, &subtype, &cmdnum, &tickcount, &seed, mouse[2])
 {
-	decl Float:vVelocity[3];
-	for(new i=1;i<=MaxClients;i++)
+	static s_iLastButtons[MAXPLAYERS+1] = {0,...};
+	if(!IsClientInGame(client) || !IsPlayerAlive(client))
+		return Plugin_Continue;
+	
+	// Player started to press space - or what ever is bound to jump..
+	if(buttons & IN_JUMP && !(s_iLastButtons[client] & IN_JUMP))
 	{
-		if(!g_bLJumpPlayerJumped[i])
-			continue;
-		
-		if(!IsClientInGame(i))
-			continue;
-		
-		GetEntPropVector(i, Prop_Data, "m_vecVelocity", vVelocity);
-		if(vVelocity[2] > g_fLJumpPreviousVelocity[i][2])
+		// Make sure the player is on the ground and not on a ladder.
+		if(GetEntityFlags(client) & FL_ONGROUND && GetEntityMoveType(client) != MOVETYPE_LADDER)
 		{
-			LJump_HasJumped(i, vVelocity);
-			g_bLJumpPlayerJumped[i] = false;
+			GetEntPropVector(client, Prop_Data, "m_vecVelocity", g_fLJumpPreviousVelocity[client]);
+			g_fLJumpPlayerJumped[client] = GetEngineTime();
 		}
 	}
-}
+	
+	if(g_fLJumpPlayerJumped[client] > 0.0)
+	{
+		decl Float:vVelocity[3];
+		GetEntPropVector(client, Prop_Data, "m_vecVelocity", vVelocity);
 
-public Event_OnPlayerJump(Handle:event, const String:error[], bool:dontBroadcast)
-{
-	new client = GetClientOfUserId(GetEventInt(event, "userid"));
-	if(!client)
-		return;
-	GetEntPropVector(client, Prop_Data, "m_vecVelocity", g_fLJumpPreviousVelocity[client]);
-	g_bLJumpPlayerJumped[client] = true;
+		if(vVelocity[2] > g_fLJumpPreviousVelocity[client][2])
+		{
+			LJump_HasJumped(client, vVelocity);
+			g_fLJumpPlayerJumped[client] = -1.0;
+		}
+	}
+	
+	s_iLastButtons[client] = buttons;
+	return Plugin_Continue;
 }
 
 public Event_OnResetJump(Handle:event, const String:error[], bool:dontBroadcast)
@@ -117,7 +120,11 @@ public Event_OnResetJump(Handle:event, const String:error[], bool:dontBroadcast)
 	new client = GetClientOfUserId(GetEventInt(event, "userid"));
 	if(!client)
 		return;
-	g_bLJumpPlayerJumped[client] = false;
+	
+	// Don't reset the jumping right after the player jumped.
+	// In CSGO the player_footstep event is fired right before the player takes off. Ignore that one event.
+	if(g_fLJumpPlayerJumped[client] > 0.0 && (GetEngineTime() - g_fLJumpPlayerJumped[client]) > 0.003)
+		g_fLJumpPlayerJumped[client] = -1.0;
 }
 
 LJump_HasJumped(client, Float:vVelocity[3])
