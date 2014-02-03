@@ -220,7 +220,7 @@ public Action:Timer_StripPlayer(Handle:timer, any:userid)
 	// Level 1: Secondary Weapon
 	if(iLevel >= 1)
 	{
-		if(!StrContains(g_sDenialSecondary[client],"weapon_") && !Denial_IsWeaponRestricted(g_sDenialSecondary[client]))
+		if(StrContains(g_sDenialSecondary[client],"weapon_") != -1 && !Denial_IsWeaponRestricted(g_sDenialSecondary[client]))
 		{
 			decl String:sOldWeapon[64];
 			new iCurrentWeapon = GetPlayerWeaponSlot(client, 1);
@@ -230,14 +230,16 @@ public Action:Timer_StripPlayer(Handle:timer, any:userid)
 				GetEdictClassname(iCurrentWeapon, sOldWeapon, sizeof(sOldWeapon));
 				Client_RemoveWeapon(client, sOldWeapon);
 			}
-			Client_GiveWeapon(client, g_sDenialSecondary[client]);
+			iCurrentWeapon = GivePlayerItem(client, g_sDenialSecondary[client]);
+			if(iCurrentWeapon != INVALID_ENT_REFERENCE)
+				EquipPlayerWeapon(client, iCurrentWeapon);
 		}
 	}
 	
 	// Level 2: Primary Weapon
 	if(iLevel >= 2)
 	{
-		if(!StrContains(g_sDenialPrimary[client],"weapon_") && !Denial_IsWeaponRestricted(g_sDenialPrimary[client]))
+		if(StrContains(g_sDenialPrimary[client],"weapon_") != -1 && !Denial_IsWeaponRestricted(g_sDenialPrimary[client]))
 		{
 			decl String:sOldWeapon[64];
 			new iCurrentWeapon = GetPlayerWeaponSlot(client, 0);
@@ -247,7 +249,9 @@ public Action:Timer_StripPlayer(Handle:timer, any:userid)
 				GetEdictClassname(iCurrentWeapon, sOldWeapon, sizeof(sOldWeapon));
 				Client_RemoveWeapon(client, sOldWeapon);
 			}
-			Client_GiveWeapon(client, g_sDenialPrimary[client]);
+			iCurrentWeapon = GivePlayerItem(client, g_sDenialPrimary[client]);
+			if(iCurrentWeapon != INVALID_ENT_REFERENCE)
+				EquipPlayerWeapon(client, iCurrentWeapon);
 		}
 	}
 	
@@ -268,11 +272,13 @@ bool:Denial_IsWeaponRestricted(String:sWeapon[])
 	decl String:sRestrictedWeapons[1024];
 	GetConVarString(g_hCVDenialRestrict, sRestrictedWeapons, sizeof(sRestrictedWeapons));
 	
-	decl String:sBuffer[64];
-	strcopy(sBuffer, sizeof(sBuffer), sWeapon);
-	ReplaceString(sBuffer, strlen(sBuffer)+1, "weapon_", "");
+	new iPos = StrContains(sWeapon, "weapon_");
+	if(iPos != -1)
+		iPos += 7; // skip "weapon_" too.
+	else
+		iPos = 0;
 	
-	if(StrContains(sRestrictedWeapons, sBuffer, false) != -1)
+	if(StrContains(sRestrictedWeapons, sWeapon[iPos], false) != -1)
 		return true;
 	return false;
 }
