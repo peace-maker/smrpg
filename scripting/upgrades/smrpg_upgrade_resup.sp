@@ -88,7 +88,7 @@ public Action:Timer_Resupply(Handle:timer)
 	
 	new bool:bBotEnable = SMRPG_IgnoreBots();
 	
-	new iLevel, iOffset, iWeapon, iPrimaryAmmo;
+	new iLevel, iPrimaryAmmo;
 	for(new i=1;i<=MaxClients;i++)
 	{
 		if(!IsClientInGame(i))
@@ -106,17 +106,8 @@ public Action:Timer_Resupply(Handle:timer)
 		if(!SMRPG_RunUpgradeEffect(i, UPGRADE_SHORTNAME))
 			continue; // Some other plugin doesn't want this effect to run
 		
-		iOffset = Client_GetWeaponsOffset(i) - 4;
-		iWeapon = INVALID_ENT_REFERENCE;
-		for (new w=0; w < MAX_WEAPONS; w++) {
-			iOffset += 4;
-			
-			iWeapon = GetEntDataEnt2(i, iOffset);
-			
-			if (!Weapon_IsValid(iWeapon)) {
-				continue;
-			}
-			
+		LOOP_CLIENTWEAPONS(i, iWeapon, iIndex)
+		{
 			// Fall back to non-limit alternative, if sdkcall fails.
 			if(GiveAmmo(i, iLevel, Weapon_GetPrimaryAmmoType(iWeapon), true) == -1)
 			{
