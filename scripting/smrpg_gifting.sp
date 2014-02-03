@@ -59,11 +59,11 @@ public OnLibraryAdded(const String:name[])
 public Action:SMRPG_TranslateCommand(client, const String:command[], CommandTranslationType:type, String:translation[], maxlen)
 {
 	if(type == CommandTranslationType_ShortDescription)
-		Format(translation, maxlen, "Give your credits to some other player.");
+		Format(translation, maxlen, "%T", "rpggift short desc", client);
 	else if(type == CommandTranslationType_Description)
-		Format(translation, maxlen, "Give your credits to some other player. Usage: rpggift <#userid|authid|name> <credits>");
+		Format(translation, maxlen, "%T", "rpggift desc", client);
 	else if(type == CommandTranslationType_Advert)
-		Format(translation, maxlen, "{G}Type {N}rpggift{G} to give credits to other players as a {N}present{G}!");
+		Format(translation, maxlen, "%T", "rpggift advert", client);
 	return Plugin_Continue;
 }
 

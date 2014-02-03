@@ -34,4 +34,16 @@
     "#format" "{1:N},{2:d},{3:N}"
     "en"  "{1} gave {2} credits to {3} as a present!"
   }
+  "rpggift short desc"
+  {
+    "en"  "Give your credits to some other player."
+  }
+  "rpggift desc"
+  {
+    "en"  "Give your credits to some other player. Usage: {N}rpggift <#userid|authid|name> <credits>"
+  }
+  "rpggift advert"
+  {
+    "en"  "Type {N}rpggift{G} to give credits to other players as a {N}present{G}!"
+  }
 }

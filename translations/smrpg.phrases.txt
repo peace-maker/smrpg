@@ -203,4 +203,80 @@
 	{
 		"en"			"WARNING: You will lose all Levels, Credits, and Experience.\nReset stats permanently?"
 	}
+	
+	// Command help
+	"rpgmenu short desc"
+	{
+		"en"			"Opens the rpg main menu"
+	}
+	
+	"rpgmenu desc"
+	{
+		"en"			"Opens the rpg main menu. You can buy or sell upgrades, view your stats, view this command list and change other settings."
+	}
+	
+	"rpgmenu advert"
+	{
+		"en"			"Type {N}rpgmenu{G} to open the main rpg menu and {N}manage your upgrades{G} and other options."
+	}
+	
+	"rpgrank short desc"
+	{
+		"en"			"Shows your rank or the rank of the target person"
+	}
+	
+	"rpgrank desc"
+	{
+		"en"			"Shows your rank or the rank of the target person. Usage: {N}rpgrank [name|steamid|#userid]"
+	}
+	
+	"rpgrank advert"
+	{
+		"en"			"Type {N}rpgrank{G} to display your own stats or {N}rpgrank <playername>{G} to display the rank of other players."
+	}
+	
+	"rpginfo short desc"
+	{
+		"en"			"Shows the purchased upgrades of the target person"
+	}
+	
+	"rpginfo desc"
+	{
+		"en"			"Shows the purchased upgrades of the target person. Usage: {N}rpginfo <name|steamid|#userid>"
+	}
+	
+	"rpginfo advert"
+	{
+		"en"			"Type {N}rpginfo <playername>{G} to view what upgrades other players have bought."
+	}
+	
+	"rpgtop10 short desc"
+	{
+		"en"			"Show the SM:RPG top 10"
+	}
+	
+	"rpgtop10 desc"
+	{
+		"en"			"Show the top 10 ranked RPG players on this server."
+	}
+	
+	"rpgtop10 advert"
+	{
+		"en"			"Type {N}rpgtop10{G} to view the top 10 ranked RPG players on this server."
+	}
+	
+	"rpghelp short desc"
+	{
+		"en"			"Show help about upgrades"
+	}
+	
+	"rpghelp desc"
+	{
+		"en"			"Show the SM:RPG help menu where you get detailed descriptions of the different available upgrades."
+	}
+	
+	"rpghelp advert"
+	{
+		"en"			"Type {N}rpghelp{G} to get a detailed description of what the upgrades do."
+	}
 }

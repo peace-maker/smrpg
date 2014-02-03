@@ -39,6 +39,7 @@ new Handle:g_hCVSalePercent;
 new Handle:g_hCVIgnoreLevelBarrier;
 
 new Handle:g_hCVShowUpgradePurchase;
+new Handle:g_hCVCommandAdvertInterval;
 
 #define IF_IGNORE_BOTS(%1) if(IsFakeClient(%1) && (!GetConVarBool(g_hCVBotEnable) || (GetConVarBool(g_hCVBotNeedHuman) && Client_GetCount(true, false) == 0)))
 
@@ -112,11 +113,13 @@ public OnPluginStart()
 	g_hCVIgnoreLevelBarrier = CreateConVar("smrpg_ignore_level_barrier", "0", "Ignore the hardcoded maxlevels for the upgrades and allow to set the maxlevel as high as you want.", 0, true, 0.0, true, 1.0);
 	
 	g_hCVShowUpgradePurchase = CreateConVar("smrpg_show_upgrade_purchase_in_chat", "0", "Show a message to all in chat when a player buys an upgrade.", 0, true, 0.0, true, 1.0);
+	g_hCVCommandAdvertInterval = CreateConVar("smrpg_commandadvert_interval", "180", "Show the description of an available commmand in chat every x seconds. (0 = disabled)", 0, true, 0.0);
 	
 	AutoExecConfig(true, "plugin.smrpg");
 	
 	HookConVarChange(g_hCVEnable, ConVar_EnableChanged);
 	HookConVarChange(g_hCVSaveInterval, ConVar_SaveIntervalChanged);
+	HookConVarChange(g_hCVCommandAdvertInterval, ConVar_AdvertIntervalChanged);
 	
 	RegConsoleCmd("rpgmenu", Cmd_RPGMenu, "Opens the rpg main menu");
 	RegConsoleCmd("rpg", Cmd_RPGMenu, "Opens the rpg main menu");
@@ -221,6 +224,10 @@ public OnLibraryRemoved(const String:name[])
 public OnMapStart()
 {
 	PrecacheSound("buttons/blip2.wav", true);
+	
+	new Float:fInterval = GetConVarFloat(g_hCVCommandAdvertInterval);
+	if(fInterval > 0.0)
+		g_hCommandAdvertTimer = CreateTimer(fInterval, Timer_ShowCommandAdvert, _, TIMER_FLAG_NO_MAPCHANGE|TIMER_REPEAT);
 	
 	// Clean up our database..
 	DatabaseMaid();

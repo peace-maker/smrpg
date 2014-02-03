@@ -1,5 +1,6 @@
 #pragma semicolon 1
 #include <sourcemod>
+#include <smlib>
 
 #define MAX_COMMAND_NAME_LENGTH 32
 
@@ -10,6 +11,10 @@ enum RPGCommand {
 }
 
 new Handle:g_hCommandList;
+
+// Command advertising
+new Handle:g_hCommandAdvertTimer;
+new g_iLastAdvertizedCommand = -1;
 
 RegisterCommandlistNatives()
 {
@@ -126,34 +131,125 @@ public Native_UnregisterCommand(Handle:plugin, numParams)
 
 public Action:CommandList_DefaultTranslations(client, const String:command[], CommandTranslationType:type, String:translation[], maxlen)
 {
-	if(type == CommandTranslationType_ShortDescription)
+	if(StrEqual(command, "rpgmenu"))
 	{
-		if(StrEqual(command, "rpgmenu"))
-			Format(translation, maxlen, "Opens the rpg main menu");
-		else if(StrEqual(command, "rpgrank"))
-			Format(translation, maxlen, "Shows your rank or the rank of the target person");
-		else if(StrEqual(command, "rpginfo"))
-			Format(translation, maxlen, "Shows the purchased upgrades of the target person");
-		else if(StrEqual(command, "rpgtop10"))
-			Format(translation, maxlen, "Show the SM:RPG top 10");
-		else if(StrEqual(command, "rpghelp"))
-			Format(translation, maxlen, "Show the SM:RPG help menu");
-		return Plugin_Continue;
+		switch(type)
+		{
+			case CommandTranslationType_ShortDescription:
+				Format(translation, maxlen, "%T", "rpgmenu short desc", client);
+			case CommandTranslationType_Description:
+				Format(translation, maxlen, "%T", "rpgmenu desc", client);
+			case CommandTranslationType_Advert:
+				Format(translation, maxlen, "%T", "rpgmenu advert", client);
+		}
 	}
-	else if(type == CommandTranslationType_Description)
+	else if(StrEqual(command, "rpgrank"))
 	{
-		if(StrEqual(command, "rpgmenu"))
-			Format(translation, maxlen, "Opens the rpg main menu. You can buy or sell upgrades, view your stats, view this command list and change other settings.");
-		else if(StrEqual(command, "rpgrank"))
-			Format(translation, maxlen, "Shows your rank or the rank of the target person. Usage rpgrank [name|steamid|#userid]");
-		else if(StrEqual(command, "rpginfo"))
-			Format(translation, maxlen, "Shows the purchased upgrades of the target person. Usage rpginfo <name|steamid|#userid>");
-		else if(StrEqual(command, "rpgtop10"))
-			Format(translation, maxlen, "Show the top 10 ranked RPG players on this server.");
-		else if(StrEqual(command, "rpghelp"))
-			Format(translation, maxlen, "Show the SM:RPG help menu where you get detailed descriptions of the different available upgrades.");
-		return Plugin_Continue;
+		switch(type)
+		{
+			case CommandTranslationType_ShortDescription:
+				Format(translation, maxlen, "%T", "rpgrank short desc", client);
+			case CommandTranslationType_Description:
+				Format(translation, maxlen, "%T", "rpgrank desc", client);
+			case CommandTranslationType_Advert:
+				Format(translation, maxlen, "%T", "rpgrank advert", client);
+		}
 	}
+	else if(StrEqual(command, "rpginfo"))
+	{
+		switch(type)
+		{
+			case CommandTranslationType_ShortDescription:
+				Format(translation, maxlen, "%T", "rpginfo short desc", client);
+			case CommandTranslationType_Description:
+				Format(translation, maxlen, "%T", "rpginfo desc", client);
+			case CommandTranslationType_Advert:
+				Format(translation, maxlen, "%T", "rpginfo advert", client);
+		}
+	}
+	else if(StrEqual(command, "rpgtop10"))
+	{
+		switch(type)
+		{
+			case CommandTranslationType_ShortDescription:
+				Format(translation, maxlen, "%T", "rpgtop10 short desc", client);
+			case CommandTranslationType_Description:
+				Format(translation, maxlen, "%T", "rpgtop10 desc", client);
+			case CommandTranslationType_Advert:
+				Format(translation, maxlen, "%T", "rpgtop10 advert", client);
+		}
+	}
+	else if(StrEqual(command, "rpghelp"))
+	{
+		switch(type)
+		{
+			case CommandTranslationType_ShortDescription:
+				Format(translation, maxlen, "%T", "rpghelp short desc", client);
+			case CommandTranslationType_Description:
+				Format(translation, maxlen, "%T", "rpghelp desc", client);
+			case CommandTranslationType_Advert:
+				Format(translation, maxlen, "%T", "rpghelp advert", client);
+		}
+	}
+	return Plugin_Continue;
+}
+
+public Action:Timer_ShowCommandAdvert(Handle:timer)
+{
+	// No commands to advertise?!
+	new iNumCommands = GetArraySize(g_hCommandList);
+	if(iNumCommands == 0)
+		return Plugin_Continue;
 	
-	return Plugin_Handled;
+	// No players to show stuff to, don't do anything.
+	new iPlayerCount = Client_GetCount(true, false);
+	if(iPlayerCount == 0)
+		return Plugin_Continue;
+	
+	new iCommand[RPGCommand];
+	decl String:sText[512];
+	new iSentMessages, iTriedCommands;
+	do
+	{
+		// Show the next command
+		g_iLastAdvertizedCommand++;
+		iTriedCommands++;
+		
+		// Start with the first command again.
+		if(g_iLastAdvertizedCommand >= iNumCommands)
+			g_iLastAdvertizedCommand = 0;
+		
+		GetArrayArray(g_hCommandList, g_iLastAdvertizedCommand, iCommand[0], _:RPGCommand);
+		
+		for(new client=1;client<=MaxClients;client++)
+		{
+			if(!IsClientInGame(client) || IsFakeClient(client))
+				continue;
+			
+			// That command doesn't have an advert text?
+			if(!GetCommandTranslation(client, iCommand[c_command], CommandTranslationType_Advert, sText, sizeof(sText)))
+				continue;
+			
+			Client_PrintToChat(client, false, "{OG}SM:RPG{N} > {G}%s", sText);
+			iSentMessages++;
+		}
+		
+	}
+	// Loop until we finally sent a message or we're at the beginning again.
+	// Plugins can return Plugin_Handled when being asked for the advert text, so we skip them and try to display the advert for the next command.
+	while(!iSentMessages  && iTriedCommands < iNumCommands);
+	
+	return Plugin_Continue;
+}
+
+public ConVar_AdvertIntervalChanged(Handle:convar, const String:oldValue[], const String:newValue[])
+{
+	if(StrEqual(oldValue, newValue, false))
+		return;
+	
+	ClearHandle(g_hCommandAdvertTimer);
+	
+	new Float:fInterval = GetConVarFloat(g_hCVCommandAdvertInterval);
+	if(fInterval > 0.0)
+		g_hCommandAdvertTimer = CreateTimer(fInterval, Timer_ShowCommandAdvert, _, TIMER_FLAG_NO_MAPCHANGE|TIMER_REPEAT);
 }
