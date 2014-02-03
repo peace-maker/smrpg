@@ -51,12 +51,12 @@ See the available upgrade plugins for examples.
 * Fire Grenade - Ignites players damaged by your grenade.
 * Frost Pistol - Slow down players hit with a pistol.
 * Health+ - Increases your health.
+* HP Regeneration - Regenerates HP every second.
 * Ice Stab - Freeze a player in place when knifing him.
 * Impulse - Gain speed for a short time when being shot.
 * Increase Clipsize - Increases the size of a weapon's clip.
 * Long Jump - Boosts your jump speed.
 * Medic - Heals team mates around you.
-* HP Regeneration - Regenerates HP every second.
 * Resupply - Regenerates ammo every third second.
 * Speed+ - Increase your average movement speed.
 * Stealth - Renders yourself more and more invisible.
