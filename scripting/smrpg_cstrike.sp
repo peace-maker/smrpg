@@ -7,6 +7,8 @@
 
 #define PLUGIN_VERSION "1.0"
 
+//#define _DEBUG
+
 new Handle:g_hCVExpKill;
 new Handle:g_hCVExpKillMax;
 new Handle:g_hCVExpDamage;
@@ -37,9 +39,9 @@ new g_iKnifeLevelDetections[MAXPLAYERS+1];
 
 public Plugin:myinfo = 
 {
-	name = "SM:RPG > CSS Experience Module",
+	name = "SM:RPG > Counter-Strike Experience Module",
 	author = "Jannik \"Peace-Maker\" Hartung, SeLfkiLL",
-	description = "CSS specific calculations for SM:RPG",
+	description = "Counter-Strike specific calculations for SM:RPG",
 	version = PLUGIN_VERSION,
 	url = "http://www.wcfan.de/"
 }
@@ -47,9 +49,9 @@ public Plugin:myinfo =
 public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
 {
 	new EngineVersion:engine = GetEngineVersion();
-	if(engine != Engine_CSS)
+	if(engine != Engine_CSS && engine != Engine_CSGO)
 	{
-		Format(error, err_max, "This plugin is for use in Counter-Strike:Source only. Bad engine version %d.", engine);
+		Format(error, err_max, "This plugin is for use in Counter-Strike only. Bad engine version %d.", engine);
 		return APLRes_SilentFailure;
 	}
 	return APLRes_Success;
@@ -219,7 +221,10 @@ public Event_OnPlayerHurt(Handle:event, const String:error[], bool:dontBroadcast
 		iExp = RoundToCeil(float(iTotalDmg) * GetConVarFloat(g_hCVExpDamage));
 	}
 	
-	SMRPG_AddClientExperience(attacker, iExp, true);
+	if(StrContains(sWeapon, "knife") != -1)
+		Debug_AddClientExperience(attacker, iExp, true, "knifing", victim);
+	else
+		Debug_AddClientExperience(attacker, iExp, true, "hurting", victim);
 }
 
 public Event_OnPlayerDeath(Handle:event, const String:error[], bool:dontBroadcast)
@@ -246,7 +251,7 @@ public Event_OnPlayerDeath(Handle:event, const String:error[], bool:dontBroadcas
 	if(iExpMax > 0 && iExp > iExpMax)
 		iExp = iExpMax;
 	
-	SMRPG_AddClientExperience(attacker, iExp, false);
+	Debug_AddClientExperience(attacker, iExp, false, "killing", victim);
 }
 
 /* Experience given to the team for one of these reasons:
@@ -286,7 +291,7 @@ public Event_OnRoundEnd(Handle:event, const String:error[], bool:dontBroadcast)
 	for(new i=1;i<=MaxClients;i++)
 	{
 		if(IsClientInGame(i) && GetClientTeam(i) == iTeam)
-			SMRPG_AddClientExperience(i, RoundToCeil(float(SMRPG_LevelToExperience(SMRPG_GetClientLevel(i))) * GetConVarFloat(g_hCVExpTeamwin) * fTeamRatio), false);
+			Debug_AddClientExperience(i, RoundToCeil(float(SMRPG_LevelToExperience(SMRPG_GetClientLevel(i))) * GetConVarFloat(g_hCVExpTeamwin) * fTeamRatio), false, "winning the round");
 	}
 }
 
@@ -304,7 +309,7 @@ public Event_OnBombPlanted(Handle:event, const String:error[], bool:dontBroadcas
 		return;
 	
 	new Float:fTeamRatio = SMRPG_TeamRatio(iTeam == 2 ? 3 : 2);
-	SMRPG_AddClientExperience(client, RoundToCeil(float(SMRPG_LevelToExperience(SMRPG_GetClientLevel(client))) * GetConVarFloat(g_hCVExpBombPlanted) * fTeamRatio), false);
+	Debug_AddClientExperience(client, RoundToCeil(float(SMRPG_LevelToExperience(SMRPG_GetClientLevel(client))) * GetConVarFloat(g_hCVExpBombPlanted) * fTeamRatio), false, "planting the bomb");
 }
 
 public Event_OnBombDefused(Handle:event, const String:error[], bool:dontBroadcast)
@@ -321,7 +326,7 @@ public Event_OnBombDefused(Handle:event, const String:error[], bool:dontBroadcas
 		return;
 	
 	new Float:fTeamRatio = SMRPG_TeamRatio(iTeam == 2 ? 3 : 2);
-	SMRPG_AddClientExperience(client, RoundToCeil(float(SMRPG_LevelToExperience(SMRPG_GetClientLevel(client))) * GetConVarFloat(g_hCVExpBombDefused) * fTeamRatio), false);
+	Debug_AddClientExperience(client, RoundToCeil(float(SMRPG_LevelToExperience(SMRPG_GetClientLevel(client))) * GetConVarFloat(g_hCVExpBombDefused) * fTeamRatio), false, "defusing the bomb");
 }
 
 public Event_OnBombExploded(Handle:event, const String:error[], bool:dontBroadcast)
@@ -338,7 +343,7 @@ public Event_OnBombExploded(Handle:event, const String:error[], bool:dontBroadca
 		return;
 	
 	new Float:fTeamRatio = SMRPG_TeamRatio(iTeam == 2 ? 3 : 2);
-	SMRPG_AddClientExperience(client, RoundToCeil(float(SMRPG_LevelToExperience(SMRPG_GetClientLevel(client))) * GetConVarFloat(g_hCVExpBombExploded) * fTeamRatio), false);
+	Debug_AddClientExperience(client, RoundToCeil(float(SMRPG_LevelToExperience(SMRPG_GetClientLevel(client))) * GetConVarFloat(g_hCVExpBombExploded) * fTeamRatio), false, "letting the bomb explode");
 }
 
 public Event_OnHostageRescued(Handle:event, const String:error[], bool:dontBroadcast)
@@ -355,7 +360,7 @@ public Event_OnHostageRescued(Handle:event, const String:error[], bool:dontBroad
 		return;
 	
 	new Float:fTeamRatio = SMRPG_TeamRatio(iTeam == 2 ? 3 : 2);
-	SMRPG_AddClientExperience(client, RoundToCeil(float(SMRPG_LevelToExperience(SMRPG_GetClientLevel(client))) * GetConVarFloat(g_hCVExpHostage) * fTeamRatio), false);
+	Debug_AddClientExperience(client, RoundToCeil(float(SMRPG_LevelToExperience(SMRPG_GetClientLevel(client))) * GetConVarFloat(g_hCVExpHostage) * fTeamRatio), false, "rescuing a hostage");
 }
 
 public Event_OnVIPEscaped(Handle:event, const String:error[], bool:dontBroadcast)
@@ -372,7 +377,7 @@ public Event_OnVIPEscaped(Handle:event, const String:error[], bool:dontBroadcast
 		return;
 	
 	new Float:fTeamRatio = SMRPG_TeamRatio(iTeam == 2 ? 3 : 2);
-	SMRPG_AddClientExperience(client, RoundToCeil(float(SMRPG_LevelToExperience(SMRPG_GetClientLevel(client))) * GetConVarFloat(g_hCVExpVIPEscaped) * fTeamRatio), false);
+	Debug_AddClientExperience(client, RoundToCeil(float(SMRPG_LevelToExperience(SMRPG_GetClientLevel(client))) * GetConVarFloat(g_hCVExpVIPEscaped) * fTeamRatio), false, "escaping as vip");
 }
 
 public Action:Timer_ResetKnifeLeveling(Handle:timer, any:userid)
@@ -386,3 +391,73 @@ public Action:Timer_ResetKnifeLeveling(Handle:timer, any:userid)
 	g_bKnifeLeveled[client] = false;
 	return Plugin_Stop;
 }
+
+// This stuff is leftover from balancing the experience on a deathmatch server.
+// Maybe someone finds it useful too when playing with the experience settings, so i'll leave it here.
+Debug_AddClientExperience(client, exp, bool:bHideNotice, const String:sReason[], victim=-1)
+{
+#if !defined _DEBUG
+	if(sReason[0] > victim) {} // Ignore me. Just keep the compiler from complaining about unused variables when not compiling in debug mode.
+	// This is all that's really needed
+	SMRPG_AddClientExperience(client, exp, bHideNotice);
+#else
+	new iOldLevel = SMRPG_GetClientLevel(client);
+	new iOldExperience = SMRPG_GetClientExperience(client);
+	new iOldNeeded = SMRPG_LevelToExperience(iOldLevel);
+	
+	SMRPG_AddClientExperience(client, exp, bHideNotice);
+	
+	new iNewLevel = SMRPG_GetClientLevel(client);
+	new String:sAttackerAuth[40], String:sVictimString[256], String:sLevelInc[32];
+	GetClientAuthString(client, sAttackerAuth, sizeof(sAttackerAuth));
+	if(victim > 0)
+		Format(sVictimString, sizeof(sVictimString), " %N (lvl %d)", victim, SMRPG_GetClientLevel(victim));
+	if(iNewLevel != iOldLevel)
+		Format(sLevelInc, sizeof(sLevelInc), " (now lvl %d [%d/%d])", iNewLevel, SMRPG_GetClientExperience(client), SMRPG_LevelToExperience(iNewLevel));
+	DebugLog("%N <%s> (lvl %d [%d/%d]) got %d exp%s for %s%s.", client, sAttackerAuth, iOldLevel, iOldExperience, iOldNeeded, exp, sLevelInc, sReason, sVictimString);
+#endif
+}
+
+#if defined _DEBUG
+stock DebugLog(String:format[], any:...)
+{
+	static String:sLog[8192] = "";
+	static Handle:hFile = INVALID_HANDLE;
+	static iOpenTime = 0;
+	decl String:sBuffer[256];
+	SetGlobalTransTarget(LANG_SERVER);
+	VFormat(sBuffer, sizeof(sBuffer), format, 2);
+	
+	decl String:sOldDate[9], String:sCurrentDate[9];
+	FormatTime(sOldDate, sizeof(sOldDate), "%Y%m%d", iOpenTime);
+	FormatTime(sCurrentDate, sizeof(sCurrentDate), "%Y%m%d");
+	
+	if(hFile == INVALID_HANDLE || !StrEqual(sOldDate, sCurrentDate))
+	{
+		decl String:sPath[PLATFORM_MAX_PATH];
+		FormatTime(sPath, sizeof(sPath), "%Y_%m_%d");
+		BuildPath(Path_SM, sPath, sizeof(sPath), "data/smrpg_experience_%s.log", sPath);
+		
+		// Basic log rotation
+		if(!StrEqual(sOldDate, sCurrentDate) && hFile != INVALID_HANDLE)
+			CloseHandle(hFile);
+		
+		hFile = OpenFile(sPath, "a");
+		iOpenTime = GetTime();
+	}
+	
+	// Flush the buffer.
+	if((strlen(sLog) + strlen(sBuffer) + 24) >= sizeof(sLog)-1)
+	{
+		if(hFile != INVALID_HANDLE)
+			WriteFileString(hFile, sLog, false);
+		sLog[0] = 0;
+	}
+	
+	decl String:sDate[32];
+	FormatTime(sDate, sizeof(sDate), "%m/%d/%Y - %H:%M:%S: ");
+	StrCat(sLog, sizeof(sLog), sDate);
+	StrCat(sLog, sizeof(sLog), sBuffer);
+	StrCat(sLog, sizeof(sLog), "\n");
+}
+#endif
