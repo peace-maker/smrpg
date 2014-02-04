@@ -58,6 +58,7 @@ See the available upgrade plugins for examples.
 * Long Jump - Boosts your jump speed.
 * Medic - Heals team mates around you.
 * Resupply - Regenerates ammo every third second.
+* Shrinking - Make player models smaller.
 * Speed+ - Increase your average movement speed.
 * Stealth - Renders yourself more and more invisible.
 * Vampire - Steal HP from players when damaging them.
