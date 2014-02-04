@@ -4,6 +4,7 @@
 #include <sdkhooks>
 #include <smlib>
 #include <smrpg>
+#include <topmenus>
 
 #define PLUGIN_VERSION "1.0"
 
@@ -67,12 +68,15 @@ public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
 	g_bLateLoaded = late;
 	
 	MarkNativeAsOptional("SQL_SetCharset");
+	// https://bugs.alliedmods.net/show_bug.cgi?id=6033
+	MarkNativeAsOptional("DisplayTopMenuCategory");
 	
 	CreateNative("SMRPG_IsEnabled", Native_IsEnabled);
 	CreateNative("SMRPG_IgnoreBots", Native_IgnoreBots);
 	RegisterUpgradeNatives();
 	RegisterPlayerNatives();
 	RegisterStatsNatives();
+	RegisterTopMenuNatives();
 	RegisterCommandlistNatives();
 }
 
@@ -113,7 +117,7 @@ public OnPluginStart()
 	g_hCVIgnoreLevelBarrier = CreateConVar("smrpg_ignore_level_barrier", "0", "Ignore the hardcoded maxlevels for the upgrades and allow to set the maxlevel as high as you want.", 0, true, 0.0, true, 1.0);
 	
 	g_hCVShowUpgradePurchase = CreateConVar("smrpg_show_upgrade_purchase_in_chat", "0", "Show a message to all in chat when a player buys an upgrade.", 0, true, 0.0, true, 1.0);
-	g_hCVCommandAdvertInterval = CreateConVar("smrpg_commandadvert_interval", "180", "Show the description of an available commmand in chat every x seconds. (0 = disabled)", 0, true, 0.0);
+	g_hCVCommandAdvertInterval = CreateConVar("smrpg_commandadvert_interval", "300", "Show the description of an available commmand in chat every x seconds. (0 = disabled)", 0, true, 0.0);
 	
 	AutoExecConfig(true, "plugin.smrpg");
 	
@@ -129,10 +133,10 @@ public OnPluginStart()
 	RegConsoleCmd("rpghelp", Cmd_RPGHelp, "Show the SM:RPG help menu");
 	
 	RegisterAdminCommands();
+	RegisterTopMenuForwards();
 	
 	InitUpgrades();
 	InitDatabase();
-	InitMenu();
 	InitCommandList();
 	
 	// Register the default rpg commands
@@ -206,8 +210,24 @@ public ConVar_EnableChanged(Handle:convar, const String:oldValue[], const String
 /**
  * Public global forwards
  */
+public OnAllPluginsLoaded()
+{
+	RegisterTopMenu();
+	InitMenu();
+}
+
 public OnConfigsExecuted()
 {
+	decl String:sPath[PLATFORM_MAX_PATH];
+	decl String:sError[256];
+	
+	BuildPath(Path_SM, sPath, sizeof(sPath), "configs/smrpg/rpgmenu_sorting.txt");
+	
+	if (!LoadTopMenuConfig(GetRPGTopMenu(), sPath, sError, sizeof(sError)))
+	{
+		LogError("Could not load rpg menu config (file \"%s\": %s)", sPath, sError);
+	}
+	
 	ClearHandle(g_hPlayerAutoSave);
 	g_hPlayerAutoSave = CreateTimer(GetConVarFloat(g_hCVSaveInterval), Timer_SavePlayers, _, TIMER_REPEAT);
 }
@@ -327,7 +347,7 @@ public Event_OnPlayerSay(Handle:event, const String:error[], bool:dontBroadcast)
 		if(!sText[7])
 		{
 			// Just display the normal upgrades menu, if self targetting with no target specified.
-			DisplayUpgradesMenu(client, 0);
+			DisplayUpgradesMenu(client);
 		}
 		else
 		{
@@ -340,7 +360,7 @@ public Event_OnPlayerSay(Handle:event, const String:error[], bool:dontBroadcast)
 	else if(StrEqual(sText, "rpgtop10", false))
 		DisplayTop10Menu(client);
 	else if(StrEqual(sText, "rpghelp", false))
-		DisplayHelpMenu(client, 0);
+		DisplayHelpMenu(client);
 }
 
 /**
@@ -402,7 +422,7 @@ public Action:Cmd_RPGInfo(client, args)
 	if(!sText[0])
 	{
 		// Just display the normal upgrades menu, if self targetting with no target specified.
-		DisplayUpgradesMenu(client, 0);
+		DisplayUpgradesMenu(client);
 	}
 	else
 	{
@@ -436,7 +456,7 @@ public Action:Cmd_RPGHelp(client, args)
 		return Plugin_Handled;
 	}
 	
-	DisplayHelpMenu(client, 0);
+	DisplayHelpMenu(client);
 	
 	return Plugin_Handled;
 }

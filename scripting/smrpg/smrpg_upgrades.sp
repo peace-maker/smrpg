@@ -25,6 +25,11 @@ enum InternalUpgradeInfo
 	Handle:UPGR_incCostConvar,
 	Handle:UPGR_adminFlagConvar,
 	
+	// Topmenu object ids
+	TopMenuObject:UPGR_topmenuUpgrades,
+	TopMenuObject:UPGR_topmenuSell,
+	TopMenuObject:UPGR_topmenuHelp,
+	
 	String:UPGR_name[MAX_UPGRADE_NAME_LENGTH],
 	String:UPGR_shortName[MAX_UPGRADE_SHORTNAME_LENGTH],
 	String:UPGR_description[MAX_UPGRADE_DESCRIPTION_LENGTH]
@@ -102,7 +107,19 @@ public Native_RegisterUpgradeType(Handle:plugin, numParams)
 	new Function:activeCallback = Function:GetNativeCell(10);
 	
 	if(!bAlreadyLoaded)
+	{
 		upgrade[UPGR_index] = GetArraySize(g_hUpgrades);
+		new Handle:hTopMenu = GetRPGTopMenu();
+		if(hTopMenu != INVALID_HANDLE)
+		{
+			if(GetUpgradesCategory() != INVALID_TOPMENUOBJECT)
+				upgrade[UPGR_topmenuUpgrades] = AddToTopMenu(hTopMenu, sShortName, TopMenuObject_Item, TopMenu_HandleUpgrades, GetUpgradesCategory());
+			if(GetSellCategory() != INVALID_TOPMENUOBJECT)
+				upgrade[UPGR_topmenuSell] = AddToTopMenu(hTopMenu, sShortName, TopMenuObject_Item, TopMenu_HandleSell, GetSellCategory());
+			if(GetHelpCategory() != INVALID_TOPMENUOBJECT)
+				upgrade[UPGR_topmenuHelp] = AddToTopMenu(hTopMenu, sShortName, TopMenuObject_Item, TopMenu_HandleHelp, GetHelpCategory());
+		}
+	}
 	upgrade[UPGR_enabled] = bDefaultEnable;
 	upgrade[UPGR_unavailable] = false;
 	upgrade[UPGR_maxLevelBarrier] = iMaxLevelBarrier;

@@ -542,6 +542,37 @@ native SMRPG_RegisterCommand(const String:command[], SMRPG_TranslateCommandCB:ca
  */
 native SMRPG_UnregisterCommand(const String:command[]);
 
+/** Category names of default topmenu categories */
+#define RPGMENU_UPGRADES "RPGUpgradesMenu"
+#define RPGMENU_SELL "RPGSellMenu"
+#define RPGMENU_STATS "RPGStatsMenu"
+#define RPGMENU_COMMANDS "RPGCommandsMenu"
+#define RPGMENU_SETTINGS "RPGSettingsMenu"
+#define RPGMENU_HELP "RPGHelpMenu"
+
+/**
+ * Get the handle to the rpgmenu top menu.
+ *
+ * @return Handle to the rpgmenu top menu or INVALID_HANDLE if not created yet.
+ */
+native Handle:SMRPG_GetTopMenu();
+
+/**
+ * Called when the rpgmenu is created and 3rd party plugins can grab the Handle or add categories.
+ *
+ * @param topmenu Handle to the rpgmenu TopMenu.
+ * @noreturn
+ */
+forward SMRPG_OnRPGMenuCreated(Handle:topmenu);
+
+/**
+ * Called when the rpgmenu is ready to have items added. 
+ *
+ * @param topmenu Handle to the rpgmenu TopMenu.
+ * @noreturn
+ */
+forward SMRPG_OnRPGMenuReady(Handle:topmenu);
+
 public SharedPlugin:__pl_smrpg = 
 {
 	name = "smrpg",
@@ -577,5 +608,6 @@ public __pl_smrpg_SetNTVOptional()
 	MarkNativeAsOptional("SMRPG_ClientBuyUpgrade");
 	MarkNativeAsOptional("SMRPG_ClientSellUpgrade");
 	MarkNativeAsOptional("SMRPG_IsUpgradeActiveOnClient");
+	MarkNativeAsOptional("SMRPG_GetTopMenu");
 }
 #endif

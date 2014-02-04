@@ -1,0 +1,36 @@
+/**
+ * You may re-order items here for your own menu.  Any items not explicitly 
+ * sorted will be sorted by their final translated phrases for each given client.
+ */
+
+"Menu"
+{
+	"RPGUpgradesMenu"
+	{
+	}
+
+	"RPGSellMenu"
+	{
+	}
+
+	"RPGStatsMenu"
+	{
+		"item"		"level"
+		"item"		"exp"
+		"item"		"credits"
+		"item"		"rank"
+	}
+
+	"RPGCommandsMenu"
+	{
+	}
+
+	"RPGSettingsMenu"
+	{
+		"item"		"resetstats"
+	}
+
+	"RPGHelpMenu"
+	{
+	}
+}

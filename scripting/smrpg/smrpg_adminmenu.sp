@@ -25,10 +25,10 @@ public OnAdminMenuCreated(Handle:topmenu)
 	if(topmenu == g_hTopMenu && g_TopMenuCategory)
 		return;
 	
-	g_TopMenuCategory = AddToTopMenu(topmenu, "SM:RPG", TopMenuObject_Category, TopMenu_CategoryHandler, INVALID_TOPMENUOBJECT, "smrpg_menu", ADMFLAG_CONFIG);
+	g_TopMenuCategory = AddToTopMenu(topmenu, "SM:RPG", TopMenuObject_Category, TopMenu_AdminCategoryHandler, INVALID_TOPMENUOBJECT, "smrpg_menu", ADMFLAG_CONFIG);
 }
 
-public TopMenu_CategoryHandler(Handle:topmenu, TopMenuAction:action, TopMenuObject:object_id, param, String:buffer[], maxlength)
+public TopMenu_AdminCategoryHandler(Handle:topmenu, TopMenuAction:action, TopMenuObject:object_id, param, String:buffer[], maxlength)
 {
 	if (action == TopMenuAction_DisplayTitle)
 	{
@@ -54,11 +54,11 @@ public OnAdminMenuReady(Handle:topmenu)
 	
 	g_hTopMenu = topmenu;
 	
-	AddToTopMenu(topmenu, "Manage players", TopMenuObject_Item, TopMenu_HandlePlayers, g_TopMenuCategory, "smrpg_players_menu", ADMFLAG_CONFIG);
-	AddToTopMenu(topmenu, "Manage upgrades", TopMenuObject_Item, TopMenu_HandleUpgrades, g_TopMenuCategory, "smrpg_upgrades_menu", ADMFLAG_CONFIG);
+	AddToTopMenu(topmenu, "Manage players", TopMenuObject_Item, TopMenu_AdminHandlePlayers, g_TopMenuCategory, "smrpg_players_menu", ADMFLAG_CONFIG);
+	AddToTopMenu(topmenu, "Manage upgrades", TopMenuObject_Item, TopMenu_AdminHandleUpgrades, g_TopMenuCategory, "smrpg_upgrades_menu", ADMFLAG_CONFIG);
 }
 
-public TopMenu_HandlePlayers(Handle:topmenu, TopMenuAction:action, TopMenuObject:object_id, param, String:buffer[], maxlength)
+public TopMenu_AdminHandlePlayers(Handle:topmenu, TopMenuAction:action, TopMenuObject:object_id, param, String:buffer[], maxlength)
 {
 	if (action == TopMenuAction_DisplayOption)
 	{
@@ -597,7 +597,7 @@ ResetAdminMenu(client)
 }
 
 
-public TopMenu_HandleUpgrades(Handle:topmenu, TopMenuAction:action, TopMenuObject:object_id, param, String:buffer[], maxlength)
+public TopMenu_AdminHandleUpgrades(Handle:topmenu, TopMenuAction:action, TopMenuObject:object_id, param, String:buffer[], maxlength)
 {
 	if (action == TopMenuAction_DisplayOption)
 	{
