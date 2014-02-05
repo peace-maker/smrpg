@@ -112,12 +112,22 @@ public Native_RegisterUpgradeType(Handle:plugin, numParams)
 		new Handle:hTopMenu = GetRPGTopMenu();
 		if(hTopMenu != INVALID_HANDLE)
 		{
+			decl String:sBuffer[MAX_UPGRADE_SHORTNAME_LENGTH+20];
 			if(GetUpgradesCategory() != INVALID_TOPMENUOBJECT)
-				upgrade[UPGR_topmenuUpgrades] = AddToTopMenu(hTopMenu, sShortName, TopMenuObject_Item, TopMenu_HandleUpgrades, GetUpgradesCategory());
+			{
+				Format(sBuffer, sizeof(sBuffer), "rpgupgrade_%s", sShortName);
+				upgrade[UPGR_topmenuUpgrades] = AddToTopMenu(hTopMenu, sBuffer, TopMenuObject_Item, TopMenu_HandleUpgrades, GetUpgradesCategory());
+			}
 			if(GetSellCategory() != INVALID_TOPMENUOBJECT)
-				upgrade[UPGR_topmenuSell] = AddToTopMenu(hTopMenu, sShortName, TopMenuObject_Item, TopMenu_HandleSell, GetSellCategory());
+			{
+				Format(sBuffer, sizeof(sBuffer), "rpgsell_%s", sShortName);
+				upgrade[UPGR_topmenuSell] = AddToTopMenu(hTopMenu, sBuffer, TopMenuObject_Item, TopMenu_HandleSell, GetSellCategory());
+			}
 			if(GetHelpCategory() != INVALID_TOPMENUOBJECT)
-				upgrade[UPGR_topmenuHelp] = AddToTopMenu(hTopMenu, sShortName, TopMenuObject_Item, TopMenu_HandleHelp, GetHelpCategory());
+			{
+				Format(sBuffer, sizeof(sBuffer), "rpghelp_%s", sShortName);
+				upgrade[UPGR_topmenuHelp] = AddToTopMenu(hTopMenu, sBuffer, TopMenuObject_Item, TopMenu_HandleHelp, GetHelpCategory());
+			}
 		}
 	}
 	upgrade[UPGR_enabled] = bDefaultEnable;
