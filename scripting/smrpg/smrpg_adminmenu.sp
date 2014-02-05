@@ -1,6 +1,5 @@
 #pragma semicolon 1
 #include <sourcemod>
-#undef REQUIRE_PLUGIN
 #include <adminmenu>
 
 new TopMenuObject:g_TopMenuCategory;
@@ -25,7 +24,7 @@ public OnAdminMenuCreated(Handle:topmenu)
 	if(topmenu == g_hTopMenu && g_TopMenuCategory)
 		return;
 	
-	g_TopMenuCategory = AddToTopMenu(topmenu, "SM:RPG", TopMenuObject_Category, TopMenu_AdminCategoryHandler, INVALID_TOPMENUOBJECT, "smrpg_menu", ADMFLAG_CONFIG);
+	g_TopMenuCategory = AddToTopMenu(topmenu, "SM:RPG", TopMenuObject_Category, TopMenu_AdminCategoryHandler, INVALID_TOPMENUOBJECT, "smrpg_adminmenu", ADMFLAG_CONFIG);
 }
 
 public TopMenu_AdminCategoryHandler(Handle:topmenu, TopMenuAction:action, TopMenuObject:object_id, param, String:buffer[], maxlength)

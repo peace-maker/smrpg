@@ -119,11 +119,6 @@
 		"de"			"Statistik"
 	}
 	
-	"Commands"
-	{
-		"de"			"Befehle"
-	}
-	
 	"Settings"
 	{
 		"de"			"Einstellungen"

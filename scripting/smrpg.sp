@@ -6,6 +6,10 @@
 #include <smrpg>
 #include <topmenus>
 
+#undef REQUIRE_PLUGIN
+#include <adminmenu>
+#include <smrpg_commandlist>
+
 #define PLUGIN_VERSION "1.0"
 
 new bool:g_bLateLoaded;
@@ -40,7 +44,6 @@ new Handle:g_hCVSalePercent;
 new Handle:g_hCVIgnoreLevelBarrier;
 
 new Handle:g_hCVShowUpgradePurchase;
-new Handle:g_hCVCommandAdvertInterval;
 
 #define IF_IGNORE_BOTS(%1) if(IsFakeClient(%1) && (!GetConVarBool(g_hCVBotEnable) || (GetConVarBool(g_hCVBotNeedHuman) && Client_GetCount(true, false) == 0)))
 
@@ -48,7 +51,6 @@ new Handle:g_hCVCommandAdvertInterval;
 #include "smrpg/smrpg_database.sp"
 #include "smrpg/smrpg_players.sp"
 #include "smrpg/smrpg_stats.sp"
-#include "smrpg/smrpg_commandlist.sp"
 #include "smrpg/smrpg_menu.sp"
 #include "smrpg/smrpg_admincommands.sp"
 #include "smrpg/smrpg_adminmenu.sp"
@@ -77,7 +79,6 @@ public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
 	RegisterPlayerNatives();
 	RegisterStatsNatives();
 	RegisterTopMenuNatives();
-	RegisterCommandlistNatives();
 }
 
 public OnPluginStart()
@@ -117,13 +118,11 @@ public OnPluginStart()
 	g_hCVIgnoreLevelBarrier = CreateConVar("smrpg_ignore_level_barrier", "0", "Ignore the hardcoded maxlevels for the upgrades and allow to set the maxlevel as high as you want.", 0, true, 0.0, true, 1.0);
 	
 	g_hCVShowUpgradePurchase = CreateConVar("smrpg_show_upgrade_purchase_in_chat", "0", "Show a message to all in chat when a player buys an upgrade.", 0, true, 0.0, true, 1.0);
-	g_hCVCommandAdvertInterval = CreateConVar("smrpg_commandadvert_interval", "300", "Show the description of an available commmand in chat every x seconds. (0 = disabled)", 0, true, 0.0);
 	
 	AutoExecConfig(true, "plugin.smrpg");
 	
 	HookConVarChange(g_hCVEnable, ConVar_EnableChanged);
 	HookConVarChange(g_hCVSaveInterval, ConVar_SaveIntervalChanged);
-	HookConVarChange(g_hCVCommandAdvertInterval, ConVar_AdvertIntervalChanged);
 	
 	RegConsoleCmd("rpgmenu", Cmd_RPGMenu, "Opens the rpg main menu");
 	RegConsoleCmd("rpg", Cmd_RPGMenu, "Opens the rpg main menu");
@@ -137,14 +136,6 @@ public OnPluginStart()
 	
 	InitUpgrades();
 	InitDatabase();
-	InitCommandList();
-	
-	// Register the default rpg commands
-	SMRPG_RegisterCommand("rpgmenu", CommandList_DefaultTranslations);
-	SMRPG_RegisterCommand("rpgrank", CommandList_DefaultTranslations);
-	SMRPG_RegisterCommand("rpginfo", CommandList_DefaultTranslations);
-	SMRPG_RegisterCommand("rpgtop10", CommandList_DefaultTranslations);
-	SMRPG_RegisterCommand("rpghelp", CommandList_DefaultTranslations);
 	
 	LoadTranslations("common.phrases");
 	LoadTranslations("smrpg.phrases");
@@ -168,6 +159,11 @@ public OnPluginStart()
 			OnClientPutInServer(i);
 			
 			// Query info from db, when the connection is established.
+		}
+		
+		if(LibraryExists("smrpg_commandlist"))
+		{
+			OnLibraryAdded("smrpg_commandlist");
 		}
 	}
 	
@@ -216,6 +212,18 @@ public OnAllPluginsLoaded()
 	InitMenu();
 }
 
+public OnPluginEnd()
+{
+	if(LibraryExists("smrpg_commandlist"))
+	{
+		SMRPG_UnregisterCommand("rpgmenu");
+		SMRPG_UnregisterCommand("rpgrank");
+		SMRPG_UnregisterCommand("rpginfo");
+		SMRPG_UnregisterCommand("rpgtop10");
+		SMRPG_UnregisterCommand("rpghelp");
+	}
+}
+
 public OnConfigsExecuted()
 {
 	decl String:sPath[PLATFORM_MAX_PATH];
@@ -232,6 +240,19 @@ public OnConfigsExecuted()
 	g_hPlayerAutoSave = CreateTimer(GetConVarFloat(g_hCVSaveInterval), Timer_SavePlayers, _, TIMER_REPEAT);
 }
 
+public OnLibraryAdded(const String:name[])
+{
+	if(StrEqual(name, "smrpg_commandlist"))
+	{
+		// Register the default rpg commands
+		SMRPG_RegisterCommand("rpgmenu", CommandList_DefaultTranslations);
+		SMRPG_RegisterCommand("rpgrank", CommandList_DefaultTranslations);
+		SMRPG_RegisterCommand("rpginfo", CommandList_DefaultTranslations);
+		SMRPG_RegisterCommand("rpgtop10", CommandList_DefaultTranslations);
+		SMRPG_RegisterCommand("rpghelp", CommandList_DefaultTranslations);
+	}
+}
+
 public OnLibraryRemoved(const String:name[])
 {
 	if (StrEqual(name, "adminmenu"))
@@ -244,10 +265,6 @@ public OnLibraryRemoved(const String:name[])
 public OnMapStart()
 {
 	PrecacheSound("buttons/blip2.wav", true);
-	
-	new Float:fInterval = GetConVarFloat(g_hCVCommandAdvertInterval);
-	if(fInterval > 0.0)
-		g_hCommandAdvertTimer = CreateTimer(fInterval, Timer_ShowCommandAdvert, _, TIMER_FLAG_NO_MAPCHANGE|TIMER_REPEAT);
 	
 	// Clean up our database..
 	DatabaseMaid();
@@ -485,6 +502,74 @@ public Native_IsEnabled(Handle:plugin, numParams)
 public Native_IgnoreBots(Handle:plugin, numParams)
 {
 	return !GetConVarBool(g_hCVBotEnable);
+}
+
+/**
+ * Translation callback for SM:RPG Command List plugin
+ */
+public Action:CommandList_DefaultTranslations(client, const String:command[], CommandTranslationType:type, String:translation[], maxlen)
+{
+	if(StrEqual(command, "rpgmenu"))
+	{
+		switch(type)
+		{
+			case CommandTranslationType_ShortDescription:
+				Format(translation, maxlen, "%T", "rpgmenu short desc", client);
+			case CommandTranslationType_Description:
+				Format(translation, maxlen, "%T", "rpgmenu desc", client);
+			case CommandTranslationType_Advert:
+				Format(translation, maxlen, "%T", "rpgmenu advert", client);
+		}
+	}
+	else if(StrEqual(command, "rpgrank"))
+	{
+		switch(type)
+		{
+			case CommandTranslationType_ShortDescription:
+				Format(translation, maxlen, "%T", "rpgrank short desc", client);
+			case CommandTranslationType_Description:
+				Format(translation, maxlen, "%T", "rpgrank desc", client);
+			case CommandTranslationType_Advert:
+				Format(translation, maxlen, "%T", "rpgrank advert", client);
+		}
+	}
+	else if(StrEqual(command, "rpginfo"))
+	{
+		switch(type)
+		{
+			case CommandTranslationType_ShortDescription:
+				Format(translation, maxlen, "%T", "rpginfo short desc", client);
+			case CommandTranslationType_Description:
+				Format(translation, maxlen, "%T", "rpginfo desc", client);
+			case CommandTranslationType_Advert:
+				Format(translation, maxlen, "%T", "rpginfo advert", client);
+		}
+	}
+	else if(StrEqual(command, "rpgtop10"))
+	{
+		switch(type)
+		{
+			case CommandTranslationType_ShortDescription:
+				Format(translation, maxlen, "%T", "rpgtop10 short desc", client);
+			case CommandTranslationType_Description:
+				Format(translation, maxlen, "%T", "rpgtop10 desc", client);
+			case CommandTranslationType_Advert:
+				Format(translation, maxlen, "%T", "rpgtop10 advert", client);
+		}
+	}
+	else if(StrEqual(command, "rpghelp"))
+	{
+		switch(type)
+		{
+			case CommandTranslationType_ShortDescription:
+				Format(translation, maxlen, "%T", "rpghelp short desc", client);
+			case CommandTranslationType_Description:
+				Format(translation, maxlen, "%T", "rpghelp desc", client);
+			case CommandTranslationType_Advert:
+				Format(translation, maxlen, "%T", "rpghelp advert", client);
+		}
+	}
+	return Plugin_Continue;
 }
 
 /**

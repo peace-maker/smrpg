@@ -7,7 +7,6 @@ new Handle:g_hRPGTopMenu;
 new TopMenuObject:g_TopMenuUpgrades;
 new TopMenuObject:g_TopMenuSell;
 new TopMenuObject:g_TopMenuStats;
-new TopMenuObject:g_TopMenuCommands;
 new TopMenuObject:g_TopMenuSettings;
 new TopMenuObject:g_TopMenuHelp;
 
@@ -26,7 +25,6 @@ RegisterTopMenu()
 	g_TopMenuUpgrades = AddToTopMenu(g_hRPGTopMenu, RPGMENU_UPGRADES, TopMenuObject_Category, TopMenu_DefaultCategoryHandler, INVALID_TOPMENUOBJECT);
 	g_TopMenuSell = AddToTopMenu(g_hRPGTopMenu, RPGMENU_SELL, TopMenuObject_Category, TopMenu_DefaultCategoryHandler, INVALID_TOPMENUOBJECT);
 	g_TopMenuStats = AddToTopMenu(g_hRPGTopMenu, RPGMENU_STATS, TopMenuObject_Category, TopMenu_DefaultCategoryHandler, INVALID_TOPMENUOBJECT);
-	g_TopMenuCommands = AddToTopMenu(g_hRPGTopMenu, RPGMENU_COMMANDS, TopMenuObject_Category, TopMenu_DefaultCategoryHandler, INVALID_TOPMENUOBJECT);
 	g_TopMenuSettings = AddToTopMenu(g_hRPGTopMenu, RPGMENU_SETTINGS, TopMenuObject_Category, TopMenu_DefaultCategoryHandler, INVALID_TOPMENUOBJECT);
 	g_TopMenuHelp = AddToTopMenu(g_hRPGTopMenu, RPGMENU_HELP, TopMenuObject_Category, TopMenu_DefaultCategoryHandler, INVALID_TOPMENUOBJECT);
 }
@@ -139,8 +137,6 @@ public TopMenu_DefaultCategoryHandler(Handle:topmenu, TopMenuAction:action, TopM
 				Format(buffer, maxlength, "%T", "Sell", param);
 			else if(object_id == g_TopMenuStats)
 				Format(buffer, maxlength, "%T", "Stats", param);
-			else if(object_id == g_TopMenuCommands)
-				Format(buffer, maxlength, "%T", "Commands", param);
 			else if(object_id == g_TopMenuSettings)
 				Format(buffer, maxlength, "%T", "Settings", param);
 			else if(object_id == g_TopMenuHelp)
@@ -407,69 +403,6 @@ public TopMenu_HandleStats(Handle:topmenu, TopMenuAction:action, TopMenuObject:o
 			buffer[0] = ITEMDRAW_DISABLED;
 		}
 	}	
-}
-
-DisplayCommandsMenu(client, position)
-{
-	new Handle:hMenu = CreateMenu(Menu_HandleCommands, MENU_ACTIONS_DEFAULT|MenuAction_Display);
-	SetMenuExitBackButton(hMenu, true);
-	SetMenuTitle(hMenu, "credits_display");
-	
-	decl String:sLine[64];
-	new Handle:hCommandlist = GetCommandList();
-	new iSize = GetArraySize(hCommandlist);
-	new iCommand[RPGCommand];
-	for(new i=0;i<iSize;i++)
-	{
-		GetArrayArray(hCommandlist, i, iCommand[0], _:RPGCommand);
-		
-		if(!GetCommandTranslation(client, iCommand[c_command], CommandTranslationType_ShortDescription, sLine, sizeof(sLine)))
-			continue;
-		
-		Format(sLine, sizeof(sLine), "%s: %s", iCommand[c_command], sLine);
-		
-		AddMenuItem(hMenu, iCommand[c_command], sLine);
-	}
-	
-	if(position > 0)
-		DisplayMenuAtItem(hMenu, client, position, MENU_TIME_FOREVER);
-	else
-		DisplayMenu(hMenu, client, MENU_TIME_FOREVER);
-}
-
-public Menu_HandleCommands(Handle:menu, MenuAction:action, param1, param2)
-{
-	if(action == MenuAction_Select)
-	{
-		decl String:sInfo[16];
-		GetMenuItem(menu, param2, sInfo, sizeof(sInfo));
-		
-		decl String:sDescription[256];
-		if(GetCommandTranslation(param1, sInfo, CommandTranslationType_Description, sDescription, sizeof(sDescription)))
-			Client_PrintToChat(param1, false, "{OG}SM:RPG{N} > {G}%s{N}: %s", sInfo, sDescription);
-		
-		DisplayCommandsMenu(param1, GetMenuSelectionPosition());
-	}
-	else if(action == MenuAction_Display)
-	{
-		// Change the title
-		new Handle:hPanel = Handle:param2;
-		
-		// Display the current credits in the title
-		decl String:sBuffer[256];
-		Format(sBuffer, sizeof(sBuffer), "%T\n-----\n", "Credits", param1, GetClientCredits(param1));
-		
-		SetPanelTitle(hPanel, sBuffer);
-	}
-	else if(action == MenuAction_Cancel)
-	{
-		if(param2 == MenuCancel_ExitBack)
-			DisplayMainMenu(param1);
-	}
-	else if(action == MenuAction_End)
-	{
-		CloseHandle(menu);
-	}
 }
 
 DisplaySettingsMenu(client)

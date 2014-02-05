@@ -501,52 +501,10 @@ stock Float:SMRPG_TeamRatio(iTeam)
 	return fTeamRatio;
 }
 
-/**
- * Types of translatable information for rpg commands.
- */
-enum CommandTranslationType {
-	CommandTranslationType_ShortDescription, // Short description of the command displayed in the commandlist menu
-	CommandTranslationType_Description, // Detailed description of the command displayed when the command is selected in the commandlist menu
-	CommandTranslationType_Advert // Advertisement to show in chat periodically
-};
-
-/**
- * Called when the core plugin wants to print information about this command.
- *
- * @param client      The client in which language the information should be displayed.
- * @param command     The command we want information about.
- * @param type        The translation type (description or advert)
- * @param translation The translation buffer.
- * @param maxlen      The maximal length of the buffer.
- * @return            Return Plugin_Handled to stop the command from being listed in the menu or the advert printed, otherwise return Plugin_Continue.
- */
-functag public Action:SMRPG_TranslateCommandCB(client, const String:command[], CommandTranslationType:type, String:translation[], maxlen);
-
-/**
- * Register a rpg related command in the core.
- * The command will be listed in the command list in the rpgmenu and be advertised periodically.
- *
- * @param command   The command you want to register.
- * @param callback  The callback to call to get the description and advert text.
- * @noreturn
- * @error Command already registered by other plugin.
- */
-native SMRPG_RegisterCommand(const String:command[], SMRPG_TranslateCommandCB:callback);
-
-/**
- * Unregister the rpg related command from the core.
- * Call this in OnPluginEnd!
- * 
- * @param command   The command you previously registered and want to unregister now.
- * @noreturn
- */
-native SMRPG_UnregisterCommand(const String:command[]);
-
 /** Category names of default topmenu categories */
 #define RPGMENU_UPGRADES "RPGUpgradesMenu"
 #define RPGMENU_SELL "RPGSellMenu"
 #define RPGMENU_STATS "RPGStatsMenu"
-#define RPGMENU_COMMANDS "RPGCommandsMenu"
 #define RPGMENU_SETTINGS "RPGSettingsMenu"
 #define RPGMENU_HELP "RPGHelpMenu"
 

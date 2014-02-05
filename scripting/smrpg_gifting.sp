@@ -3,6 +3,9 @@
 #include <smlib>
 #include <smrpg>
 
+#undef REQUIRE_PLUGIN
+#include <smrpg_commandlist>
+
 #define PLUGIN_VERSION "1.0"
 
 public Plugin:myinfo = 
@@ -39,18 +42,20 @@ public ConVar_VersionChanged(Handle:convar, const String:oldValue[], const Strin
 
 public OnPluginEnd()
 {
-	SMRPG_UnregisterCommand("rpggift");
+	if(LibraryExists("smrpg_commandlist"))
+		SMRPG_UnregisterCommand("rpggift");
 }
 
 public OnAllPluginsLoaded()
 {
-	OnLibraryAdded("smrpg");
+	if(LibraryExists("smrpg_commandlist"))
+		OnLibraryAdded("smrpg_commandlist");
 }
 
 public OnLibraryAdded(const String:name[])
 {
 	// Register the command in SM:RPG
-	if(StrEqual(name, "smrpg"))
+	if(StrEqual(name, "smrpg_commandlist"))
 	{
 		SMRPG_RegisterCommand("rpggift", SMRPG_TranslateCommand);
 	}
