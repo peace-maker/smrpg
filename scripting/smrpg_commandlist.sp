@@ -77,6 +77,15 @@ public ConVar_VersionChanged(Handle:convar, const String:oldValue[], const Strin
 	SetConVarString(convar, PLUGIN_VERSION);
 }
 
+public OnLibraryRemoved(const String:name[])
+{
+	if(StrEqual(name, "smrpg"))
+	{
+		g_hRPGMenu = INVALID_HANDLE;
+		g_TopMenuCommands = INVALID_TOPMENUOBJECT;
+	}
+}
+
 public OnMapStart()
 {
 	new Float:fInterval = GetConVarFloat(g_hCVCommandAdvertInterval);
@@ -213,7 +222,8 @@ public Native_RegisterCommand(Handle:plugin, numParams)
 	
 	decl String:sCommandName[MAX_COMMAND_NAME_LENGTH+10];
 	Format(sCommandName, sizeof(sCommandName), "rpgcmd_%s", iCommand[c_command]);
-	iCommand[c_topmenuobject] = AddToTopMenu(g_hRPGMenu, sCommandName, TopMenuObject_Item, TopMenu_CommandItemHandler, g_TopMenuCommands);
+	if(g_hRPGMenu != INVALID_HANDLE && g_TopMenuCommands != INVALID_TOPMENUOBJECT)
+		iCommand[c_topmenuobject] = AddToTopMenu(g_hRPGMenu, sCommandName, TopMenuObject_Item, TopMenu_CommandItemHandler, g_TopMenuCommands);
 	PushArrayArray(g_hCommandList, iCommand[0], _:RPGCommand);
 }
 
@@ -231,7 +241,7 @@ public Native_UnregisterCommand(Handle:plugin, numParams)
 		// Found the command and it was registered by this plugin?
 		if(StrEqual(sCommand, iCommand[c_command], false) && plugin == iCommand[c_plugin])
 		{
-			if(iCommand[c_topmenuobject] != INVALID_TOPMENUOBJECT)
+			if(iCommand[c_topmenuobject] != INVALID_TOPMENUOBJECT && g_hRPGMenu != INVALID_HANDLE && g_TopMenuCommands != INVALID_TOPMENUOBJECT)
 				RemoveFromTopMenu(g_hRPGMenu, iCommand[c_topmenuobject]);
 			RemoveFromArray(g_hCommandList, i);
 			return;
