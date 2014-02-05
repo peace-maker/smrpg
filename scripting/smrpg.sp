@@ -72,6 +72,8 @@ public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
 	MarkNativeAsOptional("SQL_SetCharset");
 	// https://bugs.alliedmods.net/show_bug.cgi?id=6033
 	MarkNativeAsOptional("DisplayTopMenuCategory");
+	// https://bugs.alliedmods.net/show_bug.cgi?id=6034
+	MarkNativeAsOptional("SetTopMenuTitleCaching");
 	
 	CreateNative("SMRPG_IsEnabled", Native_IsEnabled);
 	CreateNative("SMRPG_IgnoreBots", Native_IgnoreBots);

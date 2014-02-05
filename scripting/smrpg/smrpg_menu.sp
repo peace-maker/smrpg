@@ -21,6 +21,8 @@ new Handle:g_hfwdOnRPGMenuReady;
 RegisterTopMenu()
 {
 	g_hRPGTopMenu = CreateTopMenu(TopMenu_DefaultCategoryHandler);
+	if(GetFeatureStatus(FeatureType_Native, "SetTopMenuTitleCaching") == FeatureStatus_Available)
+		SetTopMenuTitleCaching(g_hRPGTopMenu, false);
 	
 	g_TopMenuUpgrades = AddToTopMenu(g_hRPGTopMenu, RPGMENU_UPGRADES, TopMenuObject_Category, TopMenu_DefaultCategoryHandler, INVALID_TOPMENUOBJECT);
 	g_TopMenuSell = AddToTopMenu(g_hRPGTopMenu, RPGMENU_SELL, TopMenuObject_Category, TopMenu_DefaultCategoryHandler, INVALID_TOPMENUOBJECT);
@@ -127,7 +129,22 @@ public TopMenu_DefaultCategoryHandler(Handle:topmenu, TopMenuAction:action, TopM
 		case TopMenuAction_DisplayTitle:
 		{
 			// Always display the current credits in the title
-			Format(buffer, maxlength, "%T\n-----\n", "Credits", param, GetClientCredits(param));
+			if(GetFeatureStatus(FeatureType_Native, "SetTopMenuTitleCaching") == FeatureStatus_Available)
+				Format(buffer, maxlength, "%T\n-----\n", "Credits", param, GetClientCredits(param));
+			// If this version of sourcemod doesn't support changing the topmenu title dynamically, don't print the credits..
+			else
+			{
+				if(object_id == g_TopMenuUpgrades)
+					Format(buffer, maxlength, "%T\n-----\n", "Upgrades", param);
+				else if(object_id == g_TopMenuSell)
+					Format(buffer, maxlength, "%T\n-----\n", "Sell", param);
+				else if(object_id == g_TopMenuStats)
+					Format(buffer, maxlength, "%T\n-----\n", "Stats", param);
+				else if(object_id == g_TopMenuSettings)
+					Format(buffer, maxlength, "%T\n-----\n", "Settings", param);
+				else if(object_id == g_TopMenuHelp)
+					Format(buffer, maxlength, "%T\n-----\n", "Help", param);
+			}
 		}
 		case TopMenuAction_DisplayOption:
 		{

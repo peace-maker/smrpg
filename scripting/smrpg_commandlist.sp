@@ -125,7 +125,11 @@ public TopMenu_CommandCategoryHandler(Handle:topmenu, TopMenuAction:action, TopM
 		case TopMenuAction_DisplayTitle:
 		{
 			// Always display the current credits in the title
-			Format(buffer, maxlength, "%T\n-----\n", "Credits", param, SMRPG_GetClientCredits(param));
+			if(GetFeatureStatus(FeatureType_Native, "SetTopMenuTitleCaching") == FeatureStatus_Available)
+				Format(buffer, maxlength, "%T\n-----\n", "Credits", param, SMRPG_GetClientCredits(param));
+			// If this version of sourcemod doesn't support changing the topmenu title dynamically, don't print the credits..
+			else
+				Format(buffer, maxlength, "%T\n-----\n", "Commands", param);
 		}
 		case TopMenuAction_DisplayOption:
 		{
