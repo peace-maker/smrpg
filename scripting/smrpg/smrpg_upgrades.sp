@@ -334,6 +334,12 @@ public Native_GetUpgradeInfo(Handle:plugin, numParams)
 		return;
 	}
 	
+	// Keep the future proof. If the calling plugin wants more information than we got, only return as much as we know.
+	// If it wants less info, only write less.
+	new arraysize = GetNativeCell(3);
+	if(arraysize > _:UpgradeInfo)
+		arraysize = _:UpgradeInfo;
+	
 	new publicUpgrade[UpgradeInfo];
 	publicUpgrade[UI_enabled] = upgrade[UPGR_enabled];
 	publicUpgrade[UI_maxLevelBarrier] = upgrade[UPGR_maxLevelBarrier];
@@ -344,7 +350,7 @@ public Native_GetUpgradeInfo(Handle:plugin, numParams)
 	strcopy(publicUpgrade[UI_name], MAX_UPGRADE_NAME_LENGTH, upgrade[UPGR_name]);
 	strcopy(publicUpgrade[UI_shortName], MAX_UPGRADE_SHORTNAME_LENGTH, upgrade[UPGR_shortName]);
 	
-	SetNativeArray(2, publicUpgrade[0], _:UpgradeInfo);
+	SetNativeArray(2, publicUpgrade[0], arraysize);
 }
 
 // native SMRPG_SetUpgradeTranslationCallback(const String:shortname[], SMRPG_TranslateUpgrade:cb);

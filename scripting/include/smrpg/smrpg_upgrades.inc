@@ -214,10 +214,11 @@ enum UpgradeInfo
  *
  * @param shortname      The shortname of the upgrade you want to know more about.
  * @param upgrade        An buffer array to hold all the upgrade information.
+ * @param size           The size of the buffer array.
  * @noreturn
  * @error Unkown upgrade shortname.
  */
-native SMRPG_GetUpgradeInfo(const String:shortname[], upgrade[UpgradeInfo]);
+native SMRPG_GetUpgradeInfo(const String:shortname[], upgrade[UpgradeInfo], size=_:UpgradeInfo);
 
 /**
  * Ask the plugin controlling an upgrade to remove all active effects from a client.
