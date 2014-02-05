@@ -140,12 +140,12 @@
 		"en"			"Deal additional damage on enemies."
 	}
 	
-	"armor"
+	"armorregen"
 	{
 		"en"			"Armor Regeneration"
 	}
 	
-	"armor description"
+	"armorregen description"
 	{
 		"en"			"Regenerates armor every second."
 	}
@@ -168,5 +168,15 @@
 	"shrinking description"
 	{
 		"en"			"Makes your player model smaller and harder to hit."
+	}
+	
+	"armorplus"
+	{
+		"en"			"Armor+"
+	}
+	
+	"armorplus description"
+	{
+		"en"			"Increases your maximal armor."
 	}
 }

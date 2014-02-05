@@ -13,7 +13,7 @@ public Plugin:myinfo =
 {
 	name = "SM:RPG Upgrade > Armor regeneration",
 	author = "Jannik \"Peace-Maker\" Hartung",
-	description = "Armor regenration upgrade for SM:RPG. Regenerates armor every second.",
+	description = "Armor regeneration upgrade for SM:RPG. Regenerates armor every second.",
 	version = PLUGIN_VERSION,
 	url = "http://www.wcfan.de/"
 }

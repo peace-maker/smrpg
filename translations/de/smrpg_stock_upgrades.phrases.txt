@@ -140,12 +140,12 @@
 		"de"			"Füge deinen Gegnern etwas mehr Schaden zu, wenn du sie triffst."
 	}
 	
-	"armor"
+	"armorregen"
 	{
-		"de"			"Rüstung Regenerierung"
+		"de"			"Rüstungsregenerierung"
 	}
 	
-	"armor description"
+	"armorregen description"
 	{
 		"de"			"Stellt jede Sekunde eine bestimmte Menge an Rüstung wieder her."
 	}
@@ -168,5 +168,15 @@
 	"shrinking description"
 	{
 		"de"			"Verkleinert deine Spielfigur und erschwert es damit dich zu treffen."
+	}
+	
+	"armorplus"
+	{
+		"de"			"Rüstung+"
+	}
+	
+	"armorplus description"
+	{
+		"de"			"Erhöht deine maximale Rüstung."
 	}
 }
