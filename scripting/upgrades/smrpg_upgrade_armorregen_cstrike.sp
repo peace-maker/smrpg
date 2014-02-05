@@ -2,7 +2,10 @@
 #include <sourcemod>
 #include <smrpg>
 
-#define UPGRADE_SHORTNAME "armor"
+#undef REQUIRE_PLUGIN
+#include <smrpg_armorplus>
+
+#define UPGRADE_SHORTNAME "armorregen"
 
 #define PLUGIN_VERSION "1.0"
 
@@ -10,7 +13,7 @@ public Plugin:myinfo =
 {
 	name = "SM:RPG Upgrade > Armor regeneration",
 	author = "Jannik \"Peace-Maker\" Hartung",
-	description = "Armor upgrade for SM:RPG. Regenerates armor every second.",
+	description = "Armor regenration upgrade for SM:RPG. Regenerates armor every second.",
 	version = PLUGIN_VERSION,
 	url = "http://www.wcfan.de/"
 }
@@ -97,7 +100,7 @@ public Action:Timer_IncreaseArmor(Handle:timer)
 	
 	new bool:bIgnoreBots = SMRPG_IgnoreBots();
 	
-	new iLevel;
+	new iLevel, iMaxArmor, iNewArmor;
 	for(new i=1;i<=MaxClients;i++)
 	{
 		if(!IsClientInGame(i))
@@ -115,9 +118,10 @@ public Action:Timer_IncreaseArmor(Handle:timer)
 		if(!SMRPG_RunUpgradeEffect(i, UPGRADE_SHORTNAME))
 			continue; // Some other plugin doesn't want this effect to run
 		
-		new iNewArmor = GetClientArmor(i)+iLevel;
-		if(iNewArmor > 100)
-			iNewArmor = 100;
+		iMaxArmor = SMRPG_Armor_GetClientMaxArmor(i);
+		iNewArmor = GetClientArmor(i)+iLevel;
+		if(iNewArmor > iMaxArmor)
+			iNewArmor = iMaxArmor;
 		SetEntProp(i, Prop_Send, "m_ArmorValue", iNewArmor);
 	}
 	
