@@ -41,16 +41,18 @@ Server admins can install a new upgrade simply by loading the upgrade plugin.
 
 # API
 Developers can easily add new upgrades using the extensive API provided by the core.
-Have a look at the include file here: [smrpg.inc](https://github.com/peace-maker/smrpg/blob/master/scripting/include/smrpg.inc)
-See the available upgrade plugins for examples.
+Have a look at the [include files](https://github.com/peace-maker/smrpg/blob/master/scripting/include)!
+
+See the available upgrade plugins for examples. You can use the [example upgrade](https://github.com/peace-maker/smrpg/blob/master/scripting/upgrades/smrpg_upgrade_example.sp) as a skeleton.
 
 # Available upgrades
+* Armor+ (Counter-Strike only) - Increases your maximal armor.
 * Armor Regeneration (Counter-Strike only) - Regenerates armor every second.
 * Damage+ - Deal additional damage on enemies.
 * Denial - Keep your weapons the next time you spawn after you've died.
 * Fire Grenade - Ignites players damaged by your grenade.
 * Frost Pistol - Slow down players hit with a pistol.
-* Health+ - Increases your health.
+* Health+ - Increases your maximal health.
 * HP Regeneration - Regenerates HP every second.
 * Ice Stab - Freeze a player in place when knifing him.
 * Impulse - Gain speed for a short time when being shot.
