@@ -5,30 +5,22 @@
 
 #undef REQUIRE_PLUGIN
 #include <smrpg_health>
+#include <smrpg_armorplus>
 
 #define UPGRADE_SHORTNAME "medic"
 #define PLUGIN_VERSION "1.0"
 
-/**
- * @brief Heal increment for each level.
- */
-#define MEDIC_INC 5
-
-/**
- * @brief Delay between each heal.
- */
-#define MEDIC_DELAY 2.0
-
-/**
- * @brief Medic healing radius.
- */
-#define MEDIC_RADIUS 250.0
-
 #define MEDIC_HEALTH_BEAM_COLOR {5, 45, 255, 50}
 #define MEDIC_ARMOR_BEAM_COLOR {5, 255, 10, 50}
 
+new Handle:g_hCVIncrease;
+new Handle:g_hCVInterval;
+new Handle:g_hCVRadius;
+
 new g_iBeamRingSprite = -1;
 new bool:g_bIsCstrike;
+
+new Handle:g_hMedicTimer;
 
 public Plugin:myinfo = 
 {
@@ -63,12 +55,21 @@ public OnLibraryAdded(const String:name[])
 	{
 		SMRPG_RegisterUpgradeType("Medic", UPGRADE_SHORTNAME, "Heals team mates around you.", 20, true, 15, 15, 20, SMRPG_BuySell, SMRPG_ActiveQuery);
 		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
+		
+		g_hCVIncrease = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_medic_increase", "5", "Heal increment for each level.", _, true, 1.0);
+		g_hCVInterval = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_medic_interval", "2.0", "Delay between each heal wave in seconds.", _, true, 1.0);
+		g_hCVRadius = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_medic_radius", "250.0", "Radius around player in which other players are healed.", _, true, 1.0);
+		
+		HookConVarChange(g_hCVInterval, ConVar_IntervalChanged);
 	}
 }
 
 public OnMapStart()
 {
-	CreateTimer(MEDIC_DELAY, Timer_ApplyMedic, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
+	if(g_hMedicTimer != INVALID_HANDLE)
+		CloseHandle(g_hMedicTimer);
+	
+	g_hMedicTimer = CreateTimer(GetConVarFloat(g_hCVInterval), Timer_ApplyMedic, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 
 	// TODO: Make game independant
 	PrecacheSound("items/battery_pickup.wav", true);
@@ -79,6 +80,11 @@ public OnMapStart()
 		g_iBeamRingSprite = PrecacheModel("sprites/physbeam.vmt", true);
 	else
 		LogError("Unable to find a nice sprite texture for the beam ring effect. Contact the author with the game you're running this on.");
+}
+
+public OnMapEnd()
+{
+	g_hMedicTimer = INVALID_HANDLE;
 }
 
 /**
@@ -110,8 +116,7 @@ public SMRPG_TranslateUpgrade(client, const String:shortname[], TranslationType:
 }
 
 /**
- * @brief Checks the distance of each player from a medic and assigns health
- *        to them accordingly.
+ * Checks the distance of each player from a medic and assigns health to them accordingly.
  */
 public Action:Timer_ApplyMedic(Handle:timer, any:data)
 {
@@ -148,9 +153,12 @@ public Action:Timer_ApplyMedic(Handle:timer, any:data)
 		GetClientEyePosition(i, vCacheOrigin[i]);
 	}
 	
+	new Float:fMedicRadius = GetConVarFloat(g_hCVRadius);
+	new iMedicIncrease = GetConVarInt(g_hCVIncrease);
+	
 	new bool:bMedicDidHisJob, iBeamRingColor[4];
 	
-	decl iLevel, iNewHP, iMaxHealth, iNewArmor, Float:vRingOrigin[3];
+	decl iLevel, iNewHP, iMaxHealth, iNewArmor, iMaxArmor, Float:vRingOrigin[3];
 	for(new i=1;i<=MaxClients;i++)
 	{
 		/* If player is a medic and player is not dead */
@@ -180,12 +188,15 @@ public Action:Timer_ApplyMedic(Handle:timer, any:data)
 			
 			/* A suitable player has been found */
 			/* Check if player is in the medic's radius */
-			if(GetVectorDistance(vCacheOrigin[i], vCacheOrigin[m]) > MEDIC_RADIUS)
+			if(GetVectorDistance(vCacheOrigin[i], vCacheOrigin[m]) > fMedicRadius)
 				continue;
 			
 			iNewHP = GetClientHealth(m);
 			if(g_bIsCstrike)
+			{
 				iNewArmor = GetClientArmor(m);
+				iMaxArmor = SMRPG_Armor_GetClientMaxArmor(m);
+			}
 			
 			bMedicDidHisJob = false;
 			
@@ -193,7 +204,7 @@ public Action:Timer_ApplyMedic(Handle:timer, any:data)
 			/* If player is not at maximum health, heal him */
 			if(iNewHP < iMaxHealth)
 			{
-				iNewHP += iLevel * MEDIC_INC;
+				iNewHP += iLevel * iMedicIncrease;
 				
 				if(iNewHP > iMaxHealth)
 					iNewHP = iMaxHealth;
@@ -205,17 +216,17 @@ public Action:Timer_ApplyMedic(Handle:timer, any:data)
 				bMedicDidHisJob = true;
 			}
 			/* Else if player is not at maximum armor, repair him */
-			else if(g_bIsCstrike && iNewArmor < 100)
+			else if(g_bIsCstrike && iNewArmor < iMaxArmor)
 			{
-				if(iLevel*MEDIC_INC > 25)
+				if(iLevel*iMedicIncrease > 25)
 					iNewArmor += 25;
 				else
-					iNewArmor += iLevel*MEDIC_INC;
+					iNewArmor += iLevel*iMedicIncrease;
 				
-				if(iNewArmor > 100)
-					iNewArmor = 100;
+				if(iNewArmor > iMaxArmor)
+					iNewArmor = iMaxArmor;
 				
-				// TODO: Make game independant
+				// TODO: Move out of medic upgrade into own one?
 				SetEntProp(m, Prop_Send, "m_ArmorValue", iNewArmor);
 				
 				iBeamRingColor = MEDIC_ARMOR_BEAM_COLOR;
@@ -232,7 +243,7 @@ public Action:Timer_ApplyMedic(Handle:timer, any:data)
 			
 			if(g_iBeamRingSprite != -1)
 			{
-				TE_SetupBeamRingPoint(vRingOrigin, 8.0, MEDIC_RADIUS+300.0, g_iBeamRingSprite, g_iBeamRingSprite, 0, 1, 1.5, 10.0, 0.0, iBeamRingColor, 0, FBEAM_FADEOUT);
+				TE_SetupBeamRingPoint(vRingOrigin, 8.0, fMedicRadius+300.0, g_iBeamRingSprite, g_iBeamRingSprite, 0, 1, 1.5, 10.0, 0.0, iBeamRingColor, 0, FBEAM_FADEOUT);
 				
 				if(GetClientTeam(i) == 2)
 					TE_Send(iFirstTeam, iFirstCount);
@@ -245,4 +256,11 @@ public Action:Timer_ApplyMedic(Handle:timer, any:data)
 	}
 	
 	return Plugin_Continue;
+}
+
+public ConVar_IntervalChanged(Handle:convar, const String:oldValue[], const String:newValue[])
+{
+	if(g_hMedicTimer != INVALID_HANDLE)
+		CloseHandle(g_hMedicTimer);
+	g_hMedicTimer = CreateTimer(GetConVarFloat(g_hCVInterval), Timer_ApplyMedic, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 }
