@@ -2,9 +2,10 @@
 #include <sourcemod>
 #include <sdktools>
 #include <sdkhooks>
+#include <topmenus>
 #include <smlib>
 #include <smrpg>
-#include <topmenus>
+#include <autoexecconfig>
 
 #undef REQUIRE_PLUGIN
 #include <adminmenu>
@@ -92,36 +93,41 @@ public OnPluginStart()
 		HookConVarChange(hVersion, ConVar_VersionChanged);
 	}
 	
-	g_hCVEnable = CreateConVar("smrpg_enable", "1", "If set to 1, SM:RPG is enabled, if 0, SM:RPG is disabled", 0, true, 0.0, true, 1.0);
-	g_hCVBotEnable = CreateConVar("smrpg_bot_enable", "1", "If set to 1, bots will be able to use the SM:RPG plugin", 0, true, 0.0, true, 1.0);
-	g_hCVBotNeedHuman = CreateConVar("smrpg_bot_need_human", "1", "Don't allow bots to gain experience while no human player is on the server?", 0, true, 0.0, true, 1.0);
-	g_hCVDebug = CreateConVar("smrpg_debug", "0", "Turns on debug mode for this plugin", 0, true, 0.0, true, 1.0);
-	g_hCVSaveData = CreateConVar("smrpg_save_data", "1", "If disabled, the database won't be updated (this means player data won't be saved!)", 0, true, 0.0, true, 1.0);
-	g_hCVSteamIDSave = CreateConVar("smrpg_steamid_save", "1", "Save by SteamID instead of by SteamID and name", 0, true, 0.0, true, 1.0);
-	g_hCVSaveInterval = CreateConVar("smrpg_save_interval", "150", "Interval (in seconds) that player data is auto saved (0 = off)", 0, true, 0.0);
-	g_hCVPlayerExpire = CreateConVar("smrpg_player_expire", "30", "Sets how many days until an unused player account is deleted (0 = never)", 0, true, 0.0);
-	g_hCVBotMaxlevel = CreateConVar("smrpg_bot_maxlevel", "250", "The maximum level a bot can reach until its stats are reset (0 = infinite)", 0, true, 0.0);
-	g_hCVAnnounceNewLvl = CreateConVar("smrpg_announce_newlvl", "1", "Global announcement when a player reaches a new level (1 = enable, 0 = disable)", 0, true, 0.0, true, 1.0);
+	AutoExecConfig_SetFile("plugin.smrpg");
+	AutoExecConfig_SetCreateFile(true);
+	AutoExecConfig_SetPlugin(INVALID_HANDLE);
 	
-	g_hCVExpNotice = CreateConVar("smrpg_exp_notice", "1", "Sends notifications to players when they gain Experience", 0, true, 0.0, true, 1.0);
-	g_hCVExpMax = CreateConVar("smrpg_exp_max", "50000", "Maximum experience that will ever be required", 0, true, 0.0);
-	g_hCVExpStart = CreateConVar("smrpg_exp_start", "250", "Experience required for Level 1", 0, true, 0.0);
-	g_hCVExpInc = CreateConVar("smrpg_exp_inc", "50", "Increment experience required for each level (until smrpg_exp_max)", 0, true, 0.0);
+	g_hCVEnable = AutoExecConfig_CreateConVar("smrpg_enable", "1", "If set to 1, SM:RPG is enabled, if 0, SM:RPG is disabled", 0, true, 0.0, true, 1.0);
+	g_hCVBotEnable = AutoExecConfig_CreateConVar("smrpg_bot_enable", "1", "If set to 1, bots will be able to use the SM:RPG plugin", 0, true, 0.0, true, 1.0);
+	g_hCVBotNeedHuman = AutoExecConfig_CreateConVar("smrpg_bot_need_human", "1", "Don't allow bots to gain experience while no human player is on the server?", 0, true, 0.0, true, 1.0);
+	g_hCVDebug = AutoExecConfig_CreateConVar("smrpg_debug", "0", "Turns on debug mode for this plugin", 0, true, 0.0, true, 1.0);
+	g_hCVSaveData = AutoExecConfig_CreateConVar("smrpg_save_data", "1", "If disabled, the database won't be updated (this means player data won't be saved!)", 0, true, 0.0, true, 1.0);
+	g_hCVSteamIDSave = AutoExecConfig_CreateConVar("smrpg_steamid_save", "1", "Save by SteamID instead of by SteamID and name", 0, true, 0.0, true, 1.0);
+	g_hCVSaveInterval = AutoExecConfig_CreateConVar("smrpg_save_interval", "150", "Interval (in seconds) that player data is auto saved (0 = off)", 0, true, 0.0);
+	g_hCVPlayerExpire = AutoExecConfig_CreateConVar("smrpg_player_expire", "30", "Sets how many days until an unused player account is deleted (0 = never)", 0, true, 0.0);
+	g_hCVBotMaxlevel = AutoExecConfig_CreateConVar("smrpg_bot_maxlevel", "250", "The maximum level a bot can reach until its stats are reset (0 = infinite)", 0, true, 0.0);
+	g_hCVAnnounceNewLvl = AutoExecConfig_CreateConVar("smrpg_announce_newlvl", "1", "Global announcement when a player reaches a new level (1 = enable, 0 = disable)", 0, true, 0.0, true, 1.0);
 	
-	g_hCVExpDamage = CreateConVar("smrpg_exp_damage", "1.0", "Experience for hurting an enemy multiplied by the damage done", 0, true, 0.0);
-	g_hCVExpKill = CreateConVar("smrpg_exp_kill", "15.0", "Experience for a kill multiplied by the victim's level", 0, true, 0.0);
-	g_hCVExpKillMax = CreateConVar("smrpg_exp_kill_max", "0.0", "Maximum experience a player can ever earn for killing someone. (0 = unlimited)", 0, true, 0.0);
+	g_hCVExpNotice = AutoExecConfig_CreateConVar("smrpg_exp_notice", "1", "Sends notifications to players when they gain Experience", 0, true, 0.0, true, 1.0);
+	g_hCVExpMax = AutoExecConfig_CreateConVar("smrpg_exp_max", "50000", "Maximum experience that will ever be required", 0, true, 0.0);
+	g_hCVExpStart = AutoExecConfig_CreateConVar("smrpg_exp_start", "250", "Experience required for Level 1", 0, true, 0.0);
+	g_hCVExpInc = AutoExecConfig_CreateConVar("smrpg_exp_inc", "50", "Increment experience required for each level (until smrpg_exp_max)", 0, true, 0.0);
 	
-	g_hCVExpTeamwin = CreateConVar("smrpg_exp_teamwin", "0.15", "Experience multipled by the experience required and the team ratio given to a team for completing the objective", 0, true, 0.0);
+	g_hCVExpDamage = AutoExecConfig_CreateConVar("smrpg_exp_damage", "1.0", "Experience for hurting an enemy multiplied by the damage done", 0, true, 0.0);
+	g_hCVExpKill = AutoExecConfig_CreateConVar("smrpg_exp_kill", "15.0", "Experience for a kill multiplied by the victim's level", 0, true, 0.0);
+	g_hCVExpKillMax = AutoExecConfig_CreateConVar("smrpg_exp_kill_max", "0.0", "Maximum experience a player can ever earn for killing someone. (0 = unlimited)", 0, true, 0.0);
 	
-	g_hCVCreditsInc = CreateConVar("smrpg_credits_inc", "5", "Credits given to each new level", 0, true, 0.0);
-	g_hCVCreditsStart = CreateConVar("smrpg_credits_start", "0", "Starting credits for Level 1", 0, true, 0.0);
-	g_hCVSalePercent = CreateConVar("smrpg_sale_percent", "0.75", "Percentage of credits a player gets for selling an upgrade", 0, true, 0.0);
-	g_hCVIgnoreLevelBarrier = CreateConVar("smrpg_ignore_level_barrier", "0", "Ignore the hardcoded maxlevels for the upgrades and allow to set the maxlevel as high as you want.", 0, true, 0.0, true, 1.0);
+	g_hCVExpTeamwin = AutoExecConfig_CreateConVar("smrpg_exp_teamwin", "0.15", "Experience multipled by the experience required and the team ratio given to a team for completing the objective", 0, true, 0.0);
 	
-	g_hCVShowUpgradePurchase = CreateConVar("smrpg_show_upgrade_purchase_in_chat", "0", "Show a message to all in chat when a player buys an upgrade.", 0, true, 0.0, true, 1.0);
+	g_hCVCreditsInc = AutoExecConfig_CreateConVar("smrpg_credits_inc", "5", "Credits given to each new level", 0, true, 0.0);
+	g_hCVCreditsStart = AutoExecConfig_CreateConVar("smrpg_credits_start", "0", "Starting credits for Level 1", 0, true, 0.0);
+	g_hCVSalePercent = AutoExecConfig_CreateConVar("smrpg_sale_percent", "0.75", "Percentage of credits a player gets for selling an upgrade", 0, true, 0.0);
+	g_hCVIgnoreLevelBarrier = AutoExecConfig_CreateConVar("smrpg_ignore_level_barrier", "0", "Ignore the hardcoded maxlevels for the upgrades and allow to set the maxlevel as high as you want.", 0, true, 0.0, true, 1.0);
 	
-	AutoExecConfig(true, "plugin.smrpg");
+	g_hCVShowUpgradePurchase = AutoExecConfig_CreateConVar("smrpg_show_upgrade_purchase_in_chat", "0", "Show a message to all in chat when a player buys an upgrade.", 0, true, 0.0, true, 1.0);
+	
+	AutoExecConfig_ExecuteFile();
+	AutoExecConfig_CleanFile();
 	
 	HookConVarChange(g_hCVEnable, ConVar_EnableChanged);
 	HookConVarChange(g_hCVSaveInterval, ConVar_SaveIntervalChanged);
