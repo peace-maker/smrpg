@@ -61,7 +61,7 @@ InitUpgrades()
 	g_hUpgrades = CreateArray(_:InternalUpgradeInfo);
 }
 
-// native SMRPG_RegisterUpgradeType(const String:name[], const String:shortname[], maxlevelbarrier, bool:bDefaultEnable, iDefaultMaxLevel, iDefaultStartCost, iDefaultCostInc, SMRPG_UpgradeQuery:buycb, SMRPG_UpgradeQuery:sellcb, SMRPG_UpgradeQuery:activecb);
+// native SMRPG_RegisterUpgradeType(const String:name[], const String:shortname[], const String:description[], maxlevelbarrier, bool:bDefaultEnable, iDefaultMaxLevel, iDefaultStartCost, iDefaultCostInc, iAdminFlags=0, SMRPG_UpgradeQueryCB:querycb, SMRPG_ActiveQueryCB:activecb);
 public Native_RegisterUpgradeType(Handle:plugin, numParams)
 {
 	new len;
@@ -103,8 +103,9 @@ public Native_RegisterUpgradeType(Handle:plugin, numParams)
 	new iDefaultMaxLevel = GetNativeCell(6);
 	new iDefaultStartCost = GetNativeCell(7);
 	new iDefaultCostInc = GetNativeCell(8);
-	new Function:queryCallback = Function:GetNativeCell(9);
-	new Function:activeCallback = Function:GetNativeCell(10);
+	new iDefaultAdminFlags = GetNativeCell(9);
+	new Function:queryCallback = Function:GetNativeCell(10);
+	new Function:activeCallback = Function:GetNativeCell(11);
 	
 	if(!bAlreadyLoaded)
 	{
@@ -192,7 +193,8 @@ public Native_RegisterUpgradeType(Handle:plugin, numParams)
 	
 	Format(sCvarName, sizeof(sCvarName), "smrpg_%s_adminflag", sShortName);
 	Format(sCvarDescription, sizeof(sCvarDescription), "Required admin flag to use this upgrade. Leave blank to allow everyone to use this upgrade. This also checks for a \"smrpg_upgrade_%s\" admin override for permissions.", sShortName);
-	hCvar = AutoExecConfig_CreateConVar(sCvarName, "", sCvarDescription, 0, true, 0.0);
+	GetAdminFlagStringFromBits(iDefaultAdminFlags, sValue, sizeof(sValue));
+	hCvar = AutoExecConfig_CreateConVar(sCvarName, sValue, sCvarDescription, 0, true, 0.0);
 	HookConVarChange(hCvar, ConVar_UpgradeChanged);
 	upgrade[UPGR_adminFlagConvar] = hCvar;
 	GetConVarString(hCvar, sValue, sizeof(sValue));
@@ -403,6 +405,7 @@ public Native_SetUpgradeResetCallback(Handle:plugin, numParams)
 	SaveUpgradeConfig(upgrade);
 }
 
+// native SMRPG_ResetUpgradeEffectOnClient(client, const String:shortname[]);
 public Native_ResetUpgradeEffectOnClient(Handle:plugin, numParams)
 {
 	new client = GetNativeCell(1);
@@ -433,6 +436,7 @@ public Native_ResetUpgradeEffectOnClient(Handle:plugin, numParams)
 	Call_Finish();
 }
 
+// native bool:SMRPG_RunUpgradeEffect(client, const String:shortname[]);
 public Native_RunUpgradeEffect(Handle:plugin, numParams)
 {
 	new client = GetNativeCell(1);
@@ -468,6 +472,7 @@ public Native_RunUpgradeEffect(Handle:plugin, numParams)
 	return result < Plugin_Handled;
 }
 
+// native bool:SMRPG_CheckUpgradeAccess(client, const String:shortname[]);
 public Native_CheckUpgradeAccess(Handle:plugin, numParams)
 {
 	new client = GetNativeCell(1);
