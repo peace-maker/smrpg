@@ -158,6 +158,39 @@ functag public SMRPG_ResetEffectCB(client);
  */
 native SMRPG_SetUpgradeResetCallback(const String:shortname[], SMRPG_ResetEffectCB:cb);
 
+/** List of different cosmetical effects */
+enum SMRPG_FX {
+  SMRPG_FX_Visuals = 0, // Upgrade has some visual effects
+  SMRPG_FX_Sounds       // Upgrade has some sound effects
+};
+
+/**
+ * Tells the core that this upgrade does some visual and/or sound effects and if they should be enabled by default.
+ * Convars to enable/disable the effects will be added to the upgrade's config file
+ * - smrpg_<shortname>_visuals
+ * - smrpg_<shortname>_sounds
+ *
+ * Clients have the option to change this setting for each upgrade themselves individually.
+ *
+ * @param shortname       The shortname of the upgrade.
+ * @param effecttype      What kind of effect does this plugin support? See SMRPG_FX enum.
+ * @param bDefaultEnable  Should the upgrade show the effects by default?
+ * @noreturn
+ * @error Unknown upgrade shortname.
+ */
+native SMRPG_SetUpgradeDefaultCosmenticEffect(const String:shortname[], SMRPG_FX:effecttype, bool:bDefaultEnable);
+
+/**
+ * Returns whether a visual or sound effect should be played for a client.
+ * 
+ * @param client      The client index.
+ * @param shortname   The shortname of the upgrade.
+ * @param effecttype  The effect type to check for.
+ * @return            True if client has that cosmetic type enabled, false otherwise.
+ * @error Invalid client index, unknown upgrade shortname.
+ */
+native bool:SMRPG_DoesClientWantCosmetics(client, const String:shortname[], SMRPG_FX:effecttype);
+
 /**
  * Signal other plugins that this upgrade is about to do its effects on a client.
  * This calls the SMRPG_OnUpgradeEffect forward, which allows other plugins to block the effect of this upgrade.

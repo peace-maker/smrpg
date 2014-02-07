@@ -13,6 +13,8 @@ enum InternalUpgradeInfo
 	UPGR_startCost, // The amount of credits the first level costs
 	UPGR_incCost, // The amount of credits each level costs more
 	UPGR_adminFlag, // Admin flag(s) this upgrade is restricted to
+	bool:UPGR_enableVisuals, // Enable the visual effects of this upgrade by default?
+	bool:UPGR_enableSounds, // Enable the audio effects of this upgrade by default?
 	Function:UPGR_queryCallback, // callback called, when a player bought/sold the upgrade
 	Function:UPGR_activeCallback, // callback called, to see, if a player is currently under the effect of that upgrade
 	Function:UPGR_translationCallback, // callback called, when the upgrade's name is about to get displayed.
@@ -24,6 +26,8 @@ enum InternalUpgradeInfo
 	Handle:UPGR_startCostConvar,
 	Handle:UPGR_incCostConvar,
 	Handle:UPGR_adminFlagConvar,
+	Handle:UPGR_visualsConvar,
+	Handle:UPGR_soundsConvar,
 	
 	// Topmenu object ids
 	TopMenuObject:UPGR_topmenuUpgrades,
@@ -48,12 +52,14 @@ RegisterUpgradeNatives()
 	
 	CreateNative("SMRPG_SetUpgradeTranslationCallback", Native_SetUpgradeTranslationCallback);
 	CreateNative("SMRPG_SetUpgradeResetCallback", Native_SetUpgradeResetCallback);
+	CreateNative("SMRPG_SetUpgradeDefaultCosmenticEffect", Native_SetUpgradeDefaultCosmenticEffect);
 	CreateNative("SMRPG_UpgradeExists", Native_UpgradeExists);
 	CreateNative("SMRPG_GetUpgradeInfo", Native_GetUpgradeInfo);
 	CreateNative("SMRPG_ResetUpgradeEffectOnClient", Native_ResetUpgradeEffectOnClient);
 	CreateNative("SMRPG_RunUpgradeEffect", Native_RunUpgradeEffect);
 	
 	CreateNative("SMRPG_CheckUpgradeAccess", Native_CheckUpgradeAccess);
+	CreateNative("SMRPG_ClientWantsCosmetics", Native_ClientWantsCosmetics);
 }
 
 InitUpgrades()
@@ -137,6 +143,8 @@ public Native_RegisterUpgradeType(Handle:plugin, numParams)
 	upgrade[UPGR_maxLevel] = iDefaultMaxLevel;
 	upgrade[UPGR_startCost] = iDefaultStartCost;
 	upgrade[UPGR_incCost] = iDefaultCostInc;
+	upgrade[UPGR_enableVisuals] = true;
+	upgrade[UPGR_enableSounds] = true;
 	upgrade[UPGR_queryCallback] = queryCallback;
 	upgrade[UPGR_activeCallback] = activeCallback;
 	upgrade[UPGR_translationCallback] = INVALID_FUNCTION;
@@ -403,6 +411,96 @@ public Native_SetUpgradeResetCallback(Handle:plugin, numParams)
 	
 	upgrade[UPGR_resetCallback] = Function:GetNativeCell(2);
 	SaveUpgradeConfig(upgrade);
+}
+
+// native SMRPG_SetUpgradeDefaultCosmenticEffect(const String:shortname[], SMRPG_FX:effect, bool:bDefaultEnable);
+public Native_SetUpgradeDefaultCosmenticEffect(Handle:plugin, numParams)
+{
+	new len;
+	GetNativeStringLength(1, len);
+	new String:sShortName[len+1];
+	GetNativeString(1, sShortName, len+1);
+	
+	new upgrade[InternalUpgradeInfo];
+	if(!GetUpgradeByShortname(sShortName, upgrade) || !IsValidUpgrade(upgrade))
+	{
+		ThrowNativeError(SP_ERROR_NATIVE, "No upgrade named \"%s\" loaded.", sShortName);
+		return;
+	}
+	
+	new SMRPG_FX:iFX = SMRPG_FX:GetNativeCell(2);
+	new bool:bDefaultEnable = GetNativeCell(3);
+	
+	decl String:sCvarName[64], String:sCvarDescription[256];
+	
+	Format(sCvarName, sizeof(sCvarName), "smrpg_upgrade_%s", sShortName);
+	AutoExecConfig_SetFile(sCvarName, "sourcemod/smrpg");
+	AutoExecConfig_SetCreateFile(true);
+	AutoExecConfig_SetPlugin(plugin);
+	
+	switch(iFX)
+	{
+		case SMRPG_FX_Visuals:
+		{
+			Format(sCvarName, sizeof(sCvarName), "smrpg_%s_visuals", sShortName);
+			Format(sCvarDescription, sizeof(sCvarDescription), "Show the visual effects of upgrade %s by default?", upgrade[UPGR_name]);
+			new Handle:hCvar = AutoExecConfig_CreateConVar(sCvarName, (bDefaultEnable?"1":"0"), sCvarDescription, 0, true, 0.0, true, 1.0);
+			HookConVarChange(hCvar, ConVar_UpgradeChanged);
+			upgrade[UPGR_visualsConvar] = hCvar;
+			upgrade[UPGR_enableVisuals] = GetConVarBool(hCvar);
+		}
+		case SMRPG_FX_Sounds:
+		{
+			Format(sCvarName, sizeof(sCvarName), "smrpg_%s_sounds", sShortName);
+			Format(sCvarDescription, sizeof(sCvarDescription), "Play the sounds of upgrade %s by default?", upgrade[UPGR_name]);
+			new Handle:hCvar = AutoExecConfig_CreateConVar(sCvarName, (bDefaultEnable?"1":"0"), sCvarDescription, 0, true, 0.0, true, 1.0);
+			HookConVarChange(hCvar, ConVar_UpgradeChanged);
+			upgrade[UPGR_soundsConvar] = hCvar;
+			upgrade[UPGR_enableSounds] = GetConVarBool(hCvar);
+		}
+	}
+	
+	SaveUpgradeConfig(upgrade);
+}
+
+// native bool:SMRPG_ClientWantsCosmetics(client, const String:shortname[], SMRPG_FX:effect);
+public Native_ClientWantsCosmetics(Handle:plugin, numParams)
+{
+	new client = GetNativeCell(1);
+	if(client < 0 || client > MaxClients)
+	{
+		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
+		return false;
+	}
+	
+	new len;
+	GetNativeStringLength(2, len);
+	new String:sShortName[len+1];
+	GetNativeString(2, sShortName, len+1);
+	
+	new upgrade[InternalUpgradeInfo];
+	if(!GetUpgradeByShortname(sShortName, upgrade) || !IsValidUpgrade(upgrade))
+	{
+		ThrowNativeError(SP_ERROR_NATIVE, "No upgrade named \"%s\" loaded.", sShortName);
+		return false;
+	}
+	
+	new SMRPG_FX:iFX = SMRPG_FX:GetNativeCell(3);
+	
+	// TODO: Add individual options for clients.
+	switch(iFX)
+	{
+		case SMRPG_FX_Visuals:
+		{
+			return upgrade[UPGR_enableVisuals];
+		}
+		case SMRPG_FX_Sounds:
+		{
+			return upgrade[UPGR_enableSounds];
+		}
+	}
+	
+	return false;
 }
 
 // native SMRPG_ResetUpgradeEffectOnClient(client, const String:shortname[]);
@@ -678,6 +776,18 @@ public ConVar_UpgradeChanged(Handle:convar, const String:oldValue[], const Strin
 			decl String:sValue[30];
 			GetConVarString(convar, sValue, sizeof(sValue));
 			upgrade[UPGR_adminFlag] = ReadFlagString(sValue);
+			SaveUpgradeConfig(upgrade);
+			break;
+		}
+		else if(upgrade[UPGR_visualsConvar] == convar)
+		{
+			upgrade[UPGR_enableVisuals] = GetConVarBool(convar);
+			SaveUpgradeConfig(upgrade);
+			break;
+		}
+		else if(upgrade[UPGR_soundsConvar] == convar)
+		{
+			upgrade[UPGR_enableSounds] = GetConVarBool(convar);
 			SaveUpgradeConfig(upgrade);
 			break;
 		}
