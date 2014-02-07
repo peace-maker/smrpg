@@ -55,7 +55,7 @@ public OnLibraryAdded(const String:name[])
 	// Register this upgrade in SM:RPG
 	if(StrEqual(name, "smrpg"))
 	{
-		SMRPG_RegisterUpgradeType("Armor+", UPGRADE_SHORTNAME, "Increases your armor.", 16, true, 10, 10, 10, SMRPG_BuySell, SMRPG_ActiveQuery);
+		SMRPG_RegisterUpgradeType("Armor+", UPGRADE_SHORTNAME, "Increases your armor.", 16, true, 10, 10, 10, _, SMRPG_BuySell, SMRPG_ActiveQuery);
 		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
 		
 		g_hCVMaxIncrease = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_armor_inc", "25", "Armor max increase for each level", 0, true, 1.0);

@@ -53,7 +53,7 @@ public OnLibraryAdded(const String:name[])
 	// Register this upgrade in SM:RPG
 	if(StrEqual(name, "smrpg"))
 	{
-		SMRPG_RegisterUpgradeType("Shrinking", UPGRADE_SHORTNAME, "Make player models smaller.", 3, true, 3, 25, 15, SMRPG_BuySell, SMRPG_ActiveQuery);
+		SMRPG_RegisterUpgradeType("Shrinking", UPGRADE_SHORTNAME, "Make player models smaller.", 3, true, 3, 25, 15, _, SMRPG_BuySell, SMRPG_ActiveQuery);
 		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
 		
 		g_hCVIncrease = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_shrinking_increase", "0.1", "How many percent smaller should the player get each level?", _, true, 0.01, true, 0.5);

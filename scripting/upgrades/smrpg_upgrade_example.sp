@@ -44,7 +44,7 @@ public OnLibraryAdded(const String:name[])
 	if(StrEqual(name, "smrpg"))
 	{
 		// Register the upgrade type.
-		SMRPG_RegisterUpgradeType("Example", UPGRADE_SHORTNAME, "Does something.", 10, true, 5, 15, 10, SMRPG_BuySell, SMRPG_ActiveQuery);
+		SMRPG_RegisterUpgradeType("Example", UPGRADE_SHORTNAME, "Does something.", 10, true, 5, 15, 10, _, SMRPG_BuySell, SMRPG_ActiveQuery);
 		
 		// If this is an active effect which is only affecting players for a short time on some event, register this callback to enable other plugins to stop your effect anytime.
 		// This can help to prevent compatability issues between similar upgrades.

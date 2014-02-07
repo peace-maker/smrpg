@@ -87,7 +87,7 @@ public OnLibraryAdded(const String:name[])
 	// Register this upgrade in SM:RPG
 	if(StrEqual(name, "smrpg"))
 	{
-		SMRPG_RegisterUpgradeType("Increase Clipsize", UPGRADE_SHORTNAME, "Increases the size of a weapon's clip.", 2, true, 2, 30, 30, SMRPG_BuySell, SMRPG_ActiveQuery);
+		SMRPG_RegisterUpgradeType("Increase Clipsize", UPGRADE_SHORTNAME, "Increases the size of a weapon's clip.", 2, true, 2, 30, 30, _, SMRPG_BuySell, SMRPG_ActiveQuery);
 		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
 	}
 }
