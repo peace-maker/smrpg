@@ -60,6 +60,7 @@ public OnLibraryAdded(const String:name[])
 		SMRPG_RegisterUpgradeType("Impulse", UPGRADE_SHORTNAME, "Gain speed for a short time when being shot.", 10, true, 5, 20, 20, _, SMRPG_BuySell, SMRPG_ActiveQuery);
 		SMRPG_SetUpgradeResetCallback(UPGRADE_SHORTNAME, SMRPG_ResetEffect);
 		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
+		SMRPG_SetUpgradeDefaultCosmenticEffect(UPGRADE_SHORTNAME, SMRPG_FX_Visuals, true);
 		
 		g_hCVSpeedIncrease = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_impulse_speed_inc", "0.2", "Speed increase for each level when player is damaged.", 0, true, 0.1);
 		g_hCVDuration = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_impulse_duration", "0.8", "Duration of Impulse's effect in seconds.", 0, true, 0.1);
@@ -219,7 +220,7 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 	AcceptEntityInput(iSprite, "SetParent", victim);
 	
 	TE_SetupBeamFollow(iSprite, g_iRedTrailSprite, g_iRedTrailSprite, GetConVarFloat(g_hCVDuration), 10.0, 4.0, 2, {255,0,0,255});
-	TE_SendToAll();
+	SMRPG_TE_SendToAllEnabled(UPGRADE_SHORTNAME);
 }
 
 public Action:Timer_ResetSpeed(Handle:timer, any:data)

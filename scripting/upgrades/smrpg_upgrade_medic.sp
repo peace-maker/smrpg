@@ -55,6 +55,8 @@ public OnLibraryAdded(const String:name[])
 	{
 		SMRPG_RegisterUpgradeType("Medic", UPGRADE_SHORTNAME, "Heals team mates around you.", 20, true, 15, 15, 20, _, SMRPG_BuySell, SMRPG_ActiveQuery);
 		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
+		SMRPG_SetUpgradeDefaultCosmenticEffect(UPGRADE_SHORTNAME, SMRPG_FX_Sounds, true);
+		SMRPG_SetUpgradeDefaultCosmenticEffect(UPGRADE_SHORTNAME, SMRPG_FX_Visuals, true);
 		
 		g_hCVIncrease = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_medic_increase", "5", "Heal increment for each level.", _, true, 1.0);
 		g_hCVInterval = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_medic_interval", "2.0", "Delay between each heal wave in seconds.", _, true, 1.0);
@@ -132,7 +134,7 @@ public Action:Timer_ApplyMedic(Handle:timer, any:data)
 	
 	// Build origin cache and team targets for beam rings
 	decl Float:vCacheOrigin[MaxClients+1][3];
-	decl iFirstTeam[MaxClients+1], iSecondTeam[MaxClients+1];
+	decl iFirstTeam[MaxClients], iSecondTeam[MaxClients];
 	new iFirstCount, iSecondCount;
 	for(new i=1;i<=MaxClients;i++)
 	{
@@ -142,10 +144,14 @@ public Action:Timer_ApplyMedic(Handle:timer, any:data)
 		if(bIgnoreBots && IsFakeClient(i))
 			continue;
 		
-		if(GetClientTeam(i) == 2)
-			iFirstTeam[iFirstCount++] = i;
-		else if(GetClientTeam(i) == 3)
-			iSecondTeam[iSecondCount++] = i;
+		// Only show the effect to people who want to see it!
+		if(SMRPG_ClientWantsCosmetics(i, UPGRADE_SHORTNAME, SMRPG_FX_Visuals))
+		{
+			if(GetClientTeam(i) == 2)
+				iFirstTeam[iFirstCount++] = i;
+			else if(GetClientTeam(i) == 3)
+				iSecondTeam[iSecondCount++] = i;
+		}
 		
 		if(!IsPlayerAlive(i))
 			continue;
@@ -251,7 +257,7 @@ public Action:Timer_ApplyMedic(Handle:timer, any:data)
 					TE_Send(iSecondTeam, iSecondCount);
 			}
 			
-			EmitSoundToAll("items/battery_pickup.wav", i, SNDCHAN_AUTO, SNDLEVEL_NORMAL, SND_NOFLAGS, 0.2, SNDPITCH_NORMAL, i);
+			SMRPG_EmitSoundToAllEnabled(UPGRADE_SHORTNAME, "items/battery_pickup.wav", i, SNDCHAN_AUTO, SNDLEVEL_NORMAL, SND_NOFLAGS, 0.2, SNDPITCH_NORMAL, i);
 		}
 	}
 	

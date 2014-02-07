@@ -189,7 +189,7 @@ native SMRPG_SetUpgradeDefaultCosmenticEffect(const String:shortname[], SMRPG_FX
  * @return            True if client has that cosmetic type enabled, false otherwise.
  * @error Invalid client index, unknown upgrade shortname.
  */
-native bool:SMRPG_DoesClientWantCosmetics(client, const String:shortname[], SMRPG_FX:effecttype);
+native bool:SMRPG_ClientWantsCosmetics(client, const String:shortname[], SMRPG_FX:effecttype);
 
 /**
  * Signal other plugins that this upgrade is about to do its effects on a client.

@@ -70,6 +70,8 @@ public OnLibraryAdded(const String:name[])
 		SMRPG_RegisterUpgradeType("Frost Pistol", UPGRADE_SHORTNAME, "Slow down players hit with a pistol.", 10, true, 10, 20, 15, _, SMRPG_BuySell, SMRPG_ActiveQuery);
 		SMRPG_SetUpgradeResetCallback(UPGRADE_SHORTNAME, SMRPG_ResetEffect);
 		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
+		SMRPG_SetUpgradeDefaultCosmenticEffect(UPGRADE_SHORTNAME, SMRPG_FX_Sounds, true);
+		SMRPG_SetUpgradeDefaultCosmenticEffect(UPGRADE_SHORTNAME, SMRPG_FX_Visuals, true);
 		
 		g_hCVTimeIncrease = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_fpistol_inc", "0.1", "How many seconds are players slowed down multiplied by level?", 0, true, 0.0);
 	}
@@ -241,9 +243,15 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 	// TODO: Make this game independant
 	decl String:sSound[PLATFORM_MAX_PATH];
 	Format(sSound, sizeof(sSound), "physics/surfaces/tile_impact_bullet%d.wav", GetRandomInt(1, 4));
-	EmitSoundToAll(sSound, victim, SNDCHAN_AUTO, SNDLEVEL_NORMAL, SND_NOFLAGS, 0.8, SNDPITCH_NORMAL, victim);
-	SetEntityRenderMode(victim, RENDER_TRANSCOLOR);
-	Entity_SetRenderColor(victim, 0, 0, 255, -1);
+	// Only play it to players who enabled sounds for this upgrade
+	SMRPG_EmitSoundToAllEnabled(UPGRADE_SHORTNAME, sSound, victim, SNDCHAN_AUTO, SNDLEVEL_NORMAL, SND_NOFLAGS, 0.8, SNDPITCH_NORMAL, victim);
+	
+	// If the victim doesn't want any effect, don't show it to anyone..................
+	if(SMRPG_ClientWantsCosmetics(victim, UPGRADE_SHORTNAME, SMRPG_FX_Visuals))
+	{
+		SetEntityRenderMode(victim, RENDER_TRANSCOLOR);
+		Entity_SetRenderColor(victim, 0, 0, 255, -1);
+	}
 	
 	ClearHandle(g_hFPistolResetSpeed[victim]);
 	

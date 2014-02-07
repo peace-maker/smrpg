@@ -63,6 +63,8 @@ public OnLibraryAdded(const String:name[])
 		SMRPG_RegisterUpgradeType("Ice Stab", UPGRADE_SHORTNAME, "Freeze a player in place when knifing him.", 10, true, 20, 30, 10, _, SMRPG_BuySell, SMRPG_ActiveQuery);
 		SMRPG_SetUpgradeResetCallback(UPGRADE_SHORTNAME, SMRPG_ResetEffect);
 		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
+		SMRPG_SetUpgradeDefaultCosmenticEffect(UPGRADE_SHORTNAME, SMRPG_FX_Sounds, true);
+		SMRPG_SetUpgradeDefaultCosmenticEffect(UPGRADE_SHORTNAME, SMRPG_FX_Visuals, true);
 		
 		g_hCVIceStabLimitDmg = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_icestab_limit_dmg", "10", "Maximum damage that can be done upon icestabbed victims (0 = disable)", 0, true, 0.0);
 		g_hCVTimeIncrease = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_icestab_inc", "1.0", "IceStab freeze duration increase for each level", 0, true, 0.1);
@@ -194,7 +196,7 @@ public Action:Hook_OnTakeDamage(victim, &attacker, &inflictor, &Float:damage, &d
 	
 	decl String:sSound[PLATFORM_MAX_PATH];
 	Format(sSound, sizeof(sSound), "physics/glass/glass_sheet_impact_hard%d.wav", GetRandomInt(1, 3));
-	EmitSoundToAll(sSound, victim, SNDCHAN_AUTO, SNDLEVEL_NORMAL, SND_NOFLAGS, SNDVOL_NORMAL, SNDPITCH_NORMAL, victim);
+	SMRPG_EmitSoundToAllEnabled(UPGRADE_SHORTNAME, sSound, victim, SNDCHAN_AUTO, SNDLEVEL_NORMAL, SND_NOFLAGS, SNDVOL_NORMAL, SNDPITCH_NORMAL, victim);
 	
 	return Plugin_Changed;
 }
@@ -255,13 +257,16 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 	
 	decl String:sSound[PLATFORM_MAX_PATH];
 	Format(sSound, sizeof(sSound), "physics/glass/glass_impact_bullet%d.wav", GetRandomInt(1, 4));
-	EmitSoundToAll(sSound, victim, SNDCHAN_AUTO, SNDLEVEL_NORMAL, SND_NOFLAGS, SNDVOL_NORMAL, SNDPITCH_NORMAL, victim);
+	SMRPG_EmitSoundToAllEnabled(UPGRADE_SHORTNAME, sSound, victim, SNDCHAN_AUTO, SNDLEVEL_NORMAL, SND_NOFLAGS, SNDVOL_NORMAL, SNDPITCH_NORMAL, victim);
 
-	SetEntityRenderMode(victim, RENDER_TRANSCOLOR);
-	Entity_SetRenderColor(victim, 0, 0, 255, -1);
+	if(SMRPG_ClientWantsCosmetics(victim, UPGRADE_SHORTNAME, SMRPG_FX_Visuals))
+	{
+		SetEntityRenderMode(victim, RENDER_TRANSCOLOR);
+		Entity_SetRenderColor(victim, 0, 0, 255, -1);
+		g_iIceStabFade[victim] = 0;
+	}
 	
 	ClearHandle(g_hIceStabUnfreeze[victim]);
-	g_iIceStabFade[victim] = 0;
 	g_hIceStabUnfreeze[victim] = CreateTimer(GetConVarFloat(g_hCVTimeIncrease)*float(iLevel), Timer_Unfreeze, GetClientUserId(victim), TIMER_FLAG_NO_MAPCHANGE);
 }
 
