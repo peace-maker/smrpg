@@ -61,6 +61,13 @@
 		"de"			"Top 10 SM:RPG Spieler"
 	}
 	
+	"Bot reached maxlevel"
+	{
+		// 1: Name of the bot
+		// 2: Maximum level a bot can reach.
+		"de"			"{1} hat das maximale Level von {2} für Bots überschritten und wurde zurückgesetzt."
+	}
+	
 	// Menu text
 	"Level"
 	{

@@ -66,6 +66,14 @@
 		"en"			"Top 10 SM:RPG Players"
 	}
 	
+	"Bot reached maxlevel"
+	{
+		// 1: Name of the bot
+		// 2: Maximum level a bot can reach.
+		"#format"	"{1:N},{2:d}"
+		"en"			"Bot {1} reached the maximum level of {2} and was reset."
+	}
+	
 	// Menu text
 	"Level"
 	{

@@ -48,11 +48,13 @@ Stats_CalcLvlInc(iLevel, iExp)
 
 Stats_PlayerNewLevel(client, iLevelIncrease)
 {
-	if(IsFakeClient(client) && GetConVarBool(g_hCVBotMaxlevel))
+	new iBotMaxLevel = GetConVarInt(g_hCVBotMaxlevel);
+	if(IsFakeClient(client) && iBotMaxLevel > 0)
 	{
-		if((GetClientLevel(client) + iLevelIncrease) > GetConVarInt(g_hCVBotMaxlevel))
+		if((GetClientLevel(client) + iLevelIncrease) > iBotMaxLevel)
 		{
-			DebugMsg("Bot %N has surpassed the maximum level of %d, resetting its stats", client, GetConVarInt(g_hCVBotMaxlevel));
+			DebugMsg("Bot %N has surpassed the maximum level of %d, resetting its stats", client, iBotMaxLevel);
+			Client_PrintToChatAll(false, "%t", "Bot reached maxlevel", client, iBotMaxLevel);
 			ResetStats(client);
 			return;
 		}
