@@ -904,8 +904,12 @@ ShowUpgradePropertyChangeMenu(client, ChangeUpgradeProperty:property)
 	
 	SetMenuTitle(hMenu, sBuffer);
 	
+	AddMenuItem(hMenu, "10", "+10");
+	AddMenuItem(hMenu, "5", "+5");
 	AddMenuItem(hMenu, "1", "+1");
 	AddMenuItem(hMenu, "-1", "-1");
+	AddMenuItem(hMenu, "-5", "-5");
+	AddMenuItem(hMenu, "-10", "-10");
 	
 	DisplayMenu(hMenu, client, MENU_TIME_FOREVER);
 	
