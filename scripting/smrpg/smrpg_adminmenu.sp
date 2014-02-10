@@ -120,6 +120,7 @@ ShowPlayerDetailMenu(client)
 	
 	AddMenuItem(hMenu, "stats", "Manage RPG stats");
 	AddMenuItem(hMenu, "upgrades", "Manage upgrades");
+	AddMenuItem(hMenu, "reset", "Reset player");
 	AddMenuItem(hMenu, "", "", ITEMDRAW_DISABLED|ITEMDRAW_SPACER);
 	decl String:sBuffer[256];
 	Format(sBuffer, sizeof(sBuffer), "%T", "Level", client, GetClientLevel(iTarget));
@@ -159,7 +160,61 @@ public Menu_HandlePlayerDetails(Handle:menu, MenuAction:action, param1, param2)
 		{
 			ShowPlayerUpgradeManageMenu(param1);
 		}
+		else if(StrEqual(sInfo, "reset"))
+		{
+			new Handle:hMenu = CreateMenu(Menu_HandlePlayerResetConfirm, MENU_ACTIONS_DEFAULT|MenuAction_DisplayItem);
+			SetMenuExitBackButton(hMenu, true);
+			SetMenuTitle(hMenu, "Do you really want to reset the stats and upgrades of %N?", g_iCurrentMenuTarget[param1]);
+			AddMenuItem(hMenu, "yes", "Yes");
+			AddMenuItem(hMenu, "no", "No");
+			DisplayMenu(hMenu, param1, MENU_TIME_FOREVER);
+		}
 	}
+}
+
+public Menu_HandlePlayerResetConfirm(Handle:menu, MenuAction:action, param1, param2)
+{
+	if(action == MenuAction_End)
+	{
+		CloseHandle(menu);
+	}
+	else if(action == MenuAction_Cancel)
+	{
+		if(param2 == MenuCancel_ExitBack)
+			ShowPlayerDetailMenu(param1);
+		else
+			g_iCurrentMenuTarget[param1] = -1;
+	}
+	else if(action == MenuAction_Select)
+	{
+		decl String:sInfo[32];
+		GetMenuItem(menu, param2, sInfo, sizeof(sInfo));
+		
+		if(StrEqual(sInfo, "no"))
+		{
+			ShowPlayerDetailMenu(param1);
+			return 0;
+		}
+		
+		ResetStats(g_iCurrentMenuTarget[param1]);
+		LogAction(param1, g_iCurrentMenuTarget[param1], "Permanently reset all stats of player %N.", g_iCurrentMenuTarget[param1]);
+		Client_PrintToChat(param1, false, "SM:RPG resetstats: %N's stats have been permanently reset", g_iCurrentMenuTarget[param1]);
+		ShowPlayerDetailMenu(param1);
+	}
+	else if(action == MenuAction_DisplayItem)
+	{
+		/* Get the display string, we'll use it as a translation phrase */
+		decl String:sDisplay[64];
+		GetMenuItem(menu, param2, "", 0, _, sDisplay, sizeof(sDisplay));
+
+		/* Translate the string to the client's language */
+		decl String:sBuffer[255];
+		Format(sBuffer, sizeof(sBuffer), "%T", sDisplay, param1);
+
+		/* Override the text */
+		return RedrawMenuItem(sBuffer);
+	}
+	return 0;
 }
 
 ShowPlayerStatsManageMenu(client)
