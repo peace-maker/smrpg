@@ -20,7 +20,7 @@ public Plugin:myinfo =
 public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
 {
 	// https://bugs.alliedmods.net/show_bug.cgi?id=6039
-	MarkNativeAsOptional("GiveClientAmmo");
+	MarkNativeAsOptional("GivePlayerAmmo");
 	return APLRes_Success;
 }
 
@@ -94,7 +94,7 @@ public Action:Timer_Resupply(Handle:timer)
 		return Plugin_Continue;
 	
 	new bool:bIgnoreBots = SMRPG_IgnoreBots();
-	new bool:bGiveClientAmmoNativeAvailable = GetFeatureStatus(FeatureType_Native, "GiveClientAmmo") == FeatureStatus_Available;
+	new bool:bGiveClientAmmoNativeAvailable = GetFeatureStatus(FeatureType_Native, "GivePlayerAmmo") == FeatureStatus_Available;
 	
 	new iLevel, iPrimaryAmmo;
 	for(new i=1;i<=MaxClients;i++)
@@ -119,11 +119,12 @@ public Action:Timer_Resupply(Handle:timer)
 			// Use the new SDKTools native, if available!
 			if(bGiveClientAmmoNativeAvailable)
 			{
-				GiveClientAmmo(i, iLevel, Weapon_GetPrimaryAmmoType(iWeapon), true);
+				GivePlayerAmmo(i, iLevel, Weapon_GetPrimaryAmmoType(iWeapon), true);
 			}
-			// Fall back to non-limit alternative, if sdkcall fails.
+			// Try to use our own gamedata for older sourcemod versions.
 			else if(GiveAmmo(i, iLevel, Weapon_GetPrimaryAmmoType(iWeapon), true) == -1)
 			{
+				// Fall back to non-limit alternative, if sdkcall fails.
 				Client_GetWeaponPlayerAmmoEx(i, iWeapon, iPrimaryAmmo);
 				Client_SetWeaponPlayerAmmoEx(i, iWeapon, iPrimaryAmmo+iLevel);
 			}
