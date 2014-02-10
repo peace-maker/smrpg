@@ -761,6 +761,18 @@ ShowUpgradeManageMenu(client)
 	Format(sBuffer, sizeof(sBuffer), "Increase Cost: %d", upgrade[UPGR_incCost]);
 	AddMenuItem(hMenu, "icost", sBuffer);
 	
+	if(upgrade[UPGR_visualsConvar] != INVALID_HANDLE)
+	{
+		Format(sBuffer, sizeof(sBuffer), "Visual effects: %T", upgrade[UPGR_enableVisuals]?"On":"Off", client);
+		AddMenuItem(hMenu, "visuals", sBuffer);
+	}
+	
+	if(upgrade[UPGR_soundsConvar] != INVALID_HANDLE)
+	{
+		Format(sBuffer, sizeof(sBuffer), "Sound effects: %T", upgrade[UPGR_enableSounds]?"On":"Off", client);
+		AddMenuItem(hMenu, "sounds", sBuffer);
+	}
+	
 	DisplayMenu(hMenu, client, MENU_TIME_FOREVER);
 }
 
@@ -819,6 +831,34 @@ public Menu_HandleUpgradeDetails(Handle:menu, MenuAction:action, param1, param2)
 		else if(StrEqual(sInfo, "icost"))
 		{
 			ShowUpgradePropertyChangeMenu(param1, ChangeProp_Icost);
+		}
+		else if(StrEqual(sInfo, "visuals"))
+		{
+			if(upgrade[UPGR_enableVisuals])
+			{
+				SetConVarBool(upgrade[UPGR_visualsConvar], false);
+				LogAction(param1, -1, "Disabled upgrade %s's visual effects temporarily.", upgrade[UPGR_name]);
+			}
+			else
+			{
+				SetConVarBool(upgrade[UPGR_visualsConvar], true);
+				LogAction(param1, -1, "Enabled upgrade %s's visual effects temporarily.", upgrade[UPGR_name]);
+			}
+			ShowUpgradeManageMenu(param1);
+		}
+		else if(StrEqual(sInfo, "sounds"))
+		{
+			if(upgrade[UPGR_enableSounds])
+			{
+				SetConVarBool(upgrade[UPGR_soundsConvar], false);
+				LogAction(param1, -1, "Disabled upgrade %s's sound effects temporarily.", upgrade[UPGR_name]);
+			}
+			else
+			{
+				SetConVarBool(upgrade[UPGR_soundsConvar], true);
+				LogAction(param1, -1, "Enabled upgrade %s's sound effects temporarily.", upgrade[UPGR_name]);
+			}
+			ShowUpgradeManageMenu(param1);
 		}
 	}
 }
