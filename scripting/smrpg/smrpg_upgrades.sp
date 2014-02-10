@@ -559,7 +559,12 @@ public Native_RunUpgradeEffect(Handle:plugin, numParams)
 	// Don't allow this client to use the upgrade, if he doesn't have the required admin flag.
 	// Don't inform the other plugins at all.
 	if(!HasAccessToUpgrade(client, upgrade))
-		return false;
+	{
+		// Might still allow them to use the effects of the upgrade, if they already got a level for it.
+		new iLevel = GetClientUpgradeLevel(client, upgrade[UPGR_index]);
+		if(iLevel <= 0 || !GetConVarBool(g_hCVAllowPresentUpgradeUsage))
+			return false;
+	}
 	
 	new Action:result;
 	Call_StartForward(g_hfwdOnUpgradeEffect);
