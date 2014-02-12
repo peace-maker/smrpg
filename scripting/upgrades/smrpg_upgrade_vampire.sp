@@ -139,19 +139,24 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 	fIncrease *= damage;
 	fIncrease += 0.5;
 	
-	new iNewHealth = GetClientHealth(attacker) + RoundToFloor(fIncrease);
+	new iOldHealth = GetClientHealth(attacker);
+	new iNewHealth = iOldHealth + RoundToFloor(fIncrease);
 	new iMaxHealth = SMRPG_Health_GetClientMaxHealth(attacker);
 	// Limit health gain to maxhealth
 	if(iNewHealth > iMaxHealth)
 		iNewHealth = iMaxHealth;
 	
-	SetEntityHealth(attacker, iNewHealth);
-	
-	new Float:fAttackerOrigin[3], Float:fVictimOrigin[3];
-	GetClientEyePosition(attacker, fAttackerOrigin);
-	GetClientEyePosition(victim, fVictimOrigin);
-	fAttackerOrigin[2] -= 10.0;
-	fVictimOrigin[2] -= 10.0;
-	TE_SetupBeamPoints(fAttackerOrigin, fVictimOrigin, g_iBeamSpriteIndex, g_iBeamSpriteIndex, 0, 66, 0.2, 1.0, 10.0, 1, 0.0, g_iBeamColor, 5);
-	SMRPG_TE_SendToAllEnabled(UPGRADE_SHORTNAME);
+	// Only change anything and display the effect, if we actually gave some health.
+	if(iOldHealth != iMaxHealth)
+	{
+		SetEntityHealth(attacker, iNewHealth);
+		
+		new Float:fAttackerOrigin[3], Float:fVictimOrigin[3];
+		GetClientEyePosition(attacker, fAttackerOrigin);
+		GetClientEyePosition(victim, fVictimOrigin);
+		fAttackerOrigin[2] -= 10.0;
+		fVictimOrigin[2] -= 10.0;
+		TE_SetupBeamPoints(fAttackerOrigin, fVictimOrigin, g_iBeamSpriteIndex, g_iBeamSpriteIndex, 0, 66, 0.2, 1.0, 20.0, 1, 0.0, g_iBeamColor, 5);
+		SMRPG_TE_SendToAllEnabled(UPGRADE_SHORTNAME);
+	}
 }
