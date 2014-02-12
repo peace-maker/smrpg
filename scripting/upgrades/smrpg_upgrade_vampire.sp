@@ -1,7 +1,9 @@
 #pragma semicolon 1
 #include <sourcemod>
+#include <sdktools>
 #include <sdkhooks>
 #include <smrpg>
+#include <smrpg_helper>
 
 #undef REQUIRE_PLUGIN
 #include <smrpg_health>
@@ -10,6 +12,9 @@
 #define PLUGIN_VERSION "1.0"
 
 new Handle:g_hCVPercent;
+
+new g_iBeamColor[] = {0,255,0,255}; // green
+new g_iBeamSpriteIndex = -1;
 
 public Plugin:myinfo = 
 {
@@ -50,6 +55,7 @@ public OnLibraryAdded(const String:name[])
 	{
 		SMRPG_RegisterUpgradeType("Vampire", UPGRADE_SHORTNAME, "Steal HP from players when damaging them.", 15, true, 10, 15, 10, _, SMRPG_BuySell, SMRPG_ActiveQuery);
 		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
+		SMRPG_SetUpgradeDefaultCosmenticEffect(UPGRADE_SHORTNAME, SMRPG_FX_Visuals, true);
 		
 		g_hCVPercent = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_vamp_percent", "0.075", "Percent of damage to convert to attacker's health for each level.", 0, true, 0.001);
 	}
@@ -58,6 +64,16 @@ public OnLibraryAdded(const String:name[])
 public OnClientPutInServer(client)
 {
 	SDKHook(client, SDKHook_OnTakeDamagePost, Hook_OnTakeDamagePost);
+}
+
+public OnMapStart()
+{
+	if(FileExists("materials/sprites/lgtning.vmt", true))
+		g_iBeamSpriteIndex = PrecacheModel("sprites/lgtning.vmt", true);
+	else if(FileExists("materials/sprites/physbeam.vmt", true))
+		g_iBeamSpriteIndex = PrecacheModel("sprites/physbeam.vmt", true);
+	else
+		LogError("Unable to find a nice sprite texture for the beam ring effect. Contact the author with the game you're running this on.");
 }
 
 /**
@@ -130,4 +146,12 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 		iNewHealth = iMaxHealth;
 	
 	SetEntityHealth(attacker, iNewHealth);
+	
+	new Float:fAttackerOrigin[3], Float:fVictimOrigin[3];
+	GetClientEyePosition(attacker, fAttackerOrigin);
+	GetClientEyePosition(victim, fVictimOrigin);
+	fAttackerOrigin[2] -= 10.0;
+	fVictimOrigin[2] -= 10.0;
+	TE_SetupBeamPoints(fAttackerOrigin, fVictimOrigin, g_iBeamSpriteIndex, g_iBeamSpriteIndex, 0, 66, 0.2, 1.0, 10.0, 1, 0.0, g_iBeamColor, 5);
+	SMRPG_TE_SendToAllEnabled(UPGRADE_SHORTNAME);
 }
