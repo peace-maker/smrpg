@@ -3,6 +3,7 @@
 #include <sdktools>
 #include <sdkhooks>
 #include <smrpg>
+#include <smrpg_helper>
 #include <smlib>
 
 #define UPGRADE_SHORTNAME "impulse"

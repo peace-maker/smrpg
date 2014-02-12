@@ -2,6 +2,7 @@
 #include <sourcemod>
 #include <sdktools>
 #include <smrpg>
+#include <smrpg_helper>
 
 #undef REQUIRE_PLUGIN
 #include <smrpg_health>
