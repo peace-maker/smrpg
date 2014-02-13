@@ -20,6 +20,7 @@ native bool:SMRPG_IgnoreBots();
 #include <smrpg/smrpg_clients>
 #include <smrpg/smrpg_upgrades>
 #include <smrpg/smrpg_topmenu>
+#include <smrpg/smrpg_settings>
 
 public SharedPlugin:__pl_smrpg = 
 {

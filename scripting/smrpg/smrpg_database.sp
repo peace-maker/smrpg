@@ -4,6 +4,9 @@
 #define SMRPG_DB "smrpg"
 #define TBL_PLAYERS "players"
 #define TBL_UPGRADES "upgrades"
+#define TBL_SETTINGS "settings"
+
+#define DATABASE_VERSION 100
 
 new Handle:g_hDatabase;
 new g_iSequence = -1;
@@ -76,6 +79,18 @@ public SQL_OnConnect(Handle:owner, Handle:hndl, const String:error[], any:data)
 		SetFailState("Error creating %s table: %s", TBL_UPGRADES, sError);
 		return;
 	}
+	
+	// Create the settings table.
+	Format(sQuery, sizeof(sQuery), "CREATE TABLE IF NOT EXISTS %s (setting VARCHAR(64) PRIMARY KEY NOT NULL, value VARCHAR(256) NOT NULL)", TBL_SETTINGS);
+	if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
+	{
+		decl String:sError[256];
+		SQL_GetError(g_hDatabase, sError, sizeof(sError));
+		SetFailState("Error creating %s table: %s", TBL_SETTINGS, sError);
+		return;
+	}
+	
+	LoadSettingsTable();
 
 	// This is probably empty since no upgrades could have registered yet, but well..
 	// Add all columns for currently loaded upgrades.
@@ -89,7 +104,7 @@ public SQL_OnConnect(Handle:owner, Handle:hndl, const String:error[], any:data)
 		CheckUpgradeDatabaseField(upgrade[UPGR_shortName]);
 	}
 	
-	// Cleanup or database.
+	// Cleanup our database.
 	DatabaseMaid();
 	
 	// Add all already connected players now
@@ -122,6 +137,30 @@ CheckUpgradeDatabaseField(const String:sShortName[])
 			Format(sQuery, sizeof(sQuery), "SELECT %s FROM %s WHERE upgrades_id = %d", sShortName, TBL_UPGRADES, GetClientDatabaseUpgradesId(i));
 			SQL_TQuery(g_hDatabase, SQL_GetPlayerUpgrades, sQuery, GetClientUserId(i));
 		}
+	}
+}
+
+CheckDatabaseVersion()
+{
+	decl String:sValue[8];
+	if(!GetSetting("version", sValue, sizeof(sValue)))
+	{
+		// There is no version field yet? Just create one, we don't know if we'd need to update something..
+		IntToString(DATABASE_VERSION, sValue, sizeof(sValue));
+		SetSetting("version", sValue);
+		return;
+	}
+	
+	new iVersion = StringToInt(sValue);
+	if(iVersion < DATABASE_VERSION)
+	{
+		// Perform database updates here..
+		IntToString(DATABASE_VERSION, sValue, sizeof(sValue));
+		SetSetting("version", sValue);
+	}
+	else if(iVersion > DATABASE_VERSION)
+	{
+		LogError("Database version %d is newer than supported by this plugin (%d). There might be problems with incompatible database structures!", iVersion, DATABASE_VERSION);
 	}
 }
 

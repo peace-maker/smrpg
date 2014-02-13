@@ -51,6 +51,7 @@ new Handle:g_hCVShowUpgradePurchase;
 
 #include "smrpg/smrpg_upgrades.sp"
 #include "smrpg/smrpg_database.sp"
+#include "smrpg/smrpg_settings.sp"
 #include "smrpg/smrpg_players.sp"
 #include "smrpg/smrpg_stats.sp"
 #include "smrpg/smrpg_menu.sp"
@@ -83,6 +84,7 @@ public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
 	RegisterPlayerNatives();
 	RegisterStatsNatives();
 	RegisterTopMenuNatives();
+	RegisterSettingsNatives();
 }
 
 public OnPluginStart()
@@ -144,6 +146,7 @@ public OnPluginStart()
 	RegisterAdminCommands();
 	RegisterTopMenuForwards();
 	
+	InitSettings();
 	InitUpgrades();
 	InitDatabase();
 	
