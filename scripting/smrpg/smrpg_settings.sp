@@ -10,10 +10,14 @@ RegisterSettingsNatives()
 	CreateNative("SMRPG_SetSetting", Native_SetSetting);
 }
 
+RegisterSettingsForwards()
+{
+	g_hfwdOnSettingsLoaded = CreateGlobalForward("SMRPG_OnSettingsLoaded", ET_Ignore);
+}
+
 InitSettings()
 {
 	g_hSettings = CreateTrie();
-	g_hfwdOnSettingsLoaded = CreateGlobalForward("SMRPG_OnSettingsLoaded", ET_Ignore);
 }
 
 LoadSettingsTable()

@@ -38,7 +38,10 @@ RegisterPlayerNatives()
 	CreateNative("SMRPG_SetClientCredits", Native_SetClientCredits);
 	CreateNative("SMRPG_GetClientExperience", Native_GetClientExperience);
 	CreateNative("SMRPG_SetClientExperience", Native_SetClientExperience);
-	
+}
+
+RegisterPlayerForwards()
+{
 	// forward Action:SMRPG_OnBuyUpgrade(client, const String:shortname[], newlevel);
 	g_hfwdOnBuyUpgrade = CreateGlobalForward("SMRPG_OnBuyUpgrade", ET_Hook, Param_Cell, Param_String, Param_Cell);
 	// forward Action:SMRPG_OnSellUpgrade(client, const String:shortname[], newlevel);

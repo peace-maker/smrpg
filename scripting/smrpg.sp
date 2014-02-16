@@ -147,7 +147,11 @@ public OnPluginStart()
 	RegConsoleCmd("rpghelp", Cmd_RPGHelp, "Show the SM:RPG help menu");
 	
 	RegisterAdminCommands();
+	RegisterPlayerForwards();
 	RegisterTopMenuForwards();
+	RegisterStatsForwards();
+	RegisterUpgradeForwards();
+	RegisterSettingsForwards();
 	
 	InitSettings();
 	InitUpgrades();

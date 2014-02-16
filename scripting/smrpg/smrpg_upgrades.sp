@@ -44,8 +44,6 @@ new Handle:g_hfwdOnUpgradeEffect;
 
 RegisterUpgradeNatives()
 {
-	g_hfwdOnUpgradeEffect = CreateGlobalForward("SMRPG_OnUpgradeEffect", ET_Hook, Param_Cell, Param_String);
-	
 	CreateNative("SMRPG_RegisterUpgradeType", Native_RegisterUpgradeType);
 	CreateNative("SMRPG_UnregisterUpgradeType", Native_UnregisterUpgradeType);
 	CreateNative("SMRPG_CreateUpgradeConVar", Native_CreateUpgradeConVar);
@@ -60,6 +58,11 @@ RegisterUpgradeNatives()
 	
 	CreateNative("SMRPG_CheckUpgradeAccess", Native_CheckUpgradeAccess);
 	CreateNative("SMRPG_ClientWantsCosmetics", Native_ClientWantsCosmetics);
+}
+
+RegisterUpgradeForwards()
+{
+	g_hfwdOnUpgradeEffect = CreateGlobalForward("SMRPG_OnUpgradeEffect", ET_Hook, Param_Cell, Param_String);
 }
 
 InitUpgrades()

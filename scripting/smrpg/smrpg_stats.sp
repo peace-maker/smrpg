@@ -8,14 +8,17 @@ new Handle:g_hfwdOnAddExperience;
 
 RegisterStatsNatives()
 {
-	// forward Action:SMRPG_OnAddExperience(client, ExperienceReason:reason, &iExperience);
-	g_hfwdOnAddExperience = CreateGlobalForward("SMRPG_OnAddExperience", ET_Hook, Param_Cell, Param_Cell, Param_CellByRef);
 	// native bool:SMRPG_AddClientExperience(client, exp, bool:bHideNotice);
 	CreateNative("SMRPG_AddClientExperience", Native_AddClientExperience);
 	// native SMRPG_LevelToExperience(iLevel);
 	CreateNative("SMRPG_LevelToExperience", Native_LevelToExperience);
 }
 
+RegisterStatsForwards()
+{
+	// forward Action:SMRPG_OnAddExperience(client, ExperienceReason:reason, &iExperience);
+	g_hfwdOnAddExperience = CreateGlobalForward("SMRPG_OnAddExperience", ET_Hook, Param_Cell, Param_Cell, Param_CellByRef);
+}
 
 /* Calculate the experience needed for this level */
 Stats_LvlToExp(iLevel)
