@@ -5,6 +5,9 @@
 #include <smrpg>
 #include <smrpg_commandlist>
 
+#undef REQUIRE_EXTENSIONS
+#include <clientprefs>
+
 #define PLUGIN_VERSION "1.0"
 
 #define MAX_COMMAND_NAME_LENGTH 32
@@ -27,6 +30,11 @@ new g_iLastAdvertizedCommand = -1;
 // RPG top menu
 new Handle:g_hRPGMenu;
 new TopMenuObject:g_TopMenuCommands;
+new TopMenuObject:g_TopMenuSettings;
+
+// Clientprefs
+new bool:g_bClientHideAdvert[MAXPLAYERS+1];
+new Handle:g_hCookieHideAdvert;
 
 public Plugin:myinfo = 
 {
@@ -56,6 +64,7 @@ public OnPluginStart()
 		HookConVarChange(hVersion, ConVar_VersionChanged);
 	}
 	
+	LoadTranslations("common.phrases");
 	LoadTranslations("smrpg.phrases");
 	LoadTranslations("smrpg_commandlist.phrases");
 	
@@ -70,11 +79,23 @@ public OnPluginStart()
 		SMRPG_OnRPGMenuCreated(hTopMenu);
 		SMRPG_OnRPGMenuReady(hTopMenu);
 	}
+	
+	if(LibraryExists("clientprefs"))
+		OnLibraryAdded("clientprefs");
 }
 
 public ConVar_VersionChanged(Handle:convar, const String:oldValue[], const String:newValue[])
 {
 	SetConVarString(convar, PLUGIN_VERSION);
+}
+
+public OnLibraryAdded(const String:name[])
+{
+	if(StrEqual(name, "clientprefs"))
+	{
+		PrintToServer("Registering client cookie!!");
+		g_hCookieHideAdvert = RegClientCookie("smrpg_commandlist_hidead", "Hide the messages which teach the players about available commands in SM:RPG.", CookieAccess_Protected);
+	}
 }
 
 public OnLibraryRemoved(const String:name[])
@@ -93,6 +114,18 @@ public OnMapStart()
 		g_hCommandAdvertTimer = CreateTimer(fInterval, Timer_ShowCommandAdvert, _, TIMER_FLAG_NO_MAPCHANGE|TIMER_REPEAT);
 }
 
+public OnClientDisconnect(client)
+{
+	g_bClientHideAdvert[client] = true;
+}
+
+public OnClientCookiesCached(client)
+{
+	decl String:sBuffer[4];
+	GetClientCookie(client, g_hCookieHideAdvert, sBuffer, sizeof(sBuffer));
+	g_bClientHideAdvert[client] = StringToInt(sBuffer)==1;
+}
+
 public SMRPG_OnRPGMenuCreated(Handle:topmenu)
 {
 	// Block us from being called twice!
@@ -106,6 +139,12 @@ public SMRPG_OnRPGMenuCreated(Handle:topmenu)
 
 public SMRPG_OnRPGMenuReady(Handle:topmenu)
 {
+	g_TopMenuSettings = FindTopMenuCategory(g_hRPGMenu, RPGMENU_SETTINGS);
+	if(g_TopMenuSettings != INVALID_TOPMENUOBJECT)
+	{
+		AddToTopMenu(g_hRPGMenu, "rpgcmdlist_hidead", TopMenuObject_Item, TopMenu_SettingsItemHandler, g_TopMenuSettings);
+	}
+	
 	new iSize = GetArraySize(g_hCommandList);
 	new iCommand[RPGCommand];
 	decl String:sCommandName[MAX_COMMAND_NAME_LENGTH+10];
@@ -185,6 +224,29 @@ public TopMenu_CommandItemHandler(Handle:topmenu, TopMenuAction:action, TopMenuO
 			{
 				buffer[0] = ITEMDRAW_IGNORE;
 			}
+		}
+	}
+}
+
+public TopMenu_SettingsItemHandler(Handle:topmenu, TopMenuAction:action, TopMenuObject:object_id, param, String:buffer[], maxlength)
+{
+	switch(action)
+	{
+		case TopMenuAction_DisplayOption:
+		{
+			Format(buffer, maxlength, "%T: %T", "Hide chat adverts", param, (g_bClientHideAdvert[param]?"Yes":"No"), param);
+		}
+		case TopMenuAction_SelectOption:
+		{
+			g_bClientHideAdvert[param] = !g_bClientHideAdvert[param];
+			if(AreClientCookiesCached(param))
+			{
+				decl String:sBuffer[4];
+				IntToString(g_bClientHideAdvert[param], sBuffer, sizeof(sBuffer));
+				SetClientCookie(param, g_hCookieHideAdvert, sBuffer);
+			}
+			
+			DisplayTopMenu(g_hRPGMenu, param, TopMenuPosition_LastCategory);
 		}
 	}
 }
@@ -290,6 +352,10 @@ public Action:Timer_ShowCommandAdvert(Handle:timer)
 		
 		for(new client=1;client<=MaxClients;client++)
 		{
+			// That client has adverts disabled in his !settings.
+			if(g_bClientHideAdvert[client])
+				continue;
+			
 			if(!IsClientInGame(client) || IsFakeClient(client))
 				continue;
 			

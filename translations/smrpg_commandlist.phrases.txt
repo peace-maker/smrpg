@@ -4,4 +4,9 @@
 	{
 		"en"			"Commands"
 	}
+	
+	"Hide chat adverts"
+	{
+		"en"			"Hide available command messages in chat"
+	}
 }

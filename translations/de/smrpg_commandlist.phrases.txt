@@ -4,4 +4,9 @@
 	{
 		"de"			"Befehle"
 	}
+	
+	"Hide chat adverts"
+	{
+		"de"			"Verstecke Nachrichten über verfügbare Befehle"
+	}
 }
