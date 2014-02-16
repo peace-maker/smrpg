@@ -192,4 +192,80 @@
 	{
 		"de"			"WARNUNG: Du verliertst alle Kredite, Level und Erfahrung!\nWillst du das wirklich?"
 	}
+	
+	// Command help
+	"rpgmenu short desc"
+	{
+		"de"			"Öffnet das RPG Hauptmenü"
+	}
+	
+	"rpgmenu desc"
+	{
+		"de"			"Öffnet das RPG Hauptmenü. Hier kannst du Upgrades kaufen oder verkaufen, deine Statisik und diese Befehlsliste ansehen und andere Einstellungen ändern."
+	}
+	
+	"rpgmenu advert"
+	{
+		"de"			"Schreibe {N}rpgmenu{G}, um das RPG Hauptmenü zu öffnen und deine {N}Upgrades zu verwalten{G} und mehr."
+	}
+	
+	"rpgrank short desc"
+	{
+		"de"			"Zeigt deinen Rank oder den eines anderen Spielers"
+	}
+	
+	"rpgrank desc"
+	{
+		"de"			"Zeigt deinen Rank oder den eines anderen Spielers. Gebrauch: {N}rpgrank [name|steamid|#userid]"
+	}
+	
+	"rpgrank advert"
+	{
+		"de"			"Schreibe {N}rpgrank{G}, um deine eigenen Stats anzuzeigen, oder {N}rpgrank <playername>{G}, um die Stats eines anderen Spielers zu sehen."
+	}
+	
+	"rpginfo short desc"
+	{
+		"de"			"Zeigt welche Upgrades ein anderer Spieler gekauft hat"
+	}
+	
+	"rpginfo desc"
+	{
+		"de"			"Zeigt welche Upgrades ein anderer Spieler gekauft hat. Gebrauch: {N}rpginfo <name|steamid|#userid>"
+	}
+	
+	"rpginfo advert"
+	{
+		"de"			"Schreibe {N}rpginfo <playername>{G}, um zu sehen, welche Upgrades andere Spieler gekauft haben."
+	}
+	
+	"rpgtop10 short desc"
+	{
+		"de"			"Zeigt die SM:RPG Top 10"
+	}
+	
+	"rpgtop10 desc"
+	{
+		"de"			"Zeigt die 10 besten RPG Spieler in der SM:RPG Top 10 auf diesem Server."
+	}
+	
+	"rpgtop10 advert"
+	{
+		"de"			"Schreibe {N}rpgtop10{G}, um dir die 10 besten RPG Spieler auf diesem Server anzusehen."
+	}
+	
+	"rpghelp short desc"
+	{
+		"de"			"Zeigt Hilfe über alle verfügbaren Upgrades"
+	}
+	
+	"rpghelp desc"
+	{
+		"de"			"Öffnet das SM:RPG Hilfemenü in dem du eine detailierte Beschreibung der verschiedenen Upgrades findest."
+	}
+	
+	"rpghelp advert"
+	{
+		"de"			"Schreibe {N}rpghelp{G} für eine detailierte Beschreibung der einzelnen Upgrades."
+	}
 }

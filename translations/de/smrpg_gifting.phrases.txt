@@ -31,4 +31,16 @@
     // 3: The name of the receiver.
     "de"  "{1} hat {3} {2} Kredite geschenkt!"
   }
+  "rpggift short desc"
+  {
+    "de"  "Schenke einem Spieler ein paar deiner Kredite"
+  }
+  "rpggift desc"
+  {
+    "de"  "Schenke einem Spieler ein paar deiner Kredite. Gebrauch: {N}rpggift <#userid|authid|name> <kredite>"
+  }
+  "rpggift advert"
+  {
+    "de"  "Schreibe {N}rpggift{G}, um anderen Spielern ein paar Kredite zu {N}schenken{G}!"
+  }
 }
