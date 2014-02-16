@@ -11,6 +11,9 @@
 #include <adminmenu>
 #include <smrpg_commandlist>
 
+#undef REQUIRE_EXTENSIONS
+#include <clientprefs>
+
 #define PLUGIN_VERSION "1.0"
 
 new bool:g_bLateLoaded;
@@ -180,6 +183,9 @@ public OnPluginStart()
 		}
 	}
 	
+	if(LibraryExists("clientprefs"))
+		OnLibraryAdded("clientprefs");
+	
 	// See if the menu plugin is already ready
 	new Handle:topmenu;
 	if (LibraryExists("adminmenu") && ((topmenu = GetAdminTopMenu()) != INVALID_HANDLE))
@@ -263,6 +269,10 @@ public OnLibraryAdded(const String:name[])
 		SMRPG_RegisterCommand("rpginfo", CommandList_DefaultTranslations);
 		SMRPG_RegisterCommand("rpgtop10", CommandList_DefaultTranslations);
 		SMRPG_RegisterCommand("rpghelp", CommandList_DefaultTranslations);
+	}
+	else if(StrEqual(name, "clientprefs"))
+	{
+		SetCookieMenuItem(ClientPrefsMenu_HandleItem, 0, "SM:RPG > Settings");
 	}
 }
 
@@ -583,6 +593,24 @@ public Action:CommandList_DefaultTranslations(client, const String:command[], Co
 		}
 	}
 	return Plugin_Continue;
+}
+
+/**
+ * Clientprefs !settings menu item
+ */
+public ClientPrefsMenu_HandleItem(client, CookieMenuAction:action, any:info, String:buffer[], maxlen)
+{
+	switch(action)
+	{
+		case CookieMenuAction_DisplayOption:
+		{
+			Format(buffer, maxlen, "SM:RPG > %T", "Settings", client);
+		}
+		case CookieMenuAction_SelectOption:
+		{
+			DisplaySettingsMenu(client);
+		}
+	}
 }
 
 /**
