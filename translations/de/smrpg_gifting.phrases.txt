@@ -22,7 +22,7 @@
   {
     // 1: The amount of credits the player tried to give as a gift.
     // 2: The name of the receiver.
-    "de"  "Konnte {2} keine {1} Kredite schenken und es ist nicht möglich dir deine Kredite zurück zu geben. Kontaktiere einen Admin!"
+    "de"  "Konnte {2} keine {1} Kredite schenken und es ist nicht mÃ¶glich dir deine Kredite zurÃ¼ck zu geben. Kontaktiere einen Admin!"
   }
   "Gave credits as a gift"
   {
