@@ -93,7 +93,6 @@ public OnLibraryAdded(const String:name[])
 {
 	if(StrEqual(name, "clientprefs"))
 	{
-		PrintToServer("Registering client cookie!!");
 		g_hCookieHideAdvert = RegClientCookie("smrpg_commandlist_hidead", "Hide the messages which teach the players about available commands in SM:RPG.", CookieAccess_Protected);
 	}
 }
