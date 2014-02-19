@@ -17,7 +17,6 @@ enum PlayerInfo
 	PLR_experience,
 	PLR_credits,
 	PLR_dbId,
-	PLR_dbUpgradeId,
 	bool:PLR_triedToLoadData,
 	Handle:PLR_upgradesLevel
 }
@@ -69,7 +68,6 @@ InitPlayer(client)
 	g_iPlayerInfo[client][PLR_experience] = 0;
 	g_iPlayerInfo[client][PLR_credits] = GetConVarInt(g_hCVCreditsStart);
 	g_iPlayerInfo[client][PLR_dbId] = -1;
-	g_iPlayerInfo[client][PLR_dbUpgradeId] = -1;
 	g_iPlayerInfo[client][PLR_triedToLoadData] = false;
 	
 	g_iPlayerInfo[client][PLR_upgradesLevel] = CreateArray();
@@ -95,14 +93,14 @@ AddPlayer(client, const String:auth[])
 	
 	if(GetConVarBool(g_hCVSteamIDSave))
 	{
-		Format(sQuery, sizeof(sQuery), "SELECT player_id, upgrades_id, level, experience, credits FROM %s WHERE steamid = '%s' ORDER BY level DESC LIMIT 1", TBL_PLAYERS, auth);
+		Format(sQuery, sizeof(sQuery), "SELECT player_id, level, experience, credits FROM %s WHERE steamid = '%s' ORDER BY level DESC LIMIT 1", TBL_PLAYERS, auth);
 	}
 	else
 	{
 		decl String:sName[MAX_NAME_LENGTH], String:sNameEscaped[MAX_NAME_LENGTH*2+1];
 		GetClientName(client, sName, sizeof(sName));
 		SQL_EscapeString(g_hDatabase, sName, sNameEscaped, sizeof(sNameEscaped));
-		Format(sQuery, sizeof(sQuery), "SELECT player_id, upgrades_id, level, experience, credits FROM %s WHERE name = '%s' AND steamid = '%s' ORDER BY level DESC LIMIT 1", TBL_PLAYERS, sNameEscaped, auth);
+		Format(sQuery, sizeof(sQuery), "SELECT player_id, level, experience, credits FROM %s WHERE name = '%s' AND steamid = '%s' ORDER BY level DESC LIMIT 1", TBL_PLAYERS, sNameEscaped, auth);
 	}
 	
 	SQL_TQuery(g_hDatabase, SQL_GetPlayerInfo, sQuery, GetClientUserId(client));
@@ -122,8 +120,8 @@ InsertPlayer(client)
 	GetClientAuthString(client, sSteamID, sizeof(sSteamID));
 	SQL_EscapeString(g_hDatabase, sSteamID, sSteamIDEscaped, sizeof(sSteamIDEscaped));
 	
-	Format(sQuery, sizeof(sQuery), "INSERT INTO %s (name, steamid, level, experience, credits, lastseen) VALUES ('%s', '%s', '%d', '%d', '%d', '%d')",
-		TBL_PLAYERS, sNameEscaped, sSteamIDEscaped, GetClientLevel(client), GetClientExperience(client), GetClientCredits(client), GetTime());
+	Format(sQuery, sizeof(sQuery), "INSERT INTO %s (name, steamid, level, experience, credits, lastseen, lastreset) VALUES ('%s', '%s', '%d', '%d', '%d', '%d', '%d')",
+		TBL_PLAYERS, sNameEscaped, sSteamIDEscaped, GetClientLevel(client), GetClientExperience(client), GetClientCredits(client), GetTime(), GetTime());
 	
 	SQL_TQuery(g_hDatabase, SQL_InsertPlayer, sQuery, GetClientUserId(client));
 }
@@ -140,20 +138,28 @@ SaveData(client)
 	if(!g_iPlayerInfo[client][PLR_triedToLoadData])
 		return;
 	
-	if(g_iPlayerInfo[client][PLR_dbId] < 0 || g_iPlayerInfo[client][PLR_dbUpgradeId] < 0)
+	if(g_iPlayerInfo[client][PLR_dbId] < 0)
 	{
 		InsertPlayer(client);
 		return;
 	}
 	
-	decl String:sQuery[8192];
+	decl String:sQuery[512];
 	Format(sQuery, sizeof(sQuery), "UPDATE %s SET level = '%d', experience = '%d', credits = '%d', lastseen = '%d' WHERE player_id = '%d'", TBL_PLAYERS, GetClientLevel(client), GetClientExperience(client), GetClientCredits(client), GetTime(), g_iPlayerInfo[client][PLR_dbId]);
 	SQL_TQuery(g_hDatabase, SQL_DoNothing, sQuery);
 	
-	// Save item levels
+	// Save upgrade levels
+	SavePlayerUpgradeLevels(client);
+}
+
+SavePlayerUpgradeLevels(client)
+{
+	// Save upgrade levels
 	new iSize = GetUpgradeCount();
 	new upgrade[InternalUpgradeInfo];
 	new iAdded;
+	decl String:sQuery[8192];
+	Format(sQuery, sizeof(sQuery), "REPLACE INTO %s (player_id, upgrade_id, level, currentlevel, enabled, visuals, sounds) VALUES ", TBL_PLAYERUPGRADES);
 	for(new i=0;i<iSize;i++)
 	{
 		GetUpgradeByIndex(i, upgrade);
@@ -162,15 +168,14 @@ SaveData(client)
 			continue;
 		
 		if(iAdded)
-			Format(sQuery, sizeof(sQuery), "%s, %s = '%d'", sQuery, upgrade[UPGR_shortName], GetClientUpgradeLevel(client, i));
-		else
-			Format(sQuery, sizeof(sQuery), "%s = '%d'", upgrade[UPGR_shortName], GetClientUpgradeLevel(client, i));
+			Format(sQuery, sizeof(sQuery), "%s, ", sQuery);
+		
+		Format(sQuery, sizeof(sQuery), "%s(%d, %d, %d, %d, 1, 1, 1)", sQuery, g_iPlayerInfo[client][PLR_dbId], upgrade[UPGR_databaseId], GetClientUpgradeLevel(client, i), GetClientUpgradeLevel(client, i));
 		
 		iAdded++;
 	}
 	if(iAdded > 0)
 	{
-		Format(sQuery, sizeof(sQuery), "UPDATE %s SET %s WHERE upgrades_id = '%d'", TBL_UPGRADES, sQuery, g_iPlayerInfo[client][PLR_dbUpgradeId]);
 		SQL_TQuery(g_hDatabase, SQL_DoNothing, sQuery);
 	}
 }
@@ -218,7 +223,6 @@ RemovePlayer(client)
 {
 	ResetStats(client);
 	ClearHandle(g_iPlayerInfo[client][PLR_upgradesLevel]);
-	g_iPlayerInfo[client][PLR_dbUpgradeId] = -1;
 	g_iPlayerInfo[client][PLR_dbId] = -1;
 	g_iPlayerInfo[client][PLR_triedToLoadData] = false;
 }
@@ -236,9 +240,9 @@ stock Handle:GetClientUpgradeLevels(client)
 	return g_iPlayerInfo[client][PLR_upgradesLevel];
 }
 
-GetClientDatabaseUpgradesId(client)
+GetClientDatabaseId(client)
 {
-	return g_iPlayerInfo[client][PLR_dbUpgradeId];
+	return g_iPlayerInfo[client][PLR_dbId];
 }
 
 GetClientByPlayerID(iPlayerId)
@@ -453,7 +457,6 @@ CheckItemMaxLevels(client)
 		while(iCurrentLevel > iMaxLevel)
 		{
 			/* Give player their credits back */
-			/* TakeItem isn't necessary since the player hasn't even been completely added yet */
 			SetClientCredits(client, GetClientCredits(client) + GetUpgradeCost(i, iCurrentLevel--));
 		}
 		if(GetClientUpgradeLevel(client, i) != iCurrentLevel)
@@ -566,17 +569,16 @@ public SQL_GetPlayerInfo(Handle:owner, Handle:hndl, const String:error[], any:us
 	}
 	
 	g_iPlayerInfo[client][PLR_dbId] = SQL_FetchInt(hndl, 0);
-	g_iPlayerInfo[client][PLR_dbUpgradeId] = SQL_FetchInt(hndl, 1);
-	g_iPlayerInfo[client][PLR_level] = SQL_FetchInt(hndl, 2);
-	g_iPlayerInfo[client][PLR_experience] = SQL_FetchInt(hndl, 3);
-	g_iPlayerInfo[client][PLR_credits] = SQL_FetchInt(hndl, 4);
+	g_iPlayerInfo[client][PLR_level] = SQL_FetchInt(hndl, 1);
+	g_iPlayerInfo[client][PLR_experience] = SQL_FetchInt(hndl, 2);
+	g_iPlayerInfo[client][PLR_credits] = SQL_FetchInt(hndl, 3);
 	
 	UpdateClientRank(client);
 	UpdateRankCount();
 	
 	/* Player Items */
 	decl String:sQuery[128];
-	Format(sQuery, sizeof(sQuery), "SELECT * FROM %s WHERE upgrades_id = '%d'", TBL_UPGRADES, g_iPlayerInfo[client][PLR_dbUpgradeId]);
+	Format(sQuery, sizeof(sQuery), "SELECT * FROM %s WHERE player_id = %d", TBL_PLAYERUPGRADES, g_iPlayerInfo[client][PLR_dbId]);
 	SQL_TQuery(g_hDatabase, SQL_GetPlayerUpgrades, sQuery, userid);
 }
 
@@ -593,41 +595,27 @@ public SQL_GetPlayerUpgrades(Handle:owner, Handle:hndl, const String:error[], an
 		return;
 	}
 	
-	new upgrade[InternalUpgradeInfo];
+	
 	
 	// Player isn't fully registred?! He might have disconnected while the queries were still running last time?
-	if(SQL_GetRowCount(hndl) == 0 || !SQL_FetchRow(hndl))
+	if(SQL_GetRowCount(hndl) == 0)
 	{
 		// Insert upgrade level info
-		new String:sFields[8192], String:sValues[2048];
-		new iSize = GetUpgradeCount();
-		for(new i=0;i<iSize;i++)
-		{
-			GetUpgradeByIndex(i, upgrade);
-			if(!IsValidUpgrade(upgrade))
-				continue;
-			
-			Format(sFields, sizeof(sFields), "%s, %s", sFields, upgrade[UPGR_shortName]);
-			Format(sValues, sizeof(sValues), "%s, '%d'", sValues, GetClientUpgradeLevel(client, i));
-		}
-		
-		decl String:sQuery[8192];
-		Format(sQuery, sizeof(sQuery), "INSERT INTO %s (upgrades_id%s) VALUES (NULL%s)", TBL_UPGRADES, sFields, sValues);
-		SQL_TQuery(g_hDatabase, SQL_InsertPlayerUpgrades, sQuery, userid);
+		SavePlayerUpgradeLevels(client);
 		return;
 	}
 	
-	new iNumFields = SQL_GetFieldCount(hndl);
-	decl String:sFieldName[MAX_UPGRADE_SHORTNAME_LENGTH];
-	for(new i=0;i<iNumFields;i++)
+	new upgrade[InternalUpgradeInfo];
+	while(SQL_MoreRows(hndl))
 	{
-		SQL_FieldNumToName(hndl, i, sFieldName, sizeof(sFieldName));
-		
-		// If that upgrade isn't loaded yet, we'll fetch the right level when it's loaded.
-		if(!GetUpgradeByShortname(sFieldName, upgrade))
+		if(!SQL_FetchRow(hndl))
 			continue;
 		
-		SetClientUpgradeLevel(client, upgrade[UPGR_index], SQL_FetchInt(hndl, i));
+		// If that upgrade isn't loaded yet, we'll fetch the right level when it's loaded.
+		if(!GetUpgradeByDatabaseId(SQL_FetchInt(hndl, 1), upgrade))
+			continue;
+		
+		SetClientUpgradeLevel(client, upgrade[UPGR_index], SQL_FetchInt(hndl, 2));
 	}
 	
 	g_iPlayerInfo[client][PLR_triedToLoadData] = true;
@@ -656,45 +644,9 @@ public SQL_InsertPlayer(Handle:owner, Handle:hndl, const String:error[], any:use
 	UpdateRankCount();
 	
 	// Insert upgrade level info
-	new String:sFields[8192], String:sValues[2048];
-	new iSize = GetUpgradeCount();
-	new upgrade[InternalUpgradeInfo];
-	for(new i=0;i<iSize;i++)
-	{
-		GetUpgradeByIndex(i, upgrade);
-		if(!IsValidUpgrade(upgrade))
-			continue;
-		
-		Format(sFields, sizeof(sFields), "%s, %s", sFields, upgrade[UPGR_shortName]);
-		Format(sValues, sizeof(sValues), "%s, '%d'", sValues, GetClientUpgradeLevel(client, i));
-	}
-	
-	decl String:sQuery[8192];
-	Format(sQuery, sizeof(sQuery), "INSERT INTO %s (upgrades_id%s) VALUES (NULL%s)", TBL_UPGRADES, sFields, sValues);
-	SQL_TQuery(g_hDatabase, SQL_InsertPlayerUpgrades, sQuery, userid);
-}
-
-public SQL_InsertPlayerUpgrades(Handle:owner, Handle:hndl, const String:error[], any:userid)
-{
-	new client = GetClientOfUserId(userid);
-	if(!client)
-		return;
-	
-	if(hndl == INVALID_HANDLE || strlen(error) > 0)
-	{
-		LogError("Unable to insert player upgrades info (%s)", error);
-		CallOnClientLoaded(client);
-		return;
-	}
-	
-	g_iPlayerInfo[client][PLR_dbUpgradeId] = SQL_GetInsertId(owner);
-	
-	decl String:sQuery[128];
-	Format(sQuery, sizeof(sQuery), "UPDATE %s SET upgrades_id = '%d' WHERE player_id = '%d'", TBL_PLAYERS, g_iPlayerInfo[client][PLR_dbUpgradeId], g_iPlayerInfo[client][PLR_dbId]);
-	SQL_TQuery(g_hDatabase, SQL_DoNothing, sQuery);
+	SavePlayerUpgradeLevels(client);
 	
 	g_iPlayerInfo[client][PLR_triedToLoadData] = true;
-	
 	CallOnClientLoaded(client);
 }
 

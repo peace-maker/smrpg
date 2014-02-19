@@ -6,6 +6,8 @@
 enum InternalUpgradeInfo
 {
 	UPGR_index, // index in g_hUpgrades array
+	UPGR_databaseId, // the upgrade_id in the upgrades table
+	bool:UPGR_databaseLoading, // are we currently loading the databaseid of this upgrade?
 	bool:UPGR_enabled, // upgrade enabled?
 	bool:UPGR_unavailable, // plugin providing this upgrade gone?
 	UPGR_maxLevelBarrier, // upper limit of maxlevel setting. Can't set maxlevel higher than that.
@@ -119,6 +121,8 @@ public Native_RegisterUpgradeType(Handle:plugin, numParams)
 	if(!bAlreadyLoaded)
 	{
 		upgrade[UPGR_index] = GetArraySize(g_hUpgrades);
+		upgrade[UPGR_databaseId] = -1;
+		upgrade[UPGR_databaseLoading] = false;
 		new Handle:hTopMenu = GetRPGTopMenu();
 		if(hTopMenu != INVALID_HANDLE)
 		{
@@ -235,7 +239,8 @@ public Native_RegisterUpgradeType(Handle:plugin, numParams)
 		}
 	}
 	
-	CheckUpgradeDatabaseField(sShortName);
+	if(upgrade[UPGR_databaseId] == -1 && !upgrade[UPGR_databaseLoading])
+		CheckUpgradeDatabaseEntry(upgrade);
 }
 
 // native SMRPG_UnregisterUpgradeType(const String:shortname[]);
@@ -629,6 +634,21 @@ bool:GetUpgradeByShortname(const String:sShortName[], upgrade[InternalUpgradeInf
 		GetUpgradeByIndex(i, upgrade);
 		
 		if(StrEqual(upgrade[UPGR_shortName], sShortName, false))
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+bool:GetUpgradeByDatabaseId(iDatabaseId, upgrade[InternalUpgradeInfo])
+{
+	new iSize = GetArraySize(g_hUpgrades);
+	for(new i=0;i<iSize;i++)
+	{
+		GetUpgradeByIndex(i, upgrade);
+		
+		if(upgrade[UPGR_databaseId] == iDatabaseId)
 		{
 			return true;
 		}

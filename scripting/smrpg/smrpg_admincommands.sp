@@ -45,7 +45,7 @@ public Action:Cmd_PlayerInfo(client, args)
 	
 	decl String:sSteamID[32];
 	GetClientAuthString(iTarget, sSteamID, sizeof(sSteamID));
-	ReplyToCommand(client, "SM:RPG Info: Index: %d, UserID: %d, SteamID: %s, Database ID: %d:%d", iTarget, GetClientUserId(iTarget), sSteamID, playerInfo[PLR_dbId], playerInfo[PLR_dbUpgradeId]);
+	ReplyToCommand(client, "SM:RPG Info: Index: %d, UserID: %d, SteamID: %s, Database ID: %d", iTarget, GetClientUserId(iTarget), sSteamID, playerInfo[PLR_dbId]);
 	
 	ReplyToCommand(client, "SM:RPG Stats: Level: %d, Experience: %d/%d, Credits: %d, Rank: %d/%d", GetClientLevel(iTarget), GetClientExperience(iTarget), Stats_LvlToExp(GetClientLevel(iTarget)), GetClientCredits(iTarget), GetClientRank(iTarget), GetRankCount());
 	
