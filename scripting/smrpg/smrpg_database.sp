@@ -72,7 +72,7 @@ public SQL_OnConnect(Handle:owner, Handle:hndl, const String:error[], any:data)
 	}
 	
 	// Create the player -> upgrades table.
-	Format(sQuery, sizeof(sQuery), "CREATE TABLE IF NOT EXISTS %s (player_id INTEGER, upgrade_id INTEGER, level INTEGER NOT NULL, currentlevel INTEGER NOT NULL, enabled INTEGER DEFAULT '1', visuals INTEGER DEFAULT '1', sounds INTEGER DEFAULT '1', PRIMARY KEY(player_id, upgrade_id))", TBL_PLAYERUPGRADES);
+	Format(sQuery, sizeof(sQuery), "CREATE TABLE IF NOT EXISTS %s (player_id INTEGER, upgrade_id INTEGER, purchasedlevel INTEGER NOT NULL, selectedlevel INTEGER NOT NULL, enabled INTEGER DEFAULT '1', visuals INTEGER DEFAULT '1', sounds INTEGER DEFAULT '1', PRIMARY KEY(player_id, upgrade_id))", TBL_PLAYERUPGRADES);
 	if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
 	{
 		decl String:sError[256];

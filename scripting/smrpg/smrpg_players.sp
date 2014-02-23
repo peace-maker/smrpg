@@ -11,6 +11,14 @@ new Handle:g_hfwdOnClientCredits;
 
 new Handle:g_hfwdOnClientLoaded;
 
+enum PlayerUpgradeInfo {
+	PUI_purchasedlevel,
+	PUI_selectedlevel,
+	bool:PUI_enabled,
+	bool:PUI_visuals,
+	bool:PUI_sounds
+};
+
 enum PlayerInfo
 {
 	PLR_level,
@@ -18,7 +26,7 @@ enum PlayerInfo
 	PLR_credits,
 	PLR_dbId,
 	bool:PLR_triedToLoadData,
-	Handle:PLR_upgradesLevel
+	Handle:PLR_upgrades
 }
 
 new g_iPlayerInfo[MAXPLAYERS+1][PlayerInfo];
@@ -37,6 +45,8 @@ RegisterPlayerNatives()
 	CreateNative("SMRPG_SetClientCredits", Native_SetClientCredits);
 	CreateNative("SMRPG_GetClientExperience", Native_GetClientExperience);
 	CreateNative("SMRPG_SetClientExperience", Native_SetClientExperience);
+	
+	CreateNative("SMRPG_ClientWantsCosmetics", Native_ClientWantsCosmetics);
 }
 
 RegisterPlayerForwards()
@@ -70,11 +80,13 @@ InitPlayer(client)
 	g_iPlayerInfo[client][PLR_dbId] = -1;
 	g_iPlayerInfo[client][PLR_triedToLoadData] = false;
 	
-	g_iPlayerInfo[client][PLR_upgradesLevel] = CreateArray();
+	g_iPlayerInfo[client][PLR_upgrades] = CreateArray(_:PlayerUpgradeInfo);
 	new iNumUpgrades = GetUpgradeCount();
+	
 	for(new i=0;i<iNumUpgrades;i++)
 	{
-		PushArrayCell(g_iPlayerInfo[client][PLR_upgradesLevel], 0); // level 0 for all upgrades
+		// level 0 for all upgrades
+		InitPlayerNewUpgrade(client);
 	}
 }
 
@@ -156,7 +168,7 @@ SavePlayerUpgradeLevels(client)
 {
 	// Save upgrade levels
 	new iSize = GetUpgradeCount();
-	new upgrade[InternalUpgradeInfo];
+	new upgrade[InternalUpgradeInfo], playerupgrade[PlayerUpgradeInfo];
 	new iAdded;
 	decl String:sQuery[8192];
 	Format(sQuery, sizeof(sQuery), "REPLACE INTO %s (player_id, upgrade_id, level, currentlevel, enabled, visuals, sounds) VALUES ", TBL_PLAYERUPGRADES);
@@ -170,7 +182,9 @@ SavePlayerUpgradeLevels(client)
 		if(iAdded)
 			Format(sQuery, sizeof(sQuery), "%s, ", sQuery);
 		
-		Format(sQuery, sizeof(sQuery), "%s(%d, %d, %d, %d, 1, 1, 1)", sQuery, g_iPlayerInfo[client][PLR_dbId], upgrade[UPGR_databaseId], GetClientUpgradeLevel(client, i), GetClientUpgradeLevel(client, i));
+		GetPlayerUpgradeInfoByIndex(client, i, playerupgrade);
+		
+		Format(sQuery, sizeof(sQuery), "%s(%d, %d, %d, %d, %d, %d, %d)", sQuery, g_iPlayerInfo[client][PLR_dbId], upgrade[UPGR_databaseId], GetClientUpgradeLevel(client, i), GetClientUpgradeLevel(client, i), playerupgrade[PUI_enabled], playerupgrade[PUI_visuals], playerupgrade[PUI_sounds]);
 		
 		iAdded++;
 	}
@@ -197,11 +211,14 @@ ResetStats(client)
 	DebugMsg("Stats have been reset for player: %N", client);
 	
 	new iSize = GetUpgradeCount();
-	new upgrade[InternalUpgradeInfo];
+	new upgrade[InternalUpgradeInfo], playerupgrade[PlayerUpgradeInfo];
 	for(new i=0;i<iSize;i++)
 	{
+		GetPlayerUpgradeInfoByIndex(client, i, playerupgrade);
 		// Reset upgrade to level 0
-		SetArrayCell(GetClientUpgradeLevels(client), i, 0);
+		playerupgrade[PUI_purchasedlevel] = 0;
+		playerupgrade[PUI_selectedlevel] = 0;
+		SavePlayerUpgradeInfo(client, i, playerupgrade);
 		
 		GetUpgradeByIndex(i, upgrade);
 		
@@ -222,9 +239,19 @@ ResetStats(client)
 RemovePlayer(client)
 {
 	ResetStats(client);
-	ClearHandle(g_iPlayerInfo[client][PLR_upgradesLevel]);
+	ClearHandle(g_iPlayerInfo[client][PLR_upgrades]);
 	g_iPlayerInfo[client][PLR_dbId] = -1;
 	g_iPlayerInfo[client][PLR_triedToLoadData] = false;
+}
+
+GetPlayerUpgradeInfoByIndex(client, index, playerupgrade[PlayerUpgradeInfo])
+{
+	GetArrayArray(g_iPlayerInfo[client][PLR_upgrades], index, playerupgrade[0], _:PlayerUpgradeInfo);
+}
+
+SavePlayerUpgradeInfo(client, index, playerupgrade[PlayerUpgradeInfo])
+{
+	SetArrayArray(g_iPlayerInfo[client][PLR_upgrades], index, playerupgrade[0], _:PlayerUpgradeInfo);
 }
 
 /**
@@ -235,9 +262,9 @@ stock GetClientRPGInfo(client, info[PlayerInfo])
 	Array_Copy(g_iPlayerInfo[client][0], info[0], _:PlayerInfo);
 }
 
-stock Handle:GetClientUpgradeLevels(client)
+stock Handle:GetClientUpgrades(client)
 {
-	return g_iPlayerInfo[client][PLR_upgradesLevel];
+	return g_iPlayerInfo[client][PLR_upgrades];
 }
 
 GetClientDatabaseId(client)
@@ -257,7 +284,20 @@ GetClientByPlayerID(iPlayerId)
 
 GetClientUpgradeLevel(client, iUpgradeIndex)
 {
-	return GetArrayCell(GetClientUpgradeLevels(client), iUpgradeIndex);
+	new playerupgrade[PlayerUpgradeInfo];
+	GetPlayerUpgradeInfoByIndex(client, iUpgradeIndex, playerupgrade);
+	return playerupgrade[PUI_selectedlevel];
+}
+
+InitPlayerNewUpgrade(client)
+{
+	new playerupgrade[PlayerUpgradeInfo];
+	playerupgrade[PUI_purchasedlevel] = 0;
+	playerupgrade[PUI_selectedlevel] = 0;
+	playerupgrade[PUI_enabled] = true;
+	playerupgrade[PUI_visuals] = true;
+	playerupgrade[PUI_sounds] = true;
+	PushArrayArray(GetClientUpgrades(client), playerupgrade[0], _:PlayerUpgradeInfo);
 }
 
 /**
@@ -271,7 +311,12 @@ SetClientUpgradeLevel(client, iUpgradeIndex, iLevel)
 	if(iLevel == iOldLevel)
 		return;
 	
-	SetArrayCell(GetClientUpgradeLevels(client), iUpgradeIndex, iLevel);
+	new playerupgrade[PlayerUpgradeInfo];
+	GetPlayerUpgradeInfoByIndex(client, iUpgradeIndex, playerupgrade);
+	// TODO: Differ for selected and purchased level!
+	playerupgrade[PUI_selectedlevel] = iLevel;
+	playerupgrade[PUI_purchasedlevel] = iLevel;
+	SavePlayerUpgradeInfo(client, iUpgradeIndex, playerupgrade);
 	
 	new upgrade[InternalUpgradeInfo];
 	GetUpgradeByIndex(iUpgradeIndex, upgrade);
@@ -676,7 +721,7 @@ public Native_GetClientUpgradeLevel(Handle:plugin, numParams)
 		return 0;
 	}
 	
-	return GetArrayCell(GetClientUpgradeLevels(client), upgrade[UPGR_index]);
+	return GetClientUpgradeLevel(client, upgrade[UPGR_index]);
 }
 
 // native bool:SMRPG_ClientBuyUpgrade(client, const String:shortname[]);
@@ -843,6 +888,49 @@ public Native_SetClientExperience(Handle:plugin, numParams)
 	new iExperience = GetNativeCell(2);
 	
 	return SetClientExperience(client, iExperience);
+}
+
+// native bool:SMRPG_ClientWantsCosmetics(client, const String:shortname[], SMRPG_FX:effect);
+public Native_ClientWantsCosmetics(Handle:plugin, numParams)
+{
+	new client = GetNativeCell(1);
+	if(client < 0 || client > MaxClients)
+	{
+		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
+		return false;
+	}
+	
+	new len;
+	GetNativeStringLength(2, len);
+	new String:sShortName[len+1];
+	GetNativeString(2, sShortName, len+1);
+	
+	new upgrade[InternalUpgradeInfo];
+	if(!GetUpgradeByShortname(sShortName, upgrade) || !IsValidUpgrade(upgrade))
+	{
+		ThrowNativeError(SP_ERROR_NATIVE, "No upgrade named \"%s\" loaded.", sShortName);
+		return false;
+	}
+	
+	new SMRPG_FX:iFX = SMRPG_FX:GetNativeCell(3);
+	
+	new playerupgrade[PlayerUpgradeInfo];
+	GetPlayerUpgradeInfoByIndex(client, upgrade[UPGR_index], playerupgrade);
+	
+	// If the visuals on the upgrade are disabled globally, ignore the clients individual setting.
+	switch(iFX)
+	{
+		case SMRPG_FX_Visuals:
+		{
+			return upgrade[UPGR_enableVisuals] && playerupgrade[PUI_visuals];
+		}
+		case SMRPG_FX_Sounds:
+		{
+			return upgrade[UPGR_enableSounds] && playerupgrade[PUI_sounds];
+		}
+	}
+	
+	return false;
 }
 
 /**

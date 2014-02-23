@@ -59,7 +59,6 @@ RegisterUpgradeNatives()
 	CreateNative("SMRPG_RunUpgradeEffect", Native_RunUpgradeEffect);
 	
 	CreateNative("SMRPG_CheckUpgradeAccess", Native_CheckUpgradeAccess);
-	CreateNative("SMRPG_ClientWantsCosmetics", Native_ClientWantsCosmetics);
 }
 
 RegisterUpgradeForwards()
@@ -234,7 +233,7 @@ public Native_RegisterUpgradeType(Handle:plugin, numParams)
 		{
 			if(IsClientConnected(i))
 			{
-				PushArrayCell(GetClientUpgradeLevels(i), 0);
+				InitPlayerNewUpgrade(i);
 			}
 		}
 	}
@@ -469,46 +468,6 @@ public Native_SetUpgradeDefaultCosmenticEffect(Handle:plugin, numParams)
 	}
 	
 	SaveUpgradeConfig(upgrade);
-}
-
-// native bool:SMRPG_ClientWantsCosmetics(client, const String:shortname[], SMRPG_FX:effect);
-public Native_ClientWantsCosmetics(Handle:plugin, numParams)
-{
-	new client = GetNativeCell(1);
-	if(client < 0 || client > MaxClients)
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
-		return false;
-	}
-	
-	new len;
-	GetNativeStringLength(2, len);
-	new String:sShortName[len+1];
-	GetNativeString(2, sShortName, len+1);
-	
-	new upgrade[InternalUpgradeInfo];
-	if(!GetUpgradeByShortname(sShortName, upgrade) || !IsValidUpgrade(upgrade))
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "No upgrade named \"%s\" loaded.", sShortName);
-		return false;
-	}
-	
-	new SMRPG_FX:iFX = SMRPG_FX:GetNativeCell(3);
-	
-	// TODO: Add individual options for clients.
-	switch(iFX)
-	{
-		case SMRPG_FX_Visuals:
-		{
-			return upgrade[UPGR_enableVisuals];
-		}
-		case SMRPG_FX_Sounds:
-		{
-			return upgrade[UPGR_enableSounds];
-		}
-	}
-	
-	return false;
 }
 
 // native SMRPG_ResetUpgradeEffectOnClient(client, const String:shortname[]);
