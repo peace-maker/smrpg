@@ -740,7 +740,7 @@ public Action:Cmd_DBDelPlayer(client, args)
 			RemovePlayer(iTarget);
 		
 		WritePackCell(hPack, iTarget);
-		Format(sQuery, sizeof(sQuery), "SELECT upgrades_id, name FROM %s WHERE steamid = '%s'", TBL_PLAYERS, sTarget);
+		Format(sQuery, sizeof(sQuery), "SELECT player_id, name FROM %s WHERE steamid = '%s'", TBL_PLAYERS, sTarget);
 		SQL_TQuery(g_hDatabase, SQL_CheckDeletePlayer, sQuery, hPack);
 	}
 	// Match as playerid
@@ -751,7 +751,7 @@ public Action:Cmd_DBDelPlayer(client, args)
 			RemovePlayer(iTarget);
 		
 		WritePackCell(hPack, iTarget);
-		Format(sQuery, sizeof(sQuery), "SELECT upgrades_id, name FROM %s WHERE player_id = '%d'", TBL_PLAYERS, iPlayerID);
+		Format(sQuery, sizeof(sQuery), "SELECT player_id, name FROM %s WHERE player_id = '%d'", TBL_PLAYERS, iPlayerID);
 		SQL_TQuery(g_hDatabase, SQL_CheckDeletePlayer, sQuery, hPack);
 	}
 	// Match as name
@@ -762,7 +762,7 @@ public Action:Cmd_DBDelPlayer(client, args)
 			RemovePlayer(iTarget);
 		
 		WritePackCell(hPack, iTarget);
-		Format(sQuery, sizeof(sQuery), "SELECT upgrades_id, name FROM %s WHERE name = '%s'", TBL_PLAYERS, sTarget);
+		Format(sQuery, sizeof(sQuery), "SELECT player_id, name FROM %s WHERE name = '%s'", TBL_PLAYERS, sTarget);
 		SQL_TQuery(g_hDatabase, SQL_CheckDeletePlayer, sQuery, hPack);
 	}
 	return Plugin_Handled;
@@ -784,7 +784,7 @@ public Action:Cmd_DBMassSell(client, args)
 	new upgrade[InternalUpgradeInfo];
 	if(!GetUpgradeByShortname(sUpgrade, upgrade) || !IsValidUpgrade(upgrade))
 	{
-		ReplyToCommand(client, "SM:RPG: There is no upgrade with name \"%s\".", sUpgrade);
+		ReplyToCommand(client, "SM:RPG: There is no upgrade with name \"%s\" loaded.", sUpgrade);
 		return Plugin_Handled;
 	}
 	
@@ -815,7 +815,7 @@ public Action:Cmd_DBMassSell(client, args)
 	WritePackCell(hData, iIndex);
 	
 	decl String:sQuery[128];
-	Format(sQuery, sizeof(sQuery), "SELECT items_id, %s FROM %s WHERE %s > '0'", upgrade[UPGR_shortName], TBL_UPGRADES, upgrade[UPGR_shortName]);
+	Format(sQuery, sizeof(sQuery), "SELECT player_id, purchasedlevel FROM %s WHERE upgrade_id = %d AND purchasedlevel > 0", TBL_PLAYERUPGRADES, upgrade[UPGR_databaseId]);
 	SQL_TQuery(g_hDatabase, SQL_MassDeleteItem, sQuery, hData);
 	
 	return Plugin_Handled;
@@ -883,14 +883,17 @@ public SQL_CheckDeletePlayer(Handle:owner, Handle:hndl, const String:error[], an
 		return;
 	}
 	
-	new iUpgradeID = SQL_FetchInt(hndl, 0);
+	new iPlayerId = SQL_FetchInt(hndl, 0);
 	if(GetConVarBool(g_hCVSaveData))
 	{
 		decl String:sQuery[128];
-		Format(sQuery, sizeof(sQuery), "DELETE FROM %s WHERE upgrades_id = '%d'", TBL_UPGRADES, iUpgradeID);
+		Format(sQuery, sizeof(sQuery), "DELETE FROM %s WHERE player_id = %d", TBL_PLAYERUPGRADES, iPlayerId);
 		SQL_TQuery(g_hDatabase, SQL_DoNothing, sQuery);
-		Format(sQuery, sizeof(sQuery), "DELETE FROM %s WHERE upgrades_id = '%d'", TBL_PLAYERS, iUpgradeID);
+		Format(sQuery, sizeof(sQuery), "DELETE FROM %s WHERE player_id = %d", TBL_PLAYERS, iPlayerId);
 		SQL_TQuery(g_hDatabase, SQL_DoNothing, sQuery);
+		
+		if(iTarget != -1)
+			g_iPlayerInfo[iTarget][PLR_dbId] = -1;
 		
 		decl String:sName[64];
 		SQL_FetchString(hndl, 1, sName, sizeof(sName));
@@ -945,23 +948,29 @@ public SQL_MassDeleteItem(Handle:owner, Handle:hndl, const String:error[], any:d
 	
 	if(GetConVarBool(g_hCVSaveData))
 	{
-		new iOldLevel, iAddCredits, iItemsID;
+		// Give players full refund for their upgrades.
+		new iOldLevel, iAddCredits, iPlayerID;
 		decl String:sQuery[128];
 		while(SQL_MoreRows(hndl))
 		{
-			SQL_FetchRow(hndl);
+			if(!SQL_FetchRow(hndl))
+				continue;
 			
-			iItemsID = SQL_FetchInt(hndl, 1);
+			iPlayerID = SQL_FetchInt(hndl, 0);
 			
-			iOldLevel = SQL_FetchInt(hndl, 2);
+			// This player is currently ingame and we already handled him. Don't add credits twice.
+			if(GetClientByPlayerID(iPlayerID) != -1)
+				continue;
+			
+			iOldLevel = SQL_FetchInt(hndl, 1);
 			if(iOldLevel < 0)
 			{
-				DebugMsg("Negative level for upgrade %s in database at itemid %d!", upgrade[UPGR_name], iItemsID);
+				DebugMsg("Negative level for upgrade %s in database for player %d!", upgrade[UPGR_name], iPlayerID);
 				iOldLevel = 0;
 			}
 			if(iOldLevel > upgrade[UPGR_maxLevel])
 			{
-				DebugMsg("Upgrade level higher than max level of upgrade %s at itemid %d!", upgrade[UPGR_name], iItemsID);
+				DebugMsg("Upgrade level higher than max level of upgrade %s for player %d!", upgrade[UPGR_name], iPlayerID);
 				iOldLevel = upgrade[UPGR_maxLevel];
 			}
 			
@@ -969,11 +978,13 @@ public SQL_MassDeleteItem(Handle:owner, Handle:hndl, const String:error[], any:d
 			while(iOldLevel > 0)
 				iAddCredits += GetUpgradeCost(iIndex, iOldLevel--);
 			
-			Format(sQuery, sizeof(sQuery), "UPDATE %s SET %s = '0' WHERE items_id = '%d'", TBL_UPGRADES, upgrade[UPGR_shortName], iItemsID);
-			SQL_TQuery(g_hDatabase, SQL_DoNothing, sQuery);
-			Format(sQuery, sizeof(sQuery), "UPDATE %s SET credits = (credits + %d) WHERE items_id = '%d'", TBL_UPGRADES, iAddCredits, iItemsID);
+			Format(sQuery, sizeof(sQuery), "UPDATE %s SET credits = (credits + %d) WHERE player_id = %d", TBL_UPGRADES, iAddCredits, iPlayerID);
 			SQL_TQuery(g_hDatabase, SQL_DoNothing, sQuery);
 		}
+		
+		// Reset all players to upgrade level 0
+		Format(sQuery, sizeof(sQuery), "UPDATE %s SET purchasedlevel = 0, selectedlevel = 0 WHERE upgrade_id = %d", TBL_PLAYERUPGRADES, upgrade[UPGR_databaseId]);
+		SQL_TQuery(g_hDatabase, SQL_DoNothing, sQuery);
 		
 		if(client == 0 || IsClientInGame(client))
 		{
@@ -1014,7 +1025,7 @@ public SQL_PrintPlayerStats(Handle:owner, Handle:hndl, const String:error[], any
 	}
 	
 	decl String:sQuery[64];
-	Format(sQuery, sizeof(sQuery), "SELECT * FROM %s LIMIT 1", TBL_UPGRADES);
+	Format(sQuery, sizeof(sQuery), "SELECT upgrade_id, shortname FROM %s", TBL_UPGRADES);
 	SQL_TQuery(g_hDatabase, SQL_PrintUpgradeStats, sQuery, data);
 }
 
@@ -1031,31 +1042,28 @@ public SQL_PrintUpgradeStats(Handle:owner, Handle:hndl, const String:error[], an
 		CloseHandle(data);
 		return;
 	}
-
-	if(!SQL_FetchRow(hndl))
-	{
-		CloseHandle(data);
-		return;
-	}
-
-	new iFields = SQL_GetFieldCount(hndl);
 	
 	new ReplySource:oldSource = SetCmdReplySource(source);
-	ReplyToCommand(client, "Listing %d registered upgrades:", iFields-1);
+	ReplyToCommand(client, "Listing %d registered upgrades:", SQL_GetRowCount(hndl)-1);
 	ReplyToCommand(client, "%-15s%-8s%-10s%-8s", "Upgrade", "#bought", "AVG LVL", "Loaded");
 	SetCmdReplySource(oldSource);
 
-	decl String:sFieldName[MAX_UPGRADE_SHORTNAME_LENGTH];
+	decl String:sUpgradeName[MAX_UPGRADE_SHORTNAME_LENGTH];
 	decl String:sQuery[512];
 	new Handle:hPack;
-	for(new i=1;i<iFields;i++)
+	while(SQL_MoreRows(hndl))
 	{
+		if(!SQL_FetchRow(hndl))
+			continue;
+		
+		SQL_FetchString(hndl, 1, sUpgradeName, sizeof(sUpgradeName));
+		
 		hPack = CreateDataPack();
 		WritePackCell(hPack, serial);
 		WritePackCell(hPack, _:source);
+		WritePackString(hPack, sUpgradeName);
 		
-		SQL_FieldNumToName(hndl, i, sFieldName, sizeof(sFieldName));
-		Format(sQuery, sizeof(sQuery), "SELECT %s, COUNT(%s), AVG(%s) FROM %s WHERE %s > 0", sFieldName, sFieldName, sFieldName, TBL_UPGRADES, sFieldName);
+		Format(sQuery, sizeof(sQuery), "SELECT COUNT(*), AVG(purchasedlevel) FROM %s WHERE upgrade_id = %d AND purchasedlevel > 0", TBL_PLAYERUPGRADES, SQL_FetchInt(hndl, 0));
 		SQL_TQuery(g_hDatabase, SQL_PrintUpgradeUsage, sQuery, hPack);
 	}
 	CloseHandle(data);
@@ -1066,6 +1074,8 @@ public SQL_PrintUpgradeUsage(Handle:owner, Handle:hndl, const String:error[], an
 	ResetPack(data);
 	new client = GetClientFromSerial(ReadPackCell(data));
 	new ReplySource:source = ReplySource:ReadPackCell(data);
+	decl String:sUpgradeName[MAX_UPGRADE_SHORTNAME_LENGTH];
+	ReadPackString(data, sUpgradeName, sizeof(sUpgradeName));
 	CloseHandle(data);
 	
 	if(hndl == INVALID_HANDLE || strlen(error) > 0)
@@ -1075,15 +1085,13 @@ public SQL_PrintUpgradeUsage(Handle:owner, Handle:hndl, const String:error[], an
 	}
 
 	new upgrade[InternalUpgradeInfo];
-	decl String:sFieldName[MAX_UPGRADE_SHORTNAME_LENGTH];
 	new ReplySource:oldSource = SetCmdReplySource(source);
 	while(SQL_MoreRows(hndl))
 	{
 		if(!SQL_FetchRow(hndl))
 			continue;
 		
-		SQL_FieldNumToName(hndl, 0, sFieldName, sizeof(sFieldName));
-		ReplyToCommand(client, "%-15s%-8d%-10.2f%-8s", sFieldName, SQL_FetchInt(hndl, 1), SQL_FetchFloat(hndl, 2), (GetUpgradeByShortname(sFieldName, upgrade)?"Yes":"No"));
+		ReplyToCommand(client, "%-15s%-8d%-10.2f%-8s", sUpgradeName, SQL_FetchInt(hndl, 0), SQL_FetchFloat(hndl, 1), (GetUpgradeByShortname(sUpgradeName, upgrade)?"Yes":"No"));
 	}
 	SetCmdReplySource(oldSource);
 }

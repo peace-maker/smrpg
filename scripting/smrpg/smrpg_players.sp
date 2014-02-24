@@ -191,7 +191,6 @@ SavePlayerUpgradeLevels(client)
 	}
 	if(iAdded > 0)
 	{
-		LogMessage("Running query %s", sQuery);
 		SQL_TQuery(g_hDatabase, SQL_DoNothing, sQuery);
 	}
 }
