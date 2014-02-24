@@ -40,7 +40,7 @@ functag public bool:SMRPG_ActiveQueryCB(client);
 /**
  * Registers a new upgrade to the rpg core.
  * This will show up in the rpgmenu.
- * The shortname is like an unique identifier for this upgrade. It is also used to create a database column, so no whitespace allowed!
+ * The shortname is like an unique identifier for this upgrade.
  * Other plugins might use the shortname to check for information of the upgrade.
  *
  * This native registers 5 default convars for the plugin and saves them in a seperate config file for the upgrade in cfg/sourcemod/smrpg/smrpg_upgrade_<shortname>.cfg
@@ -53,7 +53,7 @@ functag public bool:SMRPG_ActiveQueryCB(client);
  * You can add more convars to that file using the SMRPG_CreateUpgradeConVar native.
  *
  * @param name              The full name of the upgrade. This is displayed in the rpgmenu. Set a translation callback to dynamically change it.
- * @param shortname         A short abbreviative name for this upgrade. It's the primary unique identifier used in all other upgrade-specific natives. Must not contain whitespace.
+ * @param shortname         A short abbreviative name for this upgrade. It's the primary unique identifier used in all other upgrade-specific natives.
  * @param description       A verbose description of the upgrade. Shown in the rpghelp menu.
  * @param maxlevelbarrier   Hardcoded limit you don't want the maxlevel to exceed. You can't set the maxlevel higher than this. This value can't be changed during runtime.
  * @param bDefaultEnable    Do you want this upgrade to be enabled by default? Default value of the _enable convar.
@@ -64,7 +64,7 @@ functag public bool:SMRPG_ActiveQueryCB(client);
  * @param querycb           The callback which is called when a client buys / sells this upgrade. Can be used to apply some effects immediately on purchase.
  * @param activecb          The callback which is called to check whether the upgrade currently has some active effect on the client.
  * @noreturn
- * @error Whitespace in shortname, upgrade shortname already exists.
+ * @error Upgrade shortname already exists.
  */
 native SMRPG_RegisterUpgradeType(const String:name[], const String:shortname[], const String:description[], maxlevelbarrier, bool:bDefaultEnable, iDefaultMaxLevel, iDefaultStartCost, iDefaultCostInc, iAdminFlags=0, SMRPG_UpgradeQueryCB:querycb, SMRPG_ActiveQueryCB:activecb);
 
@@ -333,6 +333,17 @@ stock bool:SMRPG_IsClientUpgradeMaxed(client, const String:shortname[])
     return true;
   return false;
 }
+
+/**
+ * Sets the selected level of the upgrade for a client. This level can't be higher than the level of the upgrade the player has purchased.
+ * Players can set their level to lower one than they actually purchased to compensate handycaps or similar.
+ *
+ * @param client         The client to set the selected upgrade level for.
+ * @param shortname      The shortname of the upgrade to set the selected level for.
+ * @param iLevel         The new selected level of the upgrade.
+ * @error Invalid client index, unknown upgrade shortname or purchased level lower than the one you want to select.
+ */
+native bool:SMRPG_SetClientSelectedUpgradeLevel(client, const String:shortname[], iLevel);
 
 /**
  * Lets a client buy an upgrade and increases his upgrade level by 1.

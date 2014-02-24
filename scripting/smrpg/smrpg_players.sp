@@ -36,6 +36,7 @@ RegisterPlayerNatives()
 {
 	CreateNative("SMRPG_GetClientUpgradeLevel", Native_GetClientUpgradeLevel);
 	CreateNative("SMRPG_GetClientPurchasedUpgradeLevel", Native_GetClientPurchasedUpgradeLevel);
+	CreateNative("SMRPG_SetClientSelectedUpgradeLevel", Native_SetClientSelectedUpgradeLevel);
 	CreateNative("SMRPG_ClientBuyUpgrade", Native_ClientBuyUpgrade);
 	CreateNative("SMRPG_ClientSellUpgrade", Native_ClientSellUpgrade);
 	CreateNative("SMRPG_IsUpgradeActiveOnClient", Native_IsUpgradeActiveOnClient);
@@ -798,6 +799,49 @@ public Native_GetClientPurchasedUpgradeLevel(Handle:plugin, numParams)
 	}
 	
 	return GetClientPurchasedUpgradeLevel(client, upgrade[UPGR_index]);
+}
+
+// native bool:SMRPG_SetClientSelectedUpgradeLevel(client, const String:shortname[], iLevel);
+public Native_SetClientSelectedUpgradeLevel(Handle:plugin, numParams)
+{
+	new client = GetNativeCell(1);
+	if(client < 0 || client > MaxClients)
+	{
+		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
+		return false;
+	}
+	
+	new len;
+	GetNativeStringLength(2, len);
+	new String:sShortName[len+1];
+	GetNativeString(2, sShortName, len+1);
+	
+	// Check if such an upgrade is registered
+	new upgrade[InternalUpgradeInfo];
+	if(!GetUpgradeByShortname(sShortName, upgrade) || !IsValidUpgrade(upgrade))
+	{
+		ThrowNativeError(SP_ERROR_NATIVE, "No upgrade named \"%s\" loaded.", sShortName);
+		return false;
+	}
+	
+	new iLevel = GetNativeCell(3);
+	if(iLevel < 0)
+	{
+		ThrowNativeError(SP_ERROR_NATIVE, "Invalid level %d.", iLevel);
+		return false;
+	}
+	
+	new iPurchased = GetClientPurchasedUpgradeLevel(client, upgrade[UPGR_index]);
+	// Can't select a level he doesn't own yet.
+	if(iPurchased < iLevel)
+	{
+		ThrowNativeError(SP_ERROR_NATIVE, "Can't select level %d of upgrade \"%s\", which is higher than the purchased level %d.", iLevel, sShortName, iPurchased);
+		return false;
+	}
+	
+	SetClientSelectedUpgradeLevel(client, upgrade[UPGR_index], iLevel);
+	
+	return true;
 }
 
 // native bool:SMRPG_ClientBuyUpgrade(client, const String:shortname[]);

@@ -55,6 +55,7 @@ public __pl_smrpg_SetNTVOptional()
 	MarkNativeAsOptional("SMRPG_RunUpgradeEffect");
 	MarkNativeAsOptional("SMRPG_GetClientUpgradeLevel");
 	MarkNativeAsOptional("SMRPG_GetClientPurchasedUpgradeLevel");
+	MarkNativeAsOptional("SMRPG_SetClientSelectedUpgradeLevel");
 	MarkNativeAsOptional("SMRPG_ClientBuyUpgrade");
 	MarkNativeAsOptional("SMRPG_ClientSellUpgrade");
 	MarkNativeAsOptional("SMRPG_IsUpgradeActiveOnClient");
