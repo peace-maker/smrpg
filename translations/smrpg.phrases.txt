@@ -131,6 +131,11 @@
 		"en"			"Sell"
 	}
 	
+	"Upgrade Settings"
+	{
+		"en"			"Upgrade Settings"
+	}
+	
 	"Stats"
 	{
 		"en"			"Stats"
@@ -205,6 +210,37 @@
 	"Confirm stats reset"
 	{
 		"en"			"WARNING: You will lose all Levels, Credits, and Experience.\nReset stats permanently?"
+	}
+	
+	//Menu upgrade settings
+	"Enabled"
+	{
+		"en"			"Enabled"
+	}
+	
+	"Selected level"
+	{
+		"en"			"Selected level"
+	}
+	
+	"Increase selected level"
+	{
+		"en"			"Increase selected level"
+	}
+	
+	"Decrease selected level"
+	{
+		"en"			"Decrease selected level"
+	}
+	
+	"Visual effects"
+	{
+		"en"			"Visual effects"
+	}
+	
+	"Sound effects"
+	{
+		"en"			"Sound effects"
 	}
 	
 	// Command help

@@ -34,6 +34,7 @@ enum InternalUpgradeInfo
 	// Topmenu object ids
 	TopMenuObject:UPGR_topmenuUpgrades,
 	TopMenuObject:UPGR_topmenuSell,
+	TopMenuObject:UPGR_topmenuUpgradeSettings,
 	TopMenuObject:UPGR_topmenuHelp,
 	
 	String:UPGR_name[MAX_UPGRADE_NAME_LENGTH],
@@ -130,6 +131,11 @@ public Native_RegisterUpgradeType(Handle:plugin, numParams)
 				Format(sBuffer, sizeof(sBuffer), "rpgsell_%s", sShortName);
 				upgrade[UPGR_topmenuSell] = AddToTopMenu(hTopMenu, sBuffer, TopMenuObject_Item, TopMenu_HandleSell, GetSellCategory());
 			}
+			if(GetUpgradeSettingsCategory() != INVALID_TOPMENUOBJECT)
+			{
+				Format(sBuffer, sizeof(sBuffer), "rpgupgrsettings_%s", sShortName);
+				upgrade[UPGR_topmenuUpgradeSettings] = AddToTopMenu(hTopMenu, sBuffer, TopMenuObject_Item, TopMenu_HandleUpgradeSettings, GetUpgradeSettingsCategory());
+			}
 			if(GetHelpCategory() != INVALID_TOPMENUOBJECT)
 			{
 				Format(sBuffer, sizeof(sBuffer), "rpghelp_%s", sShortName);
@@ -150,6 +156,8 @@ public Native_RegisterUpgradeType(Handle:plugin, numParams)
 	upgrade[UPGR_translationCallback] = INVALID_FUNCTION;
 	upgrade[UPGR_resetCallback] = INVALID_FUNCTION;
 	upgrade[UPGR_plugin] = plugin;
+	upgrade[UPGR_visualsConvar] = INVALID_HANDLE;
+	upgrade[UPGR_soundsConvar] = INVALID_HANDLE;
 	strcopy(upgrade[UPGR_name], MAX_UPGRADE_NAME_LENGTH, sName);
 	strcopy(upgrade[UPGR_shortName], MAX_UPGRADE_SHORTNAME_LENGTH, sShortName);
 	strcopy(upgrade[UPGR_description], MAX_UPGRADE_DESCRIPTION_LENGTH, sDescription);

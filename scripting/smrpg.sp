@@ -328,6 +328,7 @@ public OnClientAuthorized(client, const String:auth[])
 
 public OnClientDisconnect(client)
 {
+	ResetPlayerMenu(client);
 	ResetAdminMenu(client);
 	SaveData(client);
 	ClearClientRankCache(client);
