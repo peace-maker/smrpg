@@ -70,7 +70,7 @@ public Action:Cmd_PlayerInfo(client, args)
 			Format(sPermission, sizeof(sPermission), " NO ACCESS:");
 		else if(upgrade[UPGR_adminFlag] > 0)
 			Format(sPermission, sizeof(sPermission), " OK:");
-		ReplyToCommand(client, "SM:RPG - %s%s Level %d", upgrade[UPGR_name], sPermission, GetClientUpgradeLevel(iTarget, i));
+		ReplyToCommand(client, "SM:RPG - %s%s Level %d (Selected %d)", upgrade[UPGR_name], sPermission, GetClientPurchasedUpgradeLevel(iTarget, i), GetClientSelectedUpgradeLevel(iTarget, i));
 	}
 	ReplyToCommand(client, "SM:RPG: ----------");
 	
@@ -413,12 +413,12 @@ public Action:Cmd_SetUpgradeLvl(client, args)
 	}
 	
 	new iIndex = upgrade[UPGR_index];
-	new iOldLevel = GetClientUpgradeLevel(iTarget, iIndex);
+	new iOldLevel = GetClientPurchasedUpgradeLevel(iTarget, iIndex);
 	
 	// Item level increased
 	if(iOldLevel < iLevel)
 	{
-		while(GetClientUpgradeLevel(iTarget, iIndex) < iLevel)
+		while(GetClientPurchasedUpgradeLevel(iTarget, iIndex) < iLevel)
 		{
 			// If some plugin doesn't want any more upgrade levels, stop trying.
 			if(!GiveClientUpgrade(iTarget, iIndex))
@@ -428,7 +428,7 @@ public Action:Cmd_SetUpgradeLvl(client, args)
 	// Item level decreased..
 	else
 	{
-		while(GetClientUpgradeLevel(iTarget, iIndex) > iLevel)
+		while(GetClientPurchasedUpgradeLevel(iTarget, iIndex) > iLevel)
 		{
 			// If some plugin doesn't want any less upgrade levels, stop trying.
 			if(!TakeClientUpgrade(iTarget, iIndex))
@@ -436,8 +436,8 @@ public Action:Cmd_SetUpgradeLvl(client, args)
 		}
 	}
 	
-	LogAction(client, iTarget, "Set %N's level of upgrade %s from %d to %d at no charge.", iTarget, upgrade[UPGR_name], iOldLevel, GetClientUpgradeLevel(iTarget, iIndex));
-	ReplyToCommand(client, "SM:RPG setupgradelvl: %N now has %s Level %d (previously Level %d)", iTarget, upgrade[UPGR_name], GetClientUpgradeLevel(iTarget, iIndex), iOldLevel);
+	LogAction(client, iTarget, "Set %N's level of upgrade %s from %d to %d at no charge.", iTarget, upgrade[UPGR_name], iOldLevel, GetClientPurchasedUpgradeLevel(iTarget, iIndex));
+	ReplyToCommand(client, "SM:RPG setupgradelvl: %N now has %s Level %d (previously Level %d)", iTarget, upgrade[UPGR_name], GetClientPurchasedUpgradeLevel(iTarget, iIndex), iOldLevel);
 	
 	return Plugin_Handled;
 }
@@ -469,7 +469,7 @@ public Action:Cmd_GiveUpgrade(client, args)
 	}
 	
 	new iIndex = upgrade[UPGR_index];
-	new iOldLevel = GetClientUpgradeLevel(iTarget, iIndex);
+	new iOldLevel = GetClientPurchasedUpgradeLevel(iTarget, iIndex);
 	
 	if(iOldLevel >= upgrade[UPGR_maxLevel])
 	{
@@ -483,8 +483,8 @@ public Action:Cmd_GiveUpgrade(client, args)
 		return Plugin_Handled;
 	}
 	
-	LogAction(client, iTarget, "Gave %N a level of upgrade %s at no charge. It changed from level %d to %d.", iTarget, upgrade[UPGR_name], iOldLevel, GetClientUpgradeLevel(iTarget, iIndex));
-	ReplyToCommand(client, "SM:RPG giveupgrade: %N now has %s Level %d (previously Level %d)", iTarget, upgrade[UPGR_name], GetClientUpgradeLevel(iTarget, iIndex), iOldLevel);
+	LogAction(client, iTarget, "Gave %N a level of upgrade %s at no charge. It changed from level %d to %d.", iTarget, upgrade[UPGR_name], iOldLevel, GetClientPurchasedUpgradeLevel(iTarget, iIndex));
+	ReplyToCommand(client, "SM:RPG giveupgrade: %N now has %s Level %d (previously Level %d)", iTarget, upgrade[UPGR_name], GetClientPurchasedUpgradeLevel(iTarget, iIndex), iOldLevel);
 	
 	return Plugin_Handled;
 }
@@ -512,7 +512,8 @@ public Action:Cmd_GiveAll(client, args)
 		if(!IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled])
 			continue;
 		
-		SetClientUpgradeLevel(iTarget, i, upgrade[UPGR_maxLevel]);
+		SetClientPurchasedUpgradeLevel(iTarget, i, upgrade[UPGR_maxLevel]);
+		SetClientSelectedUpgradeLevel(iTarget, i, upgrade[UPGR_maxLevel]);
 	}
 	
 	LogAction(client, iTarget, "Set all upgrades of %N to the maximal level at no charge.", iTarget);
@@ -548,7 +549,7 @@ public Action:Cmd_TakeUpgrade(client, args)
 	}
 	
 	new iIndex = upgrade[UPGR_index];
-	new iOldLevel = GetClientUpgradeLevel(iTarget, iIndex);
+	new iOldLevel = GetClientPurchasedUpgradeLevel(iTarget, iIndex);
 	
 	if(iOldLevel <= 0)
 	{
@@ -562,8 +563,8 @@ public Action:Cmd_TakeUpgrade(client, args)
 		return Plugin_Handled;
 	}
 	
-	LogAction(client, iTarget, "Took a level of upgrade %s from %N with no refund. Changed upgrade level from %d to %d.", upgrade[UPGR_name], iTarget, iOldLevel, GetClientUpgradeLevel(iTarget, iIndex));
-	ReplyToCommand(client, "SM:RPG takeupgrade: %N now has %s Level %d (previously Level %d)", iTarget, upgrade[UPGR_name], GetClientUpgradeLevel(iTarget, iIndex), iOldLevel);
+	LogAction(client, iTarget, "Took a level of upgrade %s from %N with no refund. Changed upgrade level from %d to %d.", upgrade[UPGR_name], iTarget, iOldLevel, GetClientPurchasedUpgradeLevel(iTarget, iIndex));
+	ReplyToCommand(client, "SM:RPG takeupgrade: %N now has %s Level %d (previously Level %d)", iTarget, upgrade[UPGR_name], GetClientPurchasedUpgradeLevel(iTarget, iIndex), iOldLevel);
 	
 	return Plugin_Handled;
 }
@@ -595,7 +596,7 @@ public Action:Cmd_BuyUpgrade(client, args)
 	}
 	
 	new iIndex = upgrade[UPGR_index];
-	new iOldLevel = GetClientUpgradeLevel(iTarget, iIndex);
+	new iOldLevel = GetClientPurchasedUpgradeLevel(iTarget, iIndex);
 	
 	if(iOldLevel >= upgrade[UPGR_maxLevel])
 	{
@@ -616,8 +617,8 @@ public Action:Cmd_BuyUpgrade(client, args)
 		return Plugin_Handled;
 	}
 	
-	LogAction(client, iTarget, "Forced %N to buy a level of upgrade %s. The upgrade level changed from %d to %d", iTarget, upgrade[UPGR_name], iOldLevel, GetClientUpgradeLevel(iTarget, iIndex));
-	ReplyToCommand(client, "SM:RPG buyupgrade: %N now has %s Level %d (previously Level %d)", iTarget, upgrade[UPGR_name], GetClientUpgradeLevel(iTarget, iIndex), iOldLevel);
+	LogAction(client, iTarget, "Forced %N to buy a level of upgrade %s. The upgrade level changed from %d to %d", iTarget, upgrade[UPGR_name], iOldLevel, GetClientPurchasedUpgradeLevel(iTarget, iIndex));
+	ReplyToCommand(client, "SM:RPG buyupgrade: %N now has %s Level %d (previously Level %d)", iTarget, upgrade[UPGR_name], GetClientPurchasedUpgradeLevel(iTarget, iIndex), iOldLevel);
 	
 	return Plugin_Handled;
 }
@@ -649,7 +650,7 @@ public Action:Cmd_SellUpgrade(client, args)
 	}
 	
 	new iIndex = upgrade[UPGR_index];
-	new iOldLevel = GetClientUpgradeLevel(iTarget, iIndex);
+	new iOldLevel = GetClientPurchasedUpgradeLevel(iTarget, iIndex);
 	
 	if(iOldLevel <= 0)
 	{
@@ -667,8 +668,8 @@ public Action:Cmd_SellUpgrade(client, args)
 	new iUpgradeCosts = GetUpgradeCost(iIndex, iOldLevel);
 	SetClientCredits(iTarget, GetClientCredits(iTarget) + iUpgradeCosts);
 	
-	LogAction(client, iTarget, "Forced %N to sell a level of upgrade %s with full refund of the costs. The upgrade level changed from %d to %d and he received %d credits.", iTarget, upgrade[UPGR_name], iOldLevel, GetClientUpgradeLevel(iTarget, iIndex), iUpgradeCosts);
-	ReplyToCommand(client, "SM:RPG sellupgrade: %N now has %s Level %d (previously Level %d) and received %d credits.", iTarget, upgrade[UPGR_name], GetClientUpgradeLevel(iTarget, iIndex), iOldLevel, iUpgradeCosts);
+	LogAction(client, iTarget, "Forced %N to sell a level of upgrade %s with full refund of the costs. The upgrade level changed from %d to %d and he received %d credits.", iTarget, upgrade[UPGR_name], iOldLevel, GetClientPurchasedUpgradeLevel(iTarget, iIndex), iUpgradeCosts);
+	ReplyToCommand(client, "SM:RPG sellupgrade: %N now has %s Level %d (previously Level %d) and received %d credits.", iTarget, upgrade[UPGR_name], GetClientPurchasedUpgradeLevel(iTarget, iIndex), iOldLevel, iUpgradeCosts);
 	
 	return Plugin_Handled;
 }
@@ -698,12 +699,12 @@ public Action:Cmd_SellAll(client, args)
 		if(!IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled])
 			continue;
 		
-		while(GetClientUpgradeLevel(iTarget, i) > 0)
+		while(GetClientPurchasedUpgradeLevel(iTarget, i) > 0)
 		{
 			if(!TakeClientUpgrade(iTarget, i))
 				break;
-			iCreditsReturned += GetUpgradeCost(i, GetClientUpgradeLevel(iTarget, i)+1);
-			SetClientCredits(iTarget, GetClientCredits(iTarget) + GetUpgradeCost(i, GetClientUpgradeLevel(iTarget, i)+1));
+			iCreditsReturned += GetUpgradeCost(i, GetClientPurchasedUpgradeLevel(iTarget, i)+1);
+			SetClientCredits(iTarget, GetClientCredits(iTarget) + GetUpgradeCost(i, GetClientPurchasedUpgradeLevel(iTarget, i)+1));
 		}
 	}
 	
@@ -796,7 +797,7 @@ public Action:Cmd_DBMassSell(client, args)
 		if(!IsClientInGame(i) || !IsClientAuthorized(i))
 			continue;
 		
-		iOldLevel = GetClientUpgradeLevel(i, iIndex);
+		iOldLevel = GetClientPurchasedUpgradeLevel(i, iIndex);
 		if(iOldLevel <= 0)
 			continue;
 		

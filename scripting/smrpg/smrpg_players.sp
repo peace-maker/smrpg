@@ -35,6 +35,7 @@ new bool:g_bFirstLoaded[MAXPLAYERS+1];
 RegisterPlayerNatives()
 {
 	CreateNative("SMRPG_GetClientUpgradeLevel", Native_GetClientUpgradeLevel);
+	CreateNative("SMRPG_GetClientPurchasedUpgradeLevel", Native_GetClientPurchasedUpgradeLevel);
 	CreateNative("SMRPG_ClientBuyUpgrade", Native_ClientBuyUpgrade);
 	CreateNative("SMRPG_ClientSellUpgrade", Native_ClientSellUpgrade);
 	CreateNative("SMRPG_IsUpgradeActiveOnClient", Native_IsUpgradeActiveOnClient);
@@ -171,7 +172,7 @@ SavePlayerUpgradeLevels(client)
 	new upgrade[InternalUpgradeInfo], playerupgrade[PlayerUpgradeInfo];
 	new iAdded;
 	decl String:sQuery[8192];
-	Format(sQuery, sizeof(sQuery), "REPLACE INTO %s (player_id, upgrade_id, level, currentlevel, enabled, visuals, sounds) VALUES ", TBL_PLAYERUPGRADES);
+	Format(sQuery, sizeof(sQuery), "REPLACE INTO %s (player_id, upgrade_id, purchasedlevel, selectedlevel, enabled, visuals, sounds) VALUES ", TBL_PLAYERUPGRADES);
 	for(new i=0;i<iSize;i++)
 	{
 		GetUpgradeByIndex(i, upgrade);
@@ -184,12 +185,13 @@ SavePlayerUpgradeLevels(client)
 		
 		GetPlayerUpgradeInfoByIndex(client, i, playerupgrade);
 		
-		Format(sQuery, sizeof(sQuery), "%s(%d, %d, %d, %d, %d, %d, %d)", sQuery, g_iPlayerInfo[client][PLR_dbId], upgrade[UPGR_databaseId], GetClientUpgradeLevel(client, i), GetClientUpgradeLevel(client, i), playerupgrade[PUI_enabled], playerupgrade[PUI_visuals], playerupgrade[PUI_sounds]);
+		Format(sQuery, sizeof(sQuery), "%s(%d, %d, %d, %d, %d, %d, %d)", sQuery, g_iPlayerInfo[client][PLR_dbId], upgrade[UPGR_databaseId], GetClientPurchasedUpgradeLevel(client, i), GetClientSelectedUpgradeLevel(client, i), playerupgrade[PUI_enabled], playerupgrade[PUI_visuals], playerupgrade[PUI_sounds]);
 		
 		iAdded++;
 	}
 	if(iAdded > 0)
 	{
+		LogMessage("Running query %s", sQuery);
 		SQL_TQuery(g_hDatabase, SQL_DoNothing, sQuery);
 	}
 }
@@ -282,11 +284,25 @@ GetClientByPlayerID(iPlayerId)
 	return -1;
 }
 
-GetClientUpgradeLevel(client, iUpgradeIndex)
+GetClientSelectedUpgradeLevel(client, iUpgradeIndex)
 {
 	new playerupgrade[PlayerUpgradeInfo];
 	GetPlayerUpgradeInfoByIndex(client, iUpgradeIndex, playerupgrade);
 	return playerupgrade[PUI_selectedlevel];
+}
+
+GetClientPurchasedUpgradeLevel(client, iUpgradeIndex)
+{
+	new playerupgrade[PlayerUpgradeInfo];
+	GetPlayerUpgradeInfoByIndex(client, iUpgradeIndex, playerupgrade);
+	return playerupgrade[PUI_purchasedlevel];
+}
+
+bool:IsClientUpgradeEnabled(client, iUpgradeIndex)
+{
+	new playerupgrade[PlayerUpgradeInfo];
+	GetPlayerUpgradeInfoByIndex(client, iUpgradeIndex, playerupgrade);
+	return playerupgrade[PUI_enabled];
 }
 
 InitPlayerNewUpgrade(client)
@@ -304,18 +320,22 @@ InitPlayerNewUpgrade(client)
  * Player upgrade buying/selling
  */
 
-SetClientUpgradeLevel(client, iUpgradeIndex, iLevel)
+SetClientSelectedUpgradeLevel(client, iUpgradeIndex, iLevel)
 {
-	new iOldLevel = GetClientUpgradeLevel(client, iUpgradeIndex);
+	new iPurchased = GetClientPurchasedUpgradeLevel(client, iUpgradeIndex);
+	// Can't select a level he doesn't own yet.
+	if(iPurchased < iLevel)
+		return;
+	
+	new iOldLevel = GetClientSelectedUpgradeLevel(client, iUpgradeIndex);
 	
 	if(iLevel == iOldLevel)
 		return;
 	
 	new playerupgrade[PlayerUpgradeInfo];
 	GetPlayerUpgradeInfoByIndex(client, iUpgradeIndex, playerupgrade);
-	// TODO: Differ for selected and purchased level!
+	// Differ for selected and purchased level!
 	playerupgrade[PUI_selectedlevel] = iLevel;
-	playerupgrade[PUI_purchasedlevel] = iLevel;
 	SavePlayerUpgradeInfo(client, iUpgradeIndex, playerupgrade);
 	
 	new upgrade[InternalUpgradeInfo];
@@ -331,6 +351,20 @@ SetClientUpgradeLevel(client, iUpgradeIndex, iLevel)
 	Call_Finish();
 }
 
+SetClientPurchasedUpgradeLevel(client, iUpgradeIndex, iLevel)
+{
+	new playerupgrade[PlayerUpgradeInfo];
+	GetPlayerUpgradeInfoByIndex(client, iUpgradeIndex, playerupgrade);
+	// Differ for selected and purchased level!
+	playerupgrade[PUI_purchasedlevel] = iLevel;
+	SavePlayerUpgradeInfo(client, iUpgradeIndex, playerupgrade);
+	
+	// Only update the selected level, if it's higher than the new limit
+	new iSelectedLevel = GetClientSelectedUpgradeLevel(client, iUpgradeIndex);
+	if(iSelectedLevel > iLevel)
+		SetClientSelectedUpgradeLevel(client, iUpgradeIndex, iLevel);
+}
+
 bool:GiveClientUpgrade(client, iUpgradeIndex)
 {
 	new upgrade[InternalUpgradeInfo];
@@ -339,7 +373,7 @@ bool:GiveClientUpgrade(client, iUpgradeIndex)
 	if(!IsValidUpgrade(upgrade))
 		return false;
 	
-	new iCurrentLevel = GetClientUpgradeLevel(client, iUpgradeIndex);
+	new iCurrentLevel = GetClientPurchasedUpgradeLevel(client, iUpgradeIndex);
 	
 	if(iCurrentLevel >= upgrade[UPGR_maxLevel])
 		return false;
@@ -360,7 +394,9 @@ bool:GiveClientUpgrade(client, iUpgradeIndex)
 		return false;
 	
 	// Actually update the upgrade level.
-	SetClientUpgradeLevel(client, iUpgradeIndex, iCurrentLevel);
+	SetClientPurchasedUpgradeLevel(client, iUpgradeIndex, iCurrentLevel);
+	// Also have it select the new higher upgrade level.
+	SetClientSelectedUpgradeLevel(client, iUpgradeIndex, iCurrentLevel);
 	
 	return true;
 }
@@ -370,7 +406,7 @@ bool:BuyClientUpgrade(client, iUpgradeIndex)
 	new upgrade[InternalUpgradeInfo];
 	GetUpgradeByIndex(iUpgradeIndex, upgrade);
 	
-	new iCurrentLevel = GetClientUpgradeLevel(client, iUpgradeIndex);
+	new iCurrentLevel = GetClientPurchasedUpgradeLevel(client, iUpgradeIndex);
 	
 	// can't get higher than this.
 	if(iCurrentLevel >= upgrade[UPGR_maxLevel])
@@ -400,7 +436,7 @@ bool:TakeClientUpgrade(client, iUpgradeIndex)
 	if(!IsValidUpgrade(upgrade))
 		return false;
 	
-	new iCurrentLevel = GetClientUpgradeLevel(client, iUpgradeIndex);
+	new iCurrentLevel = GetClientPurchasedUpgradeLevel(client, iUpgradeIndex);
 	
 	// Can't get negative levels
 	if(iCurrentLevel <= 0)
@@ -422,7 +458,7 @@ bool:TakeClientUpgrade(client, iUpgradeIndex)
 		return false;
 	
 	// Actually update the upgrade level.
-	SetClientUpgradeLevel(client, iUpgradeIndex, iCurrentLevel);
+	SetClientPurchasedUpgradeLevel(client, iUpgradeIndex, iCurrentLevel);
 	
 	return true;
 }
@@ -432,7 +468,7 @@ bool:SellClientUpgrade(client, iUpgradeIndex)
 	new upgrade[InternalUpgradeInfo];
 	GetUpgradeByIndex(iUpgradeIndex, upgrade);
 	
-	new iCurrentLevel = GetClientUpgradeLevel(client, iUpgradeIndex);
+	new iCurrentLevel = GetClientPurchasedUpgradeLevel(client, iUpgradeIndex);
 	
 	// can't get negative
 	if(iCurrentLevel <= 0)
@@ -475,7 +511,7 @@ BotPickUpgrade(client)
 			if(!IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled])
 				continue;
 			
-			iCost = GetUpgradeCost(iCurrentIndex, GetClientUpgradeLevel(client, iCurrentIndex)+1);
+			iCost = GetUpgradeCost(iCurrentIndex, GetClientPurchasedUpgradeLevel(client, iCurrentIndex)+1);
 			if(GetClientCredits(client) >= iCost)
 			{
 				BuyClientUpgrade(client, iCurrentIndex);
@@ -498,14 +534,14 @@ CheckItemMaxLevels(client)
 	{
 		GetUpgradeByIndex(i, upgrade);
 		iMaxLevel = upgrade[UPGR_maxLevel];
-		iCurrentLevel = GetClientUpgradeLevel(client, i);
+		iCurrentLevel = GetClientPurchasedUpgradeLevel(client, i);
 		while(iCurrentLevel > iMaxLevel)
 		{
 			/* Give player their credits back */
 			SetClientCredits(client, GetClientCredits(client) + GetUpgradeCost(i, iCurrentLevel--));
 		}
-		if(GetClientUpgradeLevel(client, i) != iCurrentLevel)
-			SetClientUpgradeLevel(client, i, iCurrentLevel);
+		if(GetClientPurchasedUpgradeLevel(client, i) != iCurrentLevel)
+			SetClientPurchasedUpgradeLevel(client, i, iCurrentLevel);
 	}
 }
 
@@ -621,7 +657,7 @@ public SQL_GetPlayerInfo(Handle:owner, Handle:hndl, const String:error[], any:us
 	UpdateClientRank(client);
 	UpdateRankCount();
 	
-	/* Player Items */
+	/* Player Upgrades */
 	decl String:sQuery[128];
 	Format(sQuery, sizeof(sQuery), "SELECT * FROM %s WHERE player_id = %d", TBL_PLAYERUPGRADES, g_iPlayerInfo[client][PLR_dbId]);
 	SQL_TQuery(g_hDatabase, SQL_GetPlayerUpgrades, sQuery, userid);
@@ -629,6 +665,7 @@ public SQL_GetPlayerInfo(Handle:owner, Handle:hndl, const String:error[], any:us
 
 public SQL_GetPlayerUpgrades(Handle:owner, Handle:hndl, const String:error[], any:userid)
 {
+	// player_id, upgrade_id, purchasedlevel, selectedlevel, enabled, visuals, sounds
 	new client = GetClientOfUserId(userid);
 	if(!client)
 		return;
@@ -640,8 +677,6 @@ public SQL_GetPlayerUpgrades(Handle:owner, Handle:hndl, const String:error[], an
 		return;
 	}
 	
-	
-	
 	// Player isn't fully registred?! He might have disconnected while the queries were still running last time?
 	if(SQL_GetRowCount(hndl) == 0)
 	{
@@ -650,7 +685,7 @@ public SQL_GetPlayerUpgrades(Handle:owner, Handle:hndl, const String:error[], an
 		return;
 	}
 	
-	new upgrade[InternalUpgradeInfo];
+	new upgrade[InternalUpgradeInfo], playerupgrade[PlayerUpgradeInfo], iSelectedLevel;
 	while(SQL_MoreRows(hndl))
 	{
 		if(!SQL_FetchRow(hndl))
@@ -660,7 +695,20 @@ public SQL_GetPlayerUpgrades(Handle:owner, Handle:hndl, const String:error[], an
 		if(!GetUpgradeByDatabaseId(SQL_FetchInt(hndl, 1), upgrade))
 			continue;
 		
-		SetClientUpgradeLevel(client, upgrade[UPGR_index], SQL_FetchInt(hndl, 2));
+		SetClientPurchasedUpgradeLevel(client, upgrade[UPGR_index], SQL_FetchInt(hndl, 2));
+		
+		// Make sure the database is sane.. People WILL temper with it manually.
+		iSelectedLevel = SQL_FetchInt(hndl, 3);
+		if(iSelectedLevel > GetClientPurchasedUpgradeLevel(client, upgrade[UPGR_index]))
+			iSelectedLevel = GetClientPurchasedUpgradeLevel(client, upgrade[UPGR_index]);
+		SetClientSelectedUpgradeLevel(client, upgrade[UPGR_index], iSelectedLevel);
+		
+		GetPlayerUpgradeInfoByIndex(client, upgrade[UPGR_index], playerupgrade);
+		playerupgrade[PUI_enabled] = SQL_FetchInt(hndl, 4)==1;
+		playerupgrade[PUI_visuals] = SQL_FetchInt(hndl, 5)==1;
+		playerupgrade[PUI_sounds] = SQL_FetchInt(hndl, 6)==1;
+		
+		SavePlayerUpgradeInfo(client, upgrade[UPGR_index], playerupgrade);
 	}
 	
 	g_iPlayerInfo[client][PLR_triedToLoadData] = true;
@@ -721,7 +769,36 @@ public Native_GetClientUpgradeLevel(Handle:plugin, numParams)
 		return 0;
 	}
 	
-	return GetClientUpgradeLevel(client, upgrade[UPGR_index]);
+	// Return 0, if the client has it disabled.
+	if(!IsClientUpgradeEnabled(client, upgrade[UPGR_index]))
+		return 0;
+	
+	return GetClientSelectedUpgradeLevel(client, upgrade[UPGR_index]);
+}
+
+// native SMRPG_GetClientPurchasedUpgradeLevel(client, const String:shortname[]);
+public Native_GetClientPurchasedUpgradeLevel(Handle:plugin, numParams)
+{
+	new client = GetNativeCell(1);
+	if(client < 0 || client > MaxClients)
+	{
+		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
+		return 0;
+	}
+	
+	new len;
+	GetNativeStringLength(2, len);
+	new String:sShortName[len+1];
+	GetNativeString(2, sShortName, len+1);
+	
+	new upgrade[InternalUpgradeInfo];
+	if(!GetUpgradeByShortname(sShortName, upgrade) || !IsValidUpgrade(upgrade))
+	{
+		ThrowNativeError(SP_ERROR_NATIVE, "No upgrade named \"%s\" loaded.", sShortName);
+		return 0;
+	}
+	
+	return GetClientPurchasedUpgradeLevel(client, upgrade[UPGR_index]);
 }
 
 // native bool:SMRPG_ClientBuyUpgrade(client, const String:shortname[]);

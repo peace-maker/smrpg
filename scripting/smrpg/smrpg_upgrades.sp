@@ -528,7 +528,7 @@ public Native_RunUpgradeEffect(Handle:plugin, numParams)
 	if(!HasAccessToUpgrade(client, upgrade))
 	{
 		// Might still allow them to use the effects of the upgrade, if they already got a level for it.
-		new iLevel = GetClientUpgradeLevel(client, upgrade[UPGR_index]);
+		new iLevel = GetClientPurchasedUpgradeLevel(client, upgrade[UPGR_index]);
 		if(iLevel <= 0 || !GetConVarBool(g_hCVAllowPresentUpgradeUsage))
 			return false;
 	}
@@ -807,9 +807,9 @@ public ConVar_UpgradeMaxLevelChanged(Handle:convar, const String:oldValue[], con
 		if(!IsClientInGame(i))
 			continue;
 		
-		while(GetClientUpgradeLevel(i, upgrade[UPGR_index]) > iNewMaxLevel)
+		while(GetClientPurchasedUpgradeLevel(i, upgrade[UPGR_index]) > iNewMaxLevel)
 		{
-			SetClientCredits(i, GetClientCredits(i) + GetUpgradeCost(upgrade[UPGR_index], GetClientUpgradeLevel(i, upgrade[UPGR_index])));
+			SetClientCredits(i, GetClientCredits(i) + GetUpgradeCost(upgrade[UPGR_index], GetClientPurchasedUpgradeLevel(i, upgrade[UPGR_index])));
 			TakeClientUpgrade(i, upgrade[UPGR_index]);
 		}
 	}

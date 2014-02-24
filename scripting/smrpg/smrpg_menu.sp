@@ -181,7 +181,7 @@ public TopMenu_HandleUpgrades(Handle:topmenu, TopMenuAction:action, TopMenuObjec
 			decl String:sTranslatedName[MAX_UPGRADE_NAME_LENGTH];
 			GetUpgradeTranslatedName(param, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
 			
-			new iCurrentLevel = GetClientUpgradeLevel(param, upgrade[UPGR_index]);
+			new iCurrentLevel = GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index]);
 			
 			if(iCurrentLevel >= upgrade[UPGR_maxLevel])
 			{
@@ -206,7 +206,7 @@ public TopMenu_HandleUpgrades(Handle:topmenu, TopMenuAction:action, TopMenuObjec
 			}
 			
 			// Don't let players buy upgrades they already maxed out.
-			if(GetClientUpgradeLevel(param, upgrade[UPGR_index]) >= upgrade[UPGR_maxLevel])
+			if(GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index]) >= upgrade[UPGR_maxLevel])
 				buffer[0] = ITEMDRAW_DISABLED;
 		}
 		case TopMenuAction_SelectOption:
@@ -224,7 +224,7 @@ public TopMenu_HandleUpgrades(Handle:topmenu, TopMenuAction:action, TopMenuObjec
 			}
 			
 			new iItemIndex = upgrade[UPGR_index];
-			new iItemLevel = GetClientUpgradeLevel(param, iItemIndex);
+			new iItemLevel = GetClientPurchasedUpgradeLevel(param, iItemIndex);
 			new iCost = GetUpgradeCost(iItemIndex, iItemLevel+1);
 			
 			new String:sTranslatedName[MAX_UPGRADE_NAME_LENGTH];
@@ -274,7 +274,7 @@ public TopMenu_HandleSell(Handle:topmenu, TopMenuAction:action, TopMenuObject:ob
 			decl String:sTranslatedName[MAX_UPGRADE_NAME_LENGTH];
 			GetUpgradeTranslatedName(param, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
 			
-			Format(buffer, maxlength, "%s Lvl %d [%T: %d]", sTranslatedName, GetClientUpgradeLevel(param, upgrade[UPGR_index]), "Sale", param, GetUpgradeSale(upgrade[UPGR_index], GetClientUpgradeLevel(param, upgrade[UPGR_index])));
+			Format(buffer, maxlength, "%s Lvl %d [%T: %d]", sTranslatedName, GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index]), "Sale", param, GetUpgradeSale(upgrade[UPGR_index], GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index])));
 		}
 		case TopMenuAction_DrawOption:
 		{
@@ -289,7 +289,7 @@ public TopMenu_HandleSell(Handle:topmenu, TopMenuAction:action, TopMenuObject:ob
 				return;
 			}
 			
-			new iCurrentLevel = GetClientUpgradeLevel(param, upgrade[UPGR_index]);
+			new iCurrentLevel = GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index]);
 			
 			// Allow clients to sell upgrades they no longer have access to, but don't show them, if they never bought it.
 			if(!HasAccessToUpgrade(param, upgrade) && iCurrentLevel <= 0)
@@ -348,7 +348,7 @@ public Menu_ConfirmSell(Handle:menu, MenuAction:action, param1, param2)
 		
 		new String:sTranslatedName[MAX_UPGRADE_NAME_LENGTH];
 		GetUpgradeTranslatedName(param1, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
-		Client_PrintToChat(param1, false, "%t", "Upgrade sold", sTranslatedName, GetClientUpgradeLevel(param1, iItemIndex)+1);
+		Client_PrintToChat(param1, false, "%t", "Upgrade sold", sTranslatedName, GetClientPurchasedUpgradeLevel(param1, iItemIndex)+1);
 		
 		DisplayTopMenu(g_hRPGTopMenu, param1, TopMenuPosition_LastCategory);
 	}
@@ -542,7 +542,7 @@ public TopMenu_HandleHelp(Handle:topmenu, TopMenuAction:action, TopMenuObject:ob
 				return;
 			}
 			
-			new iCurrentLevel = GetClientUpgradeLevel(param, upgrade[UPGR_index]);
+			new iCurrentLevel = GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index]);
 			
 			// Allow clients to read help about upgrades they no longer have access to, but don't show them, if they never bought it.
 			if(!HasAccessToUpgrade(param, upgrade) && iCurrentLevel <= 0)
@@ -588,7 +588,7 @@ DisplayOtherUpgradesMenu(client, targetClient)
 	new String:sTranslatedName[MAX_UPGRADE_NAME_LENGTH], String:sLine[128], String:sIndex[8];
 	for(new i=0;i<iSize;i++)
 	{
-		iCurrentLevel = GetClientUpgradeLevel(targetClient, i);
+		iCurrentLevel = GetClientPurchasedUpgradeLevel(targetClient, i);
 		GetUpgradeByIndex(i, upgrade);
 		
 		// Don't show disabled items in the menu.

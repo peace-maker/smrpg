@@ -293,14 +293,28 @@ native bool:SMRPG_IsUpgradeActiveOnClient(client, const String:shortname[]);
 native bool:SMRPG_CheckUpgradeAccess(client, const String:shortname[]);
 
 /**
- * Get the level of an upgrade of a client.
+ * Get the selected level of an upgrade of a client.
+ * Players can choose to use a lower level of the upgrade than they've purchased.
+ * This native returns the selected, active level of the upgrade. If you want to know the maximum purchased level, use SMRPG_GetClientPurchasedUpgradeLevel.
+ *
+ * @param client         The client which upgrade level you want to know.
+ * @param shortname      The upgrade shortname
+ * @return The level of the upgrade the client has selected. 0 if he didn't buy it yet or has it disabled.
+ * @error Invalid client index, unknown upgrade shortname.
+ */
+native SMRPG_GetClientUpgradeLevel(client, const String:shortname[]);
+
+/**
+ * Get the maximum purchased level of an upgrade of a client.
+ * Players can choose to use a lower level of the upgrade than they've purchased.
+ * This native returns the maximum purchased level of the upgrade. If you want to know the actual selected level, use SMRPG_GetClientUpgradeLevel.
  *
  * @param client         The client which upgrade level you want to know.
  * @param shortname      The upgrade shortname
  * @return The level of the upgrade the client has purchased. 0 if he didn't buy it yet.
  * @error Invalid client index, unknown upgrade shortname.
  */
-native SMRPG_GetClientUpgradeLevel(client, const String:shortname[]);
+native SMRPG_GetClientPurchasedUpgradeLevel(client, const String:shortname[]);
 
 /**
  * Check if a client has the reached the maximum level of an upgrade.
@@ -314,7 +328,7 @@ stock bool:SMRPG_IsClientUpgradeMaxed(client, const String:shortname[])
   new upgrade[UpgradeInfo];
   SMRPG_GetUpgradeInfo(shortname, upgrade);
   
-  new iCurrentLevel = SMRPG_GetClientUpgradeLevel(client, shortname);
+  new iCurrentLevel = SMRPG_GetClientPurchasedUpgradeLevel(client, shortname);
   if(iCurrentLevel >= upgrade[UI_maxLevel])
     return true;
   return false;
