@@ -422,7 +422,13 @@ public TopMenu_HandleUpgradeSettings(Handle:topmenu, TopMenuAction:action, TopMe
 			if(!IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled])
 				return;
 			
-			GetUpgradeTranslatedName(param, upgrade[UPGR_index], buffer, maxlength);
+			new iPurchasedLevel = GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index]);
+			new iSelectedLevel = GetClientSelectedUpgradeLevel(param, upgrade[UPGR_index]);
+			decl String:sBuffer[128];
+			GetUpgradeTranslatedName(param, upgrade[UPGR_index], sBuffer, sizeof(sBuffer));
+			
+			Format(sBuffer, sizeof(sBuffer), "%s Lvl %d/%d [%T]", sBuffer, iSelectedLevel, iPurchasedLevel, IsClientUpgradeEnabled(param, upgrade[UPGR_index])?"On":"Off", param);
+			strcopy(buffer, maxlength, sBuffer);
 		}
 		case TopMenuAction_DrawOption:
 		{
@@ -439,7 +445,7 @@ public TopMenu_HandleUpgradeSettings(Handle:topmenu, TopMenuAction:action, TopMe
 			
 			new iCurrentLevel = GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index]);
 			
-			// Allow clients to read help about upgrades they no longer have access to, but don't show them, if they never bought it.
+			// Allow clients to view upgrades they no longer have access to, but don't show them, if they never bought it.
 			if(!HasAccessToUpgrade(param, upgrade) && iCurrentLevel <= 0)
 			{
 				buffer[0] = ITEMDRAW_IGNORE;
