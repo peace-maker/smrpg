@@ -426,8 +426,10 @@ public TopMenu_HandleUpgradeSettings(Handle:topmenu, TopMenuAction:action, TopMe
 			new iSelectedLevel = GetClientSelectedUpgradeLevel(param, upgrade[UPGR_index]);
 			decl String:sBuffer[128];
 			GetUpgradeTranslatedName(param, upgrade[UPGR_index], sBuffer, sizeof(sBuffer));
+			if(!GetConVarBool(g_hCVDisableLevelSelection))
+				Format(sBuffer, sizeof(sBuffer), "%s Lvl %d/%d", sBuffer, iSelectedLevel, iPurchasedLevel);
 			
-			Format(sBuffer, sizeof(sBuffer), "%s Lvl %d/%d [%T]", sBuffer, iSelectedLevel, iPurchasedLevel, IsClientUpgradeEnabled(param, upgrade[UPGR_index])?"On":"Off", param);
+			Format(sBuffer, sizeof(sBuffer), "%s [%T]", sBuffer, IsClientUpgradeEnabled(param, upgrade[UPGR_index])?"On":"Off", param);
 			strcopy(buffer, maxlength, sBuffer);
 		}
 		case TopMenuAction_DrawOption:
@@ -486,12 +488,16 @@ DisplayUpgradeSettingsMenu(client, iUpgradeIndex)
 	decl String:sBuffer[64];
 	Format(sBuffer, sizeof(sBuffer), "%T: %T", "Enabled", client, playerupgrade[PUI_enabled]?"On":"Off", client);
 	AddMenuItem(hMenu, "enable", sBuffer);
-	Format(sBuffer, sizeof(sBuffer), "%T: %d/%d", "Selected level", client, playerupgrade[PUI_selectedlevel], playerupgrade[PUI_purchasedlevel]);
-	AddMenuItem(hMenu, "", sBuffer, ITEMDRAW_DISABLED);
-	Format(sBuffer, sizeof(sBuffer), "%T", "Increase selected level", client);
-	AddMenuItem(hMenu, "incselect", sBuffer, playerupgrade[PUI_selectedlevel]<playerupgrade[PUI_purchasedlevel]?ITEMDRAW_DEFAULT:ITEMDRAW_DISABLED);
-	Format(sBuffer, sizeof(sBuffer), "%T", "Decrease selected level", client);
-	AddMenuItem(hMenu, "decselect", sBuffer, playerupgrade[PUI_selectedlevel]>0?ITEMDRAW_DEFAULT:ITEMDRAW_DISABLED);
+	
+	if(!GetConVarBool(g_hCVDisableLevelSelection))
+	{
+		Format(sBuffer, sizeof(sBuffer), "%T: %d/%d", "Selected level", client, playerupgrade[PUI_selectedlevel], playerupgrade[PUI_purchasedlevel]);
+		AddMenuItem(hMenu, "", sBuffer, ITEMDRAW_DISABLED);
+		Format(sBuffer, sizeof(sBuffer), "%T", "Increase selected level", client);
+		AddMenuItem(hMenu, "incselect", sBuffer, playerupgrade[PUI_selectedlevel]<playerupgrade[PUI_purchasedlevel]?ITEMDRAW_DEFAULT:ITEMDRAW_DISABLED);
+		Format(sBuffer, sizeof(sBuffer), "%T", "Decrease selected level", client);
+		AddMenuItem(hMenu, "decselect", sBuffer, playerupgrade[PUI_selectedlevel]>0?ITEMDRAW_DEFAULT:ITEMDRAW_DISABLED);
+	}
 	
 	new upgrade[InternalUpgradeInfo];
 	GetUpgradeByIndex(iUpgradeIndex, upgrade);
@@ -534,12 +540,12 @@ public Menu_HandleUpgradeSettings(Handle:menu, MenuAction:action, param1, param2
 		}
 		else if(StrEqual(sInfo, "incselect"))
 		{
-			if(playerupgrade[PUI_selectedlevel] < playerupgrade[PUI_purchasedlevel])
+			if(playerupgrade[PUI_selectedlevel] < playerupgrade[PUI_purchasedlevel] && !GetConVarBool(g_hCVDisableLevelSelection))
 				playerupgrade[PUI_selectedlevel]++;
 		}
 		else if(StrEqual(sInfo, "decselect"))
 		{
-			if(playerupgrade[PUI_selectedlevel] > 0)
+			if(playerupgrade[PUI_selectedlevel] > 0 && !GetConVarBool(g_hCVDisableLevelSelection))
 				playerupgrade[PUI_selectedlevel]--;
 		}
 		else if(StrEqual(sInfo, "visuals"))
