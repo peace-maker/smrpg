@@ -110,6 +110,13 @@
 		"en"			"Rank: {1}/{2}"
 	}
 	
+	"Last reset"
+	{
+		// 1: date and time representation of the last time the stats were reset to 0 for this player
+		"#format"	"{1:s}"
+		"en"			"Last reset: {1}"
+	}
+	
 	"Cost"
 	{
 		"en"			"Cost"

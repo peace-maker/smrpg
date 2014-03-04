@@ -87,6 +87,7 @@ public Action:Cmd_ResetStats(client, args)
 		return Plugin_Handled;
 	
 	ResetStats(iTarget);
+	SetPlayerLastReset(iTarget, GetTime());
 	
 	LogAction(client, iTarget, "Permanently reset all stats of player %N.", iTarget);
 	ReplyToCommand(client, "SM:RPG resetstats: %N's stats have been permanently reset", iTarget);

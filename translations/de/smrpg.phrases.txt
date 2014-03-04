@@ -100,6 +100,12 @@
 		"de"			"Rank: {1}/{2}"
 	}
 	
+	"Last reset"
+	{
+		// 1: date and time representation of the last time the stats were reset to 0 for this player
+		"de"			"Letzter Neuanfang: {1}"
+	}
+	
 	"Cost"
 	{
 		"de"			"Kosten"

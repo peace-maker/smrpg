@@ -26,7 +26,8 @@ enum PlayerInfo
 	PLR_credits,
 	PLR_dbId,
 	bool:PLR_triedToLoadData,
-	Handle:PLR_upgrades
+	Handle:PLR_upgrades,
+	PLR_lastReset
 }
 
 new g_iPlayerInfo[MAXPLAYERS+1][PlayerInfo];
@@ -81,6 +82,7 @@ InitPlayer(client)
 	g_iPlayerInfo[client][PLR_credits] = GetConVarInt(g_hCVCreditsStart);
 	g_iPlayerInfo[client][PLR_dbId] = -1;
 	g_iPlayerInfo[client][PLR_triedToLoadData] = false;
+	g_iPlayerInfo[client][PLR_lastReset] = GetTime();
 	
 	g_iPlayerInfo[client][PLR_upgrades] = CreateArray(_:PlayerUpgradeInfo);
 	new iNumUpgrades = GetUpgradeCount();
@@ -107,14 +109,14 @@ AddPlayer(client, const String:auth[])
 	
 	if(GetConVarBool(g_hCVSteamIDSave))
 	{
-		Format(sQuery, sizeof(sQuery), "SELECT player_id, level, experience, credits FROM %s WHERE steamid = '%s' ORDER BY level DESC LIMIT 1", TBL_PLAYERS, auth);
+		Format(sQuery, sizeof(sQuery), "SELECT player_id, level, experience, credits, lastreset FROM %s WHERE steamid = '%s' ORDER BY level DESC LIMIT 1", TBL_PLAYERS, auth);
 	}
 	else
 	{
 		decl String:sName[MAX_NAME_LENGTH], String:sNameEscaped[MAX_NAME_LENGTH*2+1];
 		GetClientName(client, sName, sizeof(sName));
 		SQL_EscapeString(g_hDatabase, sName, sNameEscaped, sizeof(sNameEscaped));
-		Format(sQuery, sizeof(sQuery), "SELECT player_id, level, experience, credits FROM %s WHERE name = '%s' AND steamid = '%s' ORDER BY level DESC LIMIT 1", TBL_PLAYERS, sNameEscaped, auth);
+		Format(sQuery, sizeof(sQuery), "SELECT player_id, level, experience, credits, lastreset FROM %s WHERE name = '%s' AND steamid = '%s' ORDER BY level DESC LIMIT 1", TBL_PLAYERS, sNameEscaped, auth);
 	}
 	
 	SQL_TQuery(g_hDatabase, SQL_GetPlayerInfo, sQuery, GetClientUserId(client));
@@ -159,7 +161,7 @@ SaveData(client)
 	}
 	
 	decl String:sQuery[512];
-	Format(sQuery, sizeof(sQuery), "UPDATE %s SET level = '%d', experience = '%d', credits = '%d', lastseen = '%d' WHERE player_id = '%d'", TBL_PLAYERS, GetClientLevel(client), GetClientExperience(client), GetClientCredits(client), GetTime(), g_iPlayerInfo[client][PLR_dbId]);
+	Format(sQuery, sizeof(sQuery), "UPDATE %s SET level = '%d', experience = '%d', credits = '%d', lastseen = '%d', lastreset = '%d' WHERE player_id = '%d'", TBL_PLAYERS, GetClientLevel(client), GetClientExperience(client), GetClientCredits(client), GetTime(), g_iPlayerInfo[client][PLR_lastReset], g_iPlayerInfo[client][PLR_dbId]);
 	SQL_TQuery(g_hDatabase, SQL_DoNothing, sQuery);
 	
 	// Save upgrade levels
@@ -244,6 +246,17 @@ RemovePlayer(client)
 	ClearHandle(g_iPlayerInfo[client][PLR_upgrades]);
 	g_iPlayerInfo[client][PLR_dbId] = -1;
 	g_iPlayerInfo[client][PLR_triedToLoadData] = false;
+	g_iPlayerInfo[client][PLR_lastReset] = 0;
+}
+
+GetPlayerLastReset(client)
+{
+	return g_iPlayerInfo[client][PLR_lastReset];
+}
+
+SetPlayerLastReset(client, time)
+{
+	g_iPlayerInfo[client][PLR_lastReset] = time;
 }
 
 GetPlayerUpgradeInfoByIndex(client, index, playerupgrade[PlayerUpgradeInfo])
@@ -653,6 +666,7 @@ public SQL_GetPlayerInfo(Handle:owner, Handle:hndl, const String:error[], any:us
 	g_iPlayerInfo[client][PLR_level] = SQL_FetchInt(hndl, 1);
 	g_iPlayerInfo[client][PLR_experience] = SQL_FetchInt(hndl, 2);
 	g_iPlayerInfo[client][PLR_credits] = SQL_FetchInt(hndl, 3);
+	g_iPlayerInfo[client][PLR_lastReset] = SQL_FetchInt(hndl, 4);
 	
 	UpdateClientRank(client);
 	UpdateRankCount();

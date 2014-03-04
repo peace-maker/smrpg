@@ -131,6 +131,9 @@ ShowPlayerDetailMenu(client)
 	AddMenuItem(hMenu, "", sBuffer, ITEMDRAW_DISABLED);
 	Format(sBuffer, sizeof(sBuffer), "%T", "Rank", client, GetClientRank(iTarget), GetRankCount());
 	AddMenuItem(hMenu, "", sBuffer, ITEMDRAW_DISABLED);
+	FormatTime(sBuffer, sizeof(sBuffer), "%c", GetPlayerLastReset(iTarget));
+	Format(sBuffer, sizeof(sBuffer), "%T", "Last reset", client, sBuffer);
+	AddMenuItem(hMenu, "", sBuffer, ITEMDRAW_DISABLED);
 	
 	DisplayMenu(hMenu, client, MENU_TIME_FOREVER);
 }
@@ -197,6 +200,7 @@ public Menu_HandlePlayerResetConfirm(Handle:menu, MenuAction:action, param1, par
 		}
 		
 		ResetStats(g_iCurrentMenuTarget[param1]);
+		SetPlayerLastReset(g_iCurrentMenuTarget[param1], GetTime());
 		LogAction(param1, g_iCurrentMenuTarget[param1], "Permanently reset all stats of player %N.", g_iCurrentMenuTarget[param1]);
 		Client_PrintToChat(param1, false, "SM:RPG resetstats: %N's stats have been permanently reset", g_iCurrentMenuTarget[param1]);
 		ShowPlayerDetailMenu(param1);
