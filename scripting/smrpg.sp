@@ -244,6 +244,7 @@ public OnPluginEnd()
 		SMRPG_UnregisterCommand("rpgrank");
 		SMRPG_UnregisterCommand("rpginfo");
 		SMRPG_UnregisterCommand("rpgtop10");
+		SMRPG_UnregisterCommand("rpgnext");
 		SMRPG_UnregisterCommand("rpghelp");
 	}
 }
@@ -273,6 +274,7 @@ public OnLibraryAdded(const String:name[])
 		SMRPG_RegisterCommand("rpgrank", CommandList_DefaultTranslations);
 		SMRPG_RegisterCommand("rpginfo", CommandList_DefaultTranslations);
 		SMRPG_RegisterCommand("rpgtop10", CommandList_DefaultTranslations);
+		SMRPG_RegisterCommand("rpgnext", CommandList_DefaultTranslations);
 		SMRPG_RegisterCommand("rpghelp", CommandList_DefaultTranslations);
 	}
 	else if(StrEqual(name, "clientprefs"))
@@ -598,6 +600,18 @@ public Action:CommandList_DefaultTranslations(client, const String:command[], Co
 				Format(translation, maxlen, "%T", "rpgtop10 desc", client);
 			case CommandTranslationType_Advert:
 				Format(translation, maxlen, "%T", "rpgtop10 advert", client);
+		}
+	}
+	else if(StrEqual(command, "rpgnext"))
+	{
+		switch(type)
+		{
+			case CommandTranslationType_ShortDescription:
+				Format(translation, maxlen, "%T", "rpgnext short desc", client);
+			case CommandTranslationType_Description:
+				Format(translation, maxlen, "%T", "rpgnext desc", client);
+			case CommandTranslationType_Advert:
+				Format(translation, maxlen, "%T", "rpgnext advert", client);
 		}
 	}
 	else if(StrEqual(command, "rpghelp"))

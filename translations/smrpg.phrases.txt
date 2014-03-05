@@ -273,6 +273,21 @@
 		"en"			"Type {N}rpgtop10{G} to view the top 10 ranked RPG players on this server."
 	}
 	
+	"rpgtop10 short desc"
+	{
+		"en"			"Show the next ranked players before you"
+	}
+	
+	"rpgtop10 desc"
+	{
+		"en"			"Show a list of players which are right before you in the ranking."
+	}
+	
+	"rpgtop10 advert"
+	{
+		"en"			"Type {N}rpgnext{G} to view a list of players, which are right before you in the ranking."
+	}
+	
 	"rpghelp short desc"
 	{
 		"en"			"Show help about upgrades"
