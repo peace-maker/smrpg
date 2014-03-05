@@ -48,6 +48,7 @@ RegisterPlayerNatives()
 	CreateNative("SMRPG_SetClientCredits", Native_SetClientCredits);
 	CreateNative("SMRPG_GetClientExperience", Native_GetClientExperience);
 	CreateNative("SMRPG_SetClientExperience", Native_SetClientExperience);
+	CreateNative("SMRPG_ResetClientStats", Native_ResetClientStats);
 	
 	CreateNative("SMRPG_ClientWantsCosmetics", Native_ClientWantsCosmetics);
 }
@@ -1022,6 +1023,20 @@ public Native_SetClientExperience(Handle:plugin, numParams)
 	new iExperience = GetNativeCell(2);
 	
 	return SetClientExperience(client, iExperience);
+}
+
+// native SMRPG_ResetClientStats(client);
+public Native_ResetClientStats(Handle:plugin, numParams)
+{
+	new client = GetNativeCell(1);
+	if(client < 0 || client > MaxClients)
+	{
+		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
+		return;
+	}
+	
+	ResetStats(client);
+	SetPlayerLastReset(client, GetTime());
 }
 
 // native bool:SMRPG_ClientWantsCosmetics(client, const String:shortname[], SMRPG_FX:effect);

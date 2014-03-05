@@ -65,6 +65,16 @@ native SMRPG_GetClientExperience(client);
 native bool:SMRPG_SetClientExperience(client, exp);
 
 /**
+ * Resets a clients complete rpg stats including all bought upgrades.
+ * CANNOT BE UNDONE!
+ *
+ * @param client				The client index
+ * @noreturn
+ * @error Invalid client index
+ */
+native SMRPG_ResetClientStats(client);
+
+/**
  * Adds experience to a client.
  * If he gets enough experience to level up, he levels up.
  *
