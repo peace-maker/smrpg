@@ -66,6 +66,11 @@
 		"en"			"Top 10 SM:RPG Players"
 	}
 	
+	"Next ranked players"
+	{
+		"en"			"Next ranked players"
+	}
+	
 	"Bot reached maxlevel"
 	{
 		// 1: Name of the bot

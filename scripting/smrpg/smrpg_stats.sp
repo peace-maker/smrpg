@@ -340,10 +340,52 @@ public SQL_GetTop10(Handle:owner, Handle:hndl, const String:error[], any:userid)
 	// Let the panel close on any number
 	SetPanelKeys(hPanel, 255);
 	
-	SendPanelToClient(hPanel, client, Panel_HandleTop10, MENU_TIME_FOREVER);
+	SendPanelToClient(hPanel, client, Panel_DoNothing, MENU_TIME_FOREVER);
 	CloseHandle(hPanel);
 }
 
-public Panel_HandleTop10(Handle:menu, MenuAction:action, param1, param2)
+public Panel_DoNothing(Handle:menu, MenuAction:action, param1, param2)
 {
+}
+
+DisplayNextPlayersInRanking(client)
+{
+	decl String:sQuery[128];
+	Format(sQuery, sizeof(sQuery), "SELECT name, level, experience, credits, (SELECT COUNT(*) FROM %s ps WHERE p.level < ps.level OR (p.level = ps.level AND p.experience < ps.experience))+1 AS rank FROM %s p WHERE level >= %d OR (level = %d AND experience >= %d) ORDER BY level ASC, experience ASC LIMIT 10", TBL_PLAYERS, TBL_PLAYERS, GetClientLevel(client), GetClientLevel(client), GetClientExperience(client));
+	SQL_TQuery(g_hDatabase, SQL_GetNext10, sQuery, GetClientUserId(client));
+}
+
+public SQL_GetNext10(Handle:owner, Handle:hndl, const String:error[], any:userid)
+{
+	new client = GetClientOfUserId(userid);
+	if(!client)
+		return;
+	
+	if(hndl == INVALID_HANDLE || strlen(error) > 0)
+	{
+		LogError("Unable to get the next 10 players in front of the current rank of a player (%s)", error);
+		return;
+	}
+	
+	decl String:sBuffer[128];
+	Format(sBuffer, sizeof(sBuffer), "%T\n-----\n", "Next ranked players", client);
+	
+	new Handle:hPanel = CreatePanel();
+	SetPanelTitle(hPanel, sBuffer);
+	
+	while(SQL_MoreRows(hndl))
+	{
+		if(!SQL_FetchRow(hndl))
+			continue;
+		
+		SQL_FetchString(hndl, 0, sBuffer, sizeof(sBuffer));
+		Format(sBuffer, sizeof(sBuffer), "%d. %s Lvl: %d Exp: %d Cr: %d", SQL_FetchInt(hndl, 4), sBuffer, SQL_FetchInt(hndl, 1), SQL_FetchInt(hndl, 2), SQL_FetchInt(hndl, 3));
+		DrawPanelText(hPanel, sBuffer);
+	}
+	
+	// Let the panel close on any number
+	SetPanelKeys(hPanel, 255);
+	
+	SendPanelToClient(hPanel, client, Panel_DoNothing, MENU_TIME_FOREVER);
+	CloseHandle(hPanel);
 }

@@ -144,6 +144,7 @@ public OnPluginStart()
 	RegConsoleCmd("rpgrank", Cmd_RPGRank, "Shows your rank or the rank of the target person. rpgrank [name|steamid|#userid]");
 	RegConsoleCmd("rpginfo", Cmd_RPGInfo, "Shows the purchased upgrades of the target person. rpginfo <name|steamid|#userid>");
 	RegConsoleCmd("rpgtop10", Cmd_RPGTop10, "Show the SM:RPG top 10");
+	RegConsoleCmd("rpgnext", Cmd_RPGNext, "Show the next few ranked players before you");
 	RegConsoleCmd("rpghelp", Cmd_RPGHelp, "Show the SM:RPG help menu");
 	
 	RegisterAdminCommands();
@@ -403,6 +404,8 @@ public Event_OnPlayerSay(Handle:event, const String:error[], bool:dontBroadcast)
 	}
 	else if(StrEqual(sText, "rpgtop10", false))
 		DisplayTop10Menu(client);
+	else if(StrEqual(sText, "rpgnext", false))
+		DisplayNextPlayersInRanking(client);
 	else if(StrEqual(sText, "rpghelp", false))
 		DisplayHelpMenu(client);
 }
@@ -488,6 +491,19 @@ public Action:Cmd_RPGTop10(client, args)
 	}
 	
 	DisplayTop10Menu(client);
+	
+	return Plugin_Handled;
+}
+
+public Action:Cmd_RPGNext(client, args)
+{
+	if(!client)
+	{
+		ReplyToCommand(client, "SM:RPG: This command is ingame only.");
+		return Plugin_Handled;
+	}
+	
+	DisplayNextPlayersInRanking(client);
 	
 	return Plugin_Handled;
 }
