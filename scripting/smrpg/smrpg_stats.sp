@@ -233,24 +233,24 @@ DisplaySessionStatsMenu(client)
 	Format(sBuffer, sizeof(sBuffer), "%T", "Stats", client);
 	DrawPanelItem(hPanel, sBuffer);
 	
-	Format(sBuffer, sizeof(sBuffer), "%T", "Level", client, GetClientLevel(client));
+	Format(sBuffer, sizeof(sBuffer), "  %T", "Level", client, GetClientLevel(client));
 	DrawPanelText(hPanel, sBuffer);
-	Format(sBuffer, sizeof(sBuffer), "%T", "Experience short", client, GetClientExperience(client), Stats_LvlToExp(GetClientLevel(client)));
+	Format(sBuffer, sizeof(sBuffer), "  %T", "Experience short", client, GetClientExperience(client), Stats_LvlToExp(GetClientLevel(client)));
 	DrawPanelText(hPanel, sBuffer);
-	Format(sBuffer, sizeof(sBuffer), "%T", "Credits", client, GetClientCredits(client));
+	Format(sBuffer, sizeof(sBuffer), "  %T", "Credits", client, GetClientCredits(client));
 	DrawPanelText(hPanel, sBuffer);
-	Format(sBuffer, sizeof(sBuffer), "%T", "Rank", client, GetClientRank(client), GetRankCount());
+	Format(sBuffer, sizeof(sBuffer), "  %T", "Rank", client, GetClientRank(client), GetRankCount());
 	DrawPanelText(hPanel, sBuffer);
 	
 	Format(sBuffer, sizeof(sBuffer), "%T", "Session", client);
 	DrawPanelItem(hPanel, sBuffer);
 	
 	SecondsToString(sBuffer, sizeof(sBuffer), GetTime()-g_iPlayerSessionStartStats[client][SS_JoinTime], false);
-	Format(sBuffer, sizeof(sBuffer), "%T", "Playtime", client, sBuffer);
+	Format(sBuffer, sizeof(sBuffer), "  %T", "Playtime", client, sBuffer);
 	DrawPanelText(hPanel, sBuffer);
 	
 	new iChangedLevels = GetClientLevel(client) - g_iPlayerSessionStartStats[client][SS_JoinLevel];
-	Format(sBuffer, sizeof(sBuffer), "%T: %s%d", "Changed level", client, iChangedLevels>0?"+":"", iChangedLevels);
+	Format(sBuffer, sizeof(sBuffer), "  %T: %s%d", "Changed level", client, iChangedLevels>0?"+":"", iChangedLevels);
 	DrawPanelText(hPanel, sBuffer);
 	
 	// Need to calculate the total earned experience.
@@ -260,17 +260,17 @@ DisplaySessionStatsMenu(client)
 		iEarnedExperience += Stats_LvlToExp(g_iPlayerSessionStartStats[client][SS_JoinLevel]+i);
 	}
 	
-	Format(sBuffer, sizeof(sBuffer), "%T: %s%d", "Changed experience", client, iEarnedExperience>0?"+":"", iEarnedExperience);
+	Format(sBuffer, sizeof(sBuffer), "  %T: %s%d", "Changed experience", client, iEarnedExperience>0?"+":"", iEarnedExperience);
 	DrawPanelText(hPanel, sBuffer);
 	
 	new iBuffer = GetClientCredits(client) - g_iPlayerSessionStartStats[client][SS_JoinCredits];
-	Format(sBuffer, sizeof(sBuffer), "%T: %s%d", "Changed credits", client, iBuffer>0?"+":"", iBuffer);
+	Format(sBuffer, sizeof(sBuffer), "  %T: %s%d", "Changed credits", client, iBuffer>0?"+":"", iBuffer);
 	DrawPanelText(hPanel, sBuffer);
 	
 	if(g_iPlayerSessionStartStats[client][SS_JoinRank] != -1)
 	{
 		iBuffer = GetClientRank(client) - g_iPlayerSessionStartStats[client][SS_JoinRank];
-		Format(sBuffer, sizeof(sBuffer), "%T: %s%d", "Changed rank", client, iBuffer>0?"+":"", iBuffer);
+		Format(sBuffer, sizeof(sBuffer), "  %T: %s%d", "Changed rank", client, iBuffer>0?"+":"", iBuffer);
 		DrawPanelText(hPanel, sBuffer);
 	}
 	
@@ -444,7 +444,7 @@ public Panel_DoNothing(Handle:menu, MenuAction:action, param1, param2)
 
 DisplayNextPlayersInRanking(client)
 {
-	decl String:sQuery[128];
+	decl String:sQuery[512];
 	Format(sQuery, sizeof(sQuery), "SELECT name, level, experience, credits, (SELECT COUNT(*) FROM %s ps WHERE p.level < ps.level OR (p.level = ps.level AND p.experience < ps.experience))+1 AS rank FROM %s p WHERE level >= %d OR (level = %d AND experience >= %d) ORDER BY level ASC, experience ASC LIMIT 10", TBL_PLAYERS, TBL_PLAYERS, GetClientLevel(client), GetClientLevel(client), GetClientExperience(client));
 	SQL_TQuery(g_hDatabase, SQL_GetNext10, sQuery, GetClientUserId(client));
 }
@@ -509,6 +509,6 @@ SecondsToString(String:sBuffer[], iLength, iSecs, bool:bTextual = true)
 		iSecs     -= iHours * 60 * 60;
 		new iMins  = iSecs  / 60;
 		iSecs     %= 60;
-		Format(sBuffer, iLength, "%i:%i:%i", iHours, iMins, iSecs);
+		Format(sBuffer, iLength, "%02i:%02i:%02i", iHours, iMins, iSecs);
 	}
 }
