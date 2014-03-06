@@ -145,6 +145,7 @@ public OnPluginStart()
 	RegConsoleCmd("rpginfo", Cmd_RPGInfo, "Shows the purchased upgrades of the target person. rpginfo <name|steamid|#userid>");
 	RegConsoleCmd("rpgtop10", Cmd_RPGTop10, "Show the SM:RPG top 10");
 	RegConsoleCmd("rpgnext", Cmd_RPGNext, "Show the next few ranked players before you");
+	RegConsoleCmd("rpgsession", Cmd_RPGSession, "Show your session stats");
 	RegConsoleCmd("rpghelp", Cmd_RPGHelp, "Show the SM:RPG help menu");
 	
 	RegisterAdminCommands();
@@ -164,6 +165,7 @@ public OnPluginStart()
 	HookEventEx("player_death", Event_OnPlayerDeath);
 	HookEventEx("round_end", Event_OnRoundEnd);
 	HookEvent("player_say", Event_OnPlayerSay);
+	HookEvent("player_disconnect", Event_OnPlayerDisconnect);
 	
 	if(g_bLateLoaded)
 	{
@@ -245,6 +247,7 @@ public OnPluginEnd()
 		SMRPG_UnregisterCommand("rpginfo");
 		SMRPG_UnregisterCommand("rpgtop10");
 		SMRPG_UnregisterCommand("rpgnext");
+		SMRPG_UnregisterCommand("rpgsession");
 		SMRPG_UnregisterCommand("rpghelp");
 	}
 }
@@ -275,6 +278,7 @@ public OnLibraryAdded(const String:name[])
 		SMRPG_RegisterCommand("rpginfo", CommandList_DefaultTranslations);
 		SMRPG_RegisterCommand("rpgtop10", CommandList_DefaultTranslations);
 		SMRPG_RegisterCommand("rpgnext", CommandList_DefaultTranslations);
+		SMRPG_RegisterCommand("rpgsession", CommandList_DefaultTranslations);
 		SMRPG_RegisterCommand("rpghelp", CommandList_DefaultTranslations);
 	}
 	else if(StrEqual(name, "clientprefs"))
@@ -408,8 +412,20 @@ public Event_OnPlayerSay(Handle:event, const String:error[], bool:dontBroadcast)
 		DisplayTop10Menu(client);
 	else if(StrEqual(sText, "rpgnext", false))
 		DisplayNextPlayersInRanking(client);
+	else if(StrEqual(sText, "rpgsession", false))
+		DisplaySessionStatsMenu(client);
 	else if(StrEqual(sText, "rpghelp", false))
 		DisplayHelpMenu(client);
+}
+
+// That player fully disconnected, not just reconnected after a mapchange.
+public Event_OnPlayerDisconnect(Handle:event, const String:error[], bool:dontBroadcast)
+{
+	new client = GetClientOfUserId(GetEventInt(event, "userid"));
+	if(!client)
+		return;
+	
+	ResetPlayerSessionStats(client);
 }
 
 /**
@@ -506,6 +522,19 @@ public Action:Cmd_RPGNext(client, args)
 	}
 	
 	DisplayNextPlayersInRanking(client);
+	
+	return Plugin_Handled;
+}
+
+public Action:Cmd_RPGSession(client, args)
+{
+	if(!client)
+	{
+		ReplyToCommand(client, "SM:RPG: This command is ingame only.");
+		return Plugin_Handled;
+	}
+	
+	DisplaySessionStatsMenu(client);
 	
 	return Plugin_Handled;
 }
@@ -612,6 +641,18 @@ public Action:CommandList_DefaultTranslations(client, const String:command[], Co
 				Format(translation, maxlen, "%T", "rpgnext desc", client);
 			case CommandTranslationType_Advert:
 				Format(translation, maxlen, "%T", "rpgnext advert", client);
+		}
+	}
+	else if(StrEqual(command, "rpgsession"))
+	{
+		switch(type)
+		{
+			case CommandTranslationType_ShortDescription:
+				Format(translation, maxlen, "%T", "rpgsession short desc", client);
+			case CommandTranslationType_Description:
+				Format(translation, maxlen, "%T", "rpgsession desc", client);
+			case CommandTranslationType_Advert:
+				Format(translation, maxlen, "%T", "rpgsession advert", client);
 		}
 	}
 	else if(StrEqual(command, "rpghelp"))

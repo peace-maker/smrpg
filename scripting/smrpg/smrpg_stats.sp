@@ -4,6 +4,16 @@
 new g_iCachedRank[MAXPLAYERS+1] = {-1,...};
 new g_iCachedRankCount = 0;
 
+enum SessionStats {
+	SS_JoinTime,
+	SS_JoinLevel,
+	SS_JoinExperience,
+	SS_JoinCredits,
+	SS_JoinRank
+};
+
+new g_iPlayerSessionStartStats[MAXPLAYERS+1][SessionStats];
+
 new Handle:g_hfwdOnAddExperience;
 
 RegisterStatsNatives()
@@ -189,6 +199,86 @@ Action:Stats_CallOnExperienceForward(client, ExperienceReason:reason, iExperienc
 	return result;
 }
 
+InitPlayerSessionStartStats(client)
+{
+	g_iPlayerSessionStartStats[client][SS_JoinTime] = GetTime();
+	g_iPlayerSessionStartStats[client][SS_JoinLevel] = GetClientLevel(client);
+	g_iPlayerSessionStartStats[client][SS_JoinExperience] = GetClientExperience(client);
+	g_iPlayerSessionStartStats[client][SS_JoinCredits] = GetClientCredits(client);
+	g_iPlayerSessionStartStats[client][SS_JoinRank] = -1;
+}
+
+ResetPlayerSessionStats(client)
+{
+	g_iPlayerSessionStartStats[client][SS_JoinTime] = 0;
+	g_iPlayerSessionStartStats[client][SS_JoinLevel] = 0;
+	g_iPlayerSessionStartStats[client][SS_JoinExperience] = 0;
+	g_iPlayerSessionStartStats[client][SS_JoinCredits] = 0;
+	g_iPlayerSessionStartStats[client][SS_JoinRank] = -1;
+}
+
+// Use our own forward to initialize the session info :)
+public SMRPG_OnClientLoaded(client)
+{
+	// Only set it once and leave it that way until he really disconnects.
+	if(g_iPlayerSessionStartStats[client][SS_JoinTime] == 0)
+		InitPlayerSessionStartStats(client);
+}
+
+DisplaySessionStatsMenu(client)
+{
+	new Handle:hPanel = CreatePanel();
+	
+	decl String:sBuffer[128];
+	Format(sBuffer, sizeof(sBuffer), "%T", "Stats", client);
+	DrawPanelItem(hPanel, sBuffer);
+	
+	Format(sBuffer, sizeof(sBuffer), "%T", "Level", client, GetClientLevel(client));
+	DrawPanelText(hPanel, sBuffer);
+	Format(sBuffer, sizeof(sBuffer), "%T", "Experience short", client, GetClientExperience(client), Stats_LvlToExp(GetClientLevel(client)));
+	DrawPanelText(hPanel, sBuffer);
+	Format(sBuffer, sizeof(sBuffer), "%T", "Credits", client, GetClientCredits(client));
+	DrawPanelText(hPanel, sBuffer);
+	Format(sBuffer, sizeof(sBuffer), "%T", "Rank", client, GetClientRank(client), GetRankCount());
+	DrawPanelText(hPanel, sBuffer);
+	
+	Format(sBuffer, sizeof(sBuffer), "%T", "Session", client);
+	DrawPanelItem(hPanel, sBuffer);
+	
+	SecondsToString(sBuffer, sizeof(sBuffer), GetTime()-g_iPlayerSessionStartStats[client][SS_JoinTime], false);
+	Format(sBuffer, sizeof(sBuffer), "%T", "Playtime", client, sBuffer);
+	DrawPanelText(hPanel, sBuffer);
+	
+	new iChangedLevels = GetClientLevel(client) - g_iPlayerSessionStartStats[client][SS_JoinLevel];
+	Format(sBuffer, sizeof(sBuffer), "%T: %s%d", "Changed level", client, iChangedLevels>0?"+":"", iChangedLevels);
+	DrawPanelText(hPanel, sBuffer);
+	
+	// Need to calculate the total earned experience.
+	new iEarnedExperience = GetClientExperience(client) - g_iPlayerSessionStartStats[client][SS_JoinExperience];
+	for(new i=0;i<iChangedLevels;i++)
+	{
+		iEarnedExperience += Stats_LvlToExp(g_iPlayerSessionStartStats[client][SS_JoinLevel]+i);
+	}
+	
+	Format(sBuffer, sizeof(sBuffer), "%T: %s%d", "Changed experience", client, iEarnedExperience>0?"+":"", iEarnedExperience);
+	DrawPanelText(hPanel, sBuffer);
+	
+	new iBuffer = GetClientCredits(client) - g_iPlayerSessionStartStats[client][SS_JoinCredits];
+	Format(sBuffer, sizeof(sBuffer), "%T: %s%d", "Changed credits", client, iBuffer>0?"+":"", iBuffer);
+	DrawPanelText(hPanel, sBuffer);
+	
+	if(g_iPlayerSessionStartStats[client][SS_JoinRank] != -1)
+	{
+		iBuffer = GetClientRank(client) - g_iPlayerSessionStartStats[client][SS_JoinRank];
+		Format(sBuffer, sizeof(sBuffer), "%T: %s%d", "Changed rank", client, iBuffer>0?"+":"", iBuffer);
+		DrawPanelText(hPanel, sBuffer);
+	}
+	
+	
+	SendPanelToClient(hPanel, client, Panel_DoNothing, MENU_TIME_FOREVER);
+	CloseHandle(hPanel);
+}
+
 // native SMRPG_AddClientExperience(client, exp, bool:bHideNotice);
 public Native_AddClientExperience(Handle:plugin, numParams)
 {
@@ -250,6 +340,10 @@ public SQL_GetClientRank(Handle:owner, Handle:hndl, const String:error[], any:us
 	SQL_FetchRow(hndl);
 	
 	g_iCachedRank[client] = SQL_FetchInt(hndl, 0) + 1; // +1 since the query returns the count, not the rank
+	
+	// Save the first time we fetch the rank for him.
+	if(g_iPlayerSessionStartStats[client][SS_JoinRank] == -1)
+		g_iPlayerSessionStartStats[client][SS_JoinRank] = g_iCachedRank[client];
 }
 
 UpdateRankCount()
@@ -388,4 +482,33 @@ public SQL_GetNext10(Handle:owner, Handle:hndl, const String:error[], any:userid
 	
 	SendPanelToClient(hPanel, client, Panel_DoNothing, MENU_TIME_FOREVER);
 	CloseHandle(hPanel);
+}
+
+// Taken from SourceBans 2's sb_bans :)
+SecondsToString(String:sBuffer[], iLength, iSecs, bool:bTextual = true)
+{
+	if(bTextual)
+	{
+		decl String:sDesc[6][8] = {"mo",              "wk",             "d",          "hr",    "min", "sec"};
+		new  iCount, iDiv[6]    = {60 * 60 * 24 * 30, 60 * 60 * 24 * 7, 60 * 60 * 24, 60 * 60, 60,    1};
+		sBuffer[0]              = '\0';
+		
+		for(new i = 0; i < sizeof(iDiv); i++)
+		{
+			if((iCount = iSecs / iDiv[i]) > 0)
+			{
+				Format(sBuffer, iLength, "%s%i %s, ", sBuffer, iCount, sDesc[i]);
+				iSecs %= iDiv[i];
+			}
+		}
+		sBuffer[strlen(sBuffer) - 2] = '\0';
+	}
+	else
+	{
+		new iHours = iSecs  / 60 / 60;
+		iSecs     -= iHours * 60 * 60;
+		new iMins  = iSecs  / 60;
+		iSecs     %= 60;
+		Format(sBuffer, iLength, "%i:%i:%i", iHours, iMins, iSecs);
+	}
 }

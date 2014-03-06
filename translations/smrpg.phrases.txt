@@ -125,6 +125,38 @@
 		"en"			"Sale"
 	}
 	
+	"Session"
+	{
+		"en"			"Session"
+	}
+	
+	"Playtime"
+	{
+		// 1: The time in hh:mm:ss the player is on the server since he joined.
+		"#format" "{1:s}"
+		"en"			"Session playtime: {1}"
+	}
+	
+	"Changed level"
+	{
+		"en"			"Level change"
+	}
+	
+	"Changed experience"
+	{
+		"en"			"Experience change"
+	}
+	
+	"Changed credits"
+	{
+		"en"			"Credits change"
+	}
+	
+	"Changed rank"
+	{
+		"en"			"Rank change"
+	}
+	
 	// Menu Options
 	"Upgrades"
 	{
@@ -273,19 +305,34 @@
 		"en"			"Type {N}rpgtop10{G} to view the top 10 ranked RPG players on this server."
 	}
 	
-	"rpgtop10 short desc"
+	"rpgnext short desc"
 	{
 		"en"			"Show the next ranked players before you"
 	}
 	
-	"rpgtop10 desc"
+	"rpgnext desc"
 	{
 		"en"			"Show a list of players which are right before you in the ranking."
 	}
 	
-	"rpgtop10 advert"
+	"rpgnext advert"
 	{
 		"en"			"Type {N}rpgnext{G} to view a list of players, which are right before you in the ranking."
+	}
+	
+	"rpgsession short desc"
+	{
+		"en"			"Show your current session rpg stats"
+	}
+	
+	"rpgsession desc"
+	{
+		"en"			"Show statistics about how you performed in your current session."
+	}
+	
+	"rpgsession advert"
+	{
+		"en"			"Type {N}rpgsession{G} to check how your statistics changed in your current session."
 	}
 	
 	"rpghelp short desc"
