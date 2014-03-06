@@ -115,6 +115,37 @@
 		"de"			"Verkaufen"
 	}
 	
+	"Session"
+	{
+		"de"			"Session"
+	}
+	
+	"Playtime"
+	{
+		// 1: The time in hh:mm:ss the player is on the server since he joined.
+		"de"			"Session Spielzeit: {1}"
+	}
+	
+	"Changed level"
+	{
+		"de"			"Leveländerung"
+	}
+	
+	"Changed experience"
+	{
+		"de"			"Erfahrungsänderung"
+	}
+	
+	"Changed credits"
+	{
+		"de"			"Kreditänderung"
+	}
+	
+	"Changed rank"
+	{
+		"de"			"Rankänderung"
+	}
+	
 	// Menu Options
 	"Upgrades"
 	{
@@ -272,6 +303,21 @@
 	"rpgnext advert"
 	{
 		"de"			"Schreibe {N}rpgnext{G}, um dir die 10 nächsten Spieler vor deinem Rank anzusehen."
+	}
+	
+	"rpgsession short desc"
+	{
+		"de"			"Zeigt deine Statsänderungen in deiner derzeitigen Session"
+	}
+	
+	"rpgsession desc"
+	{
+		"de"			"Zeigt Statistiken wie sich deine RPG Stats in deiner derzeitigen Session verändert haben."
+	}
+	
+	"rpgsession advert"
+	{
+		"de"			"Schreibe {N}rpgsession{G}, um Änderungen an deinen RPG Stats in dieser Session zu sehen."
 	}
 	
 	"rpghelp short desc"
