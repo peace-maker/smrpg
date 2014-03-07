@@ -269,7 +269,7 @@ DisplaySessionStatsMenu(client)
 	
 	if(g_iPlayerSessionStartStats[client][SS_JoinRank] != -1)
 	{
-		iBuffer = GetClientRank(client) - g_iPlayerSessionStartStats[client][SS_JoinRank];
+		iBuffer = g_iPlayerSessionStartStats[client][SS_JoinRank] - GetClientRank(client);
 		Format(sBuffer, sizeof(sBuffer), "  %T: %s%d", "Changed rank", client, iBuffer>0?"+":"", iBuffer);
 		DrawPanelText(hPanel, sBuffer);
 	}
