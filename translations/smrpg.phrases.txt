@@ -188,9 +188,9 @@
 		"en"			"Reset Stats"
 	}
 	
-	"Show menu on levelup?"
+	"Show menu on levelup"
 	{
-		"en"			"Show menu on levelup?"
+		"en"			"Show menu on levelup"
 	}
 	
 	// Menu selection result

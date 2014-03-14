@@ -446,7 +446,7 @@ public TopMenu_HandleSettings(Handle:topmenu, TopMenuAction:action, TopMenuObjec
 			}
 			else if(StrEqual(sName, "toggleautoshow"))
 			{
-				Format(buffer, maxlength, "%T %T", "Show menu on levelup?", param, ShowMenuOnLevelUp(param)?"Yes":"No", param);
+				Format(buffer, maxlength, "%T: %T", "Show menu on levelup", param, ShowMenuOnLevelUp(param)?"Yes":"No", param);
 			}
 		}
 		case TopMenuAction_SelectOption:
