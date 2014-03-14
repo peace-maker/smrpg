@@ -78,6 +78,7 @@ InitMenu()
 	
 	// Settings Menu
 	AddToTopMenu(g_hRPGTopMenu, "resetstats", TopMenuObject_Item, TopMenu_HandleSettings, g_TopMenuSettings);
+	AddToTopMenu(g_hRPGTopMenu, "toggleautoshow", TopMenuObject_Item, TopMenu_HandleSettings, g_TopMenuSettings);
 	
 	// Reset Stats Confirmation
 	g_hConfirmResetStatsMenu = CreateMenu(Menu_ConfirmResetStats, MENU_ACTIONS_DEFAULT|MenuAction_Display|MenuAction_DisplayItem);
@@ -432,20 +433,32 @@ DisplaySettingsMenu(client)
 
 public TopMenu_HandleSettings(Handle:topmenu, TopMenuAction:action, TopMenuObject:object_id, param, String:buffer[], maxlength)
 {
+	decl String:sName[64];
+	GetTopMenuObjName(topmenu, object_id, sName, sizeof(sName));
+	
 	switch(action)
 	{
 		case TopMenuAction_DisplayOption:
 		{
-			Format(buffer, maxlength, "%T", "Reset Stats", param);
+			if(StrEqual(sName, "resetstats"))
+			{
+				Format(buffer, maxlength, "%T", "Reset Stats", param);
+			}
+			else if(StrEqual(sName, "toggleautoshow"))
+			{
+				Format(buffer, maxlength, "%T %T", "Show menu on levelup?", param, ShowMenuOnLevelUp(param)?"Yes":"No", param);
+			}
 		}
 		case TopMenuAction_SelectOption:
 		{
-			decl String:sName[64];
-			GetTopMenuObjName(topmenu, object_id, sName, sizeof(sName));
-			
 			if(StrEqual(sName, "resetstats"))
 			{
 				DisplayMenu(g_hConfirmResetStatsMenu, param, MENU_TIME_FOREVER);
+			}
+			else if(StrEqual(sName, "toggleautoshow"))
+			{
+				SetShowMenuOnLevelUp(param, !ShowMenuOnLevelUp(param));
+				DisplayTopMenu(g_hRPGTopMenu, param, TopMenuPosition_LastCategory);
 			}
 		}
 	}	

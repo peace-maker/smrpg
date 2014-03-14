@@ -90,6 +90,13 @@ Stats_PlayerNewLevel(client, iLevelIncrease)
 	
 	DebugMsg("%N is now level %d (%d level increase(s))", client, GetClientLevel(client), iLevelIncrease);
 	
+	// Player wants to get prompted with the rpgmenu automatically when he levels up?
+	// Make sure he isn't viewing another menu at the moment.
+	if(ShowMenuOnLevelUp(client) && GetClientMenu(client) == MenuSource_None)
+	{
+		DisplayUpgradesMenu(client);
+	}
+	
 	if(GetConVarBool(g_hCVAnnounceNewLvl))
 		Client_PrintToChatAll(false, "%t", "Client level changed", client, GetClientLevel(client));
 	

@@ -177,6 +177,11 @@
 		"de"			"Statistik zurücksetzen"
 	}
 	
+	"Show menu on levelup?"
+	{
+		"de"			"Zeige Menü bei neuem Level?"
+	}
+	
 	// Menu selection result
 	"Stats have been reset"
 	{

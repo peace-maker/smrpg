@@ -18,6 +18,7 @@ enum PlayerInfo
 	PLR_credits,
 	PLR_dbId,
 	PLR_dbUpgradeId,
+	bool:PLR_showMenuOnLevelup,
 	bool:PLR_triedToLoadData,
 	Handle:PLR_upgradesLevel
 }
@@ -71,6 +72,7 @@ InitPlayer(client)
 	g_iPlayerInfo[client][PLR_dbId] = -1;
 	g_iPlayerInfo[client][PLR_dbUpgradeId] = -1;
 	g_iPlayerInfo[client][PLR_triedToLoadData] = false;
+	g_iPlayerInfo[client][PLR_showMenuOnLevelup] = GetConVarBool(g_hCVShowMenuOnLevelDefault);
 	
 	g_iPlayerInfo[client][PLR_upgradesLevel] = CreateArray();
 	new iNumUpgrades = GetUpgradeCount();
@@ -95,14 +97,14 @@ AddPlayer(client, const String:auth[])
 	
 	if(GetConVarBool(g_hCVSteamIDSave))
 	{
-		Format(sQuery, sizeof(sQuery), "SELECT player_id, upgrades_id, level, experience, credits FROM %s WHERE steamid = '%s' ORDER BY level DESC LIMIT 1", TBL_PLAYERS, auth);
+		Format(sQuery, sizeof(sQuery), "SELECT player_id, upgrades_id, level, experience, credits, showmenu FROM %s WHERE steamid = '%s' ORDER BY level DESC LIMIT 1", TBL_PLAYERS, auth);
 	}
 	else
 	{
 		decl String:sName[MAX_NAME_LENGTH], String:sNameEscaped[MAX_NAME_LENGTH*2+1];
 		GetClientName(client, sName, sizeof(sName));
 		SQL_EscapeString(g_hDatabase, sName, sNameEscaped, sizeof(sNameEscaped));
-		Format(sQuery, sizeof(sQuery), "SELECT player_id, upgrades_id, level, experience, credits FROM %s WHERE name = '%s' AND steamid = '%s' ORDER BY level DESC LIMIT 1", TBL_PLAYERS, sNameEscaped, auth);
+		Format(sQuery, sizeof(sQuery), "SELECT player_id, upgrades_id, level, experience, credits, showmenu FROM %s WHERE name = '%s' AND steamid = '%s' ORDER BY level DESC LIMIT 1", TBL_PLAYERS, sNameEscaped, auth);
 	}
 	
 	SQL_TQuery(g_hDatabase, SQL_GetPlayerInfo, sQuery, GetClientUserId(client));
@@ -122,8 +124,8 @@ InsertPlayer(client)
 	GetClientAuthString(client, sSteamID, sizeof(sSteamID));
 	SQL_EscapeString(g_hDatabase, sSteamID, sSteamIDEscaped, sizeof(sSteamIDEscaped));
 	
-	Format(sQuery, sizeof(sQuery), "INSERT INTO %s (name, steamid, level, experience, credits, lastseen) VALUES ('%s', '%s', '%d', '%d', '%d', '%d')",
-		TBL_PLAYERS, sNameEscaped, sSteamIDEscaped, GetClientLevel(client), GetClientExperience(client), GetClientCredits(client), GetTime());
+	Format(sQuery, sizeof(sQuery), "INSERT INTO %s (name, steamid, level, experience, credits, showmenu, lastseen) VALUES ('%s', '%s', '%d', '%d', '%d', '%d', '%d')",
+		TBL_PLAYERS, sNameEscaped, sSteamIDEscaped, GetClientLevel(client), GetClientExperience(client), GetClientCredits(client), ShowMenuOnLevelUp(client), GetTime());
 	
 	SQL_TQuery(g_hDatabase, SQL_InsertPlayer, sQuery, GetClientUserId(client));
 }
@@ -147,7 +149,7 @@ SaveData(client)
 	}
 	
 	decl String:sQuery[8192];
-	Format(sQuery, sizeof(sQuery), "UPDATE %s SET level = '%d', experience = '%d', credits = '%d', lastseen = '%d' WHERE player_id = '%d'", TBL_PLAYERS, GetClientLevel(client), GetClientExperience(client), GetClientCredits(client), GetTime(), g_iPlayerInfo[client][PLR_dbId]);
+	Format(sQuery, sizeof(sQuery), "UPDATE %s SET level = '%d', experience = '%d', credits = '%d', showmenu = '%d', lastseen = '%d' WHERE player_id = '%d'", TBL_PLAYERS, GetClientLevel(client), GetClientExperience(client), GetClientCredits(client), ShowMenuOnLevelUp(client), GetTime(), g_iPlayerInfo[client][PLR_dbId]);
 	SQL_TQuery(g_hDatabase, SQL_DoNothing, sQuery);
 	
 	// Save item levels
@@ -254,6 +256,16 @@ GetClientByPlayerID(iPlayerId)
 GetClientUpgradeLevel(client, iUpgradeIndex)
 {
 	return GetArrayCell(GetClientUpgradeLevels(client), iUpgradeIndex);
+}
+
+ShowMenuOnLevelUp(client)
+{
+	return g_iPlayerInfo[client][PLR_showMenuOnLevelup];
+}
+
+SetShowMenuOnLevelUp(client, bool:show)
+{
+	g_iPlayerInfo[client][PLR_showMenuOnLevelup] = show;
 }
 
 /**
@@ -570,6 +582,7 @@ public SQL_GetPlayerInfo(Handle:owner, Handle:hndl, const String:error[], any:us
 	g_iPlayerInfo[client][PLR_level] = SQL_FetchInt(hndl, 2);
 	g_iPlayerInfo[client][PLR_experience] = SQL_FetchInt(hndl, 3);
 	g_iPlayerInfo[client][PLR_credits] = SQL_FetchInt(hndl, 4);
+	g_iPlayerInfo[client][PLR_showMenuOnLevelup] = SQL_FetchInt(hndl, 5) == 1;
 	
 	UpdateClientRank(client);
 	UpdateRankCount();

@@ -49,6 +49,7 @@ new Handle:g_hCVIgnoreLevelBarrier;
 new Handle:g_hCVAllowPresentUpgradeUsage;
 
 new Handle:g_hCVShowUpgradePurchase;
+new Handle:g_hCVShowMenuOnLevelDefault;
 
 #define IF_IGNORE_BOTS(%1) if(IsFakeClient(%1) && (!GetConVarBool(g_hCVBotEnable) || (GetConVarBool(g_hCVBotNeedHuman) && Client_GetCount(true, false) == 0)))
 
@@ -132,6 +133,7 @@ public OnPluginStart()
 	g_hCVAllowPresentUpgradeUsage = AutoExecConfig_CreateConVar("smrpg_allow_present_upgrade_usage", "0", "Allow players to use the upgrades they already have levels for, if they normally wouldn't have access to the upgrade due to the adminflags.\nThis allows admins to give upgrades to players they aren't able to buy themselves.", 0, true, 0.0, true, 1.0);
 	
 	g_hCVShowUpgradePurchase = AutoExecConfig_CreateConVar("smrpg_show_upgrade_purchase_in_chat", "0", "Show a message to all in chat when a player buys an upgrade.", 0, true, 0.0, true, 1.0);
+	g_hCVShowMenuOnLevelDefault = AutoExecConfig_CreateConVar("smrpg_show_menu_on_levelup", "1", "Show the rpg menu when a players levels up by default? Players can change it in their settings individually afterwards.", 0, true, 0.0, true, 1.0);
 	
 	AutoExecConfig_ExecuteFile();
 	AutoExecConfig_CleanFile();
