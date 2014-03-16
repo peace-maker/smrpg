@@ -195,6 +195,6 @@ HandleGifting(client, String:sTarget[], String:sCredits[])
 		return;
 	}
 	
-	LogAction(client, iTarget, "Gave %d credits as a gift.", iCredits);
+	LogAction(client, iTarget, "%L gave %L %d credits as a gift.", client, iTarget, iCredits);
 	Client_PrintToChatAll(false, "{OG}SM:RPG{N} > {G}%t", "Gave credits as a gift", client, iCredits, iTarget);
 }
