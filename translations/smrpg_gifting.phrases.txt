@@ -12,6 +12,12 @@
   {
     "en"  "You don't have enough credits."
   }
+  "You have to be min level"
+  {
+    // 1: Minimum level from which you are allowed to gift credits to someone.
+    "#format" "{1:d}"
+    "en"  "You have to be at least {N}level {1}{G} to gift credits to someone."
+  }
   "Failed to give credits"
   {
     // 1: The amount of credits the player tried to give as a gift.

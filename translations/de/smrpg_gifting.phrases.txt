@@ -12,6 +12,11 @@
   {
     "de"  "Du hast nicht genug Kredite."
   }
+  "You have to be min level"
+  {
+    // 1: Minimum level from which you are allowed to gift credits to someone.
+    "de"  "Du musst mindestens {N}Level {1}{G} sein, um jemandem Kredite zu schenken."
+  }
   "Failed to give credits"
   {
     // 1: The amount of credits the player tried to give as a gift.

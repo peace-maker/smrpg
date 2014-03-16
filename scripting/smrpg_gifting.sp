@@ -8,6 +8,8 @@
 
 #define PLUGIN_VERSION "1.0"
 
+new Handle:g_hCVMinLevel;
+
 public Plugin:myinfo = 
 {
 	name = "SM:RPG > Credit Gifting",
@@ -25,6 +27,10 @@ public OnPluginStart()
 		SetConVarString(hVersion, PLUGIN_VERSION);
 		HookConVarChange(hVersion, ConVar_VersionChanged);
 	}
+	
+	g_hCVMinLevel = CreateConVar("smrpg_gifting_minlevel", "10", "The minimum level a player has to be to be allowed to gift credits to other players.", _, true, 0.0);
+	
+	AutoExecConfig();
 	
 	LoadTranslations("common.phrases");
 	LoadTranslations("smrpg_gifting.phrases");
@@ -160,6 +166,13 @@ HandleGifting(client, String:sTarget[], String:sCredits[])
 	if(iPlayerCredits < iCredits)
 	{
 		Client_PrintToChat(client, false, "{OG}SM:RPG{N} > {G}%t", "You don't have enough credits");
+		return;
+	}
+	
+	new iMinLevel = GetConVarInt(g_hCVMinLevel);
+	if(SMRPG_GetClientLevel(client) < iMinLevel)
+	{
+		Client_PrintToChat(client, false, "{OG}SM:RPG{N} > {G}%t", "You have to be min level", iMinLevel);
 		return;
 	}
 	
