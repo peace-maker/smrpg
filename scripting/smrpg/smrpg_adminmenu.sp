@@ -197,7 +197,7 @@ public Menu_HandlePlayerResetConfirm(Handle:menu, MenuAction:action, param1, par
 		}
 		
 		ResetStats(g_iCurrentMenuTarget[param1]);
-		LogAction(param1, g_iCurrentMenuTarget[param1], "Permanently reset all stats of player %N.", g_iCurrentMenuTarget[param1]);
+		LogAction(param1, g_iCurrentMenuTarget[param1], "%L permanently reset all stats of player %L.", param1, g_iCurrentMenuTarget[param1]);
 		Client_PrintToChat(param1, false, "SM:RPG resetstats: %N's stats have been permanently reset", g_iCurrentMenuTarget[param1]);
 		ShowPlayerDetailMenu(param1);
 	}
@@ -306,7 +306,7 @@ public Menu_HandlePlayerChangeCredits(Handle:menu, MenuAction:action, param1, pa
 		
 		SetClientCredits(g_iCurrentMenuTarget[param1], iOldCredits + iAmount);
 		
-		LogAction(param1, g_iCurrentMenuTarget[param1], "Changed %N's credits by %d from %d to %d.", g_iCurrentMenuTarget[param1], iAmount, iOldCredits, GetClientCredits(g_iCurrentMenuTarget[param1]));
+		LogAction(param1, g_iCurrentMenuTarget[param1], "%L changed credits of %L by %d from %d to %d.", param1, g_iCurrentMenuTarget[param1], iAmount, iOldCredits, GetClientCredits(g_iCurrentMenuTarget[param1]));
 		ShowPlayerCreditsManageMenu(param1);
 	}
 }
@@ -356,7 +356,7 @@ public Menu_HandlePlayerChangeExperience(Handle:menu, MenuAction:action, param1,
 		else
 			SetClientExperience(g_iCurrentMenuTarget[param1], GetClientExperience(g_iCurrentMenuTarget[param1])+iAmount);
 		
-		LogAction(param1, g_iCurrentMenuTarget[param1], "Changed experience of %N by %d. He is now Level %d and has %d/%d Experience (previously Level %d with %d/%d Experience)", g_iCurrentMenuTarget[param1], iAmount, GetClientLevel(g_iCurrentMenuTarget[param1]), GetClientExperience(g_iCurrentMenuTarget[param1]), Stats_LvlToExp(GetClientLevel(g_iCurrentMenuTarget[param1])), iOldLevel, iOldExperience, Stats_LvlToExp(iOldLevel));
+		LogAction(param1, g_iCurrentMenuTarget[param1], "%L changed experience of %L by %d. He is now Level %d and has %d/%d Experience (previously Level %d with %d/%d Experience)", param1, g_iCurrentMenuTarget[param1], iAmount, GetClientLevel(g_iCurrentMenuTarget[param1]), GetClientExperience(g_iCurrentMenuTarget[param1]), Stats_LvlToExp(GetClientLevel(g_iCurrentMenuTarget[param1])), iOldLevel, iOldExperience, Stats_LvlToExp(iOldLevel));
 		ShowPlayerExperienceManageMenu(param1);
 	}
 }
@@ -413,7 +413,7 @@ public Menu_HandlePlayerChangeLevel(Handle:menu, MenuAction:action, param1, para
 				PrintToChatAll("%t", "new_lvl1", g_iCurrentMenuTarget[param1], GetClientLevel(g_iCurrentMenuTarget[param1]));
 		}
 		
-		LogAction(param1, g_iCurrentMenuTarget[param1], "Changed level of %N by %d from %d to %d.", g_iCurrentMenuTarget[param1], iAmount, iOldLevel, GetClientLevel(g_iCurrentMenuTarget[param1]));
+		LogAction(param1, g_iCurrentMenuTarget[param1], "%L changed level of %L by %d from %d to %d.", param1, g_iCurrentMenuTarget[param1], iAmount, iOldLevel, GetClientLevel(g_iCurrentMenuTarget[param1]));
 		ShowPlayerLevelManageMenu(param1);
 	}
 }
@@ -580,7 +580,7 @@ public Menu_HandlePlayerUpgradeLevelChange(Handle:menu, MenuAction:action, param
 				iCreditsReturned += GetUpgradeCost(iItemIndex, GetClientUpgradeLevel(iTarget, iItemIndex)+1);
 				SetClientCredits(iTarget, GetClientCredits(iTarget) + GetUpgradeCost(iItemIndex, GetClientUpgradeLevel(iTarget, iItemIndex)+1));
 			}
-			LogAction(param1, iTarget, "Reset %N's upgrade %s with full refund of all upgrade costs. Upgrade level changed from %d to %d and player earned %d credits.", iTarget, upgrade[UPGR_name], iOldLevel, GetClientUpgradeLevel(iTarget, iItemIndex), iCreditsReturned);
+			LogAction(param1, iTarget, "%L reset upgrade %s of %L with full refund of all upgrade costs. Upgrade level changed from %d to %d and player earned %d credits.", param1, upgrade[UPGR_name], iTarget, iOldLevel, GetClientUpgradeLevel(iTarget, iItemIndex), iCreditsReturned);
 			Client_PrintToChat(param1, false, "{OG}SM:RPG{N} > {G}Reset %N's upgrade %s with full refund of all upgrade costs. Upgrade level changed from %d to %d and player earned %d credits.", iTarget, upgrade[UPGR_name], iOldLevel, GetClientUpgradeLevel(iTarget, iItemIndex), iCreditsReturned);
 		}
 		else if(StrEqual(sInfo, "give"))
@@ -589,7 +589,7 @@ public Menu_HandlePlayerUpgradeLevelChange(Handle:menu, MenuAction:action, param
 			if(iOldLevel < upgrade[UPGR_maxLevel])
 			{
 				GiveClientUpgrade(iTarget, iItemIndex);
-				LogAction(param1, iTarget, "Gave %N one level of upgrade %s at no charge. Upgrade level changed from %d to %d.", iTarget, upgrade[UPGR_name], iOldLevel, GetClientUpgradeLevel(iTarget, iItemIndex));
+				LogAction(param1, iTarget, "%L gave %L one level of upgrade %s at no charge. Upgrade level changed from %d to %d.", param1, iTarget, upgrade[UPGR_name], iOldLevel, GetClientUpgradeLevel(iTarget, iItemIndex));
 			}
 		}
 		else if(StrEqual(sInfo, "buy"))
@@ -605,7 +605,7 @@ public Menu_HandlePlayerUpgradeLevelChange(Handle:menu, MenuAction:action, param
 				else
 				{
 					BuyClientUpgrade(iTarget, iItemIndex);
-					LogAction(param1, iTarget, "Forced %N to buy one level of upgrade %s. Upgrade level changed from %d to %d.", iTarget, upgrade[UPGR_name], iOldLevel, GetClientUpgradeLevel(iTarget, iItemIndex));
+					LogAction(param1, iTarget, "%L forced %L to buy one level of upgrade %s. Upgrade level changed from %d to %d.", param1, iTarget, upgrade[UPGR_name], iOldLevel, GetClientUpgradeLevel(iTarget, iItemIndex));
 				}
 			}
 		}
@@ -619,7 +619,7 @@ public Menu_HandlePlayerUpgradeLevelChange(Handle:menu, MenuAction:action, param
 					// Full refund
 					new iCosts = GetUpgradeCost(iItemIndex, GetClientUpgradeLevel(iTarget, iItemIndex)+1);
 					SetClientCredits(iTarget, GetClientCredits(iTarget) + iCosts);
-					LogAction(param1, iTarget, "Took one level of upgrade %s from %N with full refund of the costs. Upgrade level changed from %d to %d and player got %d credits.", upgrade[UPGR_name], iTarget, iOldLevel, GetClientUpgradeLevel(iTarget, iItemIndex), iCosts);
+					LogAction(param1, iTarget, "%L took one level of upgrade %s from %L with full refund of the costs. Upgrade level changed from %d to %d and player got %d credits.", param1, upgrade[UPGR_name], iTarget, iOldLevel, GetClientUpgradeLevel(iTarget, iItemIndex), iCosts);
 				}
 			}
 		}
@@ -629,7 +629,7 @@ public Menu_HandlePlayerUpgradeLevelChange(Handle:menu, MenuAction:action, param
 			if(iOldLevel > 0)
 			{
 				SellClientUpgrade(iTarget, iItemIndex);
-				LogAction(param1, iTarget, "Forced %N to sell one level of upgrade %s. Upgrade level changed from %d to %d.", iTarget, upgrade[UPGR_name], iOldLevel, GetClientUpgradeLevel(iTarget, iItemIndex));
+				LogAction(param1, iTarget, "%L forced %L to sell one level of upgrade %s. Upgrade level changed from %d to %d.", param1, iTarget, upgrade[UPGR_name], iOldLevel, GetClientUpgradeLevel(iTarget, iItemIndex));
 			}
 		}
 		
@@ -811,12 +811,12 @@ public Menu_HandleUpgradeDetails(Handle:menu, MenuAction:action, param1, param2)
 			if(upgrade[UPGR_enabled])
 			{
 				SetConVarBool(upgrade[UPGR_enableConvar], false);
-				LogAction(param1, -1, "Disabled upgrade %s temporarily.", upgrade[UPGR_name]);
+				LogAction(param1, -1, "%L disabled upgrade %s temporarily.", param1, upgrade[UPGR_name]);
 			}
 			else
 			{
 				SetConVarBool(upgrade[UPGR_enableConvar], true);
-				LogAction(param1, -1, "Enabled upgrade %s temporarily.", upgrade[UPGR_name]);
+				LogAction(param1, -1, "%L enabled upgrade %s temporarily.", param1, upgrade[UPGR_name]);
 			}
 			ShowUpgradeManageMenu(param1);
 		}
@@ -837,12 +837,12 @@ public Menu_HandleUpgradeDetails(Handle:menu, MenuAction:action, param1, param2)
 			if(upgrade[UPGR_enableVisuals])
 			{
 				SetConVarBool(upgrade[UPGR_visualsConvar], false);
-				LogAction(param1, -1, "Disabled upgrade %s's visual effects temporarily.", upgrade[UPGR_name]);
+				LogAction(param1, -1, "%L disabled upgrade %s's visual effects temporarily.", param1, upgrade[UPGR_name]);
 			}
 			else
 			{
 				SetConVarBool(upgrade[UPGR_visualsConvar], true);
-				LogAction(param1, -1, "Enabled upgrade %s's visual effects temporarily.", upgrade[UPGR_name]);
+				LogAction(param1, -1, "%L enabled upgrade %s's visual effects temporarily.", param1, upgrade[UPGR_name]);
 			}
 			ShowUpgradeManageMenu(param1);
 		}
@@ -851,12 +851,12 @@ public Menu_HandleUpgradeDetails(Handle:menu, MenuAction:action, param1, param2)
 			if(upgrade[UPGR_enableSounds])
 			{
 				SetConVarBool(upgrade[UPGR_soundsConvar], false);
-				LogAction(param1, -1, "Disabled upgrade %s's sound effects temporarily.", upgrade[UPGR_name]);
+				LogAction(param1, -1, "%L disabled upgrade %s's sound effects temporarily.", param1, upgrade[UPGR_name]);
 			}
 			else
 			{
 				SetConVarBool(upgrade[UPGR_soundsConvar], true);
-				LogAction(param1, -1, "Enabled upgrade %s's sound effects temporarily.", upgrade[UPGR_name]);
+				LogAction(param1, -1, "%L enabled upgrade %s's sound effects temporarily.", param1, upgrade[UPGR_name]);
 			}
 			ShowUpgradeManageMenu(param1);
 		}
@@ -959,7 +959,7 @@ public Menu_HandlePropertyChange(Handle:menu, MenuAction:action, param1, param2)
 				if(iValue > 0 && iValue <= upgrade[UPGR_maxLevelBarrier])
 				{
 					SetConVarInt(upgrade[UPGR_maxLevelConvar], iValue);
-					LogAction(param1, -1, "Changed maxlevel of upgrade %s temporarily from %d to %d.", upgrade[UPGR_name], upgrade[UPGR_maxLevel], iValue);
+					LogAction(param1, -1, "%L changed maxlevel of upgrade %s temporarily from %d to %d.", param1, upgrade[UPGR_name], upgrade[UPGR_maxLevel], iValue);
 				}
 			}
 			case ChangeProp_Cost:
@@ -968,7 +968,7 @@ public Menu_HandlePropertyChange(Handle:menu, MenuAction:action, param1, param2)
 				if(iValue >= 0)
 				{
 					SetConVarInt(upgrade[UPGR_startCostConvar], iValue);
-					LogAction(param1, -1, "Changed start costs of upgrade %s temporarily from %d to %d.", upgrade[UPGR_name], upgrade[UPGR_startCost], iValue);
+					LogAction(param1, -1, "%L changed start costs of upgrade %s temporarily from %d to %d.", param1, upgrade[UPGR_name], upgrade[UPGR_startCost], iValue);
 				}
 			}
 			case ChangeProp_Icost:
@@ -977,7 +977,7 @@ public Menu_HandlePropertyChange(Handle:menu, MenuAction:action, param1, param2)
 				if(iValue > 0)
 				{
 					SetConVarInt(upgrade[UPGR_incCostConvar], iValue);
-					LogAction(param1, -1, "Changed increasing costs of upgrade %s temporarily from %d to %d.", upgrade[UPGR_name], upgrade[UPGR_incCost], iValue);
+					LogAction(param1, -1, "%L changed increasing costs of upgrade %s temporarily from %d to %d.", param1, upgrade[UPGR_name], upgrade[UPGR_incCost], iValue);
 				}
 			}
 		}
