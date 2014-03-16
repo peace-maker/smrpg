@@ -871,7 +871,7 @@ public SQL_CheckDeletePlayer(Handle:owner, Handle:hndl, const String:error[], an
 		return;
 	}
 	
-	if(!SQL_GetRowCount(hndl))
+	if(!SQL_GetRowCount(hndl) || !SQL_FetchRow(hndl))
 	{
 		if(client == 0 || IsClientInGame(client))
 		{
