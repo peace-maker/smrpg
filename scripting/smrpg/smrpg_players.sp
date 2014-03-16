@@ -148,8 +148,12 @@ SaveData(client)
 		return;
 	}
 	
+	decl String:sName[MAX_NAME_LENGTH], String:sNameEscaped[MAX_NAME_LENGTH*2+1];
+	GetClientName(client, sName, sizeof(sName));
+	SQL_EscapeString(g_hDatabase, sName, sNameEscaped, sizeof(sNameEscaped));
+	
 	decl String:sQuery[8192];
-	Format(sQuery, sizeof(sQuery), "UPDATE %s SET level = '%d', experience = '%d', credits = '%d', showmenu = '%d', lastseen = '%d' WHERE player_id = '%d'", TBL_PLAYERS, GetClientLevel(client), GetClientExperience(client), GetClientCredits(client), ShowMenuOnLevelUp(client), GetTime(), g_iPlayerInfo[client][PLR_dbId]);
+	Format(sQuery, sizeof(sQuery), "UPDATE %s SET name = '%s', level = '%d', experience = '%d', credits = '%d', showmenu = '%d', lastseen = '%d' WHERE player_id = '%d'", TBL_PLAYERS, sNameEscaped, GetClientLevel(client), GetClientExperience(client), GetClientCredits(client), ShowMenuOnLevelUp(client), GetTime(), g_iPlayerInfo[client][PLR_dbId]);
 	SQL_TQuery(g_hDatabase, SQL_DoNothing, sQuery);
 	
 	// Save item levels
