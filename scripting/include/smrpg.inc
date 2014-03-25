@@ -44,11 +44,16 @@ public __pl_smrpg_SetNTVOptional()
 	MarkNativeAsOptional("SMRPG_SetClientCredits");
 	MarkNativeAsOptional("SMRPG_GetClientExperience");
 	MarkNativeAsOptional("SMRPG_SetClientExperience");
+	MarkNativeAsOptional("SMRPG_ResetClientStats");
 	MarkNativeAsOptional("SMRPG_AddClientExperience");
 	MarkNativeAsOptional("SMRPG_LevelToExperience");
 	MarkNativeAsOptional("SMRPG_RegisterUpgradeType");
 	MarkNativeAsOptional("SMRPG_UnregisterUpgradeType");
 	MarkNativeAsOptional("SMRPG_CreateUpgradeConVar");
+	MarkNativeAsOptional("SMRPG_SetUpgradeTranslationCallback");
+	MarkNativeAsOptional("SMRPG_SetUpgradeResetCallback");
+	MarkNativeAsOptional("SMRPG_SetUpgradeDefaultCosmenticEffect");
+	MarkNativeAsOptional("SMRPG_ClientWantsCosmetics");
 	MarkNativeAsOptional("SMRPG_UpgradeExists");
 	MarkNativeAsOptional("SMRPG_ResetUpgradeEffectOnClient");
 	MarkNativeAsOptional("SMRPG_GetUpgradeInfo");
@@ -61,5 +66,7 @@ public __pl_smrpg_SetNTVOptional()
 	MarkNativeAsOptional("SMRPG_IsUpgradeActiveOnClient");
 	MarkNativeAsOptional("SMRPG_CheckUpgradeAccess");
 	MarkNativeAsOptional("SMRPG_GetTopMenu");
+	MarkNativeAsOptional("SMRPG_GetSetting");
+	MarkNativeAsOptional("SMRPG_SetSetting");
 }
 #endif
