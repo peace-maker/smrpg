@@ -3,6 +3,7 @@
 
 #define SMRPG_DB "smrpg"
 #define TBL_PLAYERS "players"
+#define TBL_PLAYERUPGRADES "player_upgrades"
 #define TBL_UPGRADES "upgrades"
 #define TBL_SETTINGS "settings"
 
@@ -61,7 +62,7 @@ public SQL_OnConnect(Handle:owner, Handle:hndl, const String:error[], any:data)
 	
 	// Create the player table
 	decl String:sQuery[1024];
-	Format(sQuery, sizeof(sQuery), "CREATE TABLE IF NOT EXISTS %s (player_id INTEGER PRIMARY KEY %s, name VARCHAR(64) NOT NULL DEFAULT ' ', steamid VARCHAR(64) NOT NULL DEFAULT '0' UNIQUE, level INTEGER DEFAULT '1', experience INTEGER DEFAULT '0', credits INTEGER DEFAULT '0', showmenu INTEGER DEFAULT '1', lastseen INTEGER DEFAULT '0', upgrades_id INTEGER DEFAULT '-1')", TBL_PLAYERS, (g_DriverType == Driver_MySQL ? "AUTO_INCREMENT" : "AUTOINCREMENT"));
+	Format(sQuery, sizeof(sQuery), "CREATE TABLE IF NOT EXISTS %s (player_id INTEGER PRIMARY KEY %s, name VARCHAR(64) NOT NULL DEFAULT ' ', steamid VARCHAR(64) NOT NULL DEFAULT '0' UNIQUE, level INTEGER DEFAULT '1', experience INTEGER DEFAULT '0', credits INTEGER DEFAULT '0', showmenu INTEGER DEFAULT '1', lastseen INTEGER DEFAULT '0', lastreset INTEGER DEFAULT '0')", TBL_PLAYERS, (g_DriverType == Driver_MySQL ? "AUTO_INCREMENT" : "AUTOINCREMENT"));
 	if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
 	{
 		decl String:sError[256];
@@ -70,8 +71,18 @@ public SQL_OnConnect(Handle:owner, Handle:hndl, const String:error[], any:data)
 		return;
 	}
 	
+	// Create the player -> upgrades table.
+	Format(sQuery, sizeof(sQuery), "CREATE TABLE IF NOT EXISTS %s (player_id INTEGER, upgrade_id INTEGER, purchasedlevel INTEGER NOT NULL, selectedlevel INTEGER NOT NULL, enabled INTEGER DEFAULT '1', visuals INTEGER DEFAULT '1', sounds INTEGER DEFAULT '1', PRIMARY KEY(player_id, upgrade_id))", TBL_PLAYERUPGRADES);
+	if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
+	{
+		decl String:sError[256];
+		SQL_GetError(g_hDatabase, sError, sizeof(sError));
+		SetFailState("Error creating %s table: %s", TBL_PLAYERUPGRADES, sError);
+		return;
+	}
+	
 	// Create the upgrades table.
-	Format(sQuery, sizeof(sQuery), "CREATE TABLE IF NOT EXISTS %s (upgrades_id INTEGER PRIMARY KEY %s)", TBL_UPGRADES, (g_DriverType == Driver_MySQL ? "AUTO_INCREMENT" : "AUTOINCREMENT"));
+	Format(sQuery, sizeof(sQuery), "CREATE TABLE IF NOT EXISTS %s (upgrade_id INTEGER PRIMARY KEY %s, shortname VARCHAR(32) UNIQUE NOT NULL, date_added INTEGER)", TBL_UPGRADES, (g_DriverType == Driver_MySQL ? "AUTO_INCREMENT" : "AUTOINCREMENT"));
 	if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
 	{
 		decl String:sError[256];
@@ -99,9 +110,9 @@ public SQL_OnConnect(Handle:owner, Handle:hndl, const String:error[], any:data)
 	for(new i=0;i<iSize;i++)
 	{
 		GetUpgradeByIndex(i, upgrade);
-		if(!IsValidUpgrade(upgrade))
+		if(!IsValidUpgrade(upgrade) || upgrade[UPGR_databaseId] != -1 || upgrade[UPGR_databaseLoading])
 			continue;
-		CheckUpgradeDatabaseField(upgrade[UPGR_shortName]);
+		CheckUpgradeDatabaseEntry(upgrade);
 	}
 	
 	// Cleanup our database.
@@ -118,26 +129,20 @@ public SQL_OnConnect(Handle:owner, Handle:hndl, const String:error[], any:data)
 	}
 }
 
-CheckUpgradeDatabaseField(const String:sShortName[])
+CheckUpgradeDatabaseEntry(upgrade[InternalUpgradeInfo])
 {
 	if(!g_hDatabase)
 		return;
 	
+	upgrade[UPGR_databaseLoading] = true;
+	SaveUpgradeConfig(upgrade);
+	
 	decl String:sQuery[512];
-	// If that's a completely new upgrade, add a column to the upgrades table
-	Format(sQuery, sizeof(sQuery), "ALTER TABLE %s ADD COLUMN %s INTEGER DEFAULT '0'", TBL_UPGRADES, sShortName);
-	SQL_LockedFastQuery(g_hDatabase, sQuery);
-	
-	
-	// Load the data for all connected players
-	for(new i=1;i<=MaxClients;i++)
-	{
-		if(IsClientInGame(i) && IsClientAuthorized(i) && GetClientDatabaseUpgradesId(i) != -1)
-		{
-			Format(sQuery, sizeof(sQuery), "SELECT %s FROM %s WHERE upgrades_id = %d", sShortName, TBL_UPGRADES, GetClientDatabaseUpgradesId(i));
-			SQL_TQuery(g_hDatabase, SQL_GetPlayerUpgrades, sQuery, GetClientUserId(i));
-		}
-	}
+	// Check if that's a completely new upgrade
+	decl String:sShortNameEscaped[MAX_UPGRADE_SHORTNAME_LENGTH*2+1];
+	SQL_EscapeString(g_hDatabase, upgrade[UPGR_shortName], sShortNameEscaped, sizeof(sShortNameEscaped));
+	Format(sQuery, sizeof(sQuery), "SELECT upgrade_id FROM %s WHERE shortname = \"%s\";", TBL_UPGRADES, sShortNameEscaped);
+	SQL_TQuery(g_hDatabase, SQL_GetUpgradeInfo, sQuery, upgrade[UPGR_index]);
 }
 
 CheckDatabaseVersion()
@@ -181,30 +186,25 @@ DatabaseMaid()
 	}
 	
 	// Delete players who are Level 1 and haven't played for 3 days
-	Format(sQuery, sizeof(sQuery), "SELECT player_id, upgrades_id FROM %s WHERE (level <= '1' AND lastseen <= '%d') %s", TBL_PLAYERS, GetTime()-259200, sQuery);
+	Format(sQuery, sizeof(sQuery), "SELECT player_id FROM %s WHERE (level <= '1' AND lastseen <= '%d') %s", TBL_PLAYERS, GetTime()-259200, sQuery);
 	SQL_LockDatabase(g_hDatabase);
 	new Handle:hResult = SQL_Query(g_hDatabase, sQuery);
 	SQL_UnlockDatabase(g_hDatabase);
 	if(hResult != INVALID_HANDLE)
 	{
-		
-		new iPlayerId, iUpgradeId;
+		new iPlayerId;
 		while(SQL_MoreRows(hResult))
 		{
 			if(!SQL_FetchRow(hResult))
 				continue;
 			
 			iPlayerId = SQL_FetchInt(hResult, 0);
-			iUpgradeId = SQL_FetchInt(hResult, 1);
+			
+			Format(sQuery, sizeof(sQuery), "DELETE FROM %s WHERE player_id = '%d'", TBL_PLAYERUPGRADES, iPlayerId);
+			SQL_LockedFastQuery(g_hDatabase, sQuery);
 			
 			Format(sQuery, sizeof(sQuery), "DELETE FROM %s WHERE player_id = '%d'", TBL_PLAYERS, iPlayerId);
 			SQL_LockedFastQuery(g_hDatabase, sQuery);
-			
-			if(iUpgradeId != -1)
-			{
-				Format(sQuery, sizeof(sQuery), "DELETE FROM %s WHERE upgrades_id = '%d'", TBL_UPGRADES, iUpgradeId);
-				SQL_LockedFastQuery(g_hDatabase, sQuery);
-			}
 		}
 		CloseHandle(hResult);
 	}
@@ -227,6 +227,57 @@ public SQL_DoNothing(Handle:owner, Handle:hndl, const String:error[], any:data)
 	{
 		LogError("Error executing query: %s", error);
 	}
+}
+
+public SQL_GetUpgradeInfo(Handle:owner, Handle:hndl, const String:error[], any:index)
+{
+	if(hndl == INVALID_HANDLE || strlen(error) > 0)
+	{
+		LogError("Error checking for upgrade info: %s", error);
+		return;
+	}
+	
+	new upgrade[InternalUpgradeInfo];
+	GetUpgradeByIndex(index, upgrade);
+	
+	decl String:sQuery[256];
+	// This is a new upgrade!
+	if(!SQL_GetRowCount(hndl) || !SQL_FetchRow(hndl))
+	{
+		Format(sQuery, sizeof(sQuery), "INSERT INTO %s (shortname, date_added) VALUES (\"%s\", %d);", TBL_UPGRADES, upgrade[UPGR_shortName], GetTime());
+		SQL_TQuery(g_hDatabase, SQL_InsertNewUpgrade, sQuery, index);
+		return;
+	}
+	
+	upgrade[UPGR_databaseLoading] = false;
+	upgrade[UPGR_databaseId] = SQL_FetchInt(hndl, 0);
+	SaveUpgradeConfig(upgrade);
+	
+	// Load the data for all connected players
+	for(new i=1;i<=MaxClients;i++)
+	{
+		if(IsClientInGame(i) && IsClientAuthorized(i) && GetClientDatabaseId(i) != -1)
+		{
+			Format(sQuery, sizeof(sQuery), "SELECT * FROM %s WHERE player_id = %d AND upgrade_id = %d", TBL_PLAYERUPGRADES, GetClientDatabaseId(i), upgrade[UPGR_databaseId]);
+			SQL_TQuery(g_hDatabase, SQL_GetPlayerUpgrades, sQuery, GetClientUserId(i));
+		}
+	}
+}
+
+public SQL_InsertNewUpgrade(Handle:owner, Handle:hndl, const String:error[], any:index)
+{
+	if(hndl == INVALID_HANDLE || strlen(error) > 0)
+	{
+		LogError("Error inserting new upgrade info: %s", error);
+		return;
+	}
+	
+	new upgrade[InternalUpgradeInfo];
+	GetUpgradeByIndex(index, upgrade);
+	
+	upgrade[UPGR_databaseLoading] = false;
+	upgrade[UPGR_databaseId] = SQL_GetInsertId(owner);
+	SaveUpgradeConfig(upgrade);
 }
 
 /**

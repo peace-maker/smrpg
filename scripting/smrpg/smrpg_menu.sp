@@ -6,6 +6,7 @@ new Handle:g_hRPGTopMenu;
 
 new TopMenuObject:g_TopMenuUpgrades;
 new TopMenuObject:g_TopMenuSell;
+new TopMenuObject:g_TopMenuUpgradeSettings;
 new TopMenuObject:g_TopMenuStats;
 new TopMenuObject:g_TopMenuSettings;
 new TopMenuObject:g_TopMenuHelp;
@@ -14,6 +15,8 @@ new Handle:g_hConfirmResetStatsMenu;
 
 new Handle:g_hfwdOnRPGMenuCreated;
 new Handle:g_hfwdOnRPGMenuReady;
+
+new g_iSelectedSettingsUpgrade[MAXPLAYERS+1] = {-1,...};
 
 /**
  * Setup functions to create the topmenu and API.
@@ -26,6 +29,7 @@ RegisterTopMenu()
 	
 	g_TopMenuUpgrades = AddToTopMenu(g_hRPGTopMenu, RPGMENU_UPGRADES, TopMenuObject_Category, TopMenu_DefaultCategoryHandler, INVALID_TOPMENUOBJECT);
 	g_TopMenuSell = AddToTopMenu(g_hRPGTopMenu, RPGMENU_SELL, TopMenuObject_Category, TopMenu_DefaultCategoryHandler, INVALID_TOPMENUOBJECT);
+	g_TopMenuUpgradeSettings = AddToTopMenu(g_hRPGTopMenu, RPGMENU_UPGRADESETTINGS, TopMenuObject_Category, TopMenu_DefaultCategoryHandler, INVALID_TOPMENUOBJECT);
 	g_TopMenuStats = AddToTopMenu(g_hRPGTopMenu, RPGMENU_STATS, TopMenuObject_Category, TopMenu_DefaultCategoryHandler, INVALID_TOPMENUOBJECT);
 	g_TopMenuSettings = AddToTopMenu(g_hRPGTopMenu, RPGMENU_SETTINGS, TopMenuObject_Category, TopMenu_DefaultCategoryHandler, INVALID_TOPMENUOBJECT);
 	g_TopMenuHelp = AddToTopMenu(g_hRPGTopMenu, RPGMENU_HELP, TopMenuObject_Category, TopMenu_DefaultCategoryHandler, INVALID_TOPMENUOBJECT);
@@ -62,6 +66,11 @@ InitMenu()
 			Format(sBuffer, sizeof(sBuffer), "rpgsell_%s", upgrade[UPGR_shortName]);
 			upgrade[UPGR_topmenuSell] = AddToTopMenu(g_hRPGTopMenu, sBuffer, TopMenuObject_Item, TopMenu_HandleSell, g_TopMenuSell);
 		}
+		if(upgrade[UPGR_topmenuUpgradeSettings] == INVALID_TOPMENUOBJECT)
+		{
+			Format(sBuffer, sizeof(sBuffer), "rpgupgrsettings_%s", upgrade[UPGR_shortName]);
+			upgrade[UPGR_topmenuUpgradeSettings] = AddToTopMenu(g_hRPGTopMenu, sBuffer, TopMenuObject_Item, TopMenu_HandleUpgradeSettings, g_TopMenuUpgradeSettings);
+		}
 		if(upgrade[UPGR_topmenuHelp] == INVALID_TOPMENUOBJECT)
 		{
 			Format(sBuffer, sizeof(sBuffer), "rpghelp_%s", upgrade[UPGR_shortName]);
@@ -96,6 +105,11 @@ InitMenu()
 	Call_StartForward(g_hfwdOnRPGMenuReady);
 	Call_PushCell(g_hRPGTopMenu);
 	Call_Finish();
+}
+
+ResetPlayerMenu(client)
+{
+	g_iSelectedSettingsUpgrade[client] = -1;
 }
 
 /**
@@ -139,6 +153,8 @@ public TopMenu_DefaultCategoryHandler(Handle:topmenu, TopMenuAction:action, TopM
 					Format(buffer, maxlength, "%T\n-----\n", "Upgrades", param);
 				else if(object_id == g_TopMenuSell)
 					Format(buffer, maxlength, "%T\n-----\n", "Sell", param);
+				else if(object_id == g_TopMenuUpgradeSettings)
+					Format(buffer, maxlength, "%T\n-----\n", "Upgrade Settings", param);
 				else if(object_id == g_TopMenuStats)
 					Format(buffer, maxlength, "%T\n-----\n", "Stats", param);
 				else if(object_id == g_TopMenuSettings)
@@ -153,6 +169,8 @@ public TopMenu_DefaultCategoryHandler(Handle:topmenu, TopMenuAction:action, TopM
 				Format(buffer, maxlength, "%T", "Upgrades", param);
 			else if(object_id == g_TopMenuSell)
 				Format(buffer, maxlength, "%T", "Sell", param);
+			else if(object_id == g_TopMenuUpgradeSettings)
+				Format(buffer, maxlength, "%T", "Upgrade Settings", param);
 			else if(object_id == g_TopMenuStats)
 				Format(buffer, maxlength, "%T", "Stats", param);
 			else if(object_id == g_TopMenuSettings)
@@ -182,7 +200,7 @@ public TopMenu_HandleUpgrades(Handle:topmenu, TopMenuAction:action, TopMenuObjec
 			decl String:sTranslatedName[MAX_UPGRADE_NAME_LENGTH];
 			GetUpgradeTranslatedName(param, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
 			
-			new iCurrentLevel = GetClientUpgradeLevel(param, upgrade[UPGR_index]);
+			new iCurrentLevel = GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index]);
 			
 			if(iCurrentLevel >= upgrade[UPGR_maxLevel])
 			{
@@ -207,7 +225,7 @@ public TopMenu_HandleUpgrades(Handle:topmenu, TopMenuAction:action, TopMenuObjec
 			}
 			
 			// Don't let players buy upgrades they already maxed out.
-			if(GetClientUpgradeLevel(param, upgrade[UPGR_index]) >= upgrade[UPGR_maxLevel])
+			if(GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index]) >= upgrade[UPGR_maxLevel])
 				buffer[0] = ITEMDRAW_DISABLED;
 		}
 		case TopMenuAction_SelectOption:
@@ -225,7 +243,7 @@ public TopMenu_HandleUpgrades(Handle:topmenu, TopMenuAction:action, TopMenuObjec
 			}
 			
 			new iItemIndex = upgrade[UPGR_index];
-			new iItemLevel = GetClientUpgradeLevel(param, iItemIndex);
+			new iItemLevel = GetClientPurchasedUpgradeLevel(param, iItemIndex);
 			new iCost = GetUpgradeCost(iItemIndex, iItemLevel+1);
 			
 			new String:sTranslatedName[MAX_UPGRADE_NAME_LENGTH];
@@ -275,7 +293,7 @@ public TopMenu_HandleSell(Handle:topmenu, TopMenuAction:action, TopMenuObject:ob
 			decl String:sTranslatedName[MAX_UPGRADE_NAME_LENGTH];
 			GetUpgradeTranslatedName(param, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
 			
-			Format(buffer, maxlength, "%s Lvl %d [%T: %d]", sTranslatedName, GetClientUpgradeLevel(param, upgrade[UPGR_index]), "Sale", param, GetUpgradeSale(upgrade[UPGR_index], GetClientUpgradeLevel(param, upgrade[UPGR_index])));
+			Format(buffer, maxlength, "%s Lvl %d [%T: %d]", sTranslatedName, GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index]), "Sale", param, GetUpgradeSale(upgrade[UPGR_index], GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index])));
 		}
 		case TopMenuAction_DrawOption:
 		{
@@ -290,7 +308,7 @@ public TopMenu_HandleSell(Handle:topmenu, TopMenuAction:action, TopMenuObject:ob
 				return;
 			}
 			
-			new iCurrentLevel = GetClientUpgradeLevel(param, upgrade[UPGR_index]);
+			new iCurrentLevel = GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index]);
 			
 			// Allow clients to sell upgrades they no longer have access to, but don't show them, if they never bought it.
 			if(!HasAccessToUpgrade(param, upgrade) && iCurrentLevel <= 0)
@@ -349,7 +367,7 @@ public Menu_ConfirmSell(Handle:menu, MenuAction:action, param1, param2)
 		
 		new String:sTranslatedName[MAX_UPGRADE_NAME_LENGTH];
 		GetUpgradeTranslatedName(param1, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
-		Client_PrintToChat(param1, false, "%t", "Upgrade sold", sTranslatedName, GetClientUpgradeLevel(param1, iItemIndex)+1);
+		Client_PrintToChat(param1, false, "%t", "Upgrade sold", sTranslatedName, GetClientPurchasedUpgradeLevel(param1, iItemIndex)+1);
 		
 		DisplayTopMenu(g_hRPGTopMenu, param1, TopMenuPosition_LastCategory);
 	}
@@ -387,6 +405,172 @@ public Menu_ConfirmSell(Handle:menu, MenuAction:action, param1, param2)
 		CloseHandle(menu);
 	}
 	return 0;
+}
+
+public TopMenu_HandleUpgradeSettings(Handle:topmenu, TopMenuAction:action, TopMenuObject:object_id, param, String:buffer[], maxlength)
+{
+	switch(action)
+	{
+		case TopMenuAction_DisplayOption:
+		{
+			decl String:sShortname[MAX_UPGRADE_SHORTNAME_LENGTH];
+			GetTopMenuObjName(topmenu, object_id, sShortname, sizeof(sShortname));
+			
+			new upgrade[InternalUpgradeInfo];
+			if(!GetUpgradeByShortname(sShortname[16], upgrade))
+				return;
+			
+			if(!IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled])
+				return;
+			
+			new iPurchasedLevel = GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index]);
+			new iSelectedLevel = GetClientSelectedUpgradeLevel(param, upgrade[UPGR_index]);
+			decl String:sBuffer[128];
+			GetUpgradeTranslatedName(param, upgrade[UPGR_index], sBuffer, sizeof(sBuffer));
+			if(!GetConVarBool(g_hCVDisableLevelSelection))
+				Format(sBuffer, sizeof(sBuffer), "%s Lvl %d/%d", sBuffer, iSelectedLevel, iPurchasedLevel);
+			
+			Format(sBuffer, sizeof(sBuffer), "%s [%T]", sBuffer, IsClientUpgradeEnabled(param, upgrade[UPGR_index])?"On":"Off", param);
+			strcopy(buffer, maxlength, sBuffer);
+		}
+		case TopMenuAction_DrawOption:
+		{
+			decl String:sShortname[MAX_UPGRADE_SHORTNAME_LENGTH];
+			GetTopMenuObjName(topmenu, object_id, sShortname, sizeof(sShortname));
+			
+			new upgrade[InternalUpgradeInfo];
+			// Don't show invalid upgrades at all in the menu.
+			if(!GetUpgradeByShortname(sShortname[16], upgrade) || !IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled])
+			{
+				buffer[0] = ITEMDRAW_IGNORE;
+				return;
+			}
+			
+			new iCurrentLevel = GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index]);
+			
+			// Allow clients to view upgrades they no longer have access to, but don't show them, if they never bought it.
+			if(!HasAccessToUpgrade(param, upgrade) && iCurrentLevel <= 0)
+			{
+				buffer[0] = ITEMDRAW_IGNORE;
+				return;
+			}
+		}
+		case TopMenuAction_SelectOption:
+		{
+			decl String:sShortname[MAX_UPGRADE_SHORTNAME_LENGTH];
+			GetTopMenuObjName(topmenu, object_id, sShortname, sizeof(sShortname));
+			
+			new upgrade[InternalUpgradeInfo];
+			
+			// Bad upgrade?
+			if(!GetUpgradeByShortname(sShortname[16], upgrade) || !IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled])
+			{
+				DisplayTopMenu(g_hRPGTopMenu, param, TopMenuPosition_LastCategory);
+				return;
+			}
+			
+			DisplayUpgradeSettingsMenu(param, upgrade[UPGR_index]);
+		}
+	}
+}
+
+DisplayUpgradeSettingsMenu(client, iUpgradeIndex)
+{
+	new Handle:hMenu = CreateMenu(Menu_HandleUpgradeSettings, MENU_ACTIONS_DEFAULT);
+	SetMenuExitBackButton(hMenu, true);
+
+	new String:sTranslatedName[MAX_UPGRADE_NAME_LENGTH];
+	GetUpgradeTranslatedName(client, iUpgradeIndex, sTranslatedName, sizeof(sTranslatedName));
+	SetMenuTitle(hMenu, "%T\n-----\n%s\n", "Credits", client, GetClientCredits(client), sTranslatedName);
+	
+	new playerupgrade[PlayerUpgradeInfo];
+	GetPlayerUpgradeInfoByIndex(client, iUpgradeIndex, playerupgrade);
+	
+	decl String:sBuffer[64];
+	Format(sBuffer, sizeof(sBuffer), "%T: %T", "Enabled", client, playerupgrade[PUI_enabled]?"On":"Off", client);
+	AddMenuItem(hMenu, "enable", sBuffer);
+	
+	if(!GetConVarBool(g_hCVDisableLevelSelection))
+	{
+		Format(sBuffer, sizeof(sBuffer), "%T: %d/%d", "Selected level", client, playerupgrade[PUI_selectedlevel], playerupgrade[PUI_purchasedlevel]);
+		AddMenuItem(hMenu, "", sBuffer, ITEMDRAW_DISABLED);
+		Format(sBuffer, sizeof(sBuffer), "%T", "Increase selected level", client);
+		AddMenuItem(hMenu, "incselect", sBuffer, playerupgrade[PUI_selectedlevel]<playerupgrade[PUI_purchasedlevel]?ITEMDRAW_DEFAULT:ITEMDRAW_DISABLED);
+		Format(sBuffer, sizeof(sBuffer), "%T", "Decrease selected level", client);
+		AddMenuItem(hMenu, "decselect", sBuffer, playerupgrade[PUI_selectedlevel]>0?ITEMDRAW_DEFAULT:ITEMDRAW_DISABLED);
+	}
+	
+	new upgrade[InternalUpgradeInfo];
+	GetUpgradeByIndex(iUpgradeIndex, upgrade);
+	
+	new bool:bHasVisuals = upgrade[UPGR_visualsConvar] != INVALID_HANDLE && upgrade[UPGR_enableVisuals];
+	new bool:bHasSounds = upgrade[UPGR_soundsConvar] != INVALID_HANDLE && upgrade[UPGR_enableSounds];
+	
+	if(bHasVisuals || bHasSounds)
+	{
+		AddMenuItem(hMenu, "", "", ITEMDRAW_SPACER);
+		if(bHasVisuals)
+		{
+			Format(sBuffer, sizeof(sBuffer), "%T: %T", "Visual effects", client, playerupgrade[PUI_visuals]?"On":"Off", client);
+			AddMenuItem(hMenu, "visuals", sBuffer);
+		}
+		if(bHasSounds)
+		{
+			Format(sBuffer, sizeof(sBuffer), "%T: %T", "Sound effects", client, playerupgrade[PUI_sounds]?"On":"Off", client);
+			AddMenuItem(hMenu, "sounds", sBuffer);
+		}
+	}
+	
+	g_iSelectedSettingsUpgrade[client] = iUpgradeIndex;
+	DisplayMenu(hMenu, client, MENU_TIME_FOREVER);
+}
+
+public Menu_HandleUpgradeSettings(Handle:menu, MenuAction:action, param1, param2)
+{
+	if(action == MenuAction_Select)
+	{
+		decl String:sInfo[16];
+		GetMenuItem(menu, param2, sInfo, sizeof(sInfo));
+		
+		new playerupgrade[PlayerUpgradeInfo];
+		GetPlayerUpgradeInfoByIndex(param1, g_iSelectedSettingsUpgrade[param1], playerupgrade);
+		
+		if(StrEqual(sInfo, "enable"))
+		{
+			playerupgrade[PUI_enabled] = playerupgrade[PUI_enabled]?false:true;
+		}
+		else if(StrEqual(sInfo, "incselect"))
+		{
+			if(playerupgrade[PUI_selectedlevel] < playerupgrade[PUI_purchasedlevel] && !GetConVarBool(g_hCVDisableLevelSelection))
+				playerupgrade[PUI_selectedlevel]++;
+		}
+		else if(StrEqual(sInfo, "decselect"))
+		{
+			if(playerupgrade[PUI_selectedlevel] > 0 && !GetConVarBool(g_hCVDisableLevelSelection))
+				playerupgrade[PUI_selectedlevel]--;
+		}
+		else if(StrEqual(sInfo, "visuals"))
+		{
+			playerupgrade[PUI_visuals] = playerupgrade[PUI_visuals]?false:true;
+		}
+		else if(StrEqual(sInfo, "sounds"))
+		{
+			playerupgrade[PUI_sounds] = playerupgrade[PUI_sounds]?false:true;
+		}
+		
+		SavePlayerUpgradeInfo(param1, g_iSelectedSettingsUpgrade[param1], playerupgrade);
+		DisplayUpgradeSettingsMenu(param1, g_iSelectedSettingsUpgrade[param1]);
+	}
+	else if(action == MenuAction_Cancel)
+	{
+		g_iSelectedSettingsUpgrade[param1] = -1;
+		if(param2 == MenuCancel_ExitBack)
+			DisplayTopMenu(g_hRPGTopMenu, param1, TopMenuPosition_LastCategory);
+	}
+	else if(action == MenuAction_End)
+	{
+		CloseHandle(menu);
+	}
 }
 
 public TopMenu_HandleStats(Handle:topmenu, TopMenuAction:action, TopMenuObject:object_id, param, String:buffer[], maxlength)
@@ -478,6 +662,7 @@ public Menu_ConfirmResetStats(Handle:menu, MenuAction:action, param1, param2)
 		}
 		
 		ResetStats(param1);
+		SetPlayerLastReset(param1, GetTime());
 		
 		Client_PrintToChat(param1, false, "%t", "Stats have been reset");
 		LogMessage("%L reset his own rpg stats on purpose.", param1);
@@ -555,7 +740,7 @@ public TopMenu_HandleHelp(Handle:topmenu, TopMenuAction:action, TopMenuObject:ob
 				return;
 			}
 			
-			new iCurrentLevel = GetClientUpgradeLevel(param, upgrade[UPGR_index]);
+			new iCurrentLevel = GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index]);
 			
 			// Allow clients to read help about upgrades they no longer have access to, but don't show them, if they never bought it.
 			if(!HasAccessToUpgrade(param, upgrade) && iCurrentLevel <= 0)
@@ -601,7 +786,7 @@ DisplayOtherUpgradesMenu(client, targetClient)
 	new String:sTranslatedName[MAX_UPGRADE_NAME_LENGTH], String:sLine[128], String:sIndex[8];
 	for(new i=0;i<iSize;i++)
 	{
-		iCurrentLevel = GetClientUpgradeLevel(targetClient, i);
+		iCurrentLevel = GetClientPurchasedUpgradeLevel(targetClient, i);
 		GetUpgradeByIndex(i, upgrade);
 		
 		// Don't show disabled items in the menu.
@@ -643,6 +828,11 @@ TopMenuObject:GetUpgradesCategory()
 TopMenuObject:GetSellCategory()
 {
 	return g_TopMenuSell;
+}
+
+TopMenuObject:GetUpgradeSettingsCategory()
+{
+	return g_TopMenuUpgradeSettings;
 }
 
 TopMenuObject:GetHelpCategory()

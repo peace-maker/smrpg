@@ -47,6 +47,7 @@ new Handle:g_hCVCreditsStart;
 new Handle:g_hCVSalePercent;
 new Handle:g_hCVIgnoreLevelBarrier;
 new Handle:g_hCVAllowPresentUpgradeUsage;
+new Handle:g_hCVDisableLevelSelection;
 
 new Handle:g_hCVShowUpgradePurchase;
 new Handle:g_hCVShowMenuOnLevelDefault;
@@ -131,6 +132,7 @@ public OnPluginStart()
 	g_hCVSalePercent = AutoExecConfig_CreateConVar("smrpg_sale_percent", "0.75", "Percentage of credits a player gets for selling an upgrade", 0, true, 0.0);
 	g_hCVIgnoreLevelBarrier = AutoExecConfig_CreateConVar("smrpg_ignore_level_barrier", "0", "Ignore the hardcoded maxlevels for the upgrades and allow to set the maxlevel as high as you want. THIS MIGHT BE BAD!", 0, true, 0.0, true, 1.0);
 	g_hCVAllowPresentUpgradeUsage = AutoExecConfig_CreateConVar("smrpg_allow_present_upgrade_usage", "0", "Allow players to use the upgrades they already have levels for, if they normally wouldn't have access to the upgrade due to the adminflags.\nThis allows admins to give upgrades to players they aren't able to buy themselves.", 0, true, 0.0, true, 1.0);
+	g_hCVDisableLevelSelection = AutoExecConfig_CreateConVar("smrpg_disable_level_selection", "0", "Don't allow players to change the selected levels of their upgrades to a lower level than they already purchased?", 0, true, 0.0, true, 1.0);
 	
 	g_hCVShowUpgradePurchase = AutoExecConfig_CreateConVar("smrpg_show_upgrade_purchase_in_chat", "0", "Show a message to all in chat when a player buys an upgrade.", 0, true, 0.0, true, 1.0);
 	g_hCVShowMenuOnLevelDefault = AutoExecConfig_CreateConVar("smrpg_show_menu_on_levelup", "1", "Show the rpg menu when a players levels up by default? Players can change it in their settings individually afterwards.", 0, true, 0.0, true, 1.0);
@@ -337,6 +339,7 @@ public OnClientAuthorized(client, const String:auth[])
 
 public OnClientDisconnect(client)
 {
+	ResetPlayerMenu(client);
 	ResetAdminMenu(client);
 	SaveData(client);
 	ClearClientRankCache(client);

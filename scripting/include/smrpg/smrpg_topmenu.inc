@@ -8,6 +8,7 @@
 /** Category names of default topmenu categories */
 #define RPGMENU_UPGRADES "RPGUpgradesMenu"
 #define RPGMENU_SELL "RPGSellMenu"
+#define RPGMENU_UPGRADESETTINGS "RPGUpgradeSettingsMenu"
 #define RPGMENU_STATS "RPGStatsMenu"
 #define RPGMENU_SETTINGS "RPGSettingsMenu"
 #define RPGMENU_HELP "RPGHelpMenu"

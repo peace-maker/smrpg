@@ -131,6 +131,9 @@ ShowPlayerDetailMenu(client)
 	AddMenuItem(hMenu, "", sBuffer, ITEMDRAW_DISABLED);
 	Format(sBuffer, sizeof(sBuffer), "%T", "Rank", client, GetClientRank(iTarget), GetRankCount());
 	AddMenuItem(hMenu, "", sBuffer, ITEMDRAW_DISABLED);
+	FormatTime(sBuffer, sizeof(sBuffer), "%c", GetPlayerLastReset(iTarget));
+	Format(sBuffer, sizeof(sBuffer), "%T", "Last reset", client, sBuffer);
+	AddMenuItem(hMenu, "", sBuffer, ITEMDRAW_DISABLED);
 	
 	DisplayMenu(hMenu, client, MENU_TIME_FOREVER);
 }
@@ -197,6 +200,7 @@ public Menu_HandlePlayerResetConfirm(Handle:menu, MenuAction:action, param1, par
 		}
 		
 		ResetStats(g_iCurrentMenuTarget[param1]);
+		SetPlayerLastReset(g_iCurrentMenuTarget[param1], GetTime());
 		LogAction(param1, g_iCurrentMenuTarget[param1], "%L permanently reset all stats of player %L.", param1, g_iCurrentMenuTarget[param1]);
 		Client_PrintToChat(param1, false, "SM:RPG resetstats: %N's stats have been permanently reset", g_iCurrentMenuTarget[param1]);
 		ShowPlayerDetailMenu(param1);
@@ -431,7 +435,7 @@ ShowPlayerUpgradeManageMenu(client)
 	new String:sTranslatedName[MAX_UPGRADE_NAME_LENGTH], String:sLine[128], String:sIndex[8], String:sPermissions[30];
 	for(new i=0;i<iSize;i++)
 	{
-		iCurrentLevel = GetClientUpgradeLevel(iTarget, i);
+		iCurrentLevel = GetClientPurchasedUpgradeLevel(iTarget, i);
 		GetUpgradeByIndex(i, upgrade);
 		
 		// Don't show disabled items in the menu.
@@ -521,7 +525,7 @@ ShowPlayerUpgradeLevelMenu(client)
 	
 	new Handle:hMenu = CreateMenu(Menu_HandlePlayerUpgradeLevelChange);
 	SetMenuExitBackButton(hMenu, true);
-	SetMenuTitle(hMenu, "Change %N's upgrade level\n%s: %d/%d", g_iCurrentMenuTarget[client], sTranslatedName, GetClientUpgradeLevel(g_iCurrentMenuTarget[client], iItemIndex), upgrade[UPGR_maxLevel]);
+	SetMenuTitle(hMenu, "Change %N's upgrade level\n%s: %d/%d", g_iCurrentMenuTarget[client], sTranslatedName, GetClientPurchasedUpgradeLevel(g_iCurrentMenuTarget[client], iItemIndex), upgrade[UPGR_maxLevel]);
 	
 	AddMenuItem(hMenu, "reset", "Reset upgrade to 0 with full refund\n");
 	AddMenuItem(hMenu, "give", "Give level at no costs");
@@ -567,34 +571,32 @@ public Menu_HandlePlayerUpgradeLevelChange(Handle:menu, MenuAction:action, param
 		}
 		
 		new iTarget = g_iCurrentMenuTarget[param1];
+		new iOldLevel = GetClientPurchasedUpgradeLevel(iTarget, iItemIndex);
 		
 		if(StrEqual(sInfo, "reset"))
 		{
-			new iOldLevel = GetClientUpgradeLevel(iTarget, iItemIndex);
 			new iCreditsReturned;
-			while(GetClientUpgradeLevel(iTarget, iItemIndex) > 0)
+			while(GetClientPurchasedUpgradeLevel(iTarget, iItemIndex) > 0)
 			{
 				if(!TakeClientUpgrade(iTarget, iItemIndex))
 					break;
 				// Full refund
-				iCreditsReturned += GetUpgradeCost(iItemIndex, GetClientUpgradeLevel(iTarget, iItemIndex)+1);
-				SetClientCredits(iTarget, GetClientCredits(iTarget) + GetUpgradeCost(iItemIndex, GetClientUpgradeLevel(iTarget, iItemIndex)+1));
+				iCreditsReturned += GetUpgradeCost(iItemIndex, GetClientPurchasedUpgradeLevel(iTarget, iItemIndex)+1);
+				SetClientCredits(iTarget, GetClientCredits(iTarget) + GetUpgradeCost(iItemIndex, GetClientPurchasedUpgradeLevel(iTarget, iItemIndex)+1));
 			}
-			LogAction(param1, iTarget, "%L reset upgrade %s of %L with full refund of all upgrade costs. Upgrade level changed from %d to %d and player earned %d credits.", param1, upgrade[UPGR_name], iTarget, iOldLevel, GetClientUpgradeLevel(iTarget, iItemIndex), iCreditsReturned);
-			Client_PrintToChat(param1, false, "{OG}SM:RPG{N} > {G}Reset %N's upgrade %s with full refund of all upgrade costs. Upgrade level changed from %d to %d and player earned %d credits.", iTarget, upgrade[UPGR_name], iOldLevel, GetClientUpgradeLevel(iTarget, iItemIndex), iCreditsReturned);
+			LogAction(param1, iTarget, "%L reset upgrade %s of %L with full refund of all upgrade costs. Upgrade level changed from %d to %d and player earned %d credits.", param1, upgrade[UPGR_name], iTarget, iOldLevel, GetClientPurchasedUpgradeLevel(iTarget, iItemIndex), iCreditsReturned);
+			Client_PrintToChat(param1, false, "{OG}SM:RPG{N} > {G}Reset %N's upgrade %s with full refund of all upgrade costs. Upgrade level changed from %d to %d and player earned %d credits.", iTarget, upgrade[UPGR_name], iOldLevel, GetClientPurchasedUpgradeLevel(iTarget, iItemIndex), iCreditsReturned);
 		}
 		else if(StrEqual(sInfo, "give"))
 		{
-			new iOldLevel = GetClientUpgradeLevel(iTarget, iItemIndex);
 			if(iOldLevel < upgrade[UPGR_maxLevel])
 			{
 				GiveClientUpgrade(iTarget, iItemIndex);
-				LogAction(param1, iTarget, "%L gave %L one level of upgrade %s at no charge. Upgrade level changed from %d to %d.", param1, iTarget, upgrade[UPGR_name], iOldLevel, GetClientUpgradeLevel(iTarget, iItemIndex));
+				LogAction(param1, iTarget, "%L gave %L one level of upgrade %s at no charge. Upgrade level changed from %d to %d.", param1, iTarget, upgrade[UPGR_name], iOldLevel, GetClientPurchasedUpgradeLevel(iTarget, iItemIndex));
 			}
 		}
 		else if(StrEqual(sInfo, "buy"))
 		{
-			new iOldLevel = GetClientUpgradeLevel(iTarget, iItemIndex);
 			if(iOldLevel < upgrade[UPGR_maxLevel])
 			{
 				new iCost = GetUpgradeCost(iItemIndex, iOldLevel+1);
@@ -605,31 +607,29 @@ public Menu_HandlePlayerUpgradeLevelChange(Handle:menu, MenuAction:action, param
 				else
 				{
 					BuyClientUpgrade(iTarget, iItemIndex);
-					LogAction(param1, iTarget, "%L forced %L to buy one level of upgrade %s. Upgrade level changed from %d to %d.", param1, iTarget, upgrade[UPGR_name], iOldLevel, GetClientUpgradeLevel(iTarget, iItemIndex));
+					LogAction(param1, iTarget, "%L forced %L to buy one level of upgrade %s. Upgrade level changed from %d to %d.", param1, iTarget, upgrade[UPGR_name], iOldLevel, GetClientPurchasedUpgradeLevel(iTarget, iItemIndex));
 				}
 			}
 		}
 		else if(StrEqual(sInfo, "take"))
 		{
-			new iOldLevel = GetClientUpgradeLevel(iTarget, iItemIndex);
 			if(iOldLevel > 0)
 			{
 				if(TakeClientUpgrade(iTarget, iItemIndex))
 				{
 					// Full refund
-					new iCosts = GetUpgradeCost(iItemIndex, GetClientUpgradeLevel(iTarget, iItemIndex)+1);
+					new iCosts = GetUpgradeCost(iItemIndex, GetClientPurchasedUpgradeLevel(iTarget, iItemIndex)+1);
 					SetClientCredits(iTarget, GetClientCredits(iTarget) + iCosts);
-					LogAction(param1, iTarget, "%L took one level of upgrade %s from %L with full refund of the costs. Upgrade level changed from %d to %d and player got %d credits.", param1, upgrade[UPGR_name], iTarget, iOldLevel, GetClientUpgradeLevel(iTarget, iItemIndex), iCosts);
+					LogAction(param1, iTarget, "%L took one level of upgrade %s from %L with full refund of the costs. Upgrade level changed from %d to %d and player got %d credits.", param1, upgrade[UPGR_name], iTarget, iOldLevel, GetClientPurchasedUpgradeLevel(iTarget, iItemIndex), iCosts);
 				}
 			}
 		}
 		else if(StrEqual(sInfo, "sell"))
 		{
-			new iOldLevel = GetClientUpgradeLevel(iTarget, iItemIndex);
 			if(iOldLevel > 0)
 			{
 				SellClientUpgrade(iTarget, iItemIndex);
-				LogAction(param1, iTarget, "%L forced %L to sell one level of upgrade %s. Upgrade level changed from %d to %d.", param1, iTarget, upgrade[UPGR_name], iOldLevel, GetClientUpgradeLevel(iTarget, iItemIndex));
+				LogAction(param1, iTarget, "%L forced %L to sell one level of upgrade %s. Upgrade level changed from %d to %d.", param1, iTarget, upgrade[UPGR_name], iOldLevel, GetClientPurchasedUpgradeLevel(iTarget, iItemIndex));
 			}
 		}
 		

@@ -115,6 +115,13 @@
 		"en"			"Rank: {1}/{2}"
 	}
 	
+	"Last reset"
+	{
+		// 1: date and time representation of the last time the stats were reset to 0 for this player
+		"#format"	"{1:s}"
+		"en"			"Last reset: {1}"
+	}
+	
 	"Cost"
 	{
 		"en"			"Cost"
@@ -166,6 +173,11 @@
 	"Sell"
 	{
 		"en"			"Sell"
+	}
+	
+	"Upgrade Settings"
+	{
+		"en"			"Upgrade Settings"
 	}
 	
 	"Stats"
@@ -247,6 +259,37 @@
 	"Confirm stats reset"
 	{
 		"en"			"WARNING: You will lose all Levels, Credits, and Experience.\nReset stats permanently?"
+	}
+	
+	//Menu upgrade settings
+	"Enabled"
+	{
+		"en"			"Enabled"
+	}
+	
+	"Selected level"
+	{
+		"en"			"Selected level"
+	}
+	
+	"Increase selected level"
+	{
+		"en"			"Increase selected level"
+	}
+	
+	"Decrease selected level"
+	{
+		"en"			"Decrease selected level"
+	}
+	
+	"Visual effects"
+	{
+		"en"			"Visual effects"
+	}
+	
+	"Sound effects"
+	{
+		"en"			"Sound effects"
 	}
 	
 	// Command help

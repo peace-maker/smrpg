@@ -6,6 +6,8 @@
 enum InternalUpgradeInfo
 {
 	UPGR_index, // index in g_hUpgrades array
+	UPGR_databaseId, // the upgrade_id in the upgrades table
+	bool:UPGR_databaseLoading, // are we currently loading the databaseid of this upgrade?
 	bool:UPGR_enabled, // upgrade enabled?
 	bool:UPGR_unavailable, // plugin providing this upgrade gone?
 	UPGR_maxLevelBarrier, // upper limit of maxlevel setting. Can't set maxlevel higher than that.
@@ -32,6 +34,7 @@ enum InternalUpgradeInfo
 	// Topmenu object ids
 	TopMenuObject:UPGR_topmenuUpgrades,
 	TopMenuObject:UPGR_topmenuSell,
+	TopMenuObject:UPGR_topmenuUpgradeSettings,
 	TopMenuObject:UPGR_topmenuHelp,
 	
 	String:UPGR_name[MAX_UPGRADE_NAME_LENGTH],
@@ -57,7 +60,6 @@ RegisterUpgradeNatives()
 	CreateNative("SMRPG_RunUpgradeEffect", Native_RunUpgradeEffect);
 	
 	CreateNative("SMRPG_CheckUpgradeAccess", Native_CheckUpgradeAccess);
-	CreateNative("SMRPG_ClientWantsCosmetics", Native_ClientWantsCosmetics);
 }
 
 RegisterUpgradeForwards()
@@ -81,12 +83,6 @@ public Native_RegisterUpgradeType(Handle:plugin, numParams)
 	GetNativeStringLength(2, len);
 	new String:sShortName[len+1];
 	GetNativeString(2, sShortName, len+1);
-	
-	if(StrContains(sShortName, " ") != -1)
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "Whitespace is not allowed in the shortname of an upgrade.");
-		return;
-	}
 
 	// There already is an upgrade with that name loaded. Don't load it twice. shortnames have to be unique.
 	new upgrade[InternalUpgradeInfo], bool:bAlreadyLoaded;
@@ -119,6 +115,8 @@ public Native_RegisterUpgradeType(Handle:plugin, numParams)
 	if(!bAlreadyLoaded)
 	{
 		upgrade[UPGR_index] = GetArraySize(g_hUpgrades);
+		upgrade[UPGR_databaseId] = -1;
+		upgrade[UPGR_databaseLoading] = false;
 		new Handle:hTopMenu = GetRPGTopMenu();
 		if(hTopMenu != INVALID_HANDLE)
 		{
@@ -132,6 +130,11 @@ public Native_RegisterUpgradeType(Handle:plugin, numParams)
 			{
 				Format(sBuffer, sizeof(sBuffer), "rpgsell_%s", sShortName);
 				upgrade[UPGR_topmenuSell] = AddToTopMenu(hTopMenu, sBuffer, TopMenuObject_Item, TopMenu_HandleSell, GetSellCategory());
+			}
+			if(GetUpgradeSettingsCategory() != INVALID_TOPMENUOBJECT)
+			{
+				Format(sBuffer, sizeof(sBuffer), "rpgupgrsettings_%s", sShortName);
+				upgrade[UPGR_topmenuUpgradeSettings] = AddToTopMenu(hTopMenu, sBuffer, TopMenuObject_Item, TopMenu_HandleUpgradeSettings, GetUpgradeSettingsCategory());
 			}
 			if(GetHelpCategory() != INVALID_TOPMENUOBJECT)
 			{
@@ -153,6 +156,8 @@ public Native_RegisterUpgradeType(Handle:plugin, numParams)
 	upgrade[UPGR_translationCallback] = INVALID_FUNCTION;
 	upgrade[UPGR_resetCallback] = INVALID_FUNCTION;
 	upgrade[UPGR_plugin] = plugin;
+	upgrade[UPGR_visualsConvar] = INVALID_HANDLE;
+	upgrade[UPGR_soundsConvar] = INVALID_HANDLE;
 	strcopy(upgrade[UPGR_name], MAX_UPGRADE_NAME_LENGTH, sName);
 	strcopy(upgrade[UPGR_shortName], MAX_UPGRADE_SHORTNAME_LENGTH, sShortName);
 	strcopy(upgrade[UPGR_description], MAX_UPGRADE_DESCRIPTION_LENGTH, sDescription);
@@ -230,12 +235,13 @@ public Native_RegisterUpgradeType(Handle:plugin, numParams)
 		{
 			if(IsClientConnected(i))
 			{
-				PushArrayCell(GetClientUpgradeLevels(i), 0);
+				InitPlayerNewUpgrade(i);
 			}
 		}
 	}
 	
-	CheckUpgradeDatabaseField(sShortName);
+	if(upgrade[UPGR_databaseId] == -1 && !upgrade[UPGR_databaseLoading])
+		CheckUpgradeDatabaseEntry(upgrade);
 }
 
 // native SMRPG_UnregisterUpgradeType(const String:shortname[]);
@@ -466,46 +472,6 @@ public Native_SetUpgradeDefaultCosmenticEffect(Handle:plugin, numParams)
 	SaveUpgradeConfig(upgrade);
 }
 
-// native bool:SMRPG_ClientWantsCosmetics(client, const String:shortname[], SMRPG_FX:effect);
-public Native_ClientWantsCosmetics(Handle:plugin, numParams)
-{
-	new client = GetNativeCell(1);
-	if(client < 0 || client > MaxClients)
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
-		return false;
-	}
-	
-	new len;
-	GetNativeStringLength(2, len);
-	new String:sShortName[len+1];
-	GetNativeString(2, sShortName, len+1);
-	
-	new upgrade[InternalUpgradeInfo];
-	if(!GetUpgradeByShortname(sShortName, upgrade) || !IsValidUpgrade(upgrade))
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "No upgrade named \"%s\" loaded.", sShortName);
-		return false;
-	}
-	
-	new SMRPG_FX:iFX = SMRPG_FX:GetNativeCell(3);
-	
-	// TODO: Add individual options for clients.
-	switch(iFX)
-	{
-		case SMRPG_FX_Visuals:
-		{
-			return upgrade[UPGR_enableVisuals];
-		}
-		case SMRPG_FX_Sounds:
-		{
-			return upgrade[UPGR_enableSounds];
-		}
-	}
-	
-	return false;
-}
-
 // native SMRPG_ResetUpgradeEffectOnClient(client, const String:shortname[]);
 public Native_ResetUpgradeEffectOnClient(Handle:plugin, numParams)
 {
@@ -564,7 +530,7 @@ public Native_RunUpgradeEffect(Handle:plugin, numParams)
 	if(!HasAccessToUpgrade(client, upgrade))
 	{
 		// Might still allow them to use the effects of the upgrade, if they already got a level for it.
-		new iLevel = GetClientUpgradeLevel(client, upgrade[UPGR_index]);
+		new iLevel = GetClientPurchasedUpgradeLevel(client, upgrade[UPGR_index]);
 		if(iLevel <= 0 || !GetConVarBool(g_hCVAllowPresentUpgradeUsage))
 			return false;
 	}
@@ -629,6 +595,21 @@ bool:GetUpgradeByShortname(const String:sShortName[], upgrade[InternalUpgradeInf
 		GetUpgradeByIndex(i, upgrade);
 		
 		if(StrEqual(upgrade[UPGR_shortName], sShortName, false))
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+bool:GetUpgradeByDatabaseId(iDatabaseId, upgrade[InternalUpgradeInfo])
+{
+	new iSize = GetArraySize(g_hUpgrades);
+	for(new i=0;i<iSize;i++)
+	{
+		GetUpgradeByIndex(i, upgrade);
+		
+		if(upgrade[UPGR_databaseId] == iDatabaseId)
 		{
 			return true;
 		}
@@ -828,9 +809,9 @@ public ConVar_UpgradeMaxLevelChanged(Handle:convar, const String:oldValue[], con
 		if(!IsClientInGame(i))
 			continue;
 		
-		while(GetClientUpgradeLevel(i, upgrade[UPGR_index]) > iNewMaxLevel)
+		while(GetClientPurchasedUpgradeLevel(i, upgrade[UPGR_index]) > iNewMaxLevel)
 		{
-			SetClientCredits(i, GetClientCredits(i) + GetUpgradeCost(upgrade[UPGR_index], GetClientUpgradeLevel(i, upgrade[UPGR_index])));
+			SetClientCredits(i, GetClientCredits(i) + GetUpgradeCost(upgrade[UPGR_index], GetClientPurchasedUpgradeLevel(i, upgrade[UPGR_index])));
 			TakeClientUpgrade(i, upgrade[UPGR_index]);
 		}
 	}

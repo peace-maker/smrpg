@@ -12,6 +12,10 @@
 	"RPGSellMenu"
 	{
 	}
+	
+	"RPGUpgradeSettingsMenu"
+	{
+	}
 
 	"RPGStatsMenu"
 	{
