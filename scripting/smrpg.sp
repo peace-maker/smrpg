@@ -30,6 +30,7 @@ new Handle:g_hCVSaveInterval;
 new Handle:g_hCVPlayerExpire;
 new Handle:g_hCVBotMaxlevel;
 new Handle:g_hCVAnnounceNewLvl;
+new Handle:g_hCVAFKTime;
 
 new Handle:g_hCVExpNotice;
 new Handle:g_hCVExpMax;
@@ -115,6 +116,7 @@ public OnPluginStart()
 	g_hCVPlayerExpire = AutoExecConfig_CreateConVar("smrpg_player_expire", "30", "Sets how many days until an unused player account is deleted (0 = never)", 0, true, 0.0);
 	g_hCVBotMaxlevel = AutoExecConfig_CreateConVar("smrpg_bot_maxlevel", "250", "The maximum level a bot can reach until its stats are reset (0 = infinite)", 0, true, 0.0);
 	g_hCVAnnounceNewLvl = AutoExecConfig_CreateConVar("smrpg_announce_newlvl", "1", "Global announcement when a player reaches a new level (1 = enable, 0 = disable)", 0, true, 0.0, true, 1.0);
+	g_hCVAFKTime = AutoExecConfig_CreateConVar("smrpg_afk_time", "30", "After how many seconds of idleing is the player flagged as AFK? (0 = off)", 0, true, 0.0);
 	
 	g_hCVExpNotice = AutoExecConfig_CreateConVar("smrpg_exp_notice", "1", "Sends notifications to players when they gain Experience", 0, true, 0.0, true, 1.0);
 	g_hCVExpMax = AutoExecConfig_CreateConVar("smrpg_exp_max", "50000", "Maximum experience that will ever be required", 0, true, 0.0);
@@ -166,6 +168,7 @@ public OnPluginStart()
 	LoadTranslations("common.phrases");
 	LoadTranslations("smrpg.phrases");
 	
+	HookEventEx("player_spawn", Event_OnPlayerSpawn);
 	HookEventEx("player_death", Event_OnPlayerDeath);
 	HookEventEx("round_end", Event_OnRoundEnd);
 	HookEvent("player_say", Event_OnPlayerSay);
@@ -306,6 +309,8 @@ public OnMapStart()
 	
 	// Clean up our database..
 	DatabaseMaid();
+	
+	StartAFKChecker();
 }
 
 public OnMapEnd()
@@ -344,6 +349,15 @@ public OnClientDisconnect(client)
 	SaveData(client);
 	ClearClientRankCache(client);
 	RemovePlayer(client);
+	ResetAFKPlayer(client);
+}
+
+public Action:OnPlayerRunCmd(client, &buttons, &impulse, Float:vel[3], Float:angles[3], &weapon, &subtype, &cmdnum, &tickcount, &seed, mouse[2])
+{
+	// Reset his afk timer when he uses a weapon.
+	if(IsClientInGame(client) && IsPlayerAlive(client) && buttons & (IN_ATTACK|IN_ATTACK2))
+		g_PlayerAFKInfo[client][AFK_startTime] = 0;
+	return Plugin_Continue;
 }
 
 public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagetype, weapon, const Float:damageForce[3], const Float:damagePosition[3])
@@ -358,12 +372,29 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
  * Event handlers
  */
 
+public Event_OnPlayerSpawn(Handle:event, const String:error[], bool:dontBroadcast)
+{
+	new client = GetClientOfUserId(GetEventInt(event, "userid"));
+	
+	if(client <= 0)
+		return;
+	
+	// Save the spawn time so we don't count the new spawn position as if the player moved himself
+	g_PlayerAFKInfo[client][AFK_spawnTime] = GetTime();
+}
+ 
 public Event_OnPlayerDeath(Handle:event, const String:error[], bool:dontBroadcast)
 {
 	new attacker = GetClientOfUserId(GetEventInt(event, "attacker"));
 	new victim = GetClientOfUserId(GetEventInt(event, "userid"));
 	
-	if(attacker <= 0 || victim <= 0)
+	if(victim <= 0)
+		return;
+	
+	// Save when the player died.
+	g_PlayerAFKInfo[victim][AFK_deathTime] = GetTime();
+	
+	if(attacker <= 0)
 		return;
 	
 	Stats_PlayerKill(attacker, victim);

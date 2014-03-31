@@ -75,6 +75,17 @@ native bool:SMRPG_SetClientExperience(client, exp);
 native SMRPG_ResetClientStats(client);
 
 /**
+ * Check if a client is away from keyboard.
+ * This is done by saving the player's last position regularly and see if it is still the same later.
+ * Shooting resets the timer.
+ *
+ * @param client				The client index
+ * @return	True if player afk, false otherwise.
+ * @error Invalid client index
+ */
+native bool:SMRPG_IsClientAFK(client);
+
+/**
  * Adds experience to a client.
  * If he gets enough experience to level up, he levels up.
  *

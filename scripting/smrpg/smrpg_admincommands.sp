@@ -45,7 +45,7 @@ public Action:Cmd_PlayerInfo(client, args)
 	
 	decl String:sSteamID[32];
 	GetClientAuthString(iTarget, sSteamID, sizeof(sSteamID));
-	ReplyToCommand(client, "SM:RPG Info: Index: %d, UserID: %d, SteamID: %s, Database ID: %d", iTarget, GetClientUserId(iTarget), sSteamID, playerInfo[PLR_dbId]);
+	ReplyToCommand(client, "SM:RPG Info: Index: %d, UserID: %d, SteamID: %s, Database ID: %d, AFK: %d", iTarget, GetClientUserId(iTarget), sSteamID, playerInfo[PLR_dbId], IsClientAFK(iTarget));
 	
 	ReplyToCommand(client, "SM:RPG Stats: Level: %d, Experience: %d/%d, Credits: %d, Rank: %d/%d", GetClientLevel(iTarget), GetClientExperience(iTarget), Stats_LvlToExp(GetClientLevel(iTarget)), GetClientCredits(iTarget), GetClientRank(iTarget), GetRankCount());
 	
@@ -829,7 +829,7 @@ public Action:Cmd_DebugPlayerlist(client, args)
 		if(!IsClientInGame(i))
 			continue;
 		
-		ReplyToCommand(client, "Player: %N, UserID: %d, Level: %d, Experience: %d/%d", i, GetClientUserId(i), GetClientLevel(i), GetClientExperience(i), Stats_LvlToExp(GetClientLevel(i)));
+		ReplyToCommand(client, "Player: %N, UserID: %d, Level: %d, Experience: %d/%d, AFK: %d", i, GetClientUserId(i), GetClientLevel(i), GetClientExperience(i), Stats_LvlToExp(GetClientLevel(i)), IsClientAFK(i));
 	}
 	return Plugin_Handled;
 }

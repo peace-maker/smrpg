@@ -166,6 +166,9 @@ public Event_OnPlayerHurt(Handle:event, const String:error[], bool:dontBroadcast
 	if(!SMRPG_IsEnabled())
 		return;
 	
+	if(SMRPG_IsClientAFK(victim))
+		return;
+	
 	// Ignore teamattack
 	if(GetClientTeam(attacker) == GetClientTeam(victim))
 		return;
@@ -236,6 +239,9 @@ public Event_OnPlayerDeath(Handle:event, const String:error[], bool:dontBroadcas
 		return;
 	
 	if(!SMRPG_IsEnabled())
+		return;
+	
+	if(SMRPG_IsClientAFK(victim))
 		return;
 	
 	// Ignore teamattack

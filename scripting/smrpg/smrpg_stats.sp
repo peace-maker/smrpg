@@ -1,5 +1,6 @@
 #pragma semicolon 1
 #include <sourcemod>
+#include <smlib>
 
 new g_iCachedRank[MAXPLAYERS+1] = {-1,...};
 new g_iCachedRankCount = 0;
@@ -16,12 +17,25 @@ new g_iPlayerSessionStartStats[MAXPLAYERS+1][SessionStats];
 
 new Handle:g_hfwdOnAddExperience;
 
+// AFK Handling
+enum AFKInfo {
+	Float:AFK_lastPosition[3],
+	AFK_startTime,
+	AFK_spawnTime,
+	AFK_deathTime
+}
+new g_PlayerAFKInfo[MAXPLAYERS+1][AFKInfo];
+new Handle:g_hCheckAFKPlayers;
+
 RegisterStatsNatives()
 {
 	// native bool:SMRPG_AddClientExperience(client, exp, bool:bHideNotice);
 	CreateNative("SMRPG_AddClientExperience", Native_AddClientExperience);
 	// native SMRPG_LevelToExperience(iLevel);
 	CreateNative("SMRPG_LevelToExperience", Native_LevelToExperience);
+	
+	// native bool:SMRPG_IsClientAFK(client);
+	CreateNative("SMRPG_IsClientAFK", Native_IsClientAFK);
 }
 
 RegisterStatsForwards()
@@ -141,6 +155,10 @@ Stats_PlayerDamage(attacker, victim, Float:fDamage)
 	if(!GetConVarBool(g_hCVEnable))
 		return;
 	
+	// Don't give the attacker any exp when his victim was afk.
+	if(IsClientAFK(victim))
+		return;
+	
 	// Ignore teamattack
 	if(GetClientTeam(attacker) == GetClientTeam(victim))
 		return;
@@ -154,6 +172,10 @@ Stats_PlayerDamage(attacker, victim, Float:fDamage)
 Stats_PlayerKill(attacker, victim)
 {
 	if(!GetConVarBool(g_hCVEnable))
+		return;
+	
+	// Don't give the attacker any exp when his victim was afk.
+	if(IsClientAFK(victim))
 		return;
 	
 	// Ignore teamattack
@@ -206,6 +228,122 @@ Action:Stats_CallOnExperienceForward(client, ExperienceReason:reason, iExperienc
 	return result;
 }
 
+// AFK Handling
+StartAFKChecker()
+{
+	ClearHandle(g_hCheckAFKPlayers);
+	g_hCheckAFKPlayers = CreateTimer(0.5, Timer_CheckAFKPlayers, _, TIMER_FLAG_NO_MAPCHANGE|TIMER_REPEAT);
+}
+
+public Action:Timer_CheckAFKPlayers(Handle:timer)
+{
+	new Float:fOrigin[3], Float:fLastPosition[3];
+	for(new i=1;i<=MaxClients;i++)
+	{
+		if(IsClientInGame(i) && IsPlayerAlive(i) && GetClientTeam(i) > 1)
+		{
+			GetClientAbsOrigin(i, fOrigin);
+			
+			// See if the player just spawned..
+			if(g_PlayerAFKInfo[i][AFK_spawnTime] > 0)
+			{
+				new iDifference = GetTime() - g_PlayerAFKInfo[i][AFK_spawnTime];
+				// The player spawned 2 seconds ago. He's now ready to be checked for being afk again.
+				if(iDifference > 2)
+				{
+					g_PlayerAFKInfo[i][AFK_spawnTime] = 0;
+					if(g_PlayerAFKInfo[i][AFK_startTime] > 0)
+						g_PlayerAFKInfo[i][AFK_startTime] += iDifference;
+					Array_Copy(fOrigin, g_PlayerAFKInfo[i][AFK_lastPosition], 3);
+				}
+				continue;
+			}
+			
+			// See if we need to subtract some time while he was dead.
+			if(g_PlayerAFKInfo[i][AFK_deathTime] > 0)
+			{
+				if(g_PlayerAFKInfo[i][AFK_startTime] > 0)
+					g_PlayerAFKInfo[i][AFK_startTime] += GetTime() - g_PlayerAFKInfo[i][AFK_deathTime];
+				g_PlayerAFKInfo[i][AFK_deathTime] = 0;
+			}
+			
+			Array_Copy(g_PlayerAFKInfo[i][AFK_lastPosition], fLastPosition, 3);
+			if(Math_VectorsEqual(fOrigin, fLastPosition, 1.0))
+			{
+				if(g_PlayerAFKInfo[i][AFK_startTime] == 0)
+					g_PlayerAFKInfo[i][AFK_startTime] = GetTime();
+			}
+			else
+			{
+				g_PlayerAFKInfo[i][AFK_startTime] = 0;
+			}
+			
+			Array_Copy(fOrigin, g_PlayerAFKInfo[i][AFK_lastPosition], 3);
+		}
+	}
+	
+	return Plugin_Continue;
+}
+
+bool:IsClientAFK(client)
+{
+	if(g_PlayerAFKInfo[client][AFK_startTime] == 0)
+		return false;
+	
+	new iAFKTime = GetConVarInt(g_hCVAFKTime);
+	if(iAFKTime <= 0)
+		return false;
+	
+	if((GetTime() - g_PlayerAFKInfo[client][AFK_startTime]) > iAFKTime)
+		return true;
+	return false;
+}
+
+ResetAFKPlayer(client)
+{
+	g_PlayerAFKInfo[client][AFK_startTime] = 0;
+	g_PlayerAFKInfo[client][AFK_spawnTime] = 0;
+	g_PlayerAFKInfo[client][AFK_deathTime] = 0;
+	Array_Copy(g_PlayerAFKInfo[client][AFK_lastPosition], Float:{0.0,0.0,0.0}, 3);
+}
+
+/**
+ * Native Callbacks
+ */
+// native SMRPG_AddClientExperience(client, exp, bool:bHideNotice);
+public Native_AddClientExperience(Handle:plugin, numParams)
+{
+	new client = GetNativeCell(1);
+	if(client < 0 || client > MaxClients)
+	{
+		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
+		return;
+	}
+	
+	new iExperience = GetNativeCell(2);
+	new bool:bHideNotice = bool:GetNativeCell(3);
+	Stats_AddExperience(client, iExperience, bHideNotice);
+}
+
+public Native_LevelToExperience(Handle:plugin, numParams)
+{
+	new iLevel = GetNativeCell(1);
+	return Stats_LvlToExp(iLevel);
+}
+
+public Native_IsClientAFK(Handle:plugin, numParams)
+{
+	new client = GetNativeCell(1);
+	if(client < 0 || client > MaxClients)
+	{
+		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
+		return false;
+	}
+	
+	return IsClientAFK(client);
+}
+
+// rpgsession handling
 InitPlayerSessionStartStats(client)
 {
 	g_iPlayerSessionStartStats[client][SS_JoinTime] = GetTime();
@@ -286,26 +424,6 @@ DisplaySessionStatsMenu(client)
 	CloseHandle(hPanel);
 }
 
-// native SMRPG_AddClientExperience(client, exp, bool:bHideNotice);
-public Native_AddClientExperience(Handle:plugin, numParams)
-{
-	new client = GetNativeCell(1);
-	if(client < 0 || client > MaxClients)
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
-		return;
-	}
-	
-	new iExperience = GetNativeCell(2);
-	new bool:bHideNotice = bool:GetNativeCell(3);
-	Stats_AddExperience(client, iExperience, bHideNotice);
-}
-
-public Native_LevelToExperience(Handle:plugin, numParams)
-{
-	new iLevel = GetNativeCell(1);
-	return Stats_LvlToExp(iLevel);
-}
 
 /*	//////////////////////////////////////
 	CRPG_RankManager
