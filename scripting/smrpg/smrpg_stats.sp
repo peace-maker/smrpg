@@ -25,7 +25,6 @@ enum AFKInfo {
 	AFK_deathTime
 }
 new g_PlayerAFKInfo[MAXPLAYERS+1][AFKInfo];
-new Handle:g_hCheckAFKPlayers;
 
 RegisterStatsNatives()
 {
@@ -231,8 +230,7 @@ Action:Stats_CallOnExperienceForward(client, ExperienceReason:reason, iExperienc
 // AFK Handling
 StartAFKChecker()
 {
-	ClearHandle(g_hCheckAFKPlayers);
-	g_hCheckAFKPlayers = CreateTimer(0.5, Timer_CheckAFKPlayers, _, TIMER_FLAG_NO_MAPCHANGE|TIMER_REPEAT);
+	CreateTimer(0.5, Timer_CheckAFKPlayers, _, TIMER_FLAG_NO_MAPCHANGE|TIMER_REPEAT);
 }
 
 public Action:Timer_CheckAFKPlayers(Handle:timer)
