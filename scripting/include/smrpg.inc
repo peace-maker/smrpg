@@ -45,6 +45,7 @@ public __pl_smrpg_SetNTVOptional()
 	MarkNativeAsOptional("SMRPG_GetClientExperience");
 	MarkNativeAsOptional("SMRPG_SetClientExperience");
 	MarkNativeAsOptional("SMRPG_ResetClientStats");
+	MarkNativeAsOptional("SMRPG_IsClientAFK");
 	MarkNativeAsOptional("SMRPG_AddClientExperience");
 	MarkNativeAsOptional("SMRPG_LevelToExperience");
 	MarkNativeAsOptional("SMRPG_RegisterUpgradeType");
