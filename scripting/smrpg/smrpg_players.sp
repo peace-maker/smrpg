@@ -190,7 +190,7 @@ SavePlayerUpgradeLevels(client)
 		if(!IsValidUpgrade(upgrade))
 			continue;
 		
-		if(iAdded)
+		if(iAdded > 0)
 			Format(sQuery, sizeof(sQuery), "%s, ", sQuery);
 		
 		GetPlayerUpgradeInfoByIndex(client, i, playerupgrade);
@@ -253,6 +253,7 @@ RemovePlayer(client)
 	ClearHandle(g_iPlayerInfo[client][PLR_upgrades]);
 	g_iPlayerInfo[client][PLR_dbId] = -1;
 	g_iPlayerInfo[client][PLR_triedToLoadData] = false;
+	g_iPlayerInfo[client][PLR_showMenuOnLevelup] = GetConVarBool(g_hCVShowMenuOnLevelDefault);
 	g_iPlayerInfo[client][PLR_lastReset] = 0;
 }
 
@@ -691,7 +692,7 @@ public SQL_GetPlayerInfo(Handle:owner, Handle:hndl, const String:error[], any:us
 	
 	/* Player Upgrades */
 	decl String:sQuery[128];
-	Format(sQuery, sizeof(sQuery), "SELECT * FROM %s WHERE player_id = %d", TBL_PLAYERUPGRADES, g_iPlayerInfo[client][PLR_dbId]);
+	Format(sQuery, sizeof(sQuery), "SELECT upgrade_id, purchasedlevel, selectedlevel, enabled, visuals, sounds FROM %s WHERE player_id = %d", TBL_PLAYERUPGRADES, g_iPlayerInfo[client][PLR_dbId]);
 	SQL_TQuery(g_hDatabase, SQL_GetPlayerUpgrades, sQuery, userid);
 }
 
@@ -709,14 +710,6 @@ public SQL_GetPlayerUpgrades(Handle:owner, Handle:hndl, const String:error[], an
 		return;
 	}
 	
-	// Player isn't fully registred?! He might have disconnected while the queries were still running last time?
-	if(SQL_GetRowCount(hndl) == 0)
-	{
-		// Insert upgrade level info
-		SavePlayerUpgradeLevels(client);
-		return;
-	}
-	
 	new upgrade[InternalUpgradeInfo], playerupgrade[PlayerUpgradeInfo], iSelectedLevel;
 	while(SQL_MoreRows(hndl))
 	{
@@ -724,21 +717,21 @@ public SQL_GetPlayerUpgrades(Handle:owner, Handle:hndl, const String:error[], an
 			continue;
 		
 		// If that upgrade isn't loaded yet, we'll fetch the right level when it's loaded.
-		if(!GetUpgradeByDatabaseId(SQL_FetchInt(hndl, 1), upgrade))
+		if(!GetUpgradeByDatabaseId(SQL_FetchInt(hndl, 0), upgrade))
 			continue;
 		
-		SetClientPurchasedUpgradeLevel(client, upgrade[UPGR_index], SQL_FetchInt(hndl, 2));
+		SetClientPurchasedUpgradeLevel(client, upgrade[UPGR_index], SQL_FetchInt(hndl, 1));
 		
 		// Make sure the database is sane.. People WILL temper with it manually.
-		iSelectedLevel = SQL_FetchInt(hndl, 3);
+		iSelectedLevel = SQL_FetchInt(hndl, 2);
 		if(iSelectedLevel > GetClientPurchasedUpgradeLevel(client, upgrade[UPGR_index]))
 			iSelectedLevel = GetClientPurchasedUpgradeLevel(client, upgrade[UPGR_index]);
 		SetClientSelectedUpgradeLevel(client, upgrade[UPGR_index], iSelectedLevel);
 		
 		GetPlayerUpgradeInfoByIndex(client, upgrade[UPGR_index], playerupgrade);
-		playerupgrade[PUI_enabled] = SQL_FetchInt(hndl, 4)==1;
-		playerupgrade[PUI_visuals] = SQL_FetchInt(hndl, 5)==1;
-		playerupgrade[PUI_sounds] = SQL_FetchInt(hndl, 6)==1;
+		playerupgrade[PUI_enabled] = SQL_FetchInt(hndl, 3)==1;
+		playerupgrade[PUI_visuals] = SQL_FetchInt(hndl, 4)==1;
+		playerupgrade[PUI_sounds] = SQL_FetchInt(hndl, 5)==1;
 		
 		SavePlayerUpgradeInfo(client, upgrade[UPGR_index], playerupgrade);
 	}
