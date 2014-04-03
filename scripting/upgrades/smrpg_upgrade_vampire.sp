@@ -12,6 +12,7 @@
 #define PLUGIN_VERSION "1.0"
 
 new Handle:g_hCVPercent;
+new Handle:g_hCVMax;
 
 new g_iBeamColor[] = {0,255,0,255}; // green
 new g_iBeamSpriteIndex = -1;
@@ -58,6 +59,7 @@ public OnLibraryAdded(const String:name[])
 		SMRPG_SetUpgradeDefaultCosmenticEffect(UPGRADE_SHORTNAME, SMRPG_FX_Visuals, true);
 		
 		g_hCVPercent = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_vamp_percent", "0.075", "Percent of damage to convert to attacker's health for each level.", 0, true, 0.001);
+		g_hCVMax = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_vamp_maxhp", "70", "Maximum HP the attacker can get at a time. (0 = unlimited)", 0, true, 0.0);
 	}
 }
 
@@ -139,8 +141,14 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 	fIncrease *= damage;
 	fIncrease += 0.5;
 	
+	// Don't let the attacker steal more hp than the set max 
+	new iMaxIncrease = GetConVarInt(g_hCVMax);
+	new iIncrease = RoundToFloor(fIncrease);
+	if(iMaxIncrease > 0 && iIncrease > iMaxIncrease)
+		iIncrease = iMaxIncrease;
+	
 	new iOldHealth = GetClientHealth(attacker);
-	new iNewHealth = iOldHealth + RoundToFloor(fIncrease);
+	new iNewHealth = iOldHealth + iIncrease;
 	new iMaxHealth = SMRPG_Health_GetClientMaxHealth(attacker);
 	// Limit health gain to maxhealth
 	if(iNewHealth > iMaxHealth)
