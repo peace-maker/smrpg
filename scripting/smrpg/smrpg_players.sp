@@ -26,6 +26,7 @@ enum PlayerInfo
 	PLR_credits,
 	PLR_dbId,
 	bool:PLR_showMenuOnLevelup,
+	bool:PLR_fadeOnLevelup,
 	bool:PLR_triedToLoadData,
 	Handle:PLR_upgrades,
 	PLR_lastReset
@@ -85,6 +86,7 @@ InitPlayer(client)
 	g_iPlayerInfo[client][PLR_dbId] = -1;
 	g_iPlayerInfo[client][PLR_triedToLoadData] = false;
 	g_iPlayerInfo[client][PLR_showMenuOnLevelup] = GetConVarBool(g_hCVShowMenuOnLevelDefault);
+	g_iPlayerInfo[client][PLR_fadeOnLevelup] = GetConVarBool(g_hCVFadeOnLevelDefault);
 	g_iPlayerInfo[client][PLR_lastReset] = GetTime();
 	
 	g_iPlayerInfo[client][PLR_upgrades] = CreateArray(_:PlayerUpgradeInfo);
@@ -112,14 +114,14 @@ AddPlayer(client, const String:auth[])
 	
 	if(GetConVarBool(g_hCVSteamIDSave))
 	{
-		Format(sQuery, sizeof(sQuery), "SELECT player_id, level, experience, credits, lastreset, showmenu FROM %s WHERE steamid = '%s' ORDER BY level DESC LIMIT 1", TBL_PLAYERS, auth);
+		Format(sQuery, sizeof(sQuery), "SELECT player_id, level, experience, credits, lastreset, showmenu, fadescreen FROM %s WHERE steamid = '%s' ORDER BY level DESC LIMIT 1", TBL_PLAYERS, auth);
 	}
 	else
 	{
 		decl String:sName[MAX_NAME_LENGTH], String:sNameEscaped[MAX_NAME_LENGTH*2+1];
 		GetClientName(client, sName, sizeof(sName));
 		SQL_EscapeString(g_hDatabase, sName, sNameEscaped, sizeof(sNameEscaped));
-		Format(sQuery, sizeof(sQuery), "SELECT player_id, level, experience, credits, lastreset, showmenu FROM %s WHERE name = '%s' AND steamid = '%s' ORDER BY level DESC LIMIT 1", TBL_PLAYERS, sNameEscaped, auth);
+		Format(sQuery, sizeof(sQuery), "SELECT player_id, level, experience, credits, lastreset, showmenu, fadescreen FROM %s WHERE name = '%s' AND steamid = '%s' ORDER BY level DESC LIMIT 1", TBL_PLAYERS, sNameEscaped, auth);
 	}
 	
 	SQL_TQuery(g_hDatabase, SQL_GetPlayerInfo, sQuery, GetClientUserId(client));
@@ -168,7 +170,7 @@ SaveData(client)
 	SQL_EscapeString(g_hDatabase, sName, sNameEscaped, sizeof(sNameEscaped));
 	
 	decl String:sQuery[8192];
-	Format(sQuery, sizeof(sQuery), "UPDATE %s SET name = '%s', level = '%d', experience = '%d', credits = '%d', showmenu = '%d', lastseen = '%d', lastreset = '%d' WHERE player_id = '%d'", TBL_PLAYERS, sNameEscaped, GetClientLevel(client), GetClientExperience(client), GetClientCredits(client), ShowMenuOnLevelUp(client), GetTime(), g_iPlayerInfo[client][PLR_lastReset], g_iPlayerInfo[client][PLR_dbId]);
+	Format(sQuery, sizeof(sQuery), "UPDATE %s SET name = '%s', level = '%d', experience = '%d', credits = '%d', showmenu = '%d', fadescreen = '%d', lastseen = '%d', lastreset = '%d' WHERE player_id = '%d'", TBL_PLAYERS, sNameEscaped, GetClientLevel(client), GetClientExperience(client), GetClientCredits(client), ShowMenuOnLevelUp(client), FadeScreenOnLevelUp(client), GetTime(), g_iPlayerInfo[client][PLR_lastReset], g_iPlayerInfo[client][PLR_dbId]);
 	SQL_TQuery(g_hDatabase, SQL_DoNothing, sQuery);
 	
 	// Save upgrade levels
@@ -254,6 +256,7 @@ RemovePlayer(client)
 	g_iPlayerInfo[client][PLR_dbId] = -1;
 	g_iPlayerInfo[client][PLR_triedToLoadData] = false;
 	g_iPlayerInfo[client][PLR_showMenuOnLevelup] = GetConVarBool(g_hCVShowMenuOnLevelDefault);
+	g_iPlayerInfo[client][PLR_fadeOnLevelup] = GetConVarBool(g_hCVFadeOnLevelDefault);
 	g_iPlayerInfo[client][PLR_lastReset] = 0;
 }
 
@@ -345,6 +348,16 @@ ShowMenuOnLevelUp(client)
 SetShowMenuOnLevelUp(client, bool:show)
 {
 	g_iPlayerInfo[client][PLR_showMenuOnLevelup] = show;
+}
+
+FadeScreenOnLevelUp(client)
+{
+	return g_iPlayerInfo[client][PLR_fadeOnLevelup];
+}
+
+SetFadeScreenOnLevelUp(client, bool:fade)
+{
+	g_iPlayerInfo[client][PLR_fadeOnLevelup] = fade;
 }
 
 /**
@@ -686,6 +699,7 @@ public SQL_GetPlayerInfo(Handle:owner, Handle:hndl, const String:error[], any:us
 	g_iPlayerInfo[client][PLR_credits] = SQL_FetchInt(hndl, 3);
 	g_iPlayerInfo[client][PLR_lastReset] = SQL_FetchInt(hndl, 4);
 	g_iPlayerInfo[client][PLR_showMenuOnLevelup] = SQL_FetchInt(hndl, 5) == 1;
+	g_iPlayerInfo[client][PLR_fadeOnLevelup] = SQL_FetchInt(hndl, 6) == 1;
 	
 	UpdateClientRank(client);
 	UpdateRankCount();

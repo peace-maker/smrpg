@@ -110,6 +110,11 @@ Stats_PlayerNewLevel(client, iLevelIncrease)
 		DisplayUpgradesMenu(client);
 	}
 	
+	if(FadeScreenOnLevelUp(client))
+	{
+		Client_ScreenFade(client, 1, FFADE_IN, 1, 255, 215, 0, 190);
+	}
+	
 	if(GetConVarBool(g_hCVAnnounceNewLvl))
 		Client_PrintToChatAll(false, "%t", "Client level changed", client, GetClientLevel(client));
 	

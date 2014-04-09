@@ -205,6 +205,11 @@
 		"en"			"Show menu on levelup"
 	}
 	
+	"Fade screen on levelup"
+	{
+		"en"			"Flash screen on levelup"
+	}
+	
 	// Menu selection result
 	"Stats have been reset"
 	{

@@ -52,6 +52,7 @@ new Handle:g_hCVDisableLevelSelection;
 
 new Handle:g_hCVShowUpgradePurchase;
 new Handle:g_hCVShowMenuOnLevelDefault;
+new Handle:g_hCVFadeOnLevelDefault;
 
 #define IF_IGNORE_BOTS(%1) if(IsFakeClient(%1) && (!GetConVarBool(g_hCVBotEnable) || (GetConVarBool(g_hCVBotNeedHuman) && Client_GetCount(true, false) == 0)))
 
@@ -137,7 +138,8 @@ public OnPluginStart()
 	g_hCVDisableLevelSelection = AutoExecConfig_CreateConVar("smrpg_disable_level_selection", "0", "Don't allow players to change the selected levels of their upgrades to a lower level than they already purchased?", 0, true, 0.0, true, 1.0);
 	
 	g_hCVShowUpgradePurchase = AutoExecConfig_CreateConVar("smrpg_show_upgrade_purchase_in_chat", "0", "Show a message to all in chat when a player buys an upgrade.", 0, true, 0.0, true, 1.0);
-	g_hCVShowMenuOnLevelDefault = AutoExecConfig_CreateConVar("smrpg_show_menu_on_levelup", "1", "Show the rpg menu when a players levels up by default? Players can change it in their settings individually afterwards.", 0, true, 0.0, true, 1.0);
+	g_hCVShowMenuOnLevelDefault = AutoExecConfig_CreateConVar("smrpg_show_menu_on_levelup", "1", "Show the rpg menu when a player levels up by default? Players can change it in their settings individually afterwards.", 0, true, 0.0, true, 1.0);
+	g_hCVFadeOnLevelDefault = AutoExecConfig_CreateConVar("smrpg_fade_screen_on_levelup", "1", "Fade the screen golden when a player levels up by default? Players can change it in their settings individually afterwards.", 0, true, 0.0, true, 1.0);
 	
 	AutoExecConfig_ExecuteFile();
 	AutoExecConfig_CleanFile();

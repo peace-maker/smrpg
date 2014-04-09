@@ -88,6 +88,7 @@ InitMenu()
 	// Settings Menu
 	AddToTopMenu(g_hRPGTopMenu, "resetstats", TopMenuObject_Item, TopMenu_HandleSettings, g_TopMenuSettings);
 	AddToTopMenu(g_hRPGTopMenu, "toggleautoshow", TopMenuObject_Item, TopMenu_HandleSettings, g_TopMenuSettings);
+	AddToTopMenu(g_hRPGTopMenu, "togglefade", TopMenuObject_Item, TopMenu_HandleSettings, g_TopMenuSettings);
 	
 	// Reset Stats Confirmation
 	g_hConfirmResetStatsMenu = CreateMenu(Menu_ConfirmResetStats, MENU_ACTIONS_DEFAULT|MenuAction_Display|MenuAction_DisplayItem);
@@ -632,6 +633,10 @@ public TopMenu_HandleSettings(Handle:topmenu, TopMenuAction:action, TopMenuObjec
 			{
 				Format(buffer, maxlength, "%T: %T", "Show menu on levelup", param, ShowMenuOnLevelUp(param)?"Yes":"No", param);
 			}
+			else if(StrEqual(sName, "togglefade"))
+			{
+				Format(buffer, maxlength, "%T: %T", "Fade screen on levelup", param, FadeScreenOnLevelUp(param)?"Yes":"No", param);
+			}
 		}
 		case TopMenuAction_SelectOption:
 		{
@@ -642,6 +647,11 @@ public TopMenu_HandleSettings(Handle:topmenu, TopMenuAction:action, TopMenuObjec
 			else if(StrEqual(sName, "toggleautoshow"))
 			{
 				SetShowMenuOnLevelUp(param, !ShowMenuOnLevelUp(param));
+				DisplayTopMenu(g_hRPGTopMenu, param, TopMenuPosition_LastCategory);
+			}
+			else if(StrEqual(sName, "togglefade"))
+			{
+				SetFadeScreenOnLevelUp(param, !FadeScreenOnLevelUp(param));
 				DisplayTopMenu(g_hRPGTopMenu, param, TopMenuPosition_LastCategory);
 			}
 		}

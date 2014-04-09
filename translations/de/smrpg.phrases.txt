@@ -188,6 +188,11 @@
 		"de"			"Zeige Menü bei neuem Level"
 	}
 	
+	"Fade screen on levelup"
+	{
+		"de"			"Färbe Bildschirm bei neuem Level"
+	}
+	
 	// Menu selection result
 	"Stats have been reset"
 	{

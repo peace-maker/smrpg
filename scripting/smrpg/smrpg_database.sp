@@ -62,7 +62,7 @@ public SQL_OnConnect(Handle:owner, Handle:hndl, const String:error[], any:data)
 	
 	// Create the player table
 	decl String:sQuery[1024];
-	Format(sQuery, sizeof(sQuery), "CREATE TABLE IF NOT EXISTS %s (player_id INTEGER PRIMARY KEY %s, name VARCHAR(64) NOT NULL DEFAULT ' ', steamid VARCHAR(64) NOT NULL DEFAULT '0' UNIQUE, level INTEGER DEFAULT '1', experience INTEGER DEFAULT '0', credits INTEGER DEFAULT '0', showmenu INTEGER DEFAULT '1', lastseen INTEGER DEFAULT '0', lastreset INTEGER DEFAULT '0')", TBL_PLAYERS, (g_DriverType == Driver_MySQL ? "AUTO_INCREMENT" : "AUTOINCREMENT"));
+	Format(sQuery, sizeof(sQuery), "CREATE TABLE IF NOT EXISTS %s (player_id INTEGER PRIMARY KEY %s, name VARCHAR(64) NOT NULL DEFAULT ' ', steamid VARCHAR(64) NOT NULL DEFAULT '0' UNIQUE, level INTEGER DEFAULT '1', experience INTEGER DEFAULT '0', credits INTEGER DEFAULT '0', showmenu INTEGER DEFAULT '1', fadescreen INTEGER DEFAULT '1', lastseen INTEGER DEFAULT '0', lastreset INTEGER DEFAULT '0')", TBL_PLAYERS, (g_DriverType == Driver_MySQL ? "AUTO_INCREMENT" : "AUTOINCREMENT"));
 	if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
 	{
 		decl String:sError[256];
