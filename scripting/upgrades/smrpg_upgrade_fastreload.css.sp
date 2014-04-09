@@ -1,6 +1,6 @@
 /**
  * SM:RPG Fast Reload Upgrade
- * Increases the reload time of guns
+ * Increases the reload speed of guns
  * 
  * Credits to tPoncho and his Perkmod https://forums.alliedmods.net/showthread.php?t=99305
  */
@@ -24,7 +24,7 @@ public Plugin:myinfo =
 {
 	name = "SM:RPG Upgrade > Fast Reload",
 	author = "Peace-Maker",
-	description = "Fast Reload upgrade for SM:RPG. Increases the reload time of guns.",
+	description = "Fast Reload upgrade for SM:RPG. Increases the reload speed of guns.",
 	version = PLUGIN_VERSION,
 	url = "http://www.wcfan.de/"
 }
@@ -75,7 +75,7 @@ public OnLibraryAdded(const String:name[])
 	if(StrEqual(name, "smrpg"))
 	{
 		// Register the upgrade type.
-		SMRPG_RegisterUpgradeType("Fast Reload", UPGRADE_SHORTNAME, "Increases the reload time of guns.", 10, true, 5, 20, 10, _, SMRPG_BuySell, SMRPG_ActiveQuery);
+		SMRPG_RegisterUpgradeType("Fast Reload", UPGRADE_SHORTNAME, "Increases the reload speed of your guns.", 10, true, 5, 20, 10, _, SMRPG_BuySell, SMRPG_ActiveQuery);
 		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
 		
 		g_hCVSpeedInc = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_fastreload_speedmult", "0.05", "Speed up reloading of guns by this amount each level.");

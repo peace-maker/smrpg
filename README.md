@@ -50,6 +50,7 @@ See the available upgrade plugins for examples. You can use the [example upgrade
 * Armor Regeneration (Counter-Strike only) - Regenerates armor every second.
 * Damage+ - Deal additional damage on enemies.
 * Denial - Keep your weapons the next time you spawn after you've died.
+* Fast Reload (Counter-Strike: Source only) - Increases the reload speed of guns.
 * Fire Grenade - Ignites players damaged by your grenade.
 * Frost Pistol - Slow down players hit with a pistol.
 * Health+ - Increases your maximal health.

@@ -179,4 +179,14 @@
 	{
 		"de"			"Erhöht deine maximale Rüstung."
 	}
+	
+	"fastreload"
+	{
+		"de"			"Schneller Nachladen"
+	}
+	
+	"fastreload description"
+	{
+		"de"			"Erhöht die Nachladegeschwindigkeit deiner Waffen."
+	}
 }

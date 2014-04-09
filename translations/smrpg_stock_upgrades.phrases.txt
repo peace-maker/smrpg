@@ -179,4 +179,14 @@
 	{
 		"en"			"Increases your maximal armor."
 	}
+	
+	"fastreload"
+	{
+		"en"			"Fast Reload"
+	}
+	
+	"fastreload description"
+	{
+		"en"			"Increases the reload speed of your guns."
+	}
 }
