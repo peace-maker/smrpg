@@ -112,7 +112,7 @@ Stats_PlayerNewLevel(client, iLevelIncrease)
 	
 	if(FadeScreenOnLevelUp(client))
 	{
-		Client_ScreenFade(client, 1, FFADE_IN, 1, 255, 215, 0, 190);
+		Client_ScreenFade(client, 255, FFADE_OUT|FFADE_PURGE, 255, 255, 215, 0, 120);
 	}
 	
 	if(GetConVarBool(g_hCVAnnounceNewLvl))
