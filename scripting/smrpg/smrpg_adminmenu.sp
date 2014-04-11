@@ -956,7 +956,8 @@ public Menu_HandlePropertyChange(Handle:menu, MenuAction:action, param1, param2)
 			case ChangeProp_Maxlevel:
 			{
 				new iValue = upgrade[UPGR_maxLevel] + iChange;
-				if(iValue > 0 && iValue <= upgrade[UPGR_maxLevelBarrier])
+				new iMaxLevelBarrier = upgrade[UPGR_maxLevelBarrier];
+				if(iValue > 0 && (iMaxLevelBarrier <= 0 || iValue <= iMaxLevelBarrier))
 				{
 					SetConVarInt(upgrade[UPGR_maxLevelConvar], iValue);
 					LogAction(param1, -1, "%L changed maxlevel of upgrade %s temporarily from %d to %d.", param1, upgrade[UPGR_name], upgrade[UPGR_maxLevel], iValue);

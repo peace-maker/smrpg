@@ -55,7 +55,7 @@ functag public bool:SMRPG_ActiveQueryCB(client);
  * @param name              The full name of the upgrade. This is displayed in the rpgmenu. Set a translation callback to dynamically change it.
  * @param shortname         A short abbreviative name for this upgrade. It's the primary unique identifier used in all other upgrade-specific natives.
  * @param description       A verbose description of the upgrade. Shown in the rpghelp menu.
- * @param maxlevelbarrier   Hardcoded limit you don't want the maxlevel to exceed. You can't set the maxlevel higher than this. This value can't be changed during runtime.
+ * @param maxlevelbarrier   Hardcoded limit you don't want the maxlevel to exceed. You can't set the maxlevel higher than this. This value can't be changed during runtime. (0 doesn't limit the maxlevel)
  * @param bDefaultEnable    Do you want this upgrade to be enabled by default? Default value of the _enable convar.
  * @param iDefaultMaxLevel  The default maxlevel of this plugin. Players won't be able to buy more levels of this upgrade than this. Default value of the _maxlevel convar.
  * @param iDefaultStartCost The default start costs to buy level 1 of this upgrade. Default of the _cost convar.

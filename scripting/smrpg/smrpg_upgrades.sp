@@ -798,7 +798,7 @@ public ConVar_UpgradeMaxLevelChanged(Handle:convar, const String:oldValue[], con
 	new iNewMaxLevel = GetConVarInt(convar);
 	new iMaxLevelBarrier = upgrade[UPGR_maxLevelBarrier];
 	
-	if(!GetConVarBool(g_hCVIgnoreLevelBarrier) && iNewMaxLevel > iMaxLevelBarrier)
+	if(iMaxLevelBarrier > 0 && !GetConVarBool(g_hCVIgnoreLevelBarrier) && iNewMaxLevel > iMaxLevelBarrier)
 		iNewMaxLevel = iMaxLevelBarrier;
 	
 	upgrade[UPGR_maxLevel] = iNewMaxLevel;
