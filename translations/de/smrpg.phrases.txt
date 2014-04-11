@@ -198,6 +198,11 @@
 		"de"			"Färbe Bildschirm bei neuem Level"
 	}
 	
+	"Auto refresh panel"
+	{
+		"de"			"Automatisch aktualisieren"
+	}
+	
 	// Menu selection result
 	"Stats have been reset"
 	{

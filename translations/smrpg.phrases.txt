@@ -210,6 +210,11 @@
 		"en"			"Flash screen on levelup"
 	}
 	
+	"Auto refresh panel"
+	{
+		"en"			"Auto refresh"
+	}
+	
 	// Menu selection result
 	"Stats have been reset"
 	{

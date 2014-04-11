@@ -10,7 +10,10 @@ enum SessionStats {
 	SS_JoinLevel,
 	SS_JoinExperience,
 	SS_JoinCredits,
-	SS_JoinRank
+	SS_JoinRank,
+	bool:SS_WantsAutoUpdate,
+	bool:SS_WantsMenuOpen,
+	bool:SS_OKToClose
 };
 
 new g_iPlayerSessionStartStats[MAXPLAYERS+1][SessionStats];
@@ -402,6 +405,9 @@ InitPlayerSessionStartStats(client)
 	g_iPlayerSessionStartStats[client][SS_JoinExperience] = GetClientExperience(client);
 	g_iPlayerSessionStartStats[client][SS_JoinCredits] = GetClientCredits(client);
 	g_iPlayerSessionStartStats[client][SS_JoinRank] = -1;
+	g_iPlayerSessionStartStats[client][SS_WantsAutoUpdate] = false;
+	g_iPlayerSessionStartStats[client][SS_WantsMenuOpen] = false;
+	g_iPlayerSessionStartStats[client][SS_OKToClose] = false;
 }
 
 ResetPlayerSessionStats(client)
@@ -411,6 +417,9 @@ ResetPlayerSessionStats(client)
 	g_iPlayerSessionStartStats[client][SS_JoinExperience] = 0;
 	g_iPlayerSessionStartStats[client][SS_JoinCredits] = 0;
 	g_iPlayerSessionStartStats[client][SS_JoinRank] = -1;
+	g_iPlayerSessionStartStats[client][SS_WantsAutoUpdate] = false;
+	g_iPlayerSessionStartStats[client][SS_WantsMenuOpen] = false;
+	g_iPlayerSessionStartStats[client][SS_OKToClose] = false;
 }
 
 // Use our own forward to initialize the session info :)
@@ -419,6 +428,23 @@ public SMRPG_OnClientLoaded(client)
 	// Only set it once and leave it that way until he really disconnects.
 	if(g_iPlayerSessionStartStats[client][SS_JoinTime] == 0)
 		InitPlayerSessionStartStats(client);
+}
+
+StartSessionMenuUpdater()
+{
+	CreateTimer(1.0, Timer_UpdateSessionMenus, _, TIMER_FLAG_NO_MAPCHANGE|TIMER_REPEAT);
+}
+
+public Action:Timer_UpdateSessionMenus(Handle:timer)
+{
+	for(new i=1;i<=MaxClients;i++)
+	{
+		// Refresh the contents of the menu here.
+		if(IsClientInGame(i) && !IsFakeClient(i) && g_iPlayerSessionStartStats[i][SS_WantsMenuOpen] && g_iPlayerSessionStartStats[i][SS_WantsAutoUpdate])
+			DisplaySessionStatsMenu(i);
+	}
+	
+	return Plugin_Continue;
 }
 
 DisplaySessionStatsMenu(client)
@@ -470,9 +496,47 @@ DisplaySessionStatsMenu(client)
 		DrawPanelText(hPanel, sBuffer);
 	}
 	
+	DrawPanelItem(hPanel, "", ITEMDRAW_SPACER);
 	
-	SendPanelToClient(hPanel, client, Panel_DoNothing, MENU_TIME_FOREVER);
+	Format(sBuffer, sizeof(sBuffer), "%T: %T", "Auto refresh panel", client, (g_iPlayerSessionStartStats[client][SS_WantsAutoUpdate]?"Yes":"No"), client);
+	DrawPanelItem(hPanel, sBuffer);
+	
+	// The old menu is closed when we open the new one.
+	// The logic here is like this:
+	// We want to stop redisplaying the session menu, if the menu was closed gracefully or was interrupted by a different menu.
+	// If the old menu is currently displaying (callback was not called yet) we don't want it to stay closed when we display it again.
+	// So we set OKToClose to true, so it doesn't set WantsMenuOpen to false as if the menu was closed by an interrupting menu.
+	// That way the menu stays open and is refreshed every second while staying closed if the player closes it or some other menu is displayed over it.
+	if(g_iPlayerSessionStartStats[client][SS_WantsMenuOpen])
+		g_iPlayerSessionStartStats[client][SS_OKToClose] = true;
+	g_iPlayerSessionStartStats[client][SS_WantsMenuOpen] = true;
+	
+	SendPanelToClient(hPanel, client, Panel_HandleSessionMenu, MENU_TIME_FOREVER);
 	CloseHandle(hPanel);
+}
+
+public Panel_HandleSessionMenu(Handle:menu, MenuAction:action, param1, param2)
+{
+	if(action == MenuAction_Select)
+	{
+		g_iPlayerSessionStartStats[param1][SS_WantsMenuOpen] = false;
+		g_iPlayerSessionStartStats[param1][SS_OKToClose] = false;
+		
+		// Toggle the auto update
+		if(param2 == 4)
+		{
+			g_iPlayerSessionStartStats[param1][SS_WantsAutoUpdate] = !g_iPlayerSessionStartStats[param1][SS_WantsAutoUpdate];
+			DisplaySessionStatsMenu(param1);
+			return;
+		}
+	}
+	else if(action == MenuAction_Cancel)
+	{
+		
+		if(!g_iPlayerSessionStartStats[param1][SS_OKToClose])
+			g_iPlayerSessionStartStats[param1][SS_WantsMenuOpen] = false;
+		g_iPlayerSessionStartStats[param1][SS_OKToClose] = false;
+	}
 }
 
 

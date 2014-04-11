@@ -325,6 +325,7 @@ public OnMapStart()
 	DatabaseMaid();
 	
 	StartAFKChecker();
+	StartSessionMenuUpdater();
 }
 
 public OnMapEnd()
