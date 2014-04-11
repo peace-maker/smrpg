@@ -138,10 +138,17 @@ Stats_PlayerNewLevel(client, iLevelIncrease)
 	}
 }
 
-Stats_AddExperience(client, iExperience, bool:bHideNotice)
+bool:Stats_AddExperience(client, iExperience, bool:bHideNotice)
 {
 	IF_IGNORE_BOTS(client)
-		return;
+		return false;
+	
+	if(GetConVarBool(g_hCVNeedEnemies))
+	{
+		// No enemies in the opposite team?
+		if(!Team_HaveAllPlayers(GetConVarBool(g_hCVBotEnable)))
+			return false;
+	}
 	
 	SetClientExperience(client, GetClientExperience(client) + iExperience);
 	
@@ -152,6 +159,8 @@ Stats_AddExperience(client, iExperience, bool:bHideNotice)
 	
 	if(!bHideNotice && GetConVarBool(g_hCVExpNotice))
 		PrintHintText(client, "%t", "Experience Gained Hintbox", iExperience, GetClientExperience(client), Stats_LvlToExp(GetClientLevel(client)));
+	
+	return true;
 }
 
 Stats_PlayerDamage(attacker, victim, Float:fDamage)

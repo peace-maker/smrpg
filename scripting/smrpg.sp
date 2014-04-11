@@ -23,6 +23,7 @@ new Handle:g_hPlayerAutoSave;
 new Handle:g_hCVEnable;
 new Handle:g_hCVBotEnable;
 new Handle:g_hCVBotNeedHuman;
+new Handle:g_hCVNeedEnemies;
 new Handle:g_hCVDebug;
 new Handle:g_hCVSaveData;
 new Handle:g_hCVSteamIDSave;
@@ -110,6 +111,7 @@ public OnPluginStart()
 	g_hCVEnable = AutoExecConfig_CreateConVar("smrpg_enable", "1", "If set to 1, SM:RPG is enabled, if 0, SM:RPG is disabled", 0, true, 0.0, true, 1.0);
 	g_hCVBotEnable = AutoExecConfig_CreateConVar("smrpg_bot_enable", "1", "If set to 1, bots will be able to use the SM:RPG plugin", 0, true, 0.0, true, 1.0);
 	g_hCVBotNeedHuman = AutoExecConfig_CreateConVar("smrpg_bot_need_human", "1", "Don't allow bots to gain experience while no human player is on the server?", 0, true, 0.0, true, 1.0);
+	g_hCVNeedEnemies = AutoExecConfig_CreateConVar("smrpg_need_enemies", "1", "Don't give any experience if there is no enemy in the opposite team?", 0, true, 0.0, true, 1.0);
 	g_hCVDebug = AutoExecConfig_CreateConVar("smrpg_debug", "0", "Turns on debug mode for this plugin", 0, true, 0.0, true, 1.0);
 	g_hCVSaveData = AutoExecConfig_CreateConVar("smrpg_save_data", "1", "If disabled, the database won't be updated (this means player data won't be saved!)", 0, true, 0.0, true, 1.0);
 	g_hCVSteamIDSave = AutoExecConfig_CreateConVar("smrpg_steamid_save", "1", "Save by SteamID instead of by SteamID and name", 0, true, 0.0, true, 1.0);
@@ -138,7 +140,7 @@ public OnPluginStart()
 	g_hCVDisableLevelSelection = AutoExecConfig_CreateConVar("smrpg_disable_level_selection", "0", "Don't allow players to change the selected levels of their upgrades to a lower level than they already purchased?", 0, true, 0.0, true, 1.0);
 	
 	g_hCVShowUpgradePurchase = AutoExecConfig_CreateConVar("smrpg_show_upgrade_purchase_in_chat", "0", "Show a message to all in chat when a player buys an upgrade.", 0, true, 0.0, true, 1.0);
-	g_hCVShowMenuOnLevelDefault = AutoExecConfig_CreateConVar("smrpg_show_menu_on_levelup", "1", "Show the rpg menu when a player levels up by default? Players can change it in their settings individually afterwards.", 0, true, 0.0, true, 1.0);
+	g_hCVShowMenuOnLevelDefault = AutoExecConfig_CreateConVar("smrpg_show_menu_on_levelup", "0", "Show the rpg menu when a player levels up by default? Players can change it in their settings individually afterwards.", 0, true, 0.0, true, 1.0);
 	g_hCVFadeOnLevelDefault = AutoExecConfig_CreateConVar("smrpg_fade_screen_on_levelup", "1", "Fade the screen golden when a player levels up by default? Players can change it in their settings individually afterwards.", 0, true, 0.0, true, 1.0);
 	
 	AutoExecConfig_ExecuteFile();
