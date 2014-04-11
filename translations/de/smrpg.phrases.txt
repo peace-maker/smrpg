@@ -163,6 +163,11 @@
 		"de"			"Verkaufen"
 	}
 	
+	"Upgrade Settings"
+	{
+		"de"			"Upgrade Einstellungen"
+	}
+	
 	"Stats"
 	{
 		"de"			"Statistik"
