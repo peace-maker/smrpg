@@ -66,11 +66,11 @@
 		"de"			"Nächste Spieler im Ranking"
 	}
 	
-	"Bot reached maxlevel"
+	"Player reached maxlevel"
 	{
-		// 1: Name of the bot
-		// 2: Maximum level a bot can reach.
-		"de"			"{1} hat das maximale Level von {2} für Bots überschritten und wurde zurückgesetzt."
+		// 1: Name of the player
+		// 2: Maximum level a player can reach.
+		"de"			"{1} hat das maximale Level von {2} überschritten und wurde zurückgesetzt."
 	}
 	
 	// Menu text

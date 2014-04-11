@@ -71,12 +71,12 @@
 		"en"			"Next ranked players"
 	}
 	
-	"Bot reached maxlevel"
+	"Player reached maxlevel"
 	{
-		// 1: Name of the bot
-		// 2: Maximum level a bot can reach.
+		// 1: Name of the player
+		// 2: Maximum level a player can reach.
 		"#format"	"{1:N},{2:d}"
-		"en"			"Bot {1} reached the maximum level of {2} and was reset."
+		"en"			"{1} reached the maximum level of {2} and was reset."
 	}
 	
 	// Menu text

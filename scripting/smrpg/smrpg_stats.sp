@@ -74,17 +74,45 @@ Stats_CalcLvlInc(iLevel, iExp)
 
 Stats_PlayerNewLevel(client, iLevelIncrease)
 {
-	new iBotMaxLevel = GetConVarInt(g_hCVBotMaxlevel);
-	if(IsFakeClient(client) && iBotMaxLevel > 0)
+	new iMaxLevel, bool:bMaxLevelReset;
+	if(IsFakeClient(client))
 	{
-		if((GetClientLevel(client) + iLevelIncrease) > iBotMaxLevel)
+		iMaxLevel = GetConVarInt(g_hCVBotMaxlevel);
+		bMaxLevelReset = GetConVarBool(g_hCVBotMaxlevelReset);
+	}
+	else
+	{
+		iMaxLevel = GetConVarInt(g_hCVPlayerMaxlevel);
+		bMaxLevelReset = GetConVarBool(g_hCVPlayerMaxlevelReset);
+	}
+	
+	// Check if the player reached the maxlevel
+	if(iMaxLevel > 0)
+	{
+		new iNewLevel = GetClientLevel(client) + iLevelIncrease;
+		// Player surpassed the maxlevel?
+		if(iNewLevel > iMaxLevel)
 		{
-			DebugMsg("Bot %N has surpassed the maximum level of %d, resetting its stats", client, iBotMaxLevel);
-			Client_PrintToChatAll(false, "%t", "Bot reached maxlevel", client, iBotMaxLevel);
-			ResetStats(client);
-			return;
+			// Reset him immediately if we want to.
+			if(bMaxLevelReset)
+			{
+				DebugMsg("Player %N has surpassed the maximum level of %d, resetting his stats", client, iMaxLevel);
+				Client_PrintToChatAll(false, "%t", "Player reached maxlevel", client, iMaxLevel);
+				LogMessage("%L surpassed the maximum level of %d, resetting his stats.", client, iMaxLevel);
+				ResetStats(client);
+				return;
+			}
+			else
+			{
+				// Only increase so much until we reach the maxlevel.
+				iLevelIncrease = iMaxLevel - iNewLevel;
+			}
 		}
 	}
+	
+	// Don't do anything, if we don't really have a new level.
+	if(iLevelIncrease <= 0)
+		return;
 	
 	// Make sure to keep the experience he gained in addition to the needed exp for the levels.
 	new iExperience = GetClientExperience(client);
@@ -96,6 +124,7 @@ Stats_PlayerNewLevel(client, iLevelIncrease)
 	// Some admin gave him a level even though he didn't have enough exp? well well..
 	if(iExperience < 0)
 		iExperience = 0;
+	
 	SetClientExperience(client, iExperience);
 	
 	SetClientLevel(client, GetClientLevel(client)+iLevelIncrease);
@@ -149,6 +178,16 @@ bool:Stats_AddExperience(client, iExperience, bool:bHideNotice)
 		if(!Team_HaveAllPlayers(GetConVarBool(g_hCVBotEnable)))
 			return false;
 	}
+	
+	// Don't give the players any more exp when they already reached the maxlevel.
+	new iMaxlevel;
+	if(IsFakeClient(client))
+		iMaxlevel = GetConVarInt(g_hCVBotMaxlevel);
+	else
+		iMaxlevel = GetConVarInt(g_hCVPlayerMaxlevel);
+	
+	if(iMaxlevel > 0 && GetClientLevel(client) >= iMaxlevel)
+		return false;
 	
 	SetClientExperience(client, GetClientExperience(client) + iExperience);
 	
