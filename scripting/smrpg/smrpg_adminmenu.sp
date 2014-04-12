@@ -430,6 +430,9 @@ ShowPlayerUpgradeManageMenu(client)
 	
 	new iTarget = g_iCurrentMenuTarget[client];
 	
+	AddMenuItem(hMenu, "give_all", "Give all upgrades at no costs");
+	AddMenuItem(hMenu, "", "", ITEMDRAW_SPACER);
+	
 	new iSize = GetUpgradeCount();
 	new upgrade[InternalUpgradeInfo], iCurrentLevel;
 	new String:sTranslatedName[MAX_UPGRADE_NAME_LENGTH], String:sLine[128], String:sIndex[8], String:sPermissions[30];
@@ -498,12 +501,83 @@ public Menu_HandlePlayerUpgradeSelect(Handle:menu, MenuAction:action, param1, pa
 		decl String:sInfo[32];
 		GetMenuItem(menu, param2, sInfo, sizeof(sInfo));
 		
+		g_iCurrentPage[param1] = GetMenuSelectionPosition();
+		if(StrEqual(sInfo, "give_all"))
+		{
+			new Handle:hMenu = CreateMenu(Menu_HandlePlayerGiveAllConfirm, MENU_ACTIONS_DEFAULT|MenuAction_DisplayItem);
+			SetMenuExitBackButton(hMenu, true);
+			SetMenuTitle(hMenu, "Do you really want to set all upgrades to the maximal level for %N?", g_iCurrentMenuTarget[param1]);
+			AddMenuItem(hMenu, "yes", "Yes");
+			AddMenuItem(hMenu, "no", "No");
+			DisplayMenu(hMenu, param1, MENU_TIME_FOREVER);
+			return;
+		}
+		
 		new iItemIndex = StringToInt(sInfo);
 		
-		g_iCurrentPage[param1] = GetMenuSelectionPosition();
 		g_iCurrentUpgradeTarget[param1] = iItemIndex;
 		ShowPlayerUpgradeLevelMenu(param1);
 	}
+}
+
+public Menu_HandlePlayerGiveAllConfirm(Handle:menu, MenuAction:action, param1, param2)
+{
+	if(action == MenuAction_End)
+	{
+		CloseHandle(menu);
+	}
+	else if(action == MenuAction_Cancel)
+	{
+		if(param2 == MenuCancel_ExitBack)
+			ShowPlayerUpgradeManageMenu(param1);
+		else
+		{
+			g_iCurrentMenuTarget[param1] = -1;
+			g_iCurrentPage[param1] = 0;
+		}
+	}
+	else if(action == MenuAction_Select)
+	{
+		decl String:sInfo[32];
+		GetMenuItem(menu, param2, sInfo, sizeof(sInfo));
+		
+		if(StrEqual(sInfo, "no"))
+		{
+			ShowPlayerUpgradeManageMenu(param1);
+			return 0;
+		}
+		
+		new iSize = GetUpgradeCount();
+		new upgrade[InternalUpgradeInfo];
+		for(new i=0;i<iSize;i++)
+		{
+			GetUpgradeByIndex(i, upgrade);
+			if(!IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled])
+				continue;
+			
+			SetClientPurchasedUpgradeLevel(g_iCurrentMenuTarget[param1], i, upgrade[UPGR_maxLevel]);
+			SetClientSelectedUpgradeLevel(g_iCurrentMenuTarget[param1], i, upgrade[UPGR_maxLevel]);
+		}
+		
+		LogAction(param1, g_iCurrentMenuTarget[param1], "%L set all upgrades of %L to the maximal level at no charge.", param1, g_iCurrentMenuTarget[param1]);
+		
+		Client_PrintToChat(param1, false, "SM:RPG giveall: %N now has all Upgrades on max.", g_iCurrentMenuTarget[param1]);
+		ShowPlayerUpgradeManageMenu(param1);
+	}
+	else if(action == MenuAction_DisplayItem)
+	{
+		/* Get the display string, we'll use it as a translation phrase */
+		decl String:sDisplay[64];
+		GetMenuItem(menu, param2, "", 0, _, sDisplay, sizeof(sDisplay));
+
+		/* Translate the string to the client's language */
+		decl String:sBuffer[255];
+		Format(sBuffer, sizeof(sBuffer), "%T", sDisplay, param1);
+
+		/* Override the text */
+		return RedrawMenuItem(sBuffer);
+	}
+	return 0;
 }
 
 ShowPlayerUpgradeLevelMenu(client)
@@ -532,6 +606,7 @@ ShowPlayerUpgradeLevelMenu(client)
 	AddMenuItem(hMenu, "buy", "Force to buy level\n");
 	AddMenuItem(hMenu, "take", "Take level with full refund");
 	AddMenuItem(hMenu, "sell", "Force to sell level");
+	AddMenuItem(hMenu, "max", "Set to maximal level at no costs");
 	
 	DisplayMenu(hMenu, client, MENU_TIME_FOREVER);
 }
@@ -576,10 +651,8 @@ public Menu_HandlePlayerUpgradeLevelChange(Handle:menu, MenuAction:action, param
 		if(StrEqual(sInfo, "reset"))
 		{
 			new iCreditsReturned;
-			while(GetClientPurchasedUpgradeLevel(iTarget, iItemIndex) > 0)
+			while(TakeClientUpgrade(iTarget, iItemIndex))
 			{
-				if(!TakeClientUpgrade(iTarget, iItemIndex))
-					break;
 				// Full refund
 				iCreditsReturned += GetUpgradeCost(iItemIndex, GetClientPurchasedUpgradeLevel(iTarget, iItemIndex)+1);
 				SetClientCredits(iTarget, GetClientCredits(iTarget) + GetUpgradeCost(iItemIndex, GetClientPurchasedUpgradeLevel(iTarget, iItemIndex)+1));
@@ -631,6 +704,13 @@ public Menu_HandlePlayerUpgradeLevelChange(Handle:menu, MenuAction:action, param
 				SellClientUpgrade(iTarget, iItemIndex);
 				LogAction(param1, iTarget, "%L forced %L to sell one level of upgrade %s. Upgrade level changed from %d to %d.", param1, iTarget, upgrade[UPGR_name], iOldLevel, GetClientPurchasedUpgradeLevel(iTarget, iItemIndex));
 			}
+		}
+		else if(StrEqual(sInfo, "max"))
+		{
+			while(GiveClientUpgrade(iTarget, iItemIndex))
+			{
+			}
+			LogAction(param1, iTarget, "%L gave %L the maximal level of upgrade %s at no charge. Upgrade level changed from %d to %d.", param1, iTarget, upgrade[UPGR_name], iOldLevel, GetClientPurchasedUpgradeLevel(iTarget, iItemIndex));
 		}
 		
 		ShowPlayerUpgradeLevelMenu(param1);
