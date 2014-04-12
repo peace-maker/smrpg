@@ -213,7 +213,7 @@ public Hook_OnSpawnPost(entity)
 
 public Action:Hook_OnWeaponDrop(client, weapon)
 {
-	if(weapon < 0)
+	if(client <= 0 || weapon < 0)
 		return Plugin_Continue;
 	
 	if(!SMRPG_IsEnabled())

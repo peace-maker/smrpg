@@ -204,7 +204,7 @@ public Action:Hook_OnTakeDamage(victim, &attacker, &inflictor, &Float:damage, &d
 
 public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagetype, weapon, const Float:damageForce[3], const Float:damagePosition[3])
 {
-	if(attacker <= 0 || attacker > MaxClients || victim <= 0 || victim > MaxClients)
+	if(attacker <= 0 || attacker > MaxClients || !IsClientInGame(attacker) || victim <= 0 || victim > MaxClients || !IsClientInGame(victim))
 		return;
 	
 	if(damage < GetConVarFloat(g_hCVMinDamage))
