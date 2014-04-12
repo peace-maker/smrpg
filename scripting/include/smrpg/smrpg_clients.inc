@@ -65,6 +65,36 @@ native SMRPG_GetClientExperience(client);
 native bool:SMRPG_SetClientExperience(client, exp);
 
 /**
+ * Gets the rpg rank of a player.
+ * The returned rank is a cached value and the current rank is fetched afterwards.
+ *
+ * @param client        The client
+ * @return The client's rpg rank or -1 if the rank wasn't fetched yet or for bots.
+ * @error Invalid client index
+ */
+native SMRPG_GetClientRank(client);
+
+/**
+ * Get the total number of ranked players in the database.
+ * The returned value is from the cache and the cache is updated afterwards.
+ *
+ * @return Total number of ranked players.
+ */
+native SMRPG_GetRankCount();
+
+/**
+ * Get the top 10 players.
+ * The owner handle in the callback is always INVALID_HANDLE just to not leak the database handle :)
+ * The query returned is
+ *    SELECT name, level, experience, credits FROM ..
+ *
+ * @param callback    The default threaded sql callback. The query Handle will be in "hndl".
+ * @param data        Optional custom data passed to the callback.
+ * @noreturn
+ */
+native SMRPG_GetTop10Players(SQLTCallback:callback, any:data=0);
+
+/**
  * Resets a clients complete rpg stats including all bought upgrades.
  * CANNOT BE UNDONE!
  *

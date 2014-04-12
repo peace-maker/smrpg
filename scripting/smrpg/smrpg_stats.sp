@@ -35,6 +35,13 @@ RegisterStatsNatives()
 	CreateNative("SMRPG_AddClientExperience", Native_AddClientExperience);
 	// native SMRPG_LevelToExperience(iLevel);
 	CreateNative("SMRPG_LevelToExperience", Native_LevelToExperience);
+	// native SMRPG_GetClientRank(client);
+	CreateNative("SMRPG_GetClientRank", Native_GetClientRank);
+	// native SMRPG_GetRankCount();
+	CreateNative("SMRPG_GetRankCount", Native_GetRankCount);
+	
+	// native SMRPG_GetTop10Players(SQLTCallback:callback, any:data=0);
+	CreateNative("SMRPG_GetTop10Players", Native_GetTop10Players);
 	
 	// native bool:SMRPG_IsClientAFK(client);
 	CreateNative("SMRPG_IsClientAFK", Native_IsClientAFK);
@@ -144,7 +151,7 @@ Stats_PlayerNewLevel(client, iLevelIncrease)
 	
 	if(FadeScreenOnLevelUp(client))
 	{
-		Client_ScreenFade(client, 255, FFADE_OUT|FFADE_PURGE, 255, 255, 215, 0, 120);
+		Client_ScreenFade(client, 255, FFADE_OUT|FFADE_PURGE, 255, 255, 215, 0, 40);
 	}
 	
 	if(GetConVarBool(g_hCVAnnounceNewLvl))
@@ -385,6 +392,23 @@ public Native_LevelToExperience(Handle:plugin, numParams)
 	return Stats_LvlToExp(iLevel);
 }
 
+public Native_GetClientRank(Handle:plugin, numParams)
+{
+	new client = GetNativeCell(1);
+	if(client < 0 || client > MaxClients)
+	{
+		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
+		return false;
+	}
+	
+	return GetClientRank(client);
+}
+
+public Native_GetRankCount(Handle:plugin, numParams)
+{
+	return GetRankCount();
+}
+
 public Native_IsClientAFK(Handle:plugin, numParams)
 {
 	new client = GetNativeCell(1);
@@ -395,6 +419,41 @@ public Native_IsClientAFK(Handle:plugin, numParams)
 	}
 	
 	return IsClientAFK(client);
+}
+
+public Native_GetTop10Players(Handle:plugin, numParams)
+{
+	new Function:callback = GetNativeCell(1);
+	new data = GetNativeCell(2);
+	
+	new Handle:hData = CreateDataPack();
+	WritePackCell(hData, _:plugin);
+	WritePackCell(hData, _:callback);
+	WritePackCell(hData, data);
+	
+	decl String:sQuery[128];
+	Format(sQuery, sizeof(sQuery), "SELECT name, level, experience, credits FROM %s ORDER BY level DESC, experience DESC LIMIT 10", TBL_PLAYERS);
+	SQL_TQuery(g_hDatabase, SQL_GetTop10Native, sQuery, hData);
+}
+
+public SQL_GetTop10Native(Handle:owner, Handle:hndl, const String:error[], any:data)
+{
+	ResetPack(data);
+	new Handle:hPlugin = Handle:ReadPackCell(data);
+	new Function:callback = Function:ReadPackCell(data);
+	new extraData = ReadPackCell(data);
+	CloseHandle(data);
+	
+	// Don't care if the calling plugin is gone.
+	if(!IsValidPlugin(hPlugin))
+		return;
+	
+	Call_StartFunction(hPlugin, callback);
+	Call_PushCell(INVALID_HANDLE);
+	Call_PushCell(hndl);
+	Call_PushString(error);
+	Call_PushCell(extraData);
+	Call_Finish();
 }
 
 // rpgsession handling
@@ -577,7 +636,8 @@ public SQL_GetClientRank(Handle:owner, Handle:hndl, const String:error[], any:us
 		return;
 	}
 	
-	SQL_FetchRow(hndl);
+	if(!SQL_FetchRow(hndl))
+		return;
 	
 	g_iCachedRank[client] = SQL_FetchInt(hndl, 0) + 1; // +1 since the query returns the count, not the rank
 	
@@ -611,7 +671,8 @@ public SQL_GetRankCount(Handle:owner, Handle:hndl, const String:error[], any:dat
 		return;
 	}
 	
-	SQL_FetchRow(hndl);
+	if(!SQL_FetchRow(hndl))
+		return;
 	
 	g_iCachedRankCount = SQL_FetchInt(hndl, 0);
 	
