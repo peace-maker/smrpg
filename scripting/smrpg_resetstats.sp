@@ -1,12 +1,14 @@
 #pragma semicolon 1
 #include <sourcemod>
 #include <smlib>
+#include <smrpg>
 
 #define PLUGIN_VERSION "1.0"
 
 new g_iDaysInMonth[] = {0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 new Handle:g_hCVFirstReset;
 new Handle:g_hCVMonths;
+new Handle:g_hCVTop10MaxLevel;
 
 public Plugin:myinfo = 
 {
@@ -27,11 +29,12 @@ public OnPluginStart()
 	}
 	
 	g_hCVFirstReset = CreateConVar("smrpg_resetstats_firstreset", "2014-02-01", "The date of the first reset which is used as a base to get the coming reset dates. Format yyyy-mm-dd.");
-	g_hCVMonths = CreateConVar("smrpg_resetstats_months", "2", "After how many months shall we reset the stats again?", _, true, 1.0);
+	g_hCVMonths = CreateConVar("smrpg_resetstats_months", "2", "After how many months shall we reset the stats again?", _, true, 0.0);
+	g_hCVTop10MaxLevel = CreateConVar("smrpg_resetstats_top10_maxlevel", "0", "When the top 10 players total levels add together to this maxlevel, the server is reset. (0 to disable)", _, true, 0.0);
 	
 	AutoExecConfig();
 	
-	RegConsoleCmd("sm_nextreset", Cmd_NextReset, "Displays the days until the next rpg reset.");
+	RegConsoleCmd("sm_nextreset", Cmd_NextReset, "Displays when the next rpg reset will be.");
 	
 	AddCommandListener(CmdLstnr_Say, "say");
 	AddCommandListener(CmdLstnr_Say, "say_team");
@@ -48,6 +51,56 @@ public OnMapStart()
 }
 
 public Action:Cmd_NextReset(client, args)
+{
+	if(GetConVarInt(g_hCVMonths) > 0)
+		PrintDaysUntilReset(client);
+	
+	if(GetConVarInt(g_hCVTop10MaxLevel) > 0)
+		PrintLevelUntilReset(client);
+	
+	return Plugin_Handled;
+}
+
+PrintLevelUntilReset(client)
+{
+	SMRPG_GetTop10Players(SQL_GetTop10, client?GetClientUserId(client):client);
+}
+
+public SQL_GetTop10(Handle:owner, Handle:hndl, const String:error[], any:userid)
+{
+	new client = GetClientOfUserId(userid);
+	
+	if(!hndl)
+	{
+		LogError("Error fetching top10 players: %s", error);
+		return;
+	}
+	
+	new iTotalLevels;
+	// SELECT name, level, experience, credits FROM ..
+	while(SQL_MoreRows(hndl))
+	{
+		if(!SQL_FetchRow(hndl))
+			continue;
+		
+		iTotalLevels += SQL_FetchInt(hndl, 1);
+	}
+	
+	new iResetMaxLevel = GetConVarInt(g_hCVTop10MaxLevel);
+	new iLevelsLeft = iResetMaxLevel - iTotalLevels;
+	if(iLevelsLeft < 0)
+		iLevelsLeft = 0;
+	
+	if(!client)
+		PrintToServer("SM:RPG > The stats are reset when the levels of the top 10 players sum up to %d. Still %d levels left.", iResetMaxLevel, iLevelsLeft);
+	else
+		Client_PrintToChatAll(false, "{OG}SM:RPG{N} > {G}The stats are reset when the levels of the top 10 players sum up to %d. Still %d levels left.", iResetMaxLevel, iLevelsLeft);
+}
+
+/*
+ * Date interval related resetting
+ */
+PrintDaysUntilReset(client)
 {
 	new iNextReset[3];
 	new iDays = GetDaysUntilNextReset(iNextReset);
@@ -93,8 +146,6 @@ public Action:Cmd_NextReset(client, args)
 		PrintToServer("SM:RPG > The stats are going to be reset %s.", sTimeString);
 	else
 		Client_PrintToChatAll(false, "{OG}SM:RPG{N} > {G}The stats are going to be reset %s.", sTimeString);
-	
-	return Plugin_Handled;
 }
 
 public Action:CmdLstnr_Say(client, const String:command[], argc)
