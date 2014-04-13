@@ -179,6 +179,10 @@ Stats_PlayerNewLevel(client, iLevelIncrease)
 
 bool:Stats_AddExperience(client, iExperience, const String:sReason[], bool:bHideNotice, other)
 {
+	// Nothing to add?
+	if(iExperience <= 0)
+		return false;
+	
 	IF_IGNORE_BOTS(client)
 		return false;
 	
