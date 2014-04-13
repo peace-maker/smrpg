@@ -121,11 +121,13 @@ native bool:SMRPG_IsClientAFK(client);
  *
  * @param client         The client
  * @param level          The experience to add
+ * @param reason         The reason this experience was added.
  * @param bHideNotice    Set to true, if you want a notification displayed in the HintText area on the client's screen, telling him the amount of experience he just earned, or to false if not.
- * @noreturn
+ * @param other          Optional index of other client involved in the reason for this experience. e.g. the victim which was hurt. Set to -1 if no other particular entity was involved.
+ * @return               True if the experience was added, false otherwise.
  * @error Invalid client index
  */
-native SMRPG_AddClientExperience(client, exp, bool:bHideNotice);
+native bool:SMRPG_AddClientExperience(client, exp, const String:reason[], bool:bHideNotice, other=-1);
 
 /**
  * Calculate the amount of experience needed to reach the next level.
@@ -138,26 +140,23 @@ native SMRPG_LevelToExperience(iLevel);
 /**
  * List of default reasons the core plugin adds experience to clients for.
  */
-enum ExperienceReason
-{
-	ER_PlayerHurt, // Give experience to the attacker when he hurt an enemy
-	ER_PlayerKill, // Give experience to the attacker when he killed an enemy
-	ER_RoundEnd // Give experience to the winning team
-};
+#define ExperienceReason_PlayerHurt "def_playerhurt" // Give experience to the attacker when he hurt an enemy
+#define ExperienceReason_PlayerKill "def_playerkill" // Give experience to the attacker when he killed an enemy
+#define ExperienceReason_RoundEnd "def_roundend" // Give experience to the winning team
+#define ExperienceReason_Admin "def_admin" // An admin gave experience through commands or admin menu
 
 /**
- * Called when the core is about to give a client some experience for above reasons.
+ * Called when we are about to give a client some experience.
  * You can modify the experience or block it all together.
- * This is useful, if you want to add more game specific experience handling which override the default ones.
- *
- * This is not called for any other added experience in other ways. Only the default events in the core.
+ * The core calls this with the above defined reasons. This is useful, if you want to add more game specific experience handling which override the default ones.
  *
  * @param client         The client, which is about to get some experience.
  * @param reason         The reason why this client gets experience.
  * @param iExperience    By reference. The experience to give to the player. You can change it to whatever you like.
+ * @param other          The other entity which was involved in adding this experience. e.g. the victim which was hurt. -1 if no other particular entity was involved.
  * @return >= Plugin_Handled to block it, Plugin_Continue to pass, Plugin_Changed if you modified iExperience.
  */
-forward Action:SMRPG_OnAddExperience(client, ExperienceReason:reason, &iExperience);
+forward Action:SMRPG_OnAddExperience(client, const String:reason[], &iExperience, other);
 
 /**
  * Calculate the ratio of team1:team2.

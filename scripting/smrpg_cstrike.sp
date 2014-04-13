@@ -115,10 +115,13 @@ public OnClientDisconnect(client)
 	}
 }
 
-public Action:SMRPG_OnAddExperience(client, ExperienceReason:reason, &iExperience)
+public Action:SMRPG_OnAddExperience(client, const String:reason[], &iExperience, other)
 {
 	// Don't let the normal experience calculation hit. We're doing some cstrike specific stuff here.
-	return Plugin_Handled;
+	if(StrEqual(reason, ExperienceReason_PlayerHurt) || StrEqual(reason, ExperienceReason_PlayerKill) || StrEqual(reason, ExperienceReason_RoundEnd))
+		return Plugin_Handled;
+	
+	return Plugin_Continue;
 }
 
 public Action:SMRPG_OnClientLevel(client, oldlevel, newlevel)
@@ -225,9 +228,9 @@ public Event_OnPlayerHurt(Handle:event, const String:error[], bool:dontBroadcast
 	}
 	
 	if(StrContains(sWeapon, "knife") != -1)
-		Debug_AddClientExperience(attacker, iExp, true, "knifing", victim);
+		Debug_AddClientExperience(attacker, iExp, true, "cs_playerknife", victim);
 	else
-		Debug_AddClientExperience(attacker, iExp, true, "hurting", victim);
+		Debug_AddClientExperience(attacker, iExp, true, "cs_playerhurt", victim);
 }
 
 public Event_OnPlayerDeath(Handle:event, const String:error[], bool:dontBroadcast)
@@ -257,7 +260,7 @@ public Event_OnPlayerDeath(Handle:event, const String:error[], bool:dontBroadcas
 	if(iExpMax > 0 && iExp > iExpMax)
 		iExp = iExpMax;
 	
-	Debug_AddClientExperience(attacker, iExp, false, "killing", victim);
+	Debug_AddClientExperience(attacker, iExp, false, "cs_playerkill", victim);
 }
 
 /* Experience given to the team for one of these reasons:
@@ -297,7 +300,7 @@ public Event_OnRoundEnd(Handle:event, const String:error[], bool:dontBroadcast)
 	for(new i=1;i<=MaxClients;i++)
 	{
 		if(IsClientInGame(i) && GetClientTeam(i) == iTeam)
-			Debug_AddClientExperience(i, RoundToCeil(float(SMRPG_LevelToExperience(SMRPG_GetClientLevel(i))) * GetConVarFloat(g_hCVExpTeamwin) * fTeamRatio), false, "winning the round");
+			Debug_AddClientExperience(i, RoundToCeil(float(SMRPG_LevelToExperience(SMRPG_GetClientLevel(i))) * GetConVarFloat(g_hCVExpTeamwin) * fTeamRatio), false, "cs_winround");
 	}
 }
 
@@ -315,7 +318,7 @@ public Event_OnBombPlanted(Handle:event, const String:error[], bool:dontBroadcas
 		return;
 	
 	new Float:fTeamRatio = SMRPG_TeamRatio(iTeam == 2 ? 3 : 2);
-	Debug_AddClientExperience(client, RoundToCeil(float(SMRPG_LevelToExperience(SMRPG_GetClientLevel(client))) * GetConVarFloat(g_hCVExpBombPlanted) * fTeamRatio), false, "planting the bomb");
+	Debug_AddClientExperience(client, RoundToCeil(float(SMRPG_LevelToExperience(SMRPG_GetClientLevel(client))) * GetConVarFloat(g_hCVExpBombPlanted) * fTeamRatio), false, "cs_bombplanted");
 }
 
 public Event_OnBombDefused(Handle:event, const String:error[], bool:dontBroadcast)
@@ -332,7 +335,7 @@ public Event_OnBombDefused(Handle:event, const String:error[], bool:dontBroadcas
 		return;
 	
 	new Float:fTeamRatio = SMRPG_TeamRatio(iTeam == 2 ? 3 : 2);
-	Debug_AddClientExperience(client, RoundToCeil(float(SMRPG_LevelToExperience(SMRPG_GetClientLevel(client))) * GetConVarFloat(g_hCVExpBombDefused) * fTeamRatio), false, "defusing the bomb");
+	Debug_AddClientExperience(client, RoundToCeil(float(SMRPG_LevelToExperience(SMRPG_GetClientLevel(client))) * GetConVarFloat(g_hCVExpBombDefused) * fTeamRatio), false, "cs_bombdefused");
 }
 
 public Event_OnBombExploded(Handle:event, const String:error[], bool:dontBroadcast)
@@ -349,7 +352,7 @@ public Event_OnBombExploded(Handle:event, const String:error[], bool:dontBroadca
 		return;
 	
 	new Float:fTeamRatio = SMRPG_TeamRatio(iTeam == 2 ? 3 : 2);
-	Debug_AddClientExperience(client, RoundToCeil(float(SMRPG_LevelToExperience(SMRPG_GetClientLevel(client))) * GetConVarFloat(g_hCVExpBombExploded) * fTeamRatio), false, "letting the bomb explode");
+	Debug_AddClientExperience(client, RoundToCeil(float(SMRPG_LevelToExperience(SMRPG_GetClientLevel(client))) * GetConVarFloat(g_hCVExpBombExploded) * fTeamRatio), false, "cs_bombexploded");
 }
 
 public Event_OnHostageRescued(Handle:event, const String:error[], bool:dontBroadcast)
@@ -366,7 +369,7 @@ public Event_OnHostageRescued(Handle:event, const String:error[], bool:dontBroad
 		return;
 	
 	new Float:fTeamRatio = SMRPG_TeamRatio(iTeam == 2 ? 3 : 2);
-	Debug_AddClientExperience(client, RoundToCeil(float(SMRPG_LevelToExperience(SMRPG_GetClientLevel(client))) * GetConVarFloat(g_hCVExpHostage) * fTeamRatio), false, "rescuing a hostage");
+	Debug_AddClientExperience(client, RoundToCeil(float(SMRPG_LevelToExperience(SMRPG_GetClientLevel(client))) * GetConVarFloat(g_hCVExpHostage) * fTeamRatio), false, "cs_hostagerescued");
 }
 
 public Event_OnVIPEscaped(Handle:event, const String:error[], bool:dontBroadcast)
@@ -383,7 +386,7 @@ public Event_OnVIPEscaped(Handle:event, const String:error[], bool:dontBroadcast
 		return;
 	
 	new Float:fTeamRatio = SMRPG_TeamRatio(iTeam == 2 ? 3 : 2);
-	Debug_AddClientExperience(client, RoundToCeil(float(SMRPG_LevelToExperience(SMRPG_GetClientLevel(client))) * GetConVarFloat(g_hCVExpVIPEscaped) * fTeamRatio), false, "escaping as vip");
+	Debug_AddClientExperience(client, RoundToCeil(float(SMRPG_LevelToExperience(SMRPG_GetClientLevel(client))) * GetConVarFloat(g_hCVExpVIPEscaped) * fTeamRatio), false, "cs_vipescaped");
 }
 
 public Action:Timer_ResetKnifeLeveling(Handle:timer, any:userid)
@@ -403,15 +406,14 @@ public Action:Timer_ResetKnifeLeveling(Handle:timer, any:userid)
 Debug_AddClientExperience(client, exp, bool:bHideNotice, const String:sReason[], victim=-1)
 {
 #if !defined _DEBUG
-	if(sReason[0] > victim) {} // Ignore me. Just keep the compiler from complaining about unused variables when not compiling in debug mode.
 	// This is all that's really needed
-	SMRPG_AddClientExperience(client, exp, bHideNotice);
+	SMRPG_AddClientExperience(client, exp, sReason, bHideNotice, victim);
 #else
 	new iOldLevel = SMRPG_GetClientLevel(client);
 	new iOldExperience = SMRPG_GetClientExperience(client);
 	new iOldNeeded = SMRPG_LevelToExperience(iOldLevel);
 	
-	SMRPG_AddClientExperience(client, exp, bHideNotice);
+	SMRPG_AddClientExperience(client, exp, sReason, bHideNotice, victim);
 	
 	new iNewLevel = SMRPG_GetClientLevel(client);
 	new String:sAttackerAuth[40], String:sVictimString[256], String:sLevelInc[32];

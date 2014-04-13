@@ -356,7 +356,7 @@ public Menu_HandlePlayerChangeExperience(Handle:menu, MenuAction:action, param1,
 		
 		// If we're adding experience, add it properly and level up if necassary.
 		if(iAmount > 0)
-			Stats_AddExperience(g_iCurrentMenuTarget[param1], iAmount, false);
+			Stats_AddExperience(g_iCurrentMenuTarget[param1], iAmount, ExperienceReason_Admin, false, -1);
 		else
 			SetClientExperience(g_iCurrentMenuTarget[param1], GetClientExperience(g_iCurrentMenuTarget[param1])+iAmount);
 		

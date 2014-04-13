@@ -227,7 +227,7 @@ public Action:Cmd_SetExp(client, args)
 	new iOldExperience = GetClientExperience(iTarget);
 	
 	if(iExperience > iOldExperience)
-		Stats_AddExperience(iTarget, iExperience-iOldExperience, false);
+		Stats_AddExperience(iTarget, iExperience-iOldExperience, ExperienceReason_Admin, false, -1);
 	else
 		SetClientExperience(iTarget, iExperience);
 	
@@ -265,7 +265,7 @@ public Action:Cmd_AddExp(client, args)
 	new iOldLevel = GetClientLevel(iTarget);
 	new iOldExperience = GetClientExperience(iTarget);
 	
-	Stats_AddExperience(iTarget, iExperienceIncrease, false);
+	Stats_AddExperience(iTarget, iExperienceIncrease, ExperienceReason_Admin, false, -1);
 	
 	LogAction(client, iTarget, "%L added %d experience to %L. He is now Level %d and has %d/%d Experience (previously Level %d with %d/%d Experience)", client, iExperienceIncrease, iTarget, GetClientLevel(iTarget), GetClientExperience(iTarget), Stats_LvlToExp(GetClientLevel(iTarget)), iOldLevel, iOldExperience, Stats_LvlToExp(iOldLevel));
 	ReplyToCommand(client, "SM:RPG setexp: %N is now Level %d and has %d/%d Experience (previously Level %d with %d/%d Experience)", iTarget, GetClientLevel(iTarget), GetClientExperience(iTarget), Stats_LvlToExp(GetClientLevel(iTarget)), iOldLevel, iOldExperience, Stats_LvlToExp(iOldLevel));

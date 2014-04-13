@@ -31,7 +31,7 @@ new g_PlayerAFKInfo[MAXPLAYERS+1][AFKInfo];
 
 RegisterStatsNatives()
 {
-	// native bool:SMRPG_AddClientExperience(client, exp, bool:bHideNotice);
+	// native bool:SMRPG_AddClientExperience(client, exp, const String:reason[], bool:bHideNotice, other=-1);
 	CreateNative("SMRPG_AddClientExperience", Native_AddClientExperience);
 	// native SMRPG_LevelToExperience(iLevel);
 	CreateNative("SMRPG_LevelToExperience", Native_LevelToExperience);
@@ -49,8 +49,8 @@ RegisterStatsNatives()
 
 RegisterStatsForwards()
 {
-	// forward Action:SMRPG_OnAddExperience(client, ExperienceReason:reason, &iExperience);
-	g_hfwdOnAddExperience = CreateGlobalForward("SMRPG_OnAddExperience", ET_Hook, Param_Cell, Param_Cell, Param_CellByRef);
+	// forward Action:SMRPG_OnAddExperience(client, const String:reason[], &iExperience, other);
+	g_hfwdOnAddExperience = CreateGlobalForward("SMRPG_OnAddExperience", ET_Hook, Param_Cell, Param_String, Param_CellByRef, Param_Cell);
 }
 
 /* Calculate the experience needed for this level */
@@ -177,7 +177,7 @@ Stats_PlayerNewLevel(client, iLevelIncrease)
 	}
 }
 
-bool:Stats_AddExperience(client, iExperience, bool:bHideNotice)
+bool:Stats_AddExperience(client, iExperience, const String:sReason[], bool:bHideNotice, other)
 {
 	IF_IGNORE_BOTS(client)
 		return false;
@@ -197,6 +197,10 @@ bool:Stats_AddExperience(client, iExperience, bool:bHideNotice)
 		iMaxlevel = GetConVarInt(g_hCVPlayerMaxlevel);
 	
 	if(iMaxlevel > 0 && GetClientLevel(client) >= iMaxlevel)
+		return false;
+	
+	// See if some other plugin doesn't like this.
+	if(Stats_CallOnExperienceForward(client, sReason, iExperience, other) > Plugin_Changed)
 		return false;
 	
 	SetClientExperience(client, GetClientExperience(client) + iExperience);
@@ -227,8 +231,7 @@ Stats_PlayerDamage(attacker, victim, Float:fDamage)
 	
 	new iExp = RoundToCeil(fDamage * GetConVarFloat(g_hCVExpDamage));
 	
-	if(Stats_CallOnExperienceForward(attacker, ER_PlayerHurt, iExp) <= Plugin_Changed)
-		Stats_AddExperience(attacker, iExp, true);
+	Stats_AddExperience(attacker, iExp, ExperienceReason_PlayerHurt, true, victim);
 }
 
 Stats_PlayerKill(attacker, victim)
@@ -250,8 +253,7 @@ Stats_PlayerKill(attacker, victim)
 	if(iExpMax > 0 && iExp > iExpMax)
 		iExp = iExpMax;
 	
-	if(Stats_CallOnExperienceForward(attacker, ER_PlayerKill, iExp) <= Plugin_Changed)
-		Stats_AddExperience(attacker, iExp, false);
+	Stats_AddExperience(attacker, iExp, ExperienceReason_PlayerKill, false, victim);
 }
 
 Stats_WinningTeam(iTeam)
@@ -273,19 +275,20 @@ Stats_WinningTeam(iTeam)
 		if(IsClientInGame(i) && GetClientTeam(i) == iTeam)
 		{
 			iExperience = RoundToCeil(float(Stats_LvlToExp(GetClientLevel(i))) * GetConVarFloat(g_hCVExpTeamwin) * fTeamRatio);
-			if(Stats_CallOnExperienceForward(i, ER_RoundEnd, iExperience) <= Plugin_Changed)
-				Stats_AddExperience(i, iExperience, false);
+			Stats_AddExperience(i, iExperience, ExperienceReason_RoundEnd, false, -1);
 		}
 	}
 }
 
-Action:Stats_CallOnExperienceForward(client, ExperienceReason:reason, iExperience)
+// forward Action:SMRPG_OnAddExperience(client, const String:reason[], &iExperience, other);
+Action:Stats_CallOnExperienceForward(client, const String:sReason[], &iExperience, other)
 {
 	new Action:result;
 	Call_StartForward(g_hfwdOnAddExperience);
 	Call_PushCell(client);
-	Call_PushCell(reason);
+	Call_PushString(sReason);
 	Call_PushCellRef(iExperience);
+	Call_PushCell(other);
 	Call_Finish(result);
 	return result;
 }
@@ -371,19 +374,25 @@ ResetAFKPlayer(client)
 /**
  * Native Callbacks
  */
-// native SMRPG_AddClientExperience(client, exp, bool:bHideNotice);
+// native bool:SMRPG_AddClientExperience(client, exp, const String:reason[], bool:bHideNotice, other=-1);
 public Native_AddClientExperience(Handle:plugin, numParams)
 {
 	new client = GetNativeCell(1);
 	if(client < 0 || client > MaxClients)
 	{
 		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
-		return;
+		return false;
 	}
 	
 	new iExperience = GetNativeCell(2);
-	new bool:bHideNotice = bool:GetNativeCell(3);
-	Stats_AddExperience(client, iExperience, bHideNotice);
+	new iLen;
+	GetNativeStringLength(3, iLen);
+	new String:sReason[iLen+1];
+	GetNativeString(3, sReason, iLen+1);
+	
+	new bool:bHideNotice = bool:GetNativeCell(4);
+	new other = GetNativeCell(5);
+	return Stats_AddExperience(client, iExperience, sReason, bHideNotice, other);
 }
 
 public Native_LevelToExperience(Handle:plugin, numParams)
