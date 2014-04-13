@@ -35,6 +35,10 @@ new Handle:g_hCVBotMaxlevelReset;
 new Handle:g_hCVPlayerMaxlevel;
 new Handle:g_hCVPlayerMaxlevelReset;
 
+new Handle:g_hCVBotKillPlayer;
+new Handle:g_hCVPlayerKillBot;
+new Handle:g_hCVBotKillBot;
+
 new Handle:g_hCVAnnounceNewLvl;
 new Handle:g_hCVAFKTime;
 
@@ -127,6 +131,10 @@ public OnPluginStart()
 	g_hCVBotMaxlevelReset = AutoExecConfig_CreateConVar("smrpg_bot_maxlevel_reset", "1", "Reset the bot to level 1, if the bot reaches the maxlevel for bots?", 0, true, 0.0, true, 1.0);
 	g_hCVPlayerMaxlevel = AutoExecConfig_CreateConVar("smrpg_player_maxlevel", "0", "The maximum level a player can reach until he stops getting more experience. (0 = infinite)", 0, true, 0.0);
 	g_hCVPlayerMaxlevelReset = AutoExecConfig_CreateConVar("smrpg_player_maxlevel_reset", "0", "Reset the player to level 1, if the player reaches the player maxlevel?", 0, true, 0.0, true, 1.0);
+	
+	g_hCVBotKillPlayer = AutoExecConfig_CreateConVar("smrpg_bot_kill_player", "1", "Bots earn experience for interacting with real players?", 0, true, 0.0, true, 1.0);
+	g_hCVPlayerKillBot = AutoExecConfig_CreateConVar("smrpg_player_kill_bot", "1", "Real players earn experience for interacting with bots?", 0, true, 0.0, true, 1.0);
+	g_hCVBotKillBot = AutoExecConfig_CreateConVar("smrpg_bot_kill_bot", "1", "Bots earn experience for interacting with bots?", 0, true, 0.0, true, 1.0);
 	
 	g_hCVAnnounceNewLvl = AutoExecConfig_CreateConVar("smrpg_announce_newlvl", "1", "Global announcement when a player reaches a new level (1 = enable, 0 = disable)", 0, true, 0.0, true, 1.0);
 	g_hCVAFKTime = AutoExecConfig_CreateConVar("smrpg_afk_time", "30", "After how many seconds of idleing is the player flagged as AFK? (0 = off)", 0, true, 0.0);

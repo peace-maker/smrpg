@@ -23,6 +23,8 @@ new Handle:g_hCVExpBombExploded;
 new Handle:g_hCVExpHostage;
 new Handle:g_hCVExpVIPEscaped;
 
+new Handle:g_hCVBotEarnExpObjective;
+
 new Handle:g_hCVShowMVPLevel;
 new Handle:g_hCVEnableAntiKnifeleveling;
 
@@ -67,6 +69,8 @@ public OnPluginStart()
 	g_hCVExpBombExploded = CreateConVar("smrpg_exp_bombexploded", "0.20", "Experience multipled by the experience required and the team ratio given to the bomb planter when it explodes", 0, true, 0.0);
 	g_hCVExpHostage = CreateConVar("smrpg_exp_hostage", "0.10", "Experience multipled by the experience required and the team ratio for rescuing a hostage", 0, true, 0.0);
 	g_hCVExpVIPEscaped = CreateConVar("smrpg_exp_vipescaped", "0.35", "Experience multipled by the experience required and the team ratio given to the vip when the vip escapes", 0, true, 0.0);
+	
+	g_hCVBotEarnExpObjective = CreateConVar("smrpg_bot_exp_objectives", "1", "Should bots earn experience for completing objectives (bomb, hostage, ..)?", 0, true, 0.0, true, 1.0);
 	
 	g_hCVShowMVPLevel = CreateConVar("smrpg_mvp_level", "1", "Show player level as MVP stars on the scoreboard?", 0, true, 0.0, true, 1.0);
 	g_hCVEnableAntiKnifeleveling = CreateConVar("smrpg_anti_knifelevel", "1", "Stop giving exp to players who knife each other too often in a time frame?", 0, true, 0.0, true, 1.0);
@@ -317,6 +321,9 @@ public Event_OnBombPlanted(Handle:event, const String:error[], bool:dontBroadcas
 	if(iTeam <= 1)
 		return;
 	
+	if(IsFakeClient(client) && !GetConVarBool(g_hCVBotEarnExpObjective))
+		return;
+	
 	new Float:fTeamRatio = SMRPG_TeamRatio(iTeam == 2 ? 3 : 2);
 	Debug_AddClientExperience(client, RoundToCeil(float(SMRPG_LevelToExperience(SMRPG_GetClientLevel(client))) * GetConVarFloat(g_hCVExpBombPlanted) * fTeamRatio), false, "cs_bombplanted");
 }
@@ -332,6 +339,9 @@ public Event_OnBombDefused(Handle:event, const String:error[], bool:dontBroadcas
 	
 	new iTeam = GetClientTeam(client);
 	if(iTeam <= 1)
+		return;
+	
+	if(IsFakeClient(client) && !GetConVarBool(g_hCVBotEarnExpObjective))
 		return;
 	
 	new Float:fTeamRatio = SMRPG_TeamRatio(iTeam == 2 ? 3 : 2);
@@ -351,6 +361,9 @@ public Event_OnBombExploded(Handle:event, const String:error[], bool:dontBroadca
 	if(iTeam <= 1)
 		return;
 	
+	if(IsFakeClient(client) && !GetConVarBool(g_hCVBotEarnExpObjective))
+		return;
+	
 	new Float:fTeamRatio = SMRPG_TeamRatio(iTeam == 2 ? 3 : 2);
 	Debug_AddClientExperience(client, RoundToCeil(float(SMRPG_LevelToExperience(SMRPG_GetClientLevel(client))) * GetConVarFloat(g_hCVExpBombExploded) * fTeamRatio), false, "cs_bombexploded");
 }
@@ -368,6 +381,9 @@ public Event_OnHostageRescued(Handle:event, const String:error[], bool:dontBroad
 	if(iTeam <= 1)
 		return;
 	
+	if(IsFakeClient(client) && !GetConVarBool(g_hCVBotEarnExpObjective))
+		return;
+	
 	new Float:fTeamRatio = SMRPG_TeamRatio(iTeam == 2 ? 3 : 2);
 	Debug_AddClientExperience(client, RoundToCeil(float(SMRPG_LevelToExperience(SMRPG_GetClientLevel(client))) * GetConVarFloat(g_hCVExpHostage) * fTeamRatio), false, "cs_hostagerescued");
 }
@@ -383,6 +399,9 @@ public Event_OnVIPEscaped(Handle:event, const String:error[], bool:dontBroadcast
 	
 	new iTeam = GetClientTeam(client);
 	if(iTeam <= 1)
+		return;
+	
+	if(IsFakeClient(client) && !GetConVarBool(g_hCVBotEarnExpObjective))
 		return;
 	
 	new Float:fTeamRatio = SMRPG_TeamRatio(iTeam == 2 ? 3 : 2);

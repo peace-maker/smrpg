@@ -199,6 +199,28 @@ bool:Stats_AddExperience(client, iExperience, const String:sReason[], bool:bHide
 	if(iMaxlevel > 0 && GetClientLevel(client) >= iMaxlevel)
 		return false;
 	
+	// Handle experience with bots
+	if(other > 0 && other <= MaxClients && IsClientInGame(other))
+	{
+		new bool:bClientBot = IsFakeClient(client);
+		new bool:bOtherBot = IsFakeClient(other);
+		if(bClientBot && bOtherBot)
+		{
+			if(!GetConVarBool(g_hCVBotKillBot))
+				return false;
+		}
+		else if(bClientBot && !bOtherBot)
+		{
+			if(!GetConVarBool(g_hCVBotKillPlayer))
+				return false;
+		}
+		else if(!bClientBot && bOtherBot)
+		{
+			if(!GetConVarBool(g_hCVPlayerKillBot))
+				return false;
+		}
+	}
+	
 	// See if some other plugin doesn't like this.
 	if(Stats_CallOnExperienceForward(client, sReason, iExperience, other) > Plugin_Changed)
 		return false;
