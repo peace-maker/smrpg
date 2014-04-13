@@ -23,6 +23,9 @@ new Handle:g_hCVExpBombExploded;
 new Handle:g_hCVExpHostage;
 new Handle:g_hCVExpVIPEscaped;
 
+new Handle:g_hCVExpDominating;
+new Handle:g_hCVExpRevenge;
+
 new Handle:g_hCVBotEarnExpObjective;
 
 new Handle:g_hCVShowMVPLevel;
@@ -69,6 +72,9 @@ public OnPluginStart()
 	g_hCVExpBombExploded = CreateConVar("smrpg_exp_bombexploded", "0.20", "Experience multipled by the experience required and the team ratio given to the bomb planter when it explodes", 0, true, 0.0);
 	g_hCVExpHostage = CreateConVar("smrpg_exp_hostage", "0.10", "Experience multipled by the experience required and the team ratio for rescuing a hostage", 0, true, 0.0);
 	g_hCVExpVIPEscaped = CreateConVar("smrpg_exp_vipescaped", "0.35", "Experience multipled by the experience required and the team ratio given to the vip when the vip escapes", 0, true, 0.0);
+	
+	g_hCVExpDominating = CreateConVar("smrpg_exp_dominating", "5.0", "Experience for dominating an enemy multiplied by the victim's level.", 0, true, 0.0);
+	g_hCVExpRevenge = CreateConVar("smrpg_exp_revenge", "8.0", "Experience for killing a dominating enemy in revenge multiplied by the attackers's level.", 0, true, 0.0);
 	
 	g_hCVBotEarnExpObjective = CreateConVar("smrpg_bot_exp_objectives", "1", "Should bots earn experience for completing objectives (bomb, hostage, ..)?", 0, true, 0.0, true, 1.0);
 	
@@ -265,6 +271,20 @@ public Event_OnPlayerDeath(Handle:event, const String:error[], bool:dontBroadcas
 		iExp = iExpMax;
 	
 	Debug_AddClientExperience(attacker, iExp, false, "cs_playerkill", victim);
+	
+	// Player started dominating this player?
+	if(GetEventBool(event, "dominated"))
+	{
+		iExp = RoundToCeil(SMRPG_GetClientLevel(victim) * GetConVarFloat(g_hCVExpDominating));
+		Debug_AddClientExperience(attacker, iExp, false, "cs_dominating", victim);
+	}
+	
+	// Player broke the domination and killed him in revenge?
+	if(GetEventBool(event, "revenge"))
+	{
+		iExp = RoundToCeil(SMRPG_GetClientLevel(attacker) * GetConVarFloat(g_hCVExpRevenge));
+		Debug_AddClientExperience(victim, iExp, false, "cs_revenge", attacker);
+	}
 }
 
 /* Experience given to the team for one of these reasons:
