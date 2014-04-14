@@ -111,18 +111,7 @@ AddPlayer(client, const String:auth[])
 		return;
 	
 	decl String:sQuery[256];
-	
-	if(GetConVarBool(g_hCVSteamIDSave))
-	{
-		Format(sQuery, sizeof(sQuery), "SELECT player_id, level, experience, credits, lastreset, showmenu, fadescreen FROM %s WHERE steamid = '%s' ORDER BY level DESC LIMIT 1", TBL_PLAYERS, auth);
-	}
-	else
-	{
-		decl String:sName[MAX_NAME_LENGTH], String:sNameEscaped[MAX_NAME_LENGTH*2+1];
-		GetClientName(client, sName, sizeof(sName));
-		SQL_EscapeString(g_hDatabase, sName, sNameEscaped, sizeof(sNameEscaped));
-		Format(sQuery, sizeof(sQuery), "SELECT player_id, level, experience, credits, lastreset, showmenu, fadescreen FROM %s WHERE name = '%s' AND steamid = '%s' ORDER BY level DESC LIMIT 1", TBL_PLAYERS, sNameEscaped, auth);
-	}
+	Format(sQuery, sizeof(sQuery), "SELECT player_id, level, experience, credits, lastreset, showmenu, fadescreen FROM %s WHERE steamid = '%s' ORDER BY level DESC LIMIT 1", TBL_PLAYERS, auth);
 	
 	SQL_TQuery(g_hDatabase, SQL_GetPlayerInfo, sQuery, GetClientUserId(client));
 }

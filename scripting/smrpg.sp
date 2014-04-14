@@ -26,7 +26,6 @@ new Handle:g_hCVBotNeedHuman;
 new Handle:g_hCVNeedEnemies;
 new Handle:g_hCVDebug;
 new Handle:g_hCVSaveData;
-new Handle:g_hCVSteamIDSave;
 new Handle:g_hCVSaveInterval;
 new Handle:g_hCVPlayerExpire;
 
@@ -123,7 +122,6 @@ public OnPluginStart()
 	g_hCVNeedEnemies = AutoExecConfig_CreateConVar("smrpg_need_enemies", "1", "Don't give any experience if there is no enemy in the opposite team?", 0, true, 0.0, true, 1.0);
 	g_hCVDebug = AutoExecConfig_CreateConVar("smrpg_debug", "0", "Turns on debug mode for this plugin", 0, true, 0.0, true, 1.0);
 	g_hCVSaveData = AutoExecConfig_CreateConVar("smrpg_save_data", "1", "If disabled, the database won't be updated (this means player data won't be saved!)", 0, true, 0.0, true, 1.0);
-	g_hCVSteamIDSave = AutoExecConfig_CreateConVar("smrpg_steamid_save", "1", "Save by SteamID instead of by SteamID and name", 0, true, 0.0, true, 1.0);
 	g_hCVSaveInterval = AutoExecConfig_CreateConVar("smrpg_save_interval", "150", "Interval (in seconds) that player data is auto saved (0 = off)", 0, true, 0.0);
 	g_hCVPlayerExpire = AutoExecConfig_CreateConVar("smrpg_player_expire", "30", "Sets how many days until an unused player account is deleted (0 = never)", 0, true, 0.0);
 	
