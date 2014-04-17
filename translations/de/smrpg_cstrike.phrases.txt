@@ -3,7 +3,78 @@
 	"Player is knifeleveling"
 	{
 		// 1: Name of player who is earning levels
-    // 2: Name of the player who gets knifed, so the other player gets experience
+		// 2: Name of the player who gets knifed, so the other player gets experience
 		"de"			"{N}{1}{G} steht im Verdacht mit {N}{2}{G} zu knifeleveln."
+	}
+	
+	"cs_playerknife"
+	{
+		// 1: The amount of experience earned.
+		// 2: The other player involved. e.g. the victim when hurting someone.
+		"de"			"{1} Exp. fürs verletzen von {2} mit dem Messer"
+	}
+	
+	"cs_playerhurt"
+	{
+		// 1: The amount of experience earned.
+		// 2: The other player involved. e.g. the victim when hurting someone.
+		"de"			"{1} Exp. fürs verletzen von {2}"
+	}
+	
+	"cs_playerkill"
+	{
+		// 1: The amount of experience earned.
+		// 2: The other player involved. e.g. the victim when hurting someone.
+		"de"			"{1} Exp. fürs töten von {2}"
+	}
+	
+	"cs_dominating"
+	{
+		// 1: The amount of experience earned.
+		// 2: The other player involved. e.g. the victim when hurting someone.
+		"de"			"{1} Exp. fürs dominieren von {2}"
+	}
+	
+	"cs_revenge"
+	{
+		// 1: The amount of experience earned.
+		// 2: The other player involved. e.g. the victim when hurting someone.
+		"de"			"{1} Exp. für die Rache an {2}"
+	}
+	
+	"cs_winround"
+	{
+		// 1: The amount of experience earned.
+		"de"			"{1} Exp. für den Gewinn einer Runde"
+	}
+	
+	"cs_bombplanted"
+	{
+		// 1: The amount of experience earned.
+		"de"			"{1} Exp. fürs Bombenlegen"
+	}
+	
+	"cs_bombdefused"
+	{
+		// 1: The amount of experience earned.
+		"de"			"{1} Exp. fürs Bombenentschärfen"
+	}
+	
+	"cs_bombexploded"
+	{
+		// 1: The amount of experience earned.
+		"de"			"{1} Exp. fürs Hochjagen der Bombe"
+	}
+	
+	"cs_hostagerescued"
+	{
+		// 1: The amount of experience earned.
+		"de"			"{1} Exp. fürs Retten einer Geisel"
+	}
+	
+	"cs_vipescaped"
+	{
+		// 1: The amount of experience earned.
+		"de"			"{1} Exp. fürs Entkommen als VIP"
 	}
 }
