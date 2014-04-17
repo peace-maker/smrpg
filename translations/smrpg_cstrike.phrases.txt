@@ -3,8 +3,90 @@
 	"Player is knifeleveling"
 	{
 		// 1: Name of player who is earning levels
-    // 2: Name of the player who gets knifed, so the other player gets experience
-		"#format" "{1:N},{2:N}"
+		// 2: Name of the player who gets knifed, so the other player gets experience
+		"#format"	"{1:N},{2:N}"
 		"en"			"{N}{1}{G} is suspected for knife-leveling with {N}{2}{G}."
+	}
+	
+	"cs_playerknife"
+	{
+		// 1: The amount of experience earned.
+		// 2: The other player involved. e.g. the victim when hurting someone.
+		"#format"	"{1:d},{2:N}"
+		"en"			"{1} exp. for hurting {2} with a knife"
+	}
+	
+	"cs_playerhurt"
+	{
+		// 1: The amount of experience earned.
+		// 2: The other player involved. e.g. the victim when hurting someone.
+		"#format"	"{1:d},{2:N}"
+		"en"			"{1} exp. for hurting {2}"
+	}
+	
+	"cs_playerkill"
+	{
+		// 1: The amount of experience earned.
+		// 2: The other player involved. e.g. the victim when hurting someone.
+		"#format"	"{1:d},{2:N}"
+		"en"			"{1} exp. for killing {2}"
+	}
+	
+	"cs_dominating"
+	{
+		// 1: The amount of experience earned.
+		// 2: The other player involved. e.g. the victim when hurting someone.
+		"#format"	"{1:d},{2:N}"
+		"en"			"{1} exp. for dominating {2}"
+	}
+	
+	"cs_revenge"
+	{
+		// 1: The amount of experience earned.
+		// 2: The other player involved. e.g. the victim when hurting someone.
+		"#format"	"{1:d},{2:N}"
+		"en"			"{1} exp. for getting revenge on {2}"
+	}
+	
+	"cs_winround"
+	{
+		// 1: The amount of experience earned.
+		"#format"	"{1:d}"
+		"en"			"{1} exp. for winning a round"
+	}
+	
+	"cs_bombplanted"
+	{
+		// 1: The amount of experience earned.
+		"#format"	"{1:d}"
+		"en"			"{1} exp. for planting the bomb"
+	}
+	
+	"cs_bombdefused"
+	{
+		// 1: The amount of experience earned.
+		"#format"	"{1:d}"
+		"en"			"{1} exp. for defusing the bomb"
+	}
+	
+	"cs_bombexploded"
+	{
+		// 1: The amount of experience earned.
+		"#format"	"{1:d}"
+		"en"			"{1} exp. for letting the bomb explode"
+	}
+	
+	"cs_hostagerescued"
+	{
+		// 1: The amount of experience earned.
+		"#format"	"{1:d}"
+		"en"			"{1} exp. for rescueing a hostage"
+	}
+	
+	"cs_vipescaped"
+	{
+		// 1: The amount of experience earned.
+		"#format"	"{1:d}"
+		"en"			"{1} exp. for escaping as VIP"
 	}
 }

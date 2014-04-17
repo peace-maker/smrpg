@@ -13,7 +13,8 @@ enum SessionStats {
 	SS_JoinRank,
 	bool:SS_WantsAutoUpdate,
 	bool:SS_WantsMenuOpen,
-	bool:SS_OKToClose
+	bool:SS_OKToClose,
+	Handle:SS_LastExperience
 };
 
 new g_iPlayerSessionStartStats[MAXPLAYERS+1][SessionStats];
@@ -418,7 +419,40 @@ public Native_AddClientExperience(Handle:plugin, numParams)
 	
 	new bool:bHideNotice = bool:GetNativeCell(4);
 	new other = GetNativeCell(5);
-	return Stats_AddExperience(client, iExperience, sReason, bHideNotice, other);
+	new Function:translationCallback = Function:GetNativeCell(6);
+	
+	new bool:bAdded = Stats_AddExperience(client, iExperience, sReason, bHideNotice, other);
+	
+	if(bAdded && !IsFakeClient(client))
+	{
+		new String:sTranslatedReason[256];
+		strcopy(sTranslatedReason, sizeof(sTranslatedReason), sReason);
+		if(translationCallback != INVALID_FUNCTION)
+		{
+			// functag SMRPG_ExpTranslationCb(client, const String:reason[], iExperience, other, String:buffer[], maxlen);
+			Call_StartFunction(plugin, translationCallback);
+			Call_PushCell(client);
+			Call_PushString(sReason);
+			Call_PushCell(iExperience);
+			Call_PushCell(other);
+			Call_PushStringEx(sTranslatedReason, sizeof(sTranslatedReason), SM_PARAM_STRING_UTF8|SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
+			Call_PushCell(sizeof(sTranslatedReason));
+			Call_Finish();
+		}
+		
+		// String wasn't changed or no callback set?
+		if(StrEqual(sTranslatedReason, sReason))
+		{
+			if(other > 0 && other <= MaxClients)
+				Format(sTranslatedReason, sizeof(sTranslatedReason), "%T", "Experience Reason Other Client", client, iExperience, sReason, other);
+			else
+				Format(sTranslatedReason, sizeof(sTranslatedReason), "%T", "Experience Reason General", client, iExperience, sReason);
+		}
+		
+		InsertSessionExperienceString(client, sTranslatedReason);
+	}
+	
+	return bAdded;
 }
 
 public Native_LevelToExperience(Handle:plugin, numParams)
@@ -502,6 +536,11 @@ InitPlayerSessionStartStats(client)
 	g_iPlayerSessionStartStats[client][SS_WantsAutoUpdate] = false;
 	g_iPlayerSessionStartStats[client][SS_WantsMenuOpen] = false;
 	g_iPlayerSessionStartStats[client][SS_OKToClose] = false;
+	
+	new Handle:hLastExperience = CreateArray(ByteCountToCells(256));
+	ResizeArray(hLastExperience, GetConVarInt(g_hCVLastExperienceCount));
+	SetArrayString(hLastExperience, 0, "");
+	g_iPlayerSessionStartStats[client][SS_LastExperience] = hLastExperience;
 }
 
 ResetPlayerSessionStats(client)
@@ -514,6 +553,7 @@ ResetPlayerSessionStats(client)
 	g_iPlayerSessionStartStats[client][SS_WantsAutoUpdate] = false;
 	g_iPlayerSessionStartStats[client][SS_WantsMenuOpen] = false;
 	g_iPlayerSessionStartStats[client][SS_OKToClose] = false;
+	ClearHandle(g_iPlayerSessionStartStats[client][SS_LastExperience]);
 }
 
 // Use our own forward to initialize the session info :)
@@ -522,6 +562,28 @@ public SMRPG_OnClientLoaded(client)
 	// Only set it once and leave it that way until he really disconnects.
 	if(g_iPlayerSessionStartStats[client][SS_JoinTime] == 0)
 		InitPlayerSessionStartStats(client);
+}
+
+InsertSessionExperienceString(client, const String:sExperience[])
+{
+	new Handle:hLastExperience = g_iPlayerSessionStartStats[client][SS_LastExperience];
+	// Not loaded yet..
+	if(hLastExperience == INVALID_HANDLE)
+		return;
+	
+	// Insert the string at the start of the array!
+	ShiftArrayUp(hLastExperience, 0);
+	SetArrayString(hLastExperience, 0, sExperience);
+}
+
+public ConVar_LastExperienceCountChanged(Handle:convar, const String:oldValue[], const String:newValue[])
+{
+	// Apply the new size immediately.
+	for(new i=1;i<=MaxClients;i++)
+	{
+		if(g_iPlayerSessionStartStats[i][SS_JoinTime] > 0)
+			ResizeArray(g_iPlayerSessionStartStats[i][SS_LastExperience], GetConVarInt(convar));
+	}
 }
 
 StartSessionMenuUpdater()
@@ -633,6 +695,47 @@ public Panel_HandleSessionMenu(Handle:menu, MenuAction:action, param1, param2)
 	}
 }
 
+DisplaySessionLastExperienceMenu(client)
+{
+	new Handle:hLastExperience = g_iPlayerSessionStartStats[client][SS_LastExperience];
+	// Player not loaded yet.
+	if(hLastExperience == INVALID_HANDLE)
+		return;
+	
+	new Handle:hMenu = CreateMenu(Menu_HandleLastExperience);
+	SetMenuTitle(hMenu, "%t: %N", "Last Experience", client);
+	SetMenuExitBackButton(hMenu, true);
+	
+	new iSize = GetArraySize(hLastExperience);
+	decl String:sBuffer[256];
+	for(new i=0;i<iSize;i++)
+	{
+		if(GetArrayString(hLastExperience, i, sBuffer, sizeof(sBuffer)) <= 0)
+			break;
+		
+		AddMenuItem(hMenu, "", sBuffer, ITEMDRAW_DISABLED);
+	}
+	
+	if(GetMenuItemCount(hMenu) == 0)
+	{
+		Format(sBuffer, sizeof(sBuffer), "%T", "Nothing to display", client);
+		AddMenuItem(hMenu, "", sBuffer, ITEMDRAW_DISABLED);
+	}
+	
+	DisplayMenu(hMenu, client, MENU_TIME_FOREVER);
+}
+
+public Menu_HandleLastExperience(Handle:menu, MenuAction:action, param1, param2)
+{
+	if(action == MenuAction_End)
+	{
+		CloseHandle(menu);
+	}
+	else if(action == MenuAction_Cancel && param2 == MenuCancel_ExitBack)
+	{
+		DisplayStatsMenu(param1);
+	}
+}
 
 /*	//////////////////////////////////////
 	CRPG_RankManager

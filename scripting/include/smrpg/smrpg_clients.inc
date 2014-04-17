@@ -116,6 +116,22 @@ native SMRPG_ResetClientStats(client);
 native bool:SMRPG_IsClientAFK(client);
 
 /**
+ * Called when the core wants a reason string to be translated so it's displayed in the recent added experience panel.
+ * Should look like
+ *   15 exp. for killing (name of [other])
+ *   100 exp. for winning the round
+ *
+ * @param client        The client who got experience and in which language the reason should be translated.
+ * @param reason        The reason string passed in SMRPG_AddClientExperience
+ * @param iExperience   The amount of experience added.
+ * @param other         Optionally the index of the other client involved in the reason for this experience. -1 if no other entity involved.
+ * @param buffer        The buffer to store the translated reason string in.
+ * @param maxlen        The maximal length of the translation buffer.
+ * @noreturn
+ */
+functag public SMRPG_ExpTranslationCb(client, const String:reason[], iExperience, other, String:buffer[], maxlen);
+
+/**
  * Adds experience to a client.
  * If he gets enough experience to level up, he levels up.
  *
@@ -127,7 +143,7 @@ native bool:SMRPG_IsClientAFK(client);
  * @return               True if the experience was added, false otherwise.
  * @error Invalid client index
  */
-native bool:SMRPG_AddClientExperience(client, exp, const String:reason[], bool:bHideNotice, other=-1);
+native bool:SMRPG_AddClientExperience(client, exp, const String:reason[], bool:bHideNotice, other=-1, SMRPG_ExpTranslationCb:callback=SMRPG_ExpTranslationCb:INVALID_FUNCTION);
 
 /**
  * Calculate the amount of experience needed to reach the next level.

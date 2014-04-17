@@ -84,6 +84,7 @@ InitMenu()
 	AddToTopMenu(g_hRPGTopMenu, "exp", TopMenuObject_Item, TopMenu_HandleStats, g_TopMenuStats);
 	AddToTopMenu(g_hRPGTopMenu, "credits", TopMenuObject_Item, TopMenu_HandleStats, g_TopMenuStats);
 	AddToTopMenu(g_hRPGTopMenu, "rank", TopMenuObject_Item, TopMenu_HandleStats, g_TopMenuStats);
+	AddToTopMenu(g_hRPGTopMenu, "lastexp", TopMenuObject_Item, TopMenu_HandleStats, g_TopMenuStats);
 	
 	// Settings Menu
 	AddToTopMenu(g_hRPGTopMenu, "resetstats", TopMenuObject_Item, TopMenu_HandleSettings, g_TopMenuSettings);
@@ -574,6 +575,14 @@ public Menu_HandleUpgradeSettings(Handle:menu, MenuAction:action, param1, param2
 	}
 }
 
+DisplayStatsMenu(client)
+{
+	if(GetFeatureStatus(FeatureType_Native, "DisplayTopMenuCategory") == FeatureStatus_Available)
+		DisplayTopMenuCategory(g_hRPGTopMenu, g_TopMenuStats, client);
+	else
+		DisplayTopMenu(g_hRPGTopMenu, client, TopMenuPosition_Start); // Fallback to just displaying the rpgmenu if running "old" sourcemod version.
+}
+
 public TopMenu_HandleStats(Handle:topmenu, TopMenuAction:action, TopMenuObject:object_id, param, String:buffer[], maxlength)
 {
 	switch(action)
@@ -599,11 +608,32 @@ public TopMenu_HandleStats(Handle:topmenu, TopMenuAction:action, TopMenuObject:o
 			{
 				Format(buffer, maxlength, "%T", "Rank", param, GetClientRank(param), GetRankCount());
 			}
+			else if(StrEqual(sName, "lastexp"))
+			{
+				Format(buffer, maxlength, "%T", "Last Experience", param);
+			}
 		}
 		case TopMenuAction_DrawOption:
 		{
-			// This is an informational panel only. Draw all items as disabled.
-			buffer[0] = ITEMDRAW_DISABLED;
+			decl String:sName[64];
+			GetTopMenuObjName(topmenu, object_id, sName, sizeof(sName));
+			
+			// HACKHACK: Don't disable the lastexp one
+			if(!StrEqual(sName, "lastexp"))
+			{
+				// This is an informational panel only. Draw all items as disabled.
+				buffer[0] = ITEMDRAW_DISABLED;
+			}
+		}
+		case TopMenuAction_SelectOption:
+		{
+			decl String:sName[64];
+			GetTopMenuObjName(topmenu, object_id, sName, sizeof(sName));
+			
+			if(StrEqual(sName, "lastexp"))
+			{
+				DisplaySessionLastExperienceMenu(param);
+			}
 		}
 	}	
 }

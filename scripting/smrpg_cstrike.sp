@@ -151,6 +151,15 @@ public Action:SMRPG_OnClientLevel(client, oldlevel, newlevel)
 	return Plugin_Continue;
 }
 
+public SMRPG_TranslateExperienceReason(client, const String:reason[], iExperience, other, String:buffer[], maxlen)
+{
+	// Just use the reason string directly as translation phrase.
+	if(other > 0)
+		Format(buffer, maxlen, "%T", reason, client, iExperience, other);
+	else
+		Format(buffer, maxlen, "%T", reason, client, iExperience);
+}
+
 public Event_OnPlayerSpawn(Handle:event, const String:error[], bool:dontBroadcast)
 {
 	if(!GetConVarBool(g_hCVShowMVPLevel))
@@ -452,13 +461,13 @@ Debug_AddClientExperience(client, exp, bool:bHideNotice, const String:sReason[],
 {
 #if !defined _DEBUG
 	// This is all that's really needed
-	SMRPG_AddClientExperience(client, exp, sReason, bHideNotice, victim);
+	SMRPG_AddClientExperience(client, exp, sReason, bHideNotice, victim, SMRPG_TranslateExperienceReason);
 #else
 	new iOldLevel = SMRPG_GetClientLevel(client);
 	new iOldExperience = SMRPG_GetClientExperience(client);
 	new iOldNeeded = SMRPG_LevelToExperience(iOldLevel);
 	
-	SMRPG_AddClientExperience(client, exp, sReason, bHideNotice, victim);
+	SMRPG_AddClientExperience(client, exp, sReason, bHideNotice, victim, SMRPG_TranslateExperienceReason);
 	
 	new iNewLevel = SMRPG_GetClientLevel(client);
 	new String:sAttackerAuth[40], String:sVictimString[256], String:sLevelInc[32];

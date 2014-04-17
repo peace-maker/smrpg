@@ -122,6 +122,28 @@
 		"en"			"Last reset: {1}"
 	}
 	
+	"Experience Reason Other Client"
+	{
+		// 1: The amount of experience added to a client.
+		// 2: The reason this experience was added for
+		// 3: The name of the other client involved in the reason for this experience. (e.g. name of victim hurt)
+		"#format"	"{1:d},{2:s},{3:N}"
+		"en"			 "{1} exp. for \"{2}\" against {3}"
+	}
+	
+	"Experience Reason General"
+	{
+		// 1: The amount of experience added to a client.
+		// 2: The reason this experience was added for
+		"#format"	"{1:d},{2:s}"
+		"en"			 "{1} exp. for \"{2}\""
+	}
+	
+	"Nothing to display"
+	{
+		"en"			"There is nothing to display."
+	}
+	
 	"Cost"
 	{
 		"en"			"Cost"
@@ -178,6 +200,11 @@
 	"Upgrade Settings"
 	{
 		"en"			"Upgrade Settings"
+	}
+	
+	"Last Experience"
+	{
+		"en"			"Latest Experience Log"
 	}
 	
 	"Stats"
@@ -406,5 +433,22 @@
 	"rpghelp advert"
 	{
 		"en"			"Type {N}rpghelp{G} to get a detailed description of what the upgrades do."
+	}
+	
+	"rpgexp short desc"
+	{
+		"en"			"Show latest earned experience"
+	}
+	
+	"rpgexp desc"
+	{
+		"en"			"Show the amount and reasons for the latest experience you've earned."
+	}
+	
+	"rpgexp advert"
+	{
+		// 1: Value of smrpg_lastexperience_count. The amount of experience saved in the array.
+		"#format" "{1:d}"
+		"en"			"Type {N}rpgexp{G} to see a list of the latest {1} reasons and amounts of experience you've earned."
 	}
 }

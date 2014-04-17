@@ -23,6 +23,7 @@
 		"item"		"exp"
 		"item"		"credits"
 		"item"		"rank"
+		"item"		"lastexp"
 	}
 
 	"RPGCommandsMenu"

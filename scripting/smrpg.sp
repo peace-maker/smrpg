@@ -52,6 +52,8 @@ new Handle:g_hCVExpKillMax;
 
 new Handle:g_hCVExpTeamwin;
 
+new Handle:g_hCVLastExperienceCount;
+
 new Handle:g_hCVCreditsInc;
 new Handle:g_hCVCreditsStart;
 new Handle:g_hCVSalePercent;
@@ -148,6 +150,8 @@ public OnPluginStart()
 	
 	g_hCVExpTeamwin = AutoExecConfig_CreateConVar("smrpg_exp_teamwin", "0.15", "Experience multipled by the experience required and the team ratio given to a team for completing the objective", 0, true, 0.0);
 	
+	g_hCVLastExperienceCount = AutoExecConfig_CreateConVar("smrpg_lastexperience_count", "50", "How many times should we remember why each player got some experience in the recent past?", 0, true, 1.0);
+	
 	g_hCVCreditsInc = AutoExecConfig_CreateConVar("smrpg_credits_inc", "5", "Credits given to each new level", 0, true, 0.0);
 	g_hCVCreditsStart = AutoExecConfig_CreateConVar("smrpg_credits_start", "0", "Starting credits for Level 1", 0, true, 0.0);
 	g_hCVSalePercent = AutoExecConfig_CreateConVar("smrpg_sale_percent", "0.75", "Percentage of credits a player gets for selling an upgrade", 0, true, 0.0);
@@ -164,6 +168,7 @@ public OnPluginStart()
 	
 	HookConVarChange(g_hCVEnable, ConVar_EnableChanged);
 	HookConVarChange(g_hCVSaveInterval, ConVar_SaveIntervalChanged);
+	HookConVarChange(g_hCVLastExperienceCount, ConVar_LastExperienceCountChanged);
 	
 	RegConsoleCmd("rpgmenu", Cmd_RPGMenu, "Opens the rpg main menu");
 	RegConsoleCmd("rpg", Cmd_RPGMenu, "Opens the rpg main menu");
@@ -173,6 +178,7 @@ public OnPluginStart()
 	RegConsoleCmd("rpgnext", Cmd_RPGNext, "Show the next few ranked players before you");
 	RegConsoleCmd("rpgsession", Cmd_RPGSession, "Show your session stats");
 	RegConsoleCmd("rpghelp", Cmd_RPGHelp, "Show the SM:RPG help menu");
+	RegConsoleCmd("rpgexp", Cmd_RPGLatestExperience, "Show the latest experience you earned");
 	
 	RegisterAdminCommands();
 	RegisterPlayerForwards();
@@ -276,6 +282,7 @@ public OnPluginEnd()
 		SMRPG_UnregisterCommand("rpgnext");
 		SMRPG_UnregisterCommand("rpgsession");
 		SMRPG_UnregisterCommand("rpghelp");
+		SMRPG_UnregisterCommand("rpgexp");
 	}
 }
 
@@ -473,6 +480,8 @@ public Event_OnPlayerSay(Handle:event, const String:error[], bool:dontBroadcast)
 		DisplaySessionStatsMenu(client);
 	else if(StrEqual(sText, "rpghelp", false))
 		DisplayHelpMenu(client);
+	else if(StrEqual(sText, "rpgexp", false))
+		DisplaySessionLastExperienceMenu(client);
 }
 
 // That player fully disconnected, not just reconnected after a mapchange.
@@ -609,6 +618,19 @@ public Action:Cmd_RPGHelp(client, args)
 	return Plugin_Handled;
 }
 
+public Action:Cmd_RPGLatestExperience(client, args)
+{
+	if(!client)
+	{
+		ReplyToCommand(client, "SM:RPG: This command is ingame only.");
+		return Plugin_Handled;
+	}
+	
+	DisplaySessionLastExperienceMenu(client);
+	
+	return Plugin_Handled;
+}
+
 /**
  * Timer callbacks
  */
@@ -722,6 +744,18 @@ public Action:CommandList_DefaultTranslations(client, const String:command[], Co
 				Format(translation, maxlen, "%T", "rpghelp desc", client);
 			case CommandTranslationType_Advert:
 				Format(translation, maxlen, "%T", "rpghelp advert", client);
+		}
+	}
+	else if(StrEqual(command, "rpgexp"))
+	{
+		switch(type)
+		{
+			case CommandTranslationType_ShortDescription:
+				Format(translation, maxlen, "%T", "rpgexp short desc", client);
+			case CommandTranslationType_Description:
+				Format(translation, maxlen, "%T", "rpgexp desc", client);
+			case CommandTranslationType_Advert:
+				Format(translation, maxlen, "%T", "rpgexp advert", client, GetConVarInt(g_hCVLastExperienceCount));
 		}
 	}
 	return Plugin_Continue;
