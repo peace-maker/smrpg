@@ -18,9 +18,9 @@
 		{
 			"GiveAmmo"
 			{
-				"windows"		"272"
-				"linux"			"273"
-				"mac"			"273"
+				"windows"		"273"
+				"linux"			"274"
+				"mac"			"274"
 			}
 		}
 	}
