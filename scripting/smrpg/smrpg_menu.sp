@@ -632,7 +632,7 @@ public TopMenu_HandleStats(Handle:topmenu, TopMenuAction:action, TopMenuObject:o
 			
 			if(StrEqual(sName, "lastexp"))
 			{
-				DisplaySessionLastExperienceMenu(param);
+				DisplaySessionLastExperienceMenu(param, true);
 			}
 		}
 	}	

@@ -484,7 +484,7 @@ public Event_OnPlayerSay(Handle:event, const String:error[], bool:dontBroadcast)
 	else if(StrEqual(sText, "rpghelp", false))
 		DisplayHelpMenu(client);
 	else if(StrEqual(sText, "rpgexp", false))
-		DisplaySessionLastExperienceMenu(client);
+		DisplaySessionLastExperienceMenu(client, true);
 }
 
 // That player fully disconnected, not just reconnected after a mapchange.
@@ -629,7 +629,7 @@ public Action:Cmd_RPGLatestExperience(client, args)
 		return Plugin_Handled;
 	}
 	
-	DisplaySessionLastExperienceMenu(client);
+	DisplaySessionLastExperienceMenu(client, true);
 	
 	return Plugin_Handled;
 }

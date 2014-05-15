@@ -18,6 +18,7 @@ enum SessionStats {
 };
 
 new g_iPlayerSessionStartStats[MAXPLAYERS+1][SessionStats];
+new bool:g_bBackToStatsMenu[MAXPLAYERS+1];
 
 new Handle:g_hfwdOnAddExperience;
 
@@ -657,6 +658,9 @@ DisplaySessionStatsMenu(client)
 	Format(sBuffer, sizeof(sBuffer), "%T: %T", "Auto refresh panel", client, (g_iPlayerSessionStartStats[client][SS_WantsAutoUpdate]?"Yes":"No"), client);
 	DrawPanelItem(hPanel, sBuffer);
 	
+	Format(sBuffer, sizeof(sBuffer), "%T", "Last Experience", client);
+	DrawPanelItem(hPanel, sBuffer);
+	
 	// The old menu is closed when we open the new one.
 	// The logic here is like this:
 	// We want to stop redisplaying the session menu, if the menu was closed gracefully or was interrupted by a different menu.
@@ -685,6 +689,10 @@ public Panel_HandleSessionMenu(Handle:menu, MenuAction:action, param1, param2)
 			DisplaySessionStatsMenu(param1);
 			return;
 		}
+		else if(param2 == 5)
+		{
+			DisplaySessionLastExperienceMenu(param1, false);
+		}
 	}
 	else if(action == MenuAction_Cancel)
 	{
@@ -695,12 +703,15 @@ public Panel_HandleSessionMenu(Handle:menu, MenuAction:action, param1, param2)
 	}
 }
 
-DisplaySessionLastExperienceMenu(client)
+DisplaySessionLastExperienceMenu(client, bool:bBackToStatsMenu)
 {
 	new Handle:hLastExperience = g_iPlayerSessionStartStats[client][SS_LastExperience];
 	// Player not loaded yet.
 	if(hLastExperience == INVALID_HANDLE)
 		return;
+
+	// Remember what the back button in the menu should do.
+	g_bBackToStatsMenu[client] = bBackToStatsMenu;
 	
 	new Handle:hMenu = CreateMenu(Menu_HandleLastExperience);
 	SetMenuTitle(hMenu, "%t: %N", "Last Experience", client);
@@ -733,7 +744,10 @@ public Menu_HandleLastExperience(Handle:menu, MenuAction:action, param1, param2)
 	}
 	else if(action == MenuAction_Cancel && param2 == MenuCancel_ExitBack)
 	{
-		DisplayStatsMenu(param1);
+		if(g_bBackToStatsMenu[param1])
+			DisplayStatsMenu(param1);
+		else
+			DisplaySessionStatsMenu(param1);
 	}
 }
 
