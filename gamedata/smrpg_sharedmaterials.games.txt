@@ -1,0 +1,75 @@
+"Games"
+{
+	"#default"
+	{
+		"Keys"
+		{
+			"SpriteBeam"		"sprites/lgtning.vmt"
+			"SpriteHalo"		"sprites/halo01.vmt"
+			"SpriteRedTrail"	"sprites/combineball_trail_red_1.vmt"
+			
+			"SoundLevelup"		"buttons/blip2.wav"
+			
+			// Medic
+			"SoundMedicCharge"	"items/battery_pickup.wav"
+			
+			// Frost Pistol
+			"SoundFPistolFreeze1"	"physics/surfaces/tile_impact_bullet1.wav"
+			"SoundFPistolFreeze2"	"physics/surfaces/tile_impact_bullet2.wav"
+			"SoundFPistolFreeze3"	"physics/surfaces/tile_impact_bullet3.wav"
+			"SoundFPistolFreeze4"	"physics/surfaces/tile_impact_bullet4.wav"
+			
+			// Ice Stab
+			"SoundIceStabFreeze1"	"physics/glass/glass_impact_bullet1.wav"
+			"SoundIceStabFreeze2"	"physics/glass/glass_impact_bullet2.wav"
+			"SoundIceStabFreeze3"	"physics/glass/glass_impact_bullet3.wav"
+			"SoundIceStabFreeze4"	"physics/glass/glass_impact_bullet4.wav"
+			"SoundIceStabLimitDmg1"	"physics/glass/glass_sheet_impact_hard1.wav"
+			"SoundIceStabLimitDmg2"	"physics/glass/glass_sheet_impact_hard2.wav"
+			"SoundIceStabLimitDmg3"	"physics/glass/glass_sheet_impact_hard3.wav"
+		}
+	}
+	
+	"csgo"
+	{
+		"Keys"
+		{
+			"SpriteBeam"		"sprites/physbeam.vmt"
+			"SpriteHalo"		"sprites/glow01.vmt"
+			"SpriteRedTrail"	"sprites/purplelaser1.vmt"
+		}
+	}
+	
+	"$INSURGENCY" // Standalone game
+	{
+		"Keys"
+		{
+			"SpriteBeam"		"sprites/laserbeam.vmt"
+			"SpriteHalo"		"sprites/glow01.vmt"
+		}
+	}
+	
+	"swarm"
+	{
+		"Keys"
+		{
+			"SpriteBeam"		"sprites/laserbeam.vmt"
+			"SpriteHalo"		"sprites/glow01.vmt"
+		}
+	}
+	
+	"#default"
+	{
+		"#supported"
+		{
+			"game"	"left4dead"
+			"game"	"left4dead2"
+		}
+		
+		"Keys"
+		{
+			"SpriteBeam"		"sprites/physbeam.vmt"
+			"SpriteHalo"		"sprites/glow01.vmt"
+		}
+	}
+}

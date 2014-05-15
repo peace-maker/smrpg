@@ -4,6 +4,7 @@
 #include <sdkhooks>
 #include <smrpg>
 #include <smrpg_helper>
+#include <smrpg_sharedmaterials>
 
 #undef REQUIRE_PLUGIN
 #include <smrpg_health>
@@ -15,7 +16,6 @@ new Handle:g_hCVPercent;
 new Handle:g_hCVMax;
 
 new g_iBeamColor[] = {0,255,0,255}; // green
-new g_iBeamSpriteIndex = -1;
 
 public Plugin:myinfo = 
 {
@@ -29,6 +29,8 @@ public Plugin:myinfo =
 public OnPluginStart()
 {
 	LoadTranslations("smrpg_stock_upgrades.phrases");
+	
+	SMRPG_GC_CheckSharedMaterialsAndSounds();
 	
 	// Account for late loading
 	for(new i=1;i<=MaxClients;i++)
@@ -70,12 +72,8 @@ public OnClientPutInServer(client)
 
 public OnMapStart()
 {
-	if(FileExists("materials/sprites/lgtning.vmt", true))
-		g_iBeamSpriteIndex = PrecacheModel("sprites/lgtning.vmt", true);
-	else if(FileExists("materials/sprites/physbeam.vmt", true))
-		g_iBeamSpriteIndex = PrecacheModel("sprites/physbeam.vmt", true);
-	else
-		LogError("Unable to find a nice sprite texture for the beam ring effect. Contact the author with the game you're running this on.");
+	SMRPG_GC_PrecacheModel("SpriteBeam");
+	SMRPG_GC_PrecacheModel("SpriteHalo");
 }
 
 /**
@@ -164,7 +162,17 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 		GetClientEyePosition(victim, fVictimOrigin);
 		fAttackerOrigin[2] -= 10.0;
 		fVictimOrigin[2] -= 10.0;
-		TE_SetupBeamPoints(fAttackerOrigin, fVictimOrigin, g_iBeamSpriteIndex, g_iBeamSpriteIndex, 0, 66, 0.2, 1.0, 20.0, 1, 0.0, g_iBeamColor, 5);
-		SMRPG_TE_SendToAllEnabled(UPGRADE_SHORTNAME);
+		
+		new iBeamSprite = SMRPG_GC_GetPrecachedIndex("SpriteBeam");
+		new iHaloSprite = SMRPG_GC_GetPrecachedIndex("SpriteHalo");
+		// Just use the beamsprite as halo, if no halo sprite available
+		if(iHaloSprite == -1)
+			iHaloSprite = iBeamSprite;
+		
+		if(iBeamSprite != -1)
+		{
+			TE_SetupBeamPoints(fAttackerOrigin, fVictimOrigin, iBeamSprite, iHaloSprite, 0, 66, 0.2, 1.0, 20.0, 1, 0.0, g_iBeamColor, 5);
+			SMRPG_TE_SendToAllEnabled(UPGRADE_SHORTNAME);
+		}
 	}
 }

@@ -4,6 +4,7 @@
 #include <sdkhooks>
 #include <smrpg>
 #include <smrpg_helper>
+#include <smrpg_sharedmaterials>
 #include <smlib>
 
 #define UPGRADE_SHORTNAME "fpistol"
@@ -15,6 +16,9 @@ new Float:g_fFPistolLastSpeed[MAXPLAYERS+1];
 new Handle:g_hFPistolResetSpeed[MAXPLAYERS+1];
 
 new Handle:g_hWeaponSpeeds;
+
+// See how many freeze sounds we have in the gamedata file.
+new g_iFreezeSoundCount;
 
 public Plugin:myinfo = 
 {
@@ -43,6 +47,8 @@ public OnPluginStart()
 	HookEvent("player_death", Event_OnResetEffect);
 
 	LoadTranslations("smrpg_stock_upgrades.phrases");
+	
+	SMRPG_GC_CheckSharedMaterialsAndSounds();
 
 	// Account for late loading
 	for(new i=1;i<=MaxClients;i++)
@@ -80,10 +86,14 @@ public OnLibraryAdded(const String:name[])
 
 public OnMapStart()
 {
-	PrecacheSound("physics/surfaces/tile_impact_bullet1.wav", true);
-	PrecacheSound("physics/surfaces/tile_impact_bullet2.wav", true);
-	PrecacheSound("physics/surfaces/tile_impact_bullet3.wav", true);
-	PrecacheSound("physics/surfaces/tile_impact_bullet4.wav", true);
+	g_iFreezeSoundCount = 0;
+	decl String:sBuffer[64];
+	for(;;g_iFreezeSoundCount++)
+	{
+		Format(sBuffer, sizeof(sBuffer), "SoundFPistolFreeze%d", g_iFreezeSoundCount+1);
+		if(!SMRPG_GC_PrecacheSound(sBuffer))
+			break;
+	}
 }
 
 public OnMapEnd()
@@ -241,11 +251,13 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 	}
 	
 	// Emit some icy sound
-	// TODO: Make this game independant
-	decl String:sSound[PLATFORM_MAX_PATH];
-	Format(sSound, sizeof(sSound), "physics/surfaces/tile_impact_bullet%d.wav", GetRandomInt(1, 4));
-	// Only play it to players who enabled sounds for this upgrade
-	SMRPG_EmitSoundToAllEnabled(UPGRADE_SHORTNAME, sSound, victim, SNDCHAN_AUTO, SNDLEVEL_NORMAL, SND_NOFLAGS, 0.8, SNDPITCH_NORMAL, victim);
+	if(g_iFreezeSoundCount > 0)
+	{
+		decl String:sKey[64];
+		Format(sKey, sizeof(sKey), "SoundFPistolFreeze%d", GetRandomInt(1, g_iFreezeSoundCount));
+		// Only play it to players who enabled sounds for this upgrade
+		SMRPG_EmitSoundToAllEnabled(UPGRADE_SHORTNAME, SMRPG_GC_GetKeyValue(sKey), victim, SNDCHAN_AUTO, SNDLEVEL_NORMAL, SND_NOFLAGS, 0.8, SNDPITCH_NORMAL, victim);
+	}
 	
 	// If the victim doesn't want any effect, don't show it to anyone..................
 	if(SMRPG_ClientWantsCosmetics(victim, UPGRADE_SHORTNAME, SMRPG_FX_Visuals))

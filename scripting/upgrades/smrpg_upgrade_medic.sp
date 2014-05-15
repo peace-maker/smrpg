@@ -3,6 +3,7 @@
 #include <sdktools>
 #include <smrpg>
 #include <smrpg_helper>
+#include <smrpg_sharedmaterials>
 
 #undef REQUIRE_PLUGIN
 #include <smrpg_health>
@@ -18,7 +19,6 @@ new Handle:g_hCVIncrease;
 new Handle:g_hCVInterval;
 new Handle:g_hCVRadius;
 
-new g_iBeamRingSprite = -1;
 new bool:g_bIsCstrike;
 
 new Handle:g_hMedicTimer;
@@ -36,6 +36,7 @@ public OnPluginStart()
 {
 	LoadTranslations("smrpg_stock_upgrades.phrases");
 	g_bIsCstrike = GetEngineVersion() == Engine_CSS || GetEngineVersion() == Engine_CSGO;
+	SMRPG_GC_CheckSharedMaterialsAndSounds();
 }
 
 public OnPluginEnd()
@@ -74,15 +75,10 @@ public OnMapStart()
 	
 	g_hMedicTimer = CreateTimer(GetConVarFloat(g_hCVInterval), Timer_ApplyMedic, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 
-	// TODO: Make game independant
-	PrecacheSound("items/battery_pickup.wav", true);
+	SMRPG_GC_PrecacheSound("SoundMedicCharge");
 	
-	if(FileExists("materials/sprites/lgtning.vmt", true))
-		g_iBeamRingSprite = PrecacheModel("sprites/lgtning.vmt", true);
-	else if(FileExists("materials/sprites/physbeam.vmt", true))
-		g_iBeamRingSprite = PrecacheModel("sprites/physbeam.vmt", true);
-	else
-		LogError("Unable to find a nice sprite texture for the beam ring effect. Contact the author with the game you're running this on.");
+	SMRPG_GC_PrecacheModel("SpriteBeam");
+	SMRPG_GC_PrecacheModel("SpriteHalo");
 }
 
 public OnMapEnd()
@@ -164,6 +160,12 @@ public Action:Timer_ApplyMedic(Handle:timer, any:data)
 	new iMedicIncrease = GetConVarInt(g_hCVIncrease);
 	
 	new bool:bMedicDidHisJob, iBeamRingColor[4];
+	
+	new iBeamSprite = SMRPG_GC_GetPrecachedIndex("SpriteBeam");
+	new iHaloSprite = SMRPG_GC_GetPrecachedIndex("SpriteHalo");
+	// Just use the beamsprite as halo, if no halo sprite available
+	if(iHaloSprite == -1)
+		iHaloSprite = iBeamSprite;
 	
 	decl iLevel, iNewHP, iMaxHealth, iNewArmor, iMaxArmor, Float:vRingOrigin[3];
 	for(new i=1;i<=MaxClients;i++)
@@ -248,9 +250,9 @@ public Action:Timer_ApplyMedic(Handle:timer, any:data)
 			vRingOrigin = vCacheOrigin[i];
 			vRingOrigin[2] -= 25.0;
 			
-			if(g_iBeamRingSprite != -1)
+			if(iBeamSprite != -1)
 			{
-				TE_SetupBeamRingPoint(vRingOrigin, 8.0, fMedicRadius+300.0, g_iBeamRingSprite, g_iBeamRingSprite, 0, 1, 1.5, 10.0, 0.0, iBeamRingColor, 0, FBEAM_FADEOUT);
+				TE_SetupBeamRingPoint(vRingOrigin, 8.0, fMedicRadius+300.0, iBeamSprite, iHaloSprite, 0, 1, 1.5, 10.0, 0.0, iBeamRingColor, 0, FBEAM_FADEOUT);
 				
 				if(GetClientTeam(i) == 2)
 					TE_Send(iFirstTeam, iFirstCount);
@@ -258,7 +260,7 @@ public Action:Timer_ApplyMedic(Handle:timer, any:data)
 					TE_Send(iSecondTeam, iSecondCount);
 			}
 			
-			SMRPG_EmitSoundToAllEnabled(UPGRADE_SHORTNAME, "items/battery_pickup.wav", i, SNDCHAN_AUTO, SNDLEVEL_NORMAL, SND_NOFLAGS, 0.2, SNDPITCH_NORMAL, i);
+			SMRPG_EmitSoundToAllEnabled(UPGRADE_SHORTNAME, SMRPG_GC_GetKeyValue("SoundMedicCharge"), i, SNDCHAN_AUTO, SNDLEVEL_NORMAL, SND_NOFLAGS, 0.2, SNDPITCH_NORMAL, i);
 		}
 	}
 	

@@ -4,6 +4,7 @@
 #include <sdkhooks>
 #include <smrpg>
 #include <smrpg_helper>
+#include <smrpg_sharedmaterials>
 #include <smlib>
 
 #define UPGRADE_SHORTNAME "impulse"
@@ -14,8 +15,6 @@ new Handle:g_hCVDuration;
 
 new Handle:g_hImpulseResetSpeed[MAXPLAYERS+1] = {INVALID_HANDLE,...};
 new g_iImpulseTrailSprites[MAXPLAYERS+1] = {-1,...};
-
-new g_iRedTrailSprite = -1;
 
 public Plugin:myinfo = 
 {
@@ -33,6 +32,8 @@ public OnPluginStart()
 	HookEvent("player_death", Event_OnEffectReset);
 	
 	LoadTranslations("smrpg_stock_upgrades.phrases");
+	
+	SMRPG_GC_CheckSharedMaterialsAndSounds();
 	
 	// Account for late loading
 	for(new i=1;i<=MaxClients;i++)
@@ -70,12 +71,7 @@ public OnLibraryAdded(const String:name[])
 
 public OnMapStart()
 {
-	if(FileExists("materials/sprites/combineball_trail_red_1.vmt", true))
-		g_iRedTrailSprite = PrecacheModel("sprites/combineball_trail_red_1.vmt", true);
-	else if(FileExists("materials/sprites/purplelaser1.vmt", true))
-		g_iRedTrailSprite = PrecacheModel("sprites/purplelaser1.vmt", true);
-	else
-		LogError("Can't find a sprite texture for the beam effect. Contact the plugin author with the game you're using.");
+	SMRPG_GC_PrecacheModel("SpriteRedTrail");
 }
 
 public OnClientPutInServer(client)
@@ -195,7 +191,8 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 	ResetPack(hData);
 	
 	// No effect for this game:(
-	if(g_iRedTrailSprite == -1)
+	new iRedTrailSprite = SMRPG_GC_GetPrecachedIndex("SpriteRedTrail");
+	if(iRedTrailSprite == -1)
 		return;
 	
 	decl Float:vOrigin[3];
@@ -220,7 +217,7 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 	SetVariantString("!activator");
 	AcceptEntityInput(iSprite, "SetParent", victim);
 	
-	TE_SetupBeamFollow(iSprite, g_iRedTrailSprite, g_iRedTrailSprite, GetConVarFloat(g_hCVDuration), 10.0, 4.0, 2, {255,0,0,255});
+	TE_SetupBeamFollow(iSprite, iRedTrailSprite, iRedTrailSprite, GetConVarFloat(g_hCVDuration), 10.0, 4.0, 2, {255,0,0,255});
 	SMRPG_TE_SendToAllEnabled(UPGRADE_SHORTNAME);
 }
 

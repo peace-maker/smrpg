@@ -6,6 +6,7 @@
 #include <smlib>
 #include <smrpg>
 #include <autoexecconfig>
+#include <smrpg_sharedmaterials>
 
 #undef REQUIRE_PLUGIN
 #include <adminmenu>
@@ -113,6 +114,8 @@ public OnPluginStart()
 		SetConVarString(hVersion, PLUGIN_VERSION);
 		HookConVarChange(hVersion, ConVar_VersionChanged);
 	}
+	
+	SMRPG_GC_CheckSharedMaterialsAndSounds();
 	
 	AutoExecConfig_SetFile("plugin.smrpg");
 	AutoExecConfig_SetCreateFile(true);
@@ -332,7 +335,7 @@ public OnLibraryRemoved(const String:name[])
 
 public OnMapStart()
 {
-	PrecacheSound("buttons/blip2.wav", true);
+	SMRPG_GC_PrecacheSound("SoundLevelup");
 	
 	// Clean up our database..
 	DatabaseMaid();

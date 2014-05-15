@@ -4,6 +4,7 @@
 #include <sdkhooks>
 #include <smrpg>
 #include <smrpg_helper>
+#include <smrpg_sharedmaterials>
 #include <smlib>
 
 #define UPGRADE_SHORTNAME "icestab"
@@ -21,6 +22,9 @@ new Handle:g_hCVMinDamage;
 new Handle:g_hIceStabUnfreeze[MAXPLAYERS+1] = {INVALID_HANDLE,...};
 new g_iIceStabFade[MAXPLAYERS+1] = {255,...};
 
+new g_iFreezeSoundCount;
+new g_iLimitDmgSoundCount;
+
 public Plugin:myinfo = 
 {
 	name = "SM:RPG Upgrade > Ice Stab",
@@ -36,6 +40,8 @@ public OnPluginStart()
 	HookEvent("player_death", Event_OnResetEffect);
 	
 	LoadTranslations("smrpg_stock_upgrades.phrases");
+	
+	SMRPG_GC_CheckSharedMaterialsAndSounds();
 	
 	// Account for late loading
 	for(new i=1;i<=MaxClients;i++)
@@ -76,13 +82,22 @@ public OnLibraryAdded(const String:name[])
 
 public OnMapStart()
 {
-	PrecacheSound("physics/glass/glass_impact_bullet1.wav", true);
-	PrecacheSound("physics/glass/glass_impact_bullet2.wav", true);
-	PrecacheSound("physics/glass/glass_impact_bullet3.wav", true);
-	PrecacheSound("physics/glass/glass_impact_bullet4.wav", true);
-	PrecacheSound("physics/glass/glass_sheet_impact_hard1.wav", true);
-	PrecacheSound("physics/glass/glass_sheet_impact_hard2.wav", true);
-	PrecacheSound("physics/glass/glass_sheet_impact_hard3.wav", true);
+	g_iFreezeSoundCount = 0;
+	decl String:sKey[64];
+	for(;;g_iFreezeSoundCount++)
+	{
+		Format(sKey, sizeof(sKey), "SoundIceStabFreeze%d", g_iFreezeSoundCount+1);
+		if(!SMRPG_GC_PrecacheSound(sKey))
+			break;
+	}
+	
+	g_iLimitDmgSoundCount = 0;
+	for(;;g_iLimitDmgSoundCount++)
+	{
+		Format(sKey, sizeof(sKey), "SoundIceStabLimitDmg%d", g_iLimitDmgSoundCount+1);
+		if(!SMRPG_GC_PrecacheSound(sKey))
+			break;
+	}
 }
 
 public OnClientPutInServer(client)
@@ -195,9 +210,12 @@ public Action:Hook_OnTakeDamage(victim, &attacker, &inflictor, &Float:damage, &d
 	// Limit the damage!
 	damage = fLimitDmg;
 	
-	decl String:sSound[PLATFORM_MAX_PATH];
-	Format(sSound, sizeof(sSound), "physics/glass/glass_sheet_impact_hard%d.wav", GetRandomInt(1, 3));
-	SMRPG_EmitSoundToAllEnabled(UPGRADE_SHORTNAME, sSound, victim, SNDCHAN_AUTO, SNDLEVEL_NORMAL, SND_NOFLAGS, SNDVOL_NORMAL, SNDPITCH_NORMAL, victim);
+	if(g_iLimitDmgSoundCount > 0)
+	{
+		new String:sKey[64];
+		Format(sKey, sizeof(sKey), "SoundIceStabLimitDmg%d", Math_GetRandomInt(1, g_iLimitDmgSoundCount));
+		SMRPG_EmitSoundToAllEnabled(UPGRADE_SHORTNAME, SMRPG_GC_GetKeyValue(sKey), victim, SNDCHAN_AUTO, SNDLEVEL_NORMAL, SND_NOFLAGS, SNDVOL_NORMAL, SNDPITCH_NORMAL, victim);
+	}
 	
 	return Plugin_Changed;
 }
@@ -256,9 +274,12 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 	// Note: This won't reset his velocity. Useful for surf maps.
 	SetEntityMoveType(victim, MOVETYPE_NONE);
 	
-	decl String:sSound[PLATFORM_MAX_PATH];
-	Format(sSound, sizeof(sSound), "physics/glass/glass_impact_bullet%d.wav", GetRandomInt(1, 4));
-	SMRPG_EmitSoundToAllEnabled(UPGRADE_SHORTNAME, sSound, victim, SNDCHAN_AUTO, SNDLEVEL_NORMAL, SND_NOFLAGS, SNDVOL_NORMAL, SNDPITCH_NORMAL, victim);
+	if(g_iFreezeSoundCount > 0)
+	{
+		new String:sKey[64];
+		Format(sKey, sizeof(sKey), "SoundIceStabFreeze%d", Math_GetRandomInt(1, g_iFreezeSoundCount));
+		SMRPG_EmitSoundToAllEnabled(UPGRADE_SHORTNAME, SMRPG_GC_GetKeyValue(sKey), victim, SNDCHAN_AUTO, SNDLEVEL_NORMAL, SND_NOFLAGS, SNDVOL_NORMAL, SNDPITCH_NORMAL, victim);
+	}
 
 	if(SMRPG_ClientWantsCosmetics(victim, UPGRADE_SHORTNAME, SMRPG_FX_Visuals))
 	{

@@ -160,7 +160,7 @@ Stats_PlayerNewLevel(client, iLevelIncrease)
 	
 	if(!IsFakeClient(client))
 	{
-		EmitSoundToClient(client, "buttons/blip2.wav");
+		EmitSoundToClient(client, SMRPG_GC_GetKeyValue("SoundLevelup"));
 		if((GetClientLevel(client) - iLevelIncrease) <= 1)
 		{
 			/* for newbies */
