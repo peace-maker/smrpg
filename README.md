@@ -6,7 +6,7 @@ A modular generic RPG plugin for SourceMod 1.5+.
 Based on [CSS:RPG](http://forums.alliedmods.net/showthread.php?t=51039) v1.0.5 by SeLfkiLL.
 
 # Introduction
-SM:RPG is a generic RPG plugin. Players earn experience by killing other players or on other game dependent events. After they reach a certain amount of experience, they level up and get some credits.
+SM:RPG is a generic RPG (Role Playing Game) plugin. Players earn experience by killing other players or on other game dependent events. After they reach a certain amount of experience, they level up and get some credits.
 The credits can be used to buy upgrades which give the player an advantage against his enemies.
 
 This plugin tries to be as game independent as possible. If some upgrade or core feature isn't working in your game, leave a comment.
@@ -68,6 +68,6 @@ See the available upgrade plugins for examples. You can use the [example upgrade
 
 # Credits
 * SeLfkiLL - author of the original MM:S [CSS:RPG](http://forums.alliedmods.net/showthread.php?t=51039) plugin.
-* arsirc - author of [THC:RPG](https://forums.alliedmods.net/showthread.php?p=1142124). Provided the Damage+ and Speed+ upgrade ideas.
+* arsirc - author of [THC:RPG](https://forums.alliedmods.net/showthread.php?t=123596). Provided the Damage+ and Speed+ upgrade ideas.
 * SumGuy14 (Aka Soccerdude) - author of [RPGx](https://forums.alliedmods.net/showthread.php?t=56877). Config and visual effect ideas.
 * freddukes - author of [SourceRPG](http://forums.eventscripts.com/viewtopic.php?f=27&t=20789). Config ideas, turbo mode, showing menu on levelup, ...
