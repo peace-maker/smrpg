@@ -100,7 +100,7 @@ public Action:Timer_IncreaseArmor(Handle:timer)
 	
 	new bool:bIgnoreBots = SMRPG_IgnoreBots();
 	
-	new iLevel, iMaxArmor, iNewArmor;
+	new iLevel, iMaxArmor, iCurrentArmor, iNewArmor;
 	for(new i=1;i<=MaxClients;i++)
 	{
 		if(!IsClientInGame(i))
@@ -119,7 +119,13 @@ public Action:Timer_IncreaseArmor(Handle:timer)
 			continue; // Some other plugin doesn't want this effect to run
 		
 		iMaxArmor = SMRPG_Armor_GetClientMaxArmor(i);
-		iNewArmor = GetClientArmor(i)+iLevel;
+		iCurrentArmor = GetClientArmor(i);
+		
+		// He already is regenerated completely.
+		if(iCurrentArmor >= iMaxArmor)
+			continue;
+		
+		iNewArmor = iCurrentArmor+iLevel;
 		if(iNewArmor > iMaxArmor)
 			iNewArmor = iMaxArmor;
 		SetEntProp(i, Prop_Send, "m_ArmorValue", iNewArmor);

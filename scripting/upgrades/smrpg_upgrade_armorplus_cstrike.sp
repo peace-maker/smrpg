@@ -55,10 +55,10 @@ public OnLibraryAdded(const String:name[])
 	// Register this upgrade in SM:RPG
 	if(StrEqual(name, "smrpg"))
 	{
-		SMRPG_RegisterUpgradeType("Armor+", UPGRADE_SHORTNAME, "Increases your armor.", 16, true, 10, 10, 10, _, SMRPG_BuySell, SMRPG_ActiveQuery);
+		SMRPG_RegisterUpgradeType("Armor+", UPGRADE_SHORTNAME, "Increases your armor.", 5, true, 5, 10, 10, _, SMRPG_BuySell, SMRPG_ActiveQuery);
 		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
 		
-		g_hCVMaxIncrease = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_armor_inc", "25", "Armor max increase for each level", 0, true, 1.0);
+		g_hCVMaxIncrease = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_armor_inc", "5", "Armor max increase for each level", 0, true, 1.0);
 	}
 }
 
@@ -165,7 +165,11 @@ GetClientMaxArmor(client)
 	if(iLevel <= 0)
 		return iDefaultMaxArmor;
 	
-	return iDefaultMaxArmor + GetConVarInt(g_hCVMaxIncrease) * iLevel;
+	new iNewMaxArmor = iDefaultMaxArmor + GetConVarInt(g_hCVMaxIncrease) * iLevel;
+	if(iNewMaxArmor > CS_MAX_ARMOR)
+		iNewMaxArmor = CS_MAX_ARMOR;
+	
+	return iNewMaxArmor;
 }
 
 // Check if the other plugins are ok with setting the armor before doing it.
