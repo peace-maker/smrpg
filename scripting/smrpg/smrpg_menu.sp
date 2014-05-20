@@ -206,7 +206,7 @@ public TopMenu_HandleUpgrades(Handle:topmenu, TopMenuAction:action, TopMenuObjec
 			
 			if(iCurrentLevel >= upgrade[UPGR_maxLevel])
 			{
-				Format(buffer, maxlength, "%s Lvl MAX [%T: MAX]", sTranslatedName, "Cost", param);
+				Format(buffer, maxlength, "%s Lvl %d MAX [%T: MAX]", sTranslatedName, iCurrentLevel, "Cost", param);
 			}
 			else
 			{
@@ -837,7 +837,7 @@ DisplayOtherUpgradesMenu(client, targetClient)
 		
 		IntToString(i, sIndex, sizeof(sIndex));
 		if(iCurrentLevel >= upgrade[UPGR_maxLevel])
-			Format(sLine, sizeof(sLine), "%s Lvl MAX", sTranslatedName);
+			Format(sLine, sizeof(sLine), "%s Lvl %d MAX", sTranslatedName, iCurrentLevel);
 		else
 			Format(sLine, sizeof(sLine), "%s Lvl %d", sTranslatedName, iCurrentLevel);
 		AddMenuItem(hMenu, sIndex, sLine, ITEMDRAW_DISABLED);
