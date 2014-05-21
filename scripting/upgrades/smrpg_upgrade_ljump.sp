@@ -7,6 +7,7 @@
 #define UPGRADE_SHORTNAME "ljump"
 
 new Handle:g_hCVIncrease;
+new Handle:g_hCVIncreaseStart;
 
 new Float:g_fLJumpPreviousVelocity[MAXPLAYERS+1][3];
 new Float:g_fLJumpPlayerJumped[MAXPLAYERS+1];
@@ -48,7 +49,8 @@ public OnLibraryAdded(const String:name[])
 		SMRPG_RegisterUpgradeType("Long Jump", UPGRADE_SHORTNAME, "Boosts your jump speed.", 10, true, 5, 20, 15, _, SMRPG_BuySell, SMRPG_ActiveQuery);
 		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
 		
-		g_hCVIncrease = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_ljump_inc", "0.20", "Percent of player's jump distance to increase per level.", 0, true, 0.01);
+		g_hCVIncrease = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_ljump_inc", "0.10", "Percent of player's jump distance to increase per level.", 0, true, 0.01);
+		g_hCVIncreaseStart = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_ljump_incstart", "0.20", "Percent of player's initial jump distance to increase per level.", 0, true, 0.01);
 	}
 }
 
@@ -88,25 +90,30 @@ public Action:OnPlayerRunCmd(client, &buttons, &impulse, Float:vel[3], Float:ang
 	if(!IsClientInGame(client) || !IsPlayerAlive(client))
 		return Plugin_Continue;
 	
+	// Make sure to reset the time when the player stops. Maybe he didn't took a step so player_footstep wasn't fired yet.
+	decl Float:vVelocity[3];
+	GetEntPropVector(client, Prop_Data, "m_vecVelocity", vVelocity);
+	if(vVelocity[0] == 0.0 && vVelocity[1] == 0.0 && vVelocity[2])
+		g_fLJumpPlayerJumped[client] = -1.0;
+	
+	new bool:bFirstJump = g_fLJumpPlayerJumped[client] < 0.0;
+	
 	// Player started to press space - or what ever is bound to jump..
 	if(buttons & IN_JUMP && !(s_iLastButtons[client] & IN_JUMP))
 	{
 		// Make sure the player is on the ground and not on a ladder.
 		if(GetEntityFlags(client) & FL_ONGROUND && GetEntityMoveType(client) != MOVETYPE_LADDER)
 		{
-			GetEntPropVector(client, Prop_Data, "m_vecVelocity", g_fLJumpPreviousVelocity[client]);
+			g_fLJumpPreviousVelocity[client] = vVelocity;
 			g_fLJumpPlayerJumped[client] = GetEngineTime();
 		}
 	}
 	
 	if(g_fLJumpPlayerJumped[client] > 0.0)
 	{
-		decl Float:vVelocity[3];
-		GetEntPropVector(client, Prop_Data, "m_vecVelocity", vVelocity);
-
 		if(vVelocity[2] > g_fLJumpPreviousVelocity[client][2])
 		{
-			LJump_HasJumped(client, vVelocity);
+			LJump_HasJumped(client, vVelocity, bFirstJump);
 			g_fLJumpPlayerJumped[client] = -1.0;
 		}
 	}
@@ -127,7 +134,7 @@ public Event_OnResetJump(Handle:event, const String:error[], bool:dontBroadcast)
 		g_fLJumpPlayerJumped[client] = -1.0;
 }
 
-LJump_HasJumped(client, Float:vVelocity[3])
+LJump_HasJumped(client, Float:vVelocity[3], bool:bFirstJump)
 {
 	if(!SMRPG_IsEnabled())
 		return;
@@ -149,7 +156,14 @@ LJump_HasJumped(client, Float:vVelocity[3])
 	if(!SMRPG_RunUpgradeEffect(client, UPGRADE_SHORTNAME))
 		return; // Some other plugin doesn't want this effect to run
 	
-	new Float:fIncrease = GetConVarFloat(g_hCVIncrease) * float(iLevel) + 1.0;
+	new Float:fMultiplicator;
+	// The first jump receives a bigger boost to get away from dangerous places quickly.
+	if(bFirstJump)
+		fMultiplicator = GetConVarFloat(g_hCVIncreaseStart);
+	else
+		fMultiplicator = GetConVarFloat(g_hCVIncrease);
+	
+	new Float:fIncrease = fMultiplicator * float(iLevel) + 1.0;
 	vVelocity[0] *= fIncrease;
 	vVelocity[1] *= fIncrease;
 	
