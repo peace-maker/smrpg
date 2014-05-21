@@ -1,0 +1,17 @@
+"Phrases"
+{
+	"Player is AFK"
+	{
+		"de"			"Spieler ist AFK"
+	}
+
+	"Hide stats info panel on the right"
+	{
+		"de"			"Verstecke Infopanel mit Statisiken auf der rechten Seite"
+	}
+
+	"Last Experience Short"
+	{
+		"de"			"Letzte Erfahrung"
+	}
+}
