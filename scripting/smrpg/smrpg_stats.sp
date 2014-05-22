@@ -898,9 +898,18 @@ public Panel_DoNothing(Handle:menu, MenuAction:action, param1, param2)
 DisplayNextPlayersInRanking(client)
 {
 	decl String:sQuery[512];
-	Format(sQuery, sizeof(sQuery), "SELECT name, level, experience, credits, (SELECT COUNT(*) FROM %s ps WHERE p.level < ps.level OR (p.level = ps.level AND p.experience < ps.experience))+1 AS rank FROM %s p WHERE level >= %d OR (level = %d AND experience >= %d) ORDER BY level ASC, experience ASC LIMIT 10", TBL_PLAYERS, TBL_PLAYERS, GetClientLevel(client), GetClientLevel(client), GetClientExperience(client));
+	Format(sQuery, sizeof(sQuery), "SELECT player_id, name, level, experience, credits, (SELECT COUNT(*) FROM %s ps WHERE p.level < ps.level OR (p.level = ps.level AND p.experience < ps.experience))+1 AS rank FROM %s p WHERE level >= %d OR (level = %d AND experience >= %d) ORDER BY level ASC, experience ASC LIMIT 20", TBL_PLAYERS, TBL_PLAYERS, GetClientLevel(client), GetClientLevel(client), GetClientExperience(client));
 	SQL_TQuery(g_hDatabase, SQL_GetNext10, sQuery, GetClientUserId(client));
 }
+
+enum NextPlayersSorting {
+	NP_DBID,
+	NP_rank,
+	NP_level,
+	NP_exp,
+	NP_credits,
+	String:NP_name[MAX_NAME_LENGTH]
+};
 
 public SQL_GetNext10(Handle:owner, Handle:hndl, const String:error[], any:userid)
 {
@@ -910,12 +919,14 @@ public SQL_GetNext10(Handle:owner, Handle:hndl, const String:error[], any:userid
 	
 	if(hndl == INVALID_HANDLE || strlen(error) > 0)
 	{
-		LogError("Unable to get the next 10 players in front of the current rank of a player (%s)", error);
+		LogError("Unable to get the next 20 players in front of the current rank of a player (%s)", error);
 		return;
 	}
 	
 	decl String:sBuffer[128];
 	Format(sBuffer, sizeof(sBuffer), "%T\n-----\n", "Next ranked players", client);
+	
+	new iNextCache[20][NextPlayersSorting], iCount;
 	
 	new Handle:hPanel = CreatePanel();
 	SetPanelTitle(hPanel, sBuffer);
@@ -925,9 +936,49 @@ public SQL_GetNext10(Handle:owner, Handle:hndl, const String:error[], any:userid
 		if(!SQL_FetchRow(hndl))
 			continue;
 		
-		SQL_FetchString(hndl, 0, sBuffer, sizeof(sBuffer));
-		Format(sBuffer, sizeof(sBuffer), "%d. %s Lvl: %d Exp: %d Cr: %d", SQL_FetchInt(hndl, 4), sBuffer, SQL_FetchInt(hndl, 1), SQL_FetchInt(hndl, 2), SQL_FetchInt(hndl, 3));
+		SQL_FetchString(hndl, 1, iNextCache[iCount][NP_name], MAX_NAME_LENGTH);
+		iNextCache[iCount][NP_DBID] = SQL_FetchInt(hndl, 0);
+		iNextCache[iCount][NP_level] = SQL_FetchInt(hndl, 2);
+		iNextCache[iCount][NP_exp] = SQL_FetchInt(hndl, 3);
+		iNextCache[iCount][NP_credits] = SQL_FetchInt(hndl, 4);
+		iNextCache[iCount][NP_rank] = SQL_FetchInt(hndl, 5);
+		iCount++;
+	}
+	
+	// TODO: Account for currently ingame players that got above us in the ranking and aren't in the db yet, so they aren't in the result set of the query.
+	
+	// See if some players are currently connected and possibly have newer stats in the cache than stored in the db
+	new iLocalPlayer;
+	for(new i=0;i<iCount;i++)
+	{
+		iLocalPlayer = GetClientByPlayerID(iNextCache[i][NP_DBID]);
+		if(iLocalPlayer == -1)
+			continue;
+		
+		iNextCache[i][NP_level] = GetClientLevel(iLocalPlayer);
+		iNextCache[i][NP_exp] = GetClientExperience(iLocalPlayer);
+		iNextCache[i][NP_credits] = GetClientCredits(iLocalPlayer);
+	}
+	
+	SortCustom2D(iNextCache, iCount, Sort2D_NextPlayers);
+	
+	// Save the next rank as reference if the list is reordered with current data below
+	new iLastRank = iNextCache[0][NP_rank];
+	// Fix rank if ordering changed!
+	for(new i=0;i<iCount;i++)
+	{
+		iNextCache[i][NP_rank] = iLastRank--;
+	}
+	
+	new iNeeded = iCount > 10 ? 10 : iCount;
+	for(new i=0;i<iCount,iNeeded>0;i++)
+	{
+		if(iNextCache[i][NP_level] < GetClientLevel(client) || (iNextCache[i][NP_level] == GetClientLevel(client) && iNextCache[i][NP_exp] < GetClientExperience(client)))
+			continue;
+		
+		Format(sBuffer, sizeof(sBuffer), "%d. %s Lvl: %d Exp: %d Cr: %d", iNextCache[i][NP_rank], iNextCache[i][NP_name], iNextCache[i][NP_level], iNextCache[i][NP_exp], iNextCache[i][NP_credits]);
 		DrawPanelText(hPanel, sBuffer);
+		iNeeded--;
 	}
 	
 	// Let the panel close on any number
@@ -935,6 +986,18 @@ public SQL_GetNext10(Handle:owner, Handle:hndl, const String:error[], any:userid
 	
 	SendPanelToClient(hPanel, client, Panel_DoNothing, MENU_TIME_FOREVER);
 	CloseHandle(hPanel);
+}
+
+// Sort players ascending by level and experience
+public Sort2D_NextPlayers(elem1[], elem2[], const array[][], Handle:hndl)
+{
+	if(elem1[NP_level] > elem2[NP_level])
+		return 1;
+	
+	if(elem1[NP_level] == elem2[NP_level] && elem1[NP_exp] > elem2[NP_exp])
+		return 1;
+	
+	return -1;
 }
 
 // Taken from SourceBans 2's sb_bans :)
