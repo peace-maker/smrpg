@@ -11,6 +11,8 @@
 
 #define PLUGIN_VERSION "1.0"
 
+#define SECONDS_EXP_AVG_CALC 60.0
+
 // RPG Topmenu
 new Handle:g_hRPGMenu;
 
@@ -20,6 +22,8 @@ new Handle:g_hCookieHidePanel;
 
 // Last experience memory
 new g_iLastExperience[MAXPLAYERS+1];
+new Handle:g_hExperienceStack[MAXPLAYERS+1];
+new Float:g_fExperienceAverage[MAXPLAYERS+1];
 
 public Plugin:myinfo = 
 {
@@ -67,15 +71,23 @@ public OnClientCookiesCached(client)
 	g_bClientHidePanel[client] = StringToInt(sBuffer)==1;
 }
 
+public OnClientPutInServer(client)
+{
+	g_hExperienceStack[client] = CreateStack();
+}
+
 public OnClientDisconnect(client)
 {
 	g_bClientHidePanel[client] = false;
 	g_iLastExperience[client] = 0;
+	ClearHandle(g_hExperienceStack[client]);
+	g_fExperienceAverage[client] = 0.0;
 }
 
 public OnMapStart()
 {
 	CreateTimer(1.0, Timer_ShowInfoPanel, _, TIMER_FLAG_NO_MAPCHANGE|TIMER_REPEAT);
+	CreateTimer(SECONDS_EXP_AVG_CALC, Timer_CalculateEstimatedLevelupTime, _, TIMER_FLAG_NO_MAPCHANGE|TIMER_REPEAT);
 }
 
 public Action:Timer_ShowInfoPanel(Handle:timer)
@@ -84,7 +96,7 @@ public Action:Timer_ShowInfoPanel(Handle:timer)
 		return Plugin_Continue;
 	
 	new iTarget, Obs_Mode:iMode, String:sBuffer[512];
-	new iLevel;
+	new iLevel, iExp, iExpForLevel, iExpNeeded, String:sTime[32];
 	
 	new iRankCount = SMRPG_GetRankCount();
 	for(new i=1;i<=MaxClients;i++)
@@ -117,10 +129,19 @@ public Action:Timer_ShowInfoPanel(Handle:timer)
 			Format(sBuffer, sizeof(sBuffer), "%s%N\n", sBuffer, iTarget);
 		
 		iLevel = SMRPG_GetClientLevel(iTarget);
+		iExp = SMRPG_GetClientExperience(iTarget),
+		iExpForLevel = SMRPG_LevelToExperience(iLevel);
 		Format(sBuffer, sizeof(sBuffer), "%s\n%T\n", sBuffer, "Level", i, iLevel);
-		Format(sBuffer, sizeof(sBuffer), "%s%T\n", sBuffer, "Experience short", i, SMRPG_GetClientExperience(iTarget), SMRPG_LevelToExperience(iLevel));
+		Format(sBuffer, sizeof(sBuffer), "%s%T\n", sBuffer, "Experience short", i, iExp, iExpForLevel);
 		Format(sBuffer, sizeof(sBuffer), "%s%T\n", sBuffer, "Credits", i, SMRPG_GetClientCredits(iTarget));
 		Format(sBuffer, sizeof(sBuffer), "%s%T", sBuffer, "Rank", i, SMRPG_GetClientRank(iTarget), iRankCount);
+		
+		if(g_fExperienceAverage[iTarget] > 0.0)
+		{
+			iExpNeeded = iExpForLevel - iExp;
+			SecondsToString(sTime, sizeof(sTime), RoundToCeil(float(iExpNeeded)/g_fExperienceAverage[iTarget]*SECONDS_EXP_AVG_CALC));
+			Format(sBuffer, sizeof(sBuffer), "%s\nEstimated time until levelup: %s", sBuffer, sTime);
+		}
 		
 		if(g_iLastExperience[iTarget] > 0)
 			Format(sBuffer, sizeof(sBuffer), "%s\n%T: +%d", sBuffer, "Last Experience Short", i, g_iLastExperience[iTarget]);
@@ -134,9 +155,34 @@ public Action:Timer_ShowInfoPanel(Handle:timer)
 	return Plugin_Continue;
 }
 
+public Action:Timer_CalculateEstimatedLevelupTime(Handle:timer)
+{
+	new iCount, iExp, iTotalExp, Float:fAvgExp;
+	for(new client=1;client<=MaxClients;client++)
+	{
+		if(!IsClientInGame(client))
+			continue;
+		
+		while(PopStackCell(g_hExperienceStack[client], iExp))
+		{
+			iCount++;
+			iTotalExp += iExp;
+		}
+		
+		if(iCount > 0)
+			fAvgExp = float(iTotalExp)/float(iCount);
+		else
+			fAvgExp = 0.0;
+		
+		// TODO: Consider the previous average
+		g_fExperienceAverage[client] = fAvgExp;
+	}
+}
+
 public Action:SMRPG_OnAddExperience(client, const String:reason[], &iExperience, other)
 {
 	g_iLastExperience[client] = iExperience;
+	PushStackCell(g_hExperienceStack[client], iExperience);
 	return Plugin_Continue;
 }
 
@@ -184,5 +230,34 @@ public TopMenu_SettingsItemHandler(Handle:topmenu, TopMenuAction:action, TopMenu
 			if(g_bClientHidePanel[param])
 				Client_PrintKeyHintText(param, "");
 		}
+	}
+}
+
+// Taken from SourceBans 2's sb_bans :)
+SecondsToString(String:sBuffer[], iLength, iSecs, bool:bTextual = true)
+{
+	if(bTextual)
+	{
+		decl String:sDesc[6][8] = {"mo",              "wk",             "d",          "hr",    "min", "sec"};
+		new  iCount, iDiv[6]    = {60 * 60 * 24 * 30, 60 * 60 * 24 * 7, 60 * 60 * 24, 60 * 60, 60,    1};
+		sBuffer[0]              = '\0';
+		
+		for(new i = 0; i < sizeof(iDiv); i++)
+		{
+			if((iCount = iSecs / iDiv[i]) > 0)
+			{
+				Format(sBuffer, iLength, "%s%i %s, ", sBuffer, iCount, sDesc[i]);
+				iSecs %= iDiv[i];
+			}
+		}
+		sBuffer[strlen(sBuffer) - 2] = '\0';
+	}
+	else
+	{
+		new iHours = iSecs  / 60 / 60;
+		iSecs     -= iHours * 60 * 60;
+		new iMins  = iSecs  / 60;
+		iSecs     %= 60;
+		Format(sBuffer, iLength, "%02i:%02i:%02i", iHours, iMins, iSecs);
 	}
 }
