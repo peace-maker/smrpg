@@ -464,6 +464,20 @@ public Event_OnPlayerSay(Handle:event, const String:error[], bool:dontBroadcast)
 		TrimString(sText);
 		if(!sText[7])
 		{
+			// See if he's spectating someone and show the upgrades of the target.
+			if(IsClientObserver(client) || !IsPlayerAlive(client))
+			{
+				new Obs_Mode:iObsMode = Client_GetObserverMode(client);
+				if(iObsMode == OBS_MODE_IN_EYE || iObsMode == OBS_MODE_CHASE)
+				{
+					new iTarget = Client_GetObserverTarget(client);
+					if(iTarget > 0)
+					{
+						DisplayOtherUpgradesMenu(client, iTarget);
+						return;
+					}
+				}
+			}
 			// Just display the normal upgrades menu, if self targetting with no target specified.
 			DisplayUpgradesMenu(client);
 		}
@@ -555,6 +569,20 @@ public Action:Cmd_RPGInfo(client, args)
 	
 	if(!sText[0])
 	{
+		// See if he's spectating someone and show the upgrades of the target.
+		if(IsClientObserver(client) || !IsPlayerAlive(client))
+		{
+			new Obs_Mode:iObsMode = Client_GetObserverMode(client);
+			if(iObsMode == OBS_MODE_IN_EYE || iObsMode == OBS_MODE_CHASE)
+			{
+				new iTarget = Client_GetObserverTarget(client);
+				if(iTarget > 0)
+				{
+					DisplayOtherUpgradesMenu(client, iTarget);
+					return Plugin_Handled;
+				}
+			}
+		}
 		// Just display the normal upgrades menu, if self targetting with no target specified.
 		DisplayUpgradesMenu(client);
 	}
