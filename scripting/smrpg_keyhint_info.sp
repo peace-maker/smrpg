@@ -12,6 +12,7 @@
 #define PLUGIN_VERSION "1.0"
 
 #define SECONDS_EXP_AVG_CALC 60.0
+#define EXP_MEMORY_SIZE 10
 
 // RPG Topmenu
 new Handle:g_hRPGMenu;
@@ -22,7 +23,8 @@ new Handle:g_hCookieHidePanel;
 
 // Last experience memory
 new g_iLastExperience[MAXPLAYERS+1];
-new Handle:g_hExperienceStack[MAXPLAYERS+1];
+new Handle:g_hExperienceMemory[MAXPLAYERS+1];
+new g_iExperienceThisMinute[MAXPLAYERS+1];
 new Float:g_fExperienceAverage[MAXPLAYERS+1];
 
 public Plugin:myinfo = 
@@ -46,6 +48,12 @@ public OnPluginStart()
 	
 	if(LibraryExists("clientprefs"))
 		OnLibraryAdded("clientprefs");
+	
+	for(new i=1;i<=MaxClients;i++)
+	{
+		if(IsClientInGame(i))
+			OnClientPutInServer(i);
+	}
 }
 
 public OnLibraryAdded(const String:name[])
@@ -73,14 +81,15 @@ public OnClientCookiesCached(client)
 
 public OnClientPutInServer(client)
 {
-	g_hExperienceStack[client] = CreateStack();
+	g_hExperienceMemory[client] = CreateArray();
 }
 
 public OnClientDisconnect(client)
 {
 	g_bClientHidePanel[client] = false;
 	g_iLastExperience[client] = 0;
-	ClearHandle(g_hExperienceStack[client]);
+	ClearHandle(g_hExperienceMemory[client]);
+	g_iExperienceThisMinute[client] = 0;
 	g_fExperienceAverage[client] = 0.0;
 }
 
@@ -140,7 +149,7 @@ public Action:Timer_ShowInfoPanel(Handle:timer)
 		{
 			iExpNeeded = iExpForLevel - iExp;
 			SecondsToString(sTime, sizeof(sTime), RoundToCeil(float(iExpNeeded)/g_fExperienceAverage[iTarget]*SECONDS_EXP_AVG_CALC));
-			Format(sBuffer, sizeof(sBuffer), "%s\nEstimated time until levelup: %s", sBuffer, sTime);
+			Format(sBuffer, sizeof(sBuffer), "%s\n%T: %s", sBuffer, "Estimated time until levelup", i, sTime);
 		}
 		
 		if(g_iLastExperience[iTarget] > 0)
@@ -157,32 +166,44 @@ public Action:Timer_ShowInfoPanel(Handle:timer)
 
 public Action:Timer_CalculateEstimatedLevelupTime(Handle:timer)
 {
-	new iCount, iExp, iTotalExp, Float:fAvgExp;
+	new iCount, iTotalExp;
 	for(new client=1;client<=MaxClients;client++)
 	{
 		if(!IsClientInGame(client))
 			continue;
 		
-		while(PopStackCell(g_hExperienceStack[client], iExp))
+		iCount = GetArraySize(g_hExperienceMemory[client]);
+		if(iCount < EXP_MEMORY_SIZE)
 		{
-			iCount++;
-			iTotalExp += iExp;
+			PushArrayCell(g_hExperienceMemory[client], g_iExperienceThisMinute[client]);
+		}
+		// Keep the array at EXP_MEMORY_SIZE size
+		else
+		{
+			ShiftArrayUp(g_hExperienceMemory[client], 0);
+			SetArrayCell(g_hExperienceMemory[client], 0, g_iExperienceThisMinute[client]);
+			RemoveFromArray(g_hExperienceMemory[client], EXP_MEMORY_SIZE);
 		}
 		
-		if(iCount > 0)
-			fAvgExp = float(iTotalExp)/float(iCount);
-		else
-			fAvgExp = 0.0;
+		// Start counting experience for the next minute.
+		g_iExperienceThisMinute[client] = 0;
 		
-		// TODO: Consider the previous average
-		g_fExperienceAverage[client] = fAvgExp;
+		// Get the average over the past few minutes
+		iCount = GetArraySize(g_hExperienceMemory[client]);
+		iTotalExp = 0;
+		for(new i=0;i<iCount;i++)
+		{
+			iTotalExp += GetArrayCell(g_hExperienceMemory[client], i);
+		}
+		
+		g_fExperienceAverage[client] = float(iTotalExp)/float(iCount);
 	}
 }
 
 public Action:SMRPG_OnAddExperience(client, const String:reason[], &iExperience, other)
 {
 	g_iLastExperience[client] = iExperience;
-	PushStackCell(g_hExperienceStack[client], iExperience);
+	g_iExperienceThisMinute[client] += iExperience;
 	return Plugin_Continue;
 }
 

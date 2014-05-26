@@ -14,4 +14,9 @@
 	{
 		"en"			"Last experience"
 	}
+
+	"Estimated time until levelup"
+	{
+		"en"			"Levelup in"
+	}
 }
