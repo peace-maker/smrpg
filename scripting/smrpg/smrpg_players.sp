@@ -29,8 +29,9 @@ enum PlayerInfo
 	bool:PLR_fadeOnLevelup,
 	bool:PLR_triedToLoadData,
 	Handle:PLR_upgrades,
-	PLR_lastReset
-}
+	PLR_lastReset,
+	PLR_lastSeen
+};
 
 new g_iPlayerInfo[MAXPLAYERS+1][PlayerInfo];
 new bool:g_bFirstLoaded[MAXPLAYERS+1];
@@ -51,6 +52,8 @@ RegisterPlayerNatives()
 	CreateNative("SMRPG_GetClientExperience", Native_GetClientExperience);
 	CreateNative("SMRPG_SetClientExperience", Native_SetClientExperience);
 	CreateNative("SMRPG_ResetClientStats", Native_ResetClientStats);
+	CreateNative("SMRPG_GetClientLastResetTime", Native_GetClientLastResetTime);
+	CreateNative("SMRPG_GetClientLastSeenTime", Native_GetClientLastSeenTime);
 	
 	CreateNative("SMRPG_ClientWantsCosmetics", Native_ClientWantsCosmetics);
 }
@@ -88,6 +91,7 @@ InitPlayer(client)
 	g_iPlayerInfo[client][PLR_showMenuOnLevelup] = GetConVarBool(g_hCVShowMenuOnLevelDefault);
 	g_iPlayerInfo[client][PLR_fadeOnLevelup] = GetConVarBool(g_hCVFadeOnLevelDefault);
 	g_iPlayerInfo[client][PLR_lastReset] = GetTime();
+	g_iPlayerInfo[client][PLR_lastSeen] = GetTime();
 	
 	g_iPlayerInfo[client][PLR_upgrades] = CreateArray(_:PlayerUpgradeInfo);
 	new iNumUpgrades = GetUpgradeCount();
@@ -111,7 +115,7 @@ AddPlayer(client, const String:auth[])
 		return;
 	
 	decl String:sQuery[256];
-	Format(sQuery, sizeof(sQuery), "SELECT player_id, level, experience, credits, lastreset, showmenu, fadescreen FROM %s WHERE steamid = '%s' ORDER BY level DESC LIMIT 1", TBL_PLAYERS, auth);
+	Format(sQuery, sizeof(sQuery), "SELECT player_id, level, experience, credits, lastreset, lastseen, showmenu, fadescreen FROM %s WHERE steamid = '%s' ORDER BY level DESC LIMIT 1", TBL_PLAYERS, auth);
 	
 	SQL_TQuery(g_hDatabase, SQL_GetPlayerInfo, sQuery, GetClientUserId(client));
 }
@@ -164,6 +168,9 @@ SaveData(client)
 	decl String:sQuery[8192];
 	Format(sQuery, sizeof(sQuery), "UPDATE %s SET name = '%s', level = '%d', experience = '%d', credits = '%d', showmenu = '%d', fadescreen = '%d', lastseen = '%d', lastreset = '%d' WHERE player_id = '%d'", TBL_PLAYERS, sNameEscaped, GetClientLevel(client), GetClientExperience(client), GetClientCredits(client), ShowMenuOnLevelUp(client), FadeScreenOnLevelUp(client), GetTime(), g_iPlayerInfo[client][PLR_lastReset], g_iPlayerInfo[client][PLR_dbId]);
 	SQL_TQuery(g_hDatabase, SQL_DoNothing, sQuery);
+	
+	// Remember when we last saved his stats
+	g_iPlayerInfo[client][PLR_lastSeen] = GetTime();
 	
 	// Save upgrade levels
 	SavePlayerUpgradeLevels(client);
@@ -250,6 +257,7 @@ RemovePlayer(client)
 	g_iPlayerInfo[client][PLR_showMenuOnLevelup] = GetConVarBool(g_hCVShowMenuOnLevelDefault);
 	g_iPlayerInfo[client][PLR_fadeOnLevelup] = GetConVarBool(g_hCVFadeOnLevelDefault);
 	g_iPlayerInfo[client][PLR_lastReset] = 0;
+	g_iPlayerInfo[client][PLR_lastSeen] = 0;
 }
 
 GetPlayerLastReset(client)
@@ -260,6 +268,11 @@ GetPlayerLastReset(client)
 SetPlayerLastReset(client, time)
 {
 	g_iPlayerInfo[client][PLR_lastReset] = time;
+}
+
+GetPlayerLastSeen(client)
+{
+	return g_iPlayerInfo[client][PLR_lastSeen];
 }
 
 GetPlayerUpgradeInfoByIndex(client, index, playerupgrade[PlayerUpgradeInfo])
@@ -690,8 +703,9 @@ public SQL_GetPlayerInfo(Handle:owner, Handle:hndl, const String:error[], any:us
 	g_iPlayerInfo[client][PLR_experience] = SQL_FetchInt(hndl, 2);
 	g_iPlayerInfo[client][PLR_credits] = SQL_FetchInt(hndl, 3);
 	g_iPlayerInfo[client][PLR_lastReset] = SQL_FetchInt(hndl, 4);
-	g_iPlayerInfo[client][PLR_showMenuOnLevelup] = SQL_FetchInt(hndl, 5) == 1;
-	g_iPlayerInfo[client][PLR_fadeOnLevelup] = SQL_FetchInt(hndl, 6) == 1;
+	g_iPlayerInfo[client][PLR_lastSeen] = SQL_FetchInt(hndl, 5);
+	g_iPlayerInfo[client][PLR_showMenuOnLevelup] = SQL_FetchInt(hndl, 6) == 1;
+	g_iPlayerInfo[client][PLR_fadeOnLevelup] = SQL_FetchInt(hndl, 7) == 1;
 	
 	UpdateClientRank(client);
 	UpdateRankCount();
@@ -1053,6 +1067,32 @@ public Native_ResetClientStats(Handle:plugin, numParams)
 	
 	ResetStats(client);
 	SetPlayerLastReset(client, GetTime());
+}
+
+// native SMRPG_GetClientLastResetTime(client);
+public Native_GetClientLastResetTime(Handle:plugin, numParams)
+{
+	new client = GetNativeCell(1);
+	if(client < 0 || client > MaxClients)
+	{
+		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
+		return 0;
+	}
+	
+	return GetPlayerLastReset(client);
+}
+
+// native SMRPG_GetClientLastSeenTime(client);
+public Native_GetClientLastSeenTime(Handle:plugin, numParams)
+{
+	new client = GetNativeCell(1);
+	if(client < 0 || client > MaxClients)
+	{
+		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
+		return 0;
+	}
+	
+	return GetPlayerLastSeen(client);
 }
 
 // native bool:SMRPG_ClientWantsCosmetics(client, const String:shortname[], SMRPG_FX:effect);

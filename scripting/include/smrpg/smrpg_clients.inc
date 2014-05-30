@@ -105,6 +105,24 @@ native SMRPG_GetTop10Players(SQLTCallback:callback, any:data=0);
 native SMRPG_ResetClientStats(client);
 
 /**
+ * Get the time when a client's rpg stats were last reset. Returns the time the player first joined, if his stats were never reset in between.
+ *
+ * @param client				The client index
+ * @return						The unix timestamp when the client was last reset.
+ * @error Invalid client index
+ */
+native SMRPG_GetClientLastResetTime(client);
+
+/**
+ * Get the time when the client was last active on the server.
+ *
+ * @param client				The client index
+ * @return						The unix timestamp when the client was last saved on the server.
+ * @error Invalid client index
+ */
+native SMRPG_GetClientLastSeenTime(client);
+
+/**
  * Check if a client is away from keyboard.
  * This is done by saving the player's last position regularly and see if it is still the same later.
  * Shooting resets the timer.
