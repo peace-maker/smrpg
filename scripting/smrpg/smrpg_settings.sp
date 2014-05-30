@@ -49,6 +49,13 @@ public SQL_ReadSettings(Handle:owner, Handle:hndl, const String:error[], any:dat
 		SetTrieString(g_hSettings, sKey, sValue);
 	}
 	
+	// Make sure there is a last reset time in the database.
+	if(!GetSetting("last_reset", sValue, sizeof(sValue)))
+	{
+		IntToString(GetTime(), sValue, sizeof(sValue));
+		SetSetting("last_reset", sValue);
+	}
+	
 	CheckDatabaseVersion();
 	
 	Call_StartForward(g_hfwdOnSettingsLoaded);
