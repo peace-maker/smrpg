@@ -46,6 +46,8 @@ public OnPluginStart()
 	
 	RegConsoleCmd("sm_nextreset", Cmd_NextReset, "Displays when the next rpg reset will be.");
 	
+	RegAdminCmd("smrpg_db_resetdatabase", Cmd_ResetDatabase, ADMFLAG_ROOT, "Resets all players in the database back to level 1. CANNOT BE UNDON!", "smrpg");
+	
 	AddCommandListener(CmdLstnr_Say, "say");
 	AddCommandListener(CmdLstnr_Say, "say_team");
 }
@@ -68,6 +70,23 @@ public SMRPG_OnClientLoaded(client)
 		// Wait until he joined completely.
 		CreateTimer(10.0, Timer_InformPlayerReset, GetClientSerial(client), TIMER_FLAG_NO_MAPCHANGE);
 	}
+}
+
+public Action:Cmd_ResetDatabase(client, args)
+{
+	// Reset the database.
+	SMRPG_ResetAllPlayers();
+	
+	// Inform all ingame players in chat.
+	for(new i=1;i<=MaxClients;i++)
+	{
+		if(IsClientInGame(i) && !IsFakeClient(i))
+			CreateTimer(1.0, Timer_InformPlayerReset, GetClientSerial(i), TIMER_FLAG_NO_MAPCHANGE);
+	}
+	
+	ReplyToCommand(client, "SM:RPG > The database was wiped. All players are on level 1 again.");
+	
+	return Plugin_Handled;
 }
 
 public Action:Cmd_NextReset(client, args)
@@ -205,7 +224,7 @@ public Action:Timer_InformPlayerReset(Handle:timer, any:serial)
 	
 	// Print some chat message multiple times so he really reads it.
 	for(new i=0;i<3;i++)
-		Client_PrintToChat(client, false, "{OG}SM:RPG{N} > {RB}WARNING!{G} Your stats were reset on %d-%d-%d.", iLastReset[2], iLastReset[1], iLastReset[0]);
+		Client_PrintToChat(client, false, "{OG}SM:RPG{N} > {RB}WARNING!{G} Your stats were {RB}reset on {N}%d-%d-%d{G}.", iLastReset[2], iLastReset[1], iLastReset[0]);
 	
 	// Might be interesting to know that all other players were reset too.
 	new String:sLastReset[32];
