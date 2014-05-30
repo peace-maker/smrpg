@@ -2,6 +2,7 @@
 #include <sourcemod>
 #include <smlib>
 #include <smrpg>
+#include <autoexecconfig>
 
 #define PLUGIN_VERSION "1.0"
 
@@ -30,13 +31,18 @@ public OnPluginStart()
 		HookConVarChange(hVersion, ConVar_VersionChanged);
 	}
 	
-	g_hCVFirstReset = CreateConVar("smrpg_resetstats_firstreset", "2014-02-01", "The date of the first reset which is used as a base to get the coming reset dates. Format yyyy-mm-dd.");
-	g_hCVMonths = CreateConVar("smrpg_resetstats_months", "2", "After how many months shall we reset the stats again?", _, true, 0.0);
-	g_hCVTop10MaxLevel = CreateConVar("smrpg_resetstats_top10_maxlevel", "0", "When the top 10 players total levels add together to this maxlevel, the server is reset. (0 to disable)", _, true, 0.0);
+	AutoExecConfig_SetFile("plugin.smrpg_resetstats");
+	AutoExecConfig_SetCreateFile(true);
+	AutoExecConfig_SetPlugin(INVALID_HANDLE);
 	
-	g_hCVAutoReset = CreateConVar("smrpg_resetstats_autoreset", "0", "Reset the database automatically when one of the reset conditions is true?", _, true, 0.0, true, 1.0);
+	g_hCVFirstReset = AutoExecConfig_CreateConVar("smrpg_resetstats_firstreset", "2014-02-01", "The date of the first reset which is used as a base to get the coming reset dates. Format yyyy-mm-dd.");
+	g_hCVMonths = AutoExecConfig_CreateConVar("smrpg_resetstats_months", "2", "After how many months shall we reset the stats again?", _, true, 0.0);
+	g_hCVTop10MaxLevel = AutoExecConfig_CreateConVar("smrpg_resetstats_top10_maxlevel", "0", "When the top 10 players total levels add together to this maxlevel, the server is reset. (0 to disable)", _, true, 0.0);
 	
-	AutoExecConfig();
+	g_hCVAutoReset = AutoExecConfig_CreateConVar("smrpg_resetstats_autoreset", "0", "Reset the database automatically when one of the reset conditions is true?", _, true, 0.0, true, 1.0);
+	
+	AutoExecConfig_ExecuteFile();
+	AutoExecConfig_CleanFile();
 	
 	RegConsoleCmd("sm_nextreset", Cmd_NextReset, "Displays when the next rpg reset will be.");
 	
