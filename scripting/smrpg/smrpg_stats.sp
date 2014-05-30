@@ -153,7 +153,15 @@ Stats_PlayerNewLevel(client, iLevelIncrease)
 	
 	if(FadeScreenOnLevelUp(client))
 	{
-		Client_ScreenFade(client, 255, FFADE_OUT|FFADE_PURGE, 255, 255, 215, 0, 40);
+		new String:sColor[16], String:sBuffers[4][4];
+		// Keep the default color if there is invalid input in the convar.
+		new iColor[] = {255, 215, 0, 40};
+		// Parse the "r g b a" convar string of the screen fading color.
+		GetConVarString(g_hCVFadeOnLevelColor, sColor, sizeof(sColor));
+		new iNum = ExplodeString(sColor, " ", sBuffers, 4, 4);
+		for(new i=0;i<iNum;i++)
+			iColor[i] = StringToInt(sBuffers[i]);
+		Client_ScreenFade(client, 255, FFADE_OUT|FFADE_PURGE, 255, iColor[0], iColor[1], iColor[2], iColor[3]);
 	}
 	
 	if(GetConVarBool(g_hCVAnnounceNewLvl))

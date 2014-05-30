@@ -66,6 +66,8 @@ new Handle:g_hCVShowUpgradePurchase;
 new Handle:g_hCVShowMenuOnLevelDefault;
 new Handle:g_hCVFadeOnLevelDefault;
 
+new Handle:g_hCVFadeOnLevelColor;
+
 #define IF_IGNORE_BOTS(%1) if(IsFakeClient(%1) && (!GetConVarBool(g_hCVBotEnable) || (GetConVarBool(g_hCVBotNeedHuman) && Client_GetCount(true, false) == 0)))
 
 #include "smrpg/smrpg_upgrades.sp"
@@ -165,6 +167,8 @@ public OnPluginStart()
 	g_hCVShowUpgradePurchase = AutoExecConfig_CreateConVar("smrpg_show_upgrade_purchase_in_chat", "0", "Show a message to all in chat when a player buys an upgrade.", 0, true, 0.0, true, 1.0);
 	g_hCVShowMenuOnLevelDefault = AutoExecConfig_CreateConVar("smrpg_show_menu_on_levelup", "0", "Show the rpg menu when a player levels up by default? Players can change it in their settings individually afterwards.", 0, true, 0.0, true, 1.0);
 	g_hCVFadeOnLevelDefault = AutoExecConfig_CreateConVar("smrpg_fade_screen_on_levelup", "1", "Fade the screen golden when a player levels up by default? Players can change it in their settings individually afterwards.", 0, true, 0.0, true, 1.0);
+	
+	g_hCVFadeOnLevelColor = AutoExecConfig_CreateConVar("smrpg_fade_screen_on_levelup_color", "255 215 0 40", "RGBA color to fade the screen in for a short time after levelup. Default is a golden shine.", 0);
 	
 	AutoExecConfig_ExecuteFile();
 	AutoExecConfig_CleanFile();
