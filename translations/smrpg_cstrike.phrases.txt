@@ -32,6 +32,14 @@
 		"en"			"{1} exp. for killing {2}"
 	}
 	
+	"cs_playerkillassist"
+	{
+		// 1: The amount of experience earned.
+		// 2: The other player involved. e.g. the victim when hurting someone.
+		"#format"	"{1:d},{2:N}"
+		"en"			"{1} exp. for assisting in killing {2}"
+	}
+	
 	"cs_dominating"
 	{
 		// 1: The amount of experience earned.

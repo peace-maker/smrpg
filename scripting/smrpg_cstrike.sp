@@ -10,10 +10,14 @@
 
 //#define _DEBUG
 
+new bool:g_bIsCSGO;
+
 new Handle:g_hCVExpKill;
 new Handle:g_hCVExpKillMax;
 new Handle:g_hCVExpDamage;
 new Handle:g_hCVExpTeamwin;
+
+new Handle:g_hCVExpKillAssist;
 
 new Handle:g_hCVExpKnifeDmg;
 new Handle:g_hCVExpHeadshot;
@@ -60,6 +64,9 @@ public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
 		Format(error, err_max, "This plugin is for use in Counter-Strike only. Bad engine version %d.", engine);
 		return APLRes_SilentFailure;
 	}
+	
+	g_bIsCSGO = engine == Engine_CSGO;
+	
 	return APLRes_Success;
 }
 
@@ -68,6 +75,8 @@ public OnPluginStart()
 	AutoExecConfig_SetFile("plugin.smrpg_cstrike");
 	AutoExecConfig_SetCreateFile(true);
 	AutoExecConfig_SetPlugin(INVALID_HANDLE);
+	
+	g_hCVExpKillAssist = AutoExecConfig_CreateConVar("smrpg_exp_kill_assist", "10.0", "Experience for assisting in killing a player multiplied by the victim's level", 0, true, 0.0);
 	
 	g_hCVExpKnifeDmg = AutoExecConfig_CreateConVar("smrpg_exp_knifedmg", "8.0", "Experience for knifing an enemy multiplied by the damage done (must be higher than smrpg_exp_damage)", 0, true, 0.0);
 	g_hCVExpHeadshot = AutoExecConfig_CreateConVar("smrpg_exp_headshot", "50.0", "Experience extra for a headshot", 0, true, 0.0);
@@ -262,14 +271,32 @@ public Event_OnPlayerDeath(Handle:event, const String:error[], bool:dontBroadcas
 {
 	new attacker = GetClientOfUserId(GetEventInt(event, "attacker"));
 	new victim = GetClientOfUserId(GetEventInt(event, "userid"));
+	new assister;
 	
 	if(attacker == 0 || victim == 0)
 		return;
+	
+	if(g_bIsCSGO)
+	{
+		assister = GetClientOfUserId(GetEventInt(event, "assister"));
+	}
 	
 	if(!SMRPG_IsEnabled())
 		return;
 	
 	if(SMRPG_IsClientAFK(victim))
+		return;
+	
+	// Give the assisting player some exp.
+	if(assister > 0
+	&& GetClientTeam(victim) != GetClientTeam(assister))
+	{
+		new iExp = RoundToCeil(SMRPG_GetClientLevel(victim) * GetConVarFloat(g_hCVExpKillAssist));
+		Debug_AddClientExperience(assister, iExp, false, "cs_playerkillassist", victim);
+	}
+	
+	// Ignore suicide
+	if(attacker == victim)
 		return;
 	
 	// Ignore teamattack
