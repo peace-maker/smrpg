@@ -10,6 +10,8 @@ new Handle:g_hCVFirstReset;
 new Handle:g_hCVMonths;
 new Handle:g_hCVTop10MaxLevel;
 
+new Handle:g_hCVAutoReset;
+
 public Plugin:myinfo = 
 {
 	name = "SM:RPG > Reset interval",
@@ -31,6 +33,8 @@ public OnPluginStart()
 	g_hCVFirstReset = CreateConVar("smrpg_resetstats_firstreset", "2014-02-01", "The date of the first reset which is used as a base to get the coming reset dates. Format yyyy-mm-dd.");
 	g_hCVMonths = CreateConVar("smrpg_resetstats_months", "2", "After how many months shall we reset the stats again?", _, true, 0.0);
 	g_hCVTop10MaxLevel = CreateConVar("smrpg_resetstats_top10_maxlevel", "0", "When the top 10 players total levels add together to this maxlevel, the server is reset. (0 to disable)", _, true, 0.0);
+	
+	g_hCVAutoReset = CreateConVar("smrpg_resetstats_autoreset", "0", "Reset the database automatically when one of the reset conditions is true?", _, true, 0.0, true, 1.0);
 	
 	AutoExecConfig();
 	
@@ -91,6 +95,10 @@ public SQL_GetTop10(Handle:owner, Handle:hndl, const String:error[], any:userid)
 	if(iLevelsLeft < 0)
 		iLevelsLeft = 0;
 	
+	// Actually reset the database now.
+	if(iLevelsLeft == 0)
+		DoReset();
+	
 	if(!client)
 		PrintToServer("SM:RPG > The stats are reset when the levels of the top 10 players sum up to %d. Still %d levels left.", iResetMaxLevel, iLevelsLeft);
 	else
@@ -128,7 +136,10 @@ PrintDaysUntilReset(client)
 	
 	new String:sTimeString[64];
 	if(iDays == 0)
+	{
 		strcopy(sTimeString, sizeof(sTimeString), "today");
+		DoReset();
+	}
 	else
 		strcopy(sTimeString, sizeof(sTimeString), "in");
 	
@@ -164,6 +175,34 @@ public Action:Timer_InformAboutReset(Handle:timer)
 	Cmd_NextReset(1, 0);
 	
 	return Plugin_Continue;
+}
+
+/**
+ * Reset the database iff it wasn't reset already today.
+ */
+DoReset()
+{
+	// Don't take any action automatically.
+	if(!GetConVarBool(g_hCVAutoReset))
+		return;
+	
+	decl String:sLastReset[32];
+	if(SMRPG_GetSetting("last_reset", sLastReset, sizeof(sLastReset)))
+	{
+		new iLastResetStamp = StringToInt(sLastReset);
+		new iLastReset[3];
+		GetCurrentDate(iLastReset[2], iLastReset[1], iLastReset[0], iLastResetStamp);
+		
+		new iCurrentDate[3];
+		GetCurrentDate(iCurrentDate[2], iCurrentDate[1], iCurrentDate[0]);
+		
+		// Already reset today..
+		if(iCurrentDate[0] == iLastReset[0] && iCurrentDate[1] == iLastReset[1] && iCurrentDate[2] == iLastReset[2])
+			return;
+	}
+	
+	// Reset the database.
+	SMRPG_ResetAllPlayers();
 }
 
 stock GetDaysUntilNextReset(iNextReset[3])
