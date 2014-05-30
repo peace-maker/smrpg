@@ -121,6 +121,9 @@ InsertPlayer(client)
 	if(!GetConVarBool(g_hCVEnable) || !GetConVarBool(g_hCVSaveData))
 		return;
 	
+	if(IsFakeClient(client))
+		return;
+	
 	decl String:sQuery[512];
 	decl String:sName[MAX_NAME_LENGTH], String:sNameEscaped[MAX_NAME_LENGTH*2+1];
 	GetClientName(client, sName, sizeof(sName));

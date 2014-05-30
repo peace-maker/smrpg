@@ -20,6 +20,12 @@ enum DatabaseDriver {
 
 new DatabaseDriver:g_DriverType;
 
+RegisterDatabaseNatives()
+{
+	// native bool:SMRPG_ResetAllPlayers(bool:bHardReset=false);
+	CreateNative("SMRPG_ResetAllPlayers", Native_ResetAllPlayers);
+}
+
 InitDatabase()
 {
 	if(SQL_CheckConfig(SMRPG_DB))
@@ -219,6 +225,61 @@ DatabaseMaid()
 		Format(sQuery, sizeof(sQuery), "VACUUM");
 		SQL_LockedFastQuery(g_hDatabase, sQuery);
 	}
+}
+
+// Natives
+public Native_ResetAllPlayers(Handle:plugin, numParams)
+{
+	if(!g_hDatabase)
+		return false;
+	
+	// Don't touch the database, if we don't want to save any data.
+	if(!GetConVarBool(g_hCVSaveData))
+		return false;
+	
+	new bool:bHardReset = bool:GetNativeCell(1);
+	decl String:sQuery[512];
+
+	// Delete all player information?
+	if(bHardReset)
+	{
+		Format(sQuery, sizeof(sQuery), "DELETE FROM %s", TBL_PLAYERUPGRADES);
+		SQL_TQuery(g_hDatabase, SQL_DoNothing, sQuery);
+		Format(sQuery, sizeof(sQuery), "DELETE FROM %s", TBL_PLAYERS);
+		SQL_TQuery(g_hDatabase, SQL_DoNothing, sQuery);
+		
+		// Reset all ingame players and readd them into the database.
+		for(new i=1;i<=MaxClients;i++)
+		{
+			if(IsClientInGame(i))
+			{
+				RemovePlayer(i);
+				InitPlayer(i);
+				InsertPlayer(i);
+			}
+		}
+	}
+	// Keep the player settings
+	else
+	{
+		Format(sQuery, sizeof(sQuery), "UPDATE %s SET level = 1, experience = 0, credits = %d, lastreset = %d", TBL_PLAYERS, GetConVarInt(g_hCVCreditsStart), GetTime());
+		SQL_TQuery(g_hDatabase, SQL_DoNothing, sQuery);
+		Format(sQuery, sizeof(sQuery), "UPDATE %s SET purchasedlevel = 0, selectedlevel = 0, enabled = 1", TBL_PLAYERUPGRADES);
+		SQL_TQuery(g_hDatabase, SQL_DoNothing, sQuery);
+		
+		// Just reset all ingame players too
+		for(new i=1;i<=MaxClients;i++)
+		{
+			if(IsClientInGame(i))
+				ResetStats(i);
+		}
+	}
+	
+	// Remember when we last reset the database.
+	IntToString(GetTime(), sQuery, sizeof(sQuery));
+	SetSetting("last_reset", sQuery);
+	
+	return true;
 }
 
 public SQL_DoNothing(Handle:owner, Handle:hndl, const String:error[], any:data)
