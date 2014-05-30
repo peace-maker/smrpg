@@ -60,6 +60,16 @@ public OnMapStart()
 	CreateTimer(1200.0, Timer_InformAboutReset, _, TIMER_FLAG_NO_MAPCHANGE|TIMER_REPEAT);
 }
 
+public SMRPG_OnClientLoaded(client)
+{
+	// This player's stats were reset while he wasn't on the server. Inform him about the reset.
+	if(SMRPG_GetClientLastSeenTime(client) < SMRPG_GetClientLastResetTime(client))
+	{
+		// Wait until he joined completely.
+		CreateTimer(10.0, Timer_InformPlayerReset, GetClientSerial(client), TIMER_FLAG_NO_MAPCHANGE);
+	}
+}
+
 public Action:Cmd_NextReset(client, args)
 {
 	if(GetConVarInt(g_hCVMonths) > 0)
@@ -183,6 +193,35 @@ public Action:Timer_InformAboutReset(Handle:timer)
 	return Plugin_Continue;
 }
 
+public Action:Timer_InformPlayerReset(Handle:timer, any:serial)
+{
+	new client = GetClientFromSerial(serial);
+	if(!client)
+		return Plugin_Stop;
+	
+	new iLastReset[3];
+	new iLastResetStamp = SMRPG_GetClientLastResetTime(client);
+	GetCurrentDate(iLastReset[2], iLastReset[1], iLastReset[0], iLastResetStamp);
+	
+	// Print some chat message multiple times so he really reads it.
+	for(new i=0;i<3;i++)
+		Client_PrintToChat(client, false, "{OG}SM:RPG{N} > {RB}WARNING!{G} Your stats were reset on %d-%d-%d.", iLastReset[2], iLastReset[1], iLastReset[0]);
+	
+	// Might be interesting to know that all other players were reset too.
+	new String:sLastReset[32];
+	if(SMRPG_GetSetting("last_reset", sLastReset, sizeof(sLastReset)))
+	{
+		new iLastGlobalResetStamp = StringToInt(sLastReset);
+		if(iLastGlobalResetStamp == iLastResetStamp)
+		{
+			Client_PrintToChat(client, false, "{OG}SM:RPG{N} > {G}The whole server got reset, so you're not the only one.");
+			Client_PrintToChat(client, false, "{OG}SM:RPG{N} > {G}This is done automatically regularly. Type {N}nextreset{G} to see when it's time again.");
+		}
+	}
+	
+	return Plugin_Stop;
+}
+
 /**
  * Reset the database iff it wasn't reset already today.
  */
@@ -209,6 +248,13 @@ DoReset()
 	
 	// Reset the database.
 	SMRPG_ResetAllPlayers();
+	
+	// Inform all ingame players in chat.
+	for(new i=1;i<=MaxClients;i++)
+	{
+		if(IsClientInGame(i) && !IsFakeClient(i))
+			CreateTimer(1.0, Timer_InformPlayerReset, GetClientSerial(i), TIMER_FLAG_NO_MAPCHANGE);
+	}
 }
 
 stock GetDaysUntilNextReset(iNextReset[3])
