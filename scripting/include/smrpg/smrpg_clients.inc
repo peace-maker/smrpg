@@ -158,6 +158,7 @@ functag public SMRPG_ExpTranslationCb(client, const String:reason[], iExperience
  * @param reason         The reason this experience was added.
  * @param bHideNotice    Set to true, if you want a notification displayed in the HintText area on the client's screen, telling him the amount of experience he just earned, or to false if not.
  * @param other          Optional index of other client involved in the reason for this experience. e.g. the victim which was hurt. Set to -1 if no other particular entity was involved.
+ * @param callback       Optional translation callback to translate the reason into a human readable format. (See SMRPG_ExpTranslationCb)
  * @return               True if the experience was added, false otherwise.
  * @error Invalid client index
  */
