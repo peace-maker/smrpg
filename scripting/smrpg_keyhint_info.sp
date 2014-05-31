@@ -142,8 +142,11 @@ public Action:Timer_ShowInfoPanel(Handle:timer)
 		iExpForLevel = SMRPG_LevelToExperience(iLevel);
 		Format(sBuffer, sizeof(sBuffer), "%s\n%T\n", sBuffer, "Level", i, iLevel);
 		Format(sBuffer, sizeof(sBuffer), "%s%T\n", sBuffer, "Experience short", i, iExp, iExpForLevel);
-		Format(sBuffer, sizeof(sBuffer), "%s%T\n", sBuffer, "Credits", i, SMRPG_GetClientCredits(iTarget));
-		Format(sBuffer, sizeof(sBuffer), "%s%T", sBuffer, "Rank", i, SMRPG_GetClientRank(iTarget), iRankCount);
+		Format(sBuffer, sizeof(sBuffer), "%s%T", sBuffer, "Credits", i, SMRPG_GetClientCredits(iTarget));
+		
+		new iRank = SMRPG_GetClientRank(iTarget);
+		if(iRank > 0)
+			Format(sBuffer, sizeof(sBuffer), "%s\n%T", sBuffer, "Rank", i, iRank, iRankCount);
 		
 		if(g_fExperienceAverage[iTarget] > 0.0)
 		{
