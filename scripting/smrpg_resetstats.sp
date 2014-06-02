@@ -265,6 +265,8 @@ DoReset()
 			return;
 	}
 	
+	LogMessage("Resetting SM:RPG stats automatically.");
+	
 	// Reset the database.
 	SMRPG_ResetAllPlayers();
 	
