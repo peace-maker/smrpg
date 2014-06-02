@@ -10,6 +10,9 @@
 #include <smrpg>
 #include <smlib>
 
+#undef REQUIRE_PLUGIN
+#include <adminmenu>
+
 #define PLUGIN_VERSION "1.0"
 
 new Handle:g_hCVRPGSaveData;
@@ -23,6 +26,8 @@ new Handle:g_hCVCreditsMultiplier;
 new bool:g_bMapEnded;
 
 new bool:g_bClientLeveledUp[MAXPLAYERS+1];
+
+new Handle:g_hTopMenu;
 
 public Plugin:myinfo = 
 {
@@ -47,6 +52,16 @@ public OnPluginStart()
 	RegAdminCmd("sm_turbomode", Cmd_TurboMode, ADMFLAG_CONFIG, "Enables SM:RPG turbo mode. Higher experience rates for everyone until mapchange. Stats are not saved.", "smrpg");
 	
 	HookEvent("player_spawn", Event_OnPlayerSpawn);
+	
+	LoadTranslations("common.phrases");
+	
+	// See if the menu plugin is already ready
+	new Handle:topmenu;
+	if (LibraryExists("adminmenu") && ((topmenu = GetAdminTopMenu()) != INVALID_HANDLE))
+	{
+		// If so, manually fire the callback
+		OnAdminMenuReady(topmenu);
+	}
 }
 
 /**
@@ -250,4 +265,36 @@ public Action:SMRPG_OnClientCredits(client, oldcredits, newcredits)
 	}
 	
 	return Plugin_Continue;
+}
+
+/**
+ * Admin menu integration.
+ */
+public OnAdminMenuReady(Handle:topmenu)
+{
+	// Get the rpg category
+	new TopMenuObject:iRPGCategory = FindTopMenuCategory(topmenu, "SM:RPG");
+	
+	if(iRPGCategory == INVALID_TOPMENUOBJECT)
+		return;
+	
+	if(g_hTopMenu == topmenu)
+		return;
+	
+	g_hTopMenu = topmenu;
+	
+	AddToTopMenu(topmenu, "Toggle Turbo Mode", TopMenuObject_Item, TopMenu_AdminHandleTurboMode, iRPGCategory, "sm_turbomode", ADMFLAG_CONFIG);
+}
+
+public TopMenu_AdminHandleTurboMode(Handle:topmenu, TopMenuAction:action, TopMenuObject:object_id, param, String:buffer[], maxlength)
+{
+	if (action == TopMenuAction_DisplayOption)
+	{
+		Format(buffer, maxlength, "Turbo Mode: %T", (GetConVarBool(g_hCVTurboMode)?"On":"Off"), param);
+	}
+	else if (action == TopMenuAction_SelectOption)
+	{
+		Cmd_TurboMode(param, 0);
+		RedisplayAdminMenu(topmenu, param);
+	}
 }
