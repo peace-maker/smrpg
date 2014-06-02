@@ -24,6 +24,8 @@ RegisterDatabaseNatives()
 {
 	// native bool:SMRPG_ResetAllPlayers(bool:bHardReset=false);
 	CreateNative("SMRPG_ResetAllPlayers", Native_ResetAllPlayers);
+	// native SMRPG_FlushDatabase();
+	CreateNative("SMRPG_FlushDatabase", Native_FlushDatabase);
 }
 
 InitDatabase()
@@ -280,6 +282,12 @@ public Native_ResetAllPlayers(Handle:plugin, numParams)
 	SetSetting("last_reset", sQuery);
 	
 	return true;
+}
+
+public Native_FlushDatabase(Handle:plugin, numParams)
+{
+	// Flush all info into the database. This handles smrpg_save_data and smrpg_enable
+	SaveAllPlayers();
 }
 
 public SQL_DoNothing(Handle:owner, Handle:hndl, const String:error[], any:data)
