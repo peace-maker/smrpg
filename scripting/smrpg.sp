@@ -294,6 +294,10 @@ public OnPluginEnd()
 		SMRPG_UnregisterCommand("rpghelp");
 		SMRPG_UnregisterCommand("rpgexp");
 	}
+	
+	// Try to save the stats!
+	if(g_hDatabase != INVALID_HANDLE)
+		SaveAllPlayers();
 }
 
 public OnConfigsExecuted()
