@@ -96,6 +96,9 @@ public ConVar_TurboModeChanged(Handle:convar, const String:oldValue[], const Str
 		// Remember the old value before enabling turbo mode.
 		g_bRPGSaveDataOld = GetConVarBool(g_hCVRPGSaveData);
 		
+		// Save all current progress to the database!
+		SMRPG_FlushDatabase();
+		
 		// Disable saving.
 		SetConVarBool(g_hCVRPGSaveData, false);
 		
