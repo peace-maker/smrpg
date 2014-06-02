@@ -324,8 +324,8 @@ public Event_OnPlayerDeath(Handle:event, const String:error[], bool:dontBroadcas
 	// Player broke the domination and killed him in revenge?
 	if(GetEventBool(event, "revenge"))
 	{
-		iExp = RoundToCeil(SMRPG_GetClientLevel(attacker) * GetConVarFloat(g_hCVExpRevenge));
-		Debug_AddClientExperience(victim, iExp, false, "cs_revenge", attacker);
+		iExp = RoundToCeil(SMRPG_GetClientLevel(victim) * GetConVarFloat(g_hCVExpRevenge));
+		Debug_AddClientExperience(attacker, iExp, false, "cs_revenge", victim);
 	}
 }
 
