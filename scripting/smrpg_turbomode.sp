@@ -78,7 +78,9 @@ public OnAllPluginsLoaded()
 public OnConfigsExecuted()
 {
 	// Trigger the config, if it's set already.
-	ConVar_TurboModeChanged(g_hCVTurboMode, "", "");
+	g_bRPGSaveDataOld = GetConVarBool(g_hCVRPGSaveData);
+	if(GetConVarBool(g_hCVTurboMode))
+		ConVar_TurboModeChanged(g_hCVTurboMode, "0", "1");
 }
 
 public OnMapStart()
@@ -102,10 +104,15 @@ public ConVar_SaveDataChanged(Handle:convar, const String:oldValue[], const Stri
 	// DON'T SAVE ANYTHING DURING TURBO MODE!
 	if(GetConVarBool(g_hCVTurboMode) && GetConVarBool(convar))
 		SetConVarBool(convar, false);
+	else
+		g_bRPGSaveDataOld = GetConVarBool(convar);
 }
 
 public ConVar_TurboModeChanged(Handle:convar, const String:oldValue[], const String:newValue[])
 {
+	if(StrEqual(oldValue, newValue))
+		return;
+	
 	if(GetConVarBool(g_hCVTurboMode))
 	{
 		// Remember the old value before enabling turbo mode.
