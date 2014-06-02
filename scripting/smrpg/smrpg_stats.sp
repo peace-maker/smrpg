@@ -1018,7 +1018,7 @@ public SQL_GetNext10(Handle:owner, Handle:hndl, const String:error[], any:userid
 	}
 	
 	new iNeeded = iCount > 10 ? 10 : iCount;
-	for(new i=0;i<iCount,iNeeded>0;i++)
+	for(new i=0;i<iCount&&iNeeded>0;i++)
 	{
 		if(iNextCache[i][NP_level] < GetClientLevel(client) || (iNextCache[i][NP_level] == GetClientLevel(client) && iNextCache[i][NP_exp] < GetClientExperience(client)))
 			continue;
