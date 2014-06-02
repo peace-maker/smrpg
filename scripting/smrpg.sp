@@ -25,6 +25,7 @@ new Handle:g_hCVEnable;
 new Handle:g_hCVBotEnable;
 new Handle:g_hCVBotNeedHuman;
 new Handle:g_hCVNeedEnemies;
+new Handle:g_hCVEnemiesNotAFK;
 new Handle:g_hCVDebug;
 new Handle:g_hCVSaveData;
 new Handle:g_hCVSaveInterval;
@@ -128,6 +129,7 @@ public OnPluginStart()
 	g_hCVBotEnable = AutoExecConfig_CreateConVar("smrpg_bot_enable", "1", "If set to 1, bots will be able to use the SM:RPG plugin", 0, true, 0.0, true, 1.0);
 	g_hCVBotNeedHuman = AutoExecConfig_CreateConVar("smrpg_bot_need_human", "1", "Don't allow bots to gain experience while no human player is on the server?", 0, true, 0.0, true, 1.0);
 	g_hCVNeedEnemies = AutoExecConfig_CreateConVar("smrpg_need_enemies", "1", "Don't give any experience if there is no enemy in the opposite team?", 0, true, 0.0, true, 1.0);
+	g_hCVEnemiesNotAFK = AutoExecConfig_CreateConVar("smrpg_enemies_not_afk", "1", "Don't give any experience if all enemies are currently AFK?", 0, true, 0.0, true, 1.0);
 	g_hCVDebug = AutoExecConfig_CreateConVar("smrpg_debug", "0", "Turns on debug mode for this plugin", 0, true, 0.0, true, 1.0);
 	g_hCVSaveData = AutoExecConfig_CreateConVar("smrpg_save_data", "1", "If disabled, the database won't be updated (this means player data won't be saved!)", 0, true, 0.0, true, 1.0);
 	g_hCVSaveInterval = AutoExecConfig_CreateConVar("smrpg_save_interval", "150", "Interval (in seconds) that player data is auto saved (0 = off)", 0, true, 0.0);

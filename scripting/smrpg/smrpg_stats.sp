@@ -196,11 +196,50 @@ bool:Stats_AddExperience(client, iExperience, const String:sReason[], bool:bHide
 	IF_IGNORE_BOTS(client)
 		return false;
 	
+	new bool:bBotEnable = GetConVarBool(g_hCVBotEnable);
 	if(GetConVarBool(g_hCVNeedEnemies))
 	{
 		// No enemies in the opposite team?
-		if(!Team_HaveAllPlayers(GetConVarBool(g_hCVBotEnable)))
+		if(!Team_HaveAllPlayers(bBotEnable))
 			return false;
+	}
+	
+	// All players in the opposite team are AFK?
+	if(GetConVarBool(g_hCVEnemiesNotAFK))
+	{
+		new iMyTeam = GetClientTeam(client);
+		if(iMyTeam > 1)
+		{
+			new bool:bAllAFK, iTeam;
+			for(new i=1;i<=MaxClients;i++)
+			{
+				if(IsClientInGame(i))
+				{
+					if(IsFakeClient(i) && !bBotEnable)
+						continue;
+					
+					iTeam = GetClientTeam(i);
+					// This is an enemy?
+					if(iTeam > 1 && iTeam != iMyTeam)
+					{
+						// This enemy isn't afk? Add experience then.
+						if(!IsClientAFK(i))
+						{
+							bAllAFK = false;
+							break;
+						}
+						else
+						{
+							bAllAFK = true;
+						}
+					}
+				}
+			}
+			
+			// Don't count any experience, if all players in the opposite team are AFK.
+			if(bAllAFK)
+				return false;
+		}
 	}
 	
 	// Don't give the players any more exp when they already reached the maxlevel.
