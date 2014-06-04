@@ -234,6 +234,9 @@ public SMRPG_OnClientLoaded(client)
 
 public Action:SMRPG_OnAddExperience(client, const String:reason[], &iExperience, other)
 {
+	if(!GetConVarBool(g_hCVTurboMode))
+		return Plugin_Continue;
+	
 	if(!StrEqual(reason, ExperienceReason_Admin))
 	{
 		// Higher experience rate
@@ -257,7 +260,7 @@ public Action:SMRPG_OnClientCredits(client, oldcredits, newcredits)
 		g_bClientLeveledUp[client] = false;
 		
 		// Credits were actually given not taken
-		if(oldcredits < newcredits)
+		if(GetConVarBool(g_hCVTurboMode) && oldcredits < newcredits)
 		{
 			new iInc = newcredits - oldcredits;
 			iInc = RoundToCeil(float(iInc) * GetConVarFloat(g_hCVCreditsMultiplier));
