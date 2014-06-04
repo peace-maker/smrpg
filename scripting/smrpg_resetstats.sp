@@ -74,8 +74,19 @@ public SMRPG_OnClientLoaded(client)
 
 public Action:Cmd_ResetDatabase(client, args)
 {
+	if(args < 2)
+	{
+		ReplyToCommand(client, "SM:RPG > Usage: smrpg_db_resetdatabase <reason>");
+		return Plugin_Handled;
+	}
+	
+	decl String:sReason[256];
+	GetCmdArgString(sReason, sizeof(sReason));
+	StripQuotes(sReason);
+	TrimString(sReason);
+	
 	// Reset the database.
-	SMRPG_ResetAllPlayers();
+	SMRPG_ResetAllPlayers(sReason);
 	
 	// Inform all ingame players in chat.
 	for(new i=1;i<=MaxClients;i++)
@@ -85,6 +96,7 @@ public Action:Cmd_ResetDatabase(client, args)
 	}
 	
 	ReplyToCommand(client, "SM:RPG > The database was wiped. All players are on level 1 again.");
+	LogAction(client, -1, "%L reset the SM:RPG database. The reason given was \"%s\".", client, sReason);
 	
 	return Plugin_Handled;
 }
@@ -132,7 +144,11 @@ public SQL_GetTop10(Handle:owner, Handle:hndl, const String:error[], any:userid)
 	
 	// Actually reset the database now.
 	if(iLevelsLeft == 0)
-		DoReset();
+	{
+		decl String:sReason[256];
+		Format(sReason, sizeof(sReason), "Levels of top 10 players summed up to %d.", iResetMaxLevel);
+		DoReset(sReason);
+	}
 	
 	if(!client)
 		PrintToServer("SM:RPG > The stats are reset when the levels of the top 10 players sum up to %d. Still %d levels left.", iResetMaxLevel, iLevelsLeft);
@@ -173,7 +189,13 @@ PrintDaysUntilReset(client)
 	if(iDays == 0)
 	{
 		strcopy(sTimeString, sizeof(sTimeString), "today");
-		DoReset();
+		new String:sReason[256] = "Regular reset every ";
+		new iMonthInterval = GetConVarInt(g_hCVMonths);
+		if(iMonthInterval > 1)
+			Format(sReason, sizeof(sReason), "%s%d months.", sReason, iMonthInterval);
+		else
+			Format(sReason, sizeof(sReason), "%s month.", sReason);
+		DoReset(sReason);
 	}
 	else
 		strcopy(sTimeString, sizeof(sTimeString), "in");
@@ -235,6 +257,10 @@ public Action:Timer_InformPlayerReset(Handle:timer, any:serial)
 		{
 			Client_PrintToChat(client, false, "{OG}SM:RPG{N} > {G}The whole server got reset, so you're not the only one.");
 			Client_PrintToChat(client, false, "{OG}SM:RPG{N} > {G}This is done automatically regularly. Type {N}nextreset{G} to see when it's time again.");
+			
+			new String:sReason[256];
+			if(SMRPG_GetSetting("reset_reason", sReason, sizeof(sReason)))
+				Client_PrintToChat(client, false, "{OG}SM:RPG{N} > {G}Reason: {N}%s", sReason);
 		}
 	}
 	
@@ -244,7 +270,7 @@ public Action:Timer_InformPlayerReset(Handle:timer, any:serial)
 /**
  * Reset the database iff it wasn't reset already today.
  */
-DoReset()
+DoReset(const String:sReason[])
 {
 	// Don't take any action automatically.
 	if(!GetConVarBool(g_hCVAutoReset))
@@ -268,7 +294,7 @@ DoReset()
 	LogMessage("Resetting SM:RPG stats automatically.");
 	
 	// Reset the database.
-	SMRPG_ResetAllPlayers();
+	SMRPG_ResetAllPlayers(sReason);
 	
 	// Inform all ingame players in chat.
 	for(new i=1;i<=MaxClients;i++)

@@ -22,7 +22,7 @@ new DatabaseDriver:g_DriverType;
 
 RegisterDatabaseNatives()
 {
-	// native bool:SMRPG_ResetAllPlayers(bool:bHardReset=false);
+	// native bool:SMRPG_ResetAllPlayers(const String:sReason[], bool:bHardReset=false);
 	CreateNative("SMRPG_ResetAllPlayers", Native_ResetAllPlayers);
 	// native SMRPG_FlushDatabase();
 	CreateNative("SMRPG_FlushDatabase", Native_FlushDatabase);
@@ -239,7 +239,10 @@ public Native_ResetAllPlayers(Handle:plugin, numParams)
 	if(!GetConVarBool(g_hCVSaveData))
 		return false;
 	
-	new bool:bHardReset = bool:GetNativeCell(1);
+	new String:sReason[256];
+	GetNativeString(1, sReason, sizeof(sReason));
+	
+	new bool:bHardReset = bool:GetNativeCell(2);
 	decl String:sQuery[512];
 
 	// Delete all player information?
@@ -273,13 +276,19 @@ public Native_ResetAllPlayers(Handle:plugin, numParams)
 		for(new i=1;i<=MaxClients;i++)
 		{
 			if(IsClientInGame(i))
+			{
 				ResetStats(i);
+				SetPlayerLastReset(i, GetTime());
+			}
 		}
 	}
 	
 	// Remember when we last reset the database.
 	IntToString(GetTime(), sQuery, sizeof(sQuery));
 	SetSetting("last_reset", sQuery);
+	
+	// Save the passed reason.
+	SetSetting("reset_reason", sReason);
 	
 	return true;
 }
