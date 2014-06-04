@@ -185,11 +185,13 @@ public Action:Cmd_TurboMode(client, args)
 {
 	if(!GetConVarBool(g_hCVTurboMode))
 	{
+		LogAction(client, -1, "%L enabled SM:RPG turbo mode.", client);
 		ReplyToCommand(client, "SM:RPG > Turbo mode is now enabled. All players have been reset and experience is speed up.");
 		SetConVarBool(g_hCVTurboMode, true);
 	}
 	else
 	{
+		LogAction(client, -1, "%L disabled SM:RPG turbo mode.", client);
 		ReplyToCommand(client, "SM:RPG > Turbo mode is now disabled. All players will be reconnected.");
 		SetConVarBool(g_hCVTurboMode, false);
 	}
