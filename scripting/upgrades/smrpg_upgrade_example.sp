@@ -7,7 +7,6 @@
 #include <smrpg>
 
 // Change the upgrade's shortname to a descriptive abbrevation
-// No spaces allowed here. This is going to be used as a sql table column field name!
 #define UPGRADE_SHORTNAME "example"
 #define PLUGIN_VERSION "1.0"
 
@@ -47,10 +46,18 @@ public OnLibraryAdded(const String:name[])
 		SMRPG_RegisterUpgradeType("Example", UPGRADE_SHORTNAME, "Does something.", 10, true, 5, 15, 10, _, SMRPG_BuySell, SMRPG_ActiveQuery);
 		
 		// If this is an active effect which is only affecting players for a short time on some event, register this callback to enable other plugins to stop your effect anytime.
-		// This can help to prevent compatability issues between similar upgrades.
+		// This can help to prevent compatibility issues between similar upgrades.
 		SMRPG_SetUpgradeResetCallback(UPGRADE_SHORTNAME, SMRPG_ResetEffect);
 		// If you want to translate the upgrade name and description into the client languages, register this callback!
 		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
+		
+		// If your upgrade does some visual and/or sound effects, tell the core that here.
+		// It'll create smrpg_example_visuals and smrpg_example_sounds convars for you, where the admin can enable or disable the effects.
+		// Each player can toggle the effects through the rpg menu as well individually.
+		// You should check if the client wants the effect with SMRPG_ClientWantsCosmetics before displaying it.
+		SMRPG_SetUpgradeDefaultCosmeticEffect(UPGRADE_SHORTNAME, SMRPG_FX_Visuals, true);
+		// Enable visuals by default, but disable sounds by default. If you don't have visuals or sounds just don't call SMRPG_SetUpgradeDefaultCosmeticEffect at all.
+		SMRPG_SetUpgradeDefaultCosmeticEffect(UPGRADE_SHORTNAME, SMRPG_FX_Sounds, false);
 		
 		// Create your convars through the SM:RPG core. That way they are added to your upgrade's own config file in cfg/sourcemod/smrpg/smrpg_upgrade_example.cfg!
 		g_hCVMyConvar = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_example_myvar", "1", "Does something.");
@@ -105,6 +112,16 @@ public SMRPG_TranslateUpgrade(client, const String:shortname[], TranslationType:
 	}
 }
 
+// Optionally block some other conflicting effect, if i'm currently active.
+/*
+public Action:SMRPG_OnUpgradeEffect(client, const String:shortname[])
+{
+	if(SMRPG_IsUpgradeActiveOnClient(client, UPGRADE_SHORTNAME) && StrEqual(shortname, "other_conflicting_effect"))
+		return Plugin_Handled;
+	return Plugin_Continue;
+}
+*/
+
 // This holds the basic checks you should run before applying your effect.
 ApplyMyUpgradeEffect(client)
 {
@@ -132,6 +149,19 @@ ApplyMyUpgradeEffect(client)
 	if(!SMRPG_RunUpgradeEffect(client, UPGRADE_SHORTNAME))
 		return; // Some other plugin doesn't want this effect to run
 	
+	// Optionally check for conflicting effects?
+	/*
+	if(SMRPG_IsUpgradeActiveOnClient(client, "other_conflicting_effect"))
+		SMRPG_ResetUpgradeEffectOnClient(client, "other_conflicting_effect");
+	*/
+	
 	// Do my upgrade effect
 	// ...
+	
+	// Does this client want some visual effects?
+	if(SMRPG_ClientWantsCosmetics(client, UPGRADE_SHORTNAME, SMRPG_FX_Visuals))
+	{
+		// SetEntityRenderColor(client, 255, 0, 0, 255);
+		// See smrpg_helper.inc for some helpful stocks like SMRPG_EmitSoundToAllEnabled and SMRPG_TE_SendToAllEnabled
+	}
 }
