@@ -178,7 +178,7 @@ enum SMRPG_FX {
  * @noreturn
  * @error Unknown upgrade shortname.
  */
-native SMRPG_SetUpgradeDefaultCosmenticEffect(const String:shortname[], SMRPG_FX:effecttype, bool:bDefaultEnable);
+native SMRPG_SetUpgradeDefaultCosmeticEffect(const String:shortname[], SMRPG_FX:effecttype, bool:bDefaultEnable);
 
 /**
  * Returns whether a visual or sound effect should be played for a client.

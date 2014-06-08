@@ -53,7 +53,7 @@ RegisterUpgradeNatives()
 	
 	CreateNative("SMRPG_SetUpgradeTranslationCallback", Native_SetUpgradeTranslationCallback);
 	CreateNative("SMRPG_SetUpgradeResetCallback", Native_SetUpgradeResetCallback);
-	CreateNative("SMRPG_SetUpgradeDefaultCosmenticEffect", Native_SetUpgradeDefaultCosmenticEffect);
+	CreateNative("SMRPG_SetUpgradeDefaultCosmeticEffect", Native_SetUpgradeDefaultCosmeticEffect);
 	CreateNative("SMRPG_UpgradeExists", Native_UpgradeExists);
 	CreateNative("SMRPG_GetUpgradeInfo", Native_GetUpgradeInfo);
 	CreateNative("SMRPG_ResetUpgradeEffectOnClient", Native_ResetUpgradeEffectOnClient);
@@ -422,8 +422,8 @@ public Native_SetUpgradeResetCallback(Handle:plugin, numParams)
 	SaveUpgradeConfig(upgrade);
 }
 
-// native SMRPG_SetUpgradeDefaultCosmenticEffect(const String:shortname[], SMRPG_FX:effect, bool:bDefaultEnable);
-public Native_SetUpgradeDefaultCosmenticEffect(Handle:plugin, numParams)
+// native SMRPG_SetUpgradeDefaultCosmeticEffect(const String:shortname[], SMRPG_FX:effect, bool:bDefaultEnable);
+public Native_SetUpgradeDefaultCosmeticEffect(Handle:plugin, numParams)
 {
 	new len;
 	GetNativeStringLength(1, len);

@@ -61,7 +61,7 @@ public __pl_smrpg_SetNTVOptional()
 	MarkNativeAsOptional("SMRPG_CreateUpgradeConVar");
 	MarkNativeAsOptional("SMRPG_SetUpgradeTranslationCallback");
 	MarkNativeAsOptional("SMRPG_SetUpgradeResetCallback");
-	MarkNativeAsOptional("SMRPG_SetUpgradeDefaultCosmenticEffect");
+	MarkNativeAsOptional("SMRPG_SetUpgradeDefaultCosmeticEffect");
 	MarkNativeAsOptional("SMRPG_ClientWantsCosmetics");
 	MarkNativeAsOptional("SMRPG_UpgradeExists");
 	MarkNativeAsOptional("SMRPG_ResetUpgradeEffectOnClient");
