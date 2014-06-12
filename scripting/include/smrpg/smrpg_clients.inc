@@ -194,6 +194,28 @@ native SMRPG_LevelToExperience(iLevel);
 forward Action:SMRPG_OnAddExperience(client, const String:reason[], &iExperience, other);
 
 /**
+ * Types of experience multipliers that can be set individually per weapon.
+ */
+enum WeaponExperienceType {
+	WeaponExperience_Damage, // The experience for hurting an enemy multiplied by the damage done.
+	WeaponExperience_Kill, // The experience for a kill multiplied by the victim's level.
+	WeaponExperience_Bonus // Extra experience to give on top of the regular experience on a kill. (Default 0)
+};
+
+/**
+ * Returns the settings for the weapon as set in configs/smrpg/weapon_experience.cfg.
+ * If there is no entry for this weapon in the config file or the selected type isn't changed,
+ * it defaults back to the global settings of the smrpg_exp_damage and smrpg_exp_kill convars.
+ * The bonus is 0 by default if not specified otherwise in the config file.
+ *
+ * @param sWeapon		The full weapon classname of the weapon to check for individual experience settings.
+ * @param type			The type of the experience multiplier to get. (See WeaponExperienceType)
+ *
+ * @return The experience multiplier for the selected type for this weapon.
+ */
+native Float:SMRPG_GetWeaponExperience(const String:sWeapon[], WeaponExperienceType:type);
+
+/**
  * Calculate the ratio of team1:team2.
  * This is e.g. used to lower the amount of experience earned, when a winning team has more players than the other.
  * 

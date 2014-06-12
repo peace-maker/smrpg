@@ -54,6 +54,7 @@ public __pl_smrpg_SetNTVOptional()
 	MarkNativeAsOptional("SMRPG_GetClientRank");
 	MarkNativeAsOptional("SMRPG_GetRankCount");
 	MarkNativeAsOptional("SMRPG_GetTop10Players");
+	MarkNativeAsOptional("SMRPG_GetWeaponExperience");
 	MarkNativeAsOptional("SMRPG_GetClientLastResetTime");
 	MarkNativeAsOptional("SMRPG_GetClientLastSeenTime");
 	MarkNativeAsOptional("SMRPG_RegisterUpgradeType");

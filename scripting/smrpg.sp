@@ -200,6 +200,7 @@ public OnPluginStart()
 	InitSettings();
 	InitUpgrades();
 	InitDatabase();
+	InitWeaponExperienceConfig();
 	
 	LoadTranslations("common.phrases");
 	LoadTranslations("smrpg.phrases");
@@ -348,6 +349,11 @@ public OnMapStart()
 {
 	SMRPG_GC_PrecacheSound("SoundLevelup");
 	
+	if(!ReadWeaponExperienceConfig())
+	{
+		LogError("Failed to read individual weapon experience config in sourcemod/configs/smrpg/weapon_experience.cfg");
+	}
+	
 	// Clean up our database..
 	DatabaseMaid();
 	
@@ -407,7 +413,15 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 	if(attacker <= 0 || attacker > MaxClients || victim <= 0 || victim > MaxClients)
 		return;
 	
-	Stats_PlayerDamage(attacker, victim, damage);
+	new iWeapon = inflictor;
+	if(inflictor > 0 && inflictor <= MaxClients)
+		iWeapon = Client_GetActiveWeapon(inflictor);
+	
+	new String:sWeapon[64];
+	if(iWeapon > 0)
+		GetEntityClassname(iWeapon, sWeapon, sizeof(sWeapon));
+	
+	Stats_PlayerDamage(attacker, victim, damage, sWeapon);
 }
 
 /**
@@ -439,7 +453,11 @@ public Event_OnPlayerDeath(Handle:event, const String:error[], bool:dontBroadcas
 	if(attacker <= 0)
 		return;
 	
-	Stats_PlayerKill(attacker, victim);
+	new String:sWeapon[64];
+	// FIXME: Not all games might have this resource in the player_death event..
+	GetEventString(event, "weapon", sWeapon, sizeof(sWeapon));
+	
+	Stats_PlayerKill(attacker, victim, sWeapon);
 }
 
 public Event_OnRoundEnd(Handle:event, const String:error[], bool:dontBroadcast)

@@ -31,6 +31,15 @@ enum AFKInfo {
 }
 new g_PlayerAFKInfo[MAXPLAYERS+1][AFKInfo];
 
+// Individual weapon experience settings
+new Handle:g_hWeaponExperience;
+
+enum WeaponExperienceContainer {
+	Float:WXP_Damage,
+	Float:WXP_Kill,
+	Float:WXP_Bonus
+};
+
 RegisterStatsNatives()
 {
 	// native bool:SMRPG_AddClientExperience(client, exp, const String:reason[], bool:bHideNotice, other=-1);
@@ -47,6 +56,9 @@ RegisterStatsNatives()
 	
 	// native bool:SMRPG_IsClientAFK(client);
 	CreateNative("SMRPG_IsClientAFK", Native_IsClientAFK);
+	
+	// native Float:SMRPG_GetWeaponExperience(const String:sWeapon[], WeaponExperienceType:type);
+	CreateNative("SMRPG_GetWeaponExperience", Native_GetWeaponExperience);
 }
 
 RegisterStatsForwards()
@@ -291,7 +303,7 @@ bool:Stats_AddExperience(client, iExperience, const String:sReason[], bool:bHide
 	return true;
 }
 
-Stats_PlayerDamage(attacker, victim, Float:fDamage)
+Stats_PlayerDamage(attacker, victim, Float:fDamage, const String:sWeapon[])
 {
 	if(!GetConVarBool(g_hCVEnable))
 		return;
@@ -304,12 +316,12 @@ Stats_PlayerDamage(attacker, victim, Float:fDamage)
 	if(GetClientTeam(attacker) == GetClientTeam(victim))
 		return;
 	
-	new iExp = RoundToCeil(fDamage * GetConVarFloat(g_hCVExpDamage));
+	new iExp = RoundToCeil(fDamage * GetWeaponExperience(sWeapon, WeaponExperience_Damage));
 	
 	Stats_AddExperience(attacker, iExp, ExperienceReason_PlayerHurt, true, victim);
 }
 
-Stats_PlayerKill(attacker, victim)
+Stats_PlayerKill(attacker, victim, const String:sWeapon[])
 {
 	if(!GetConVarBool(g_hCVEnable))
 		return;
@@ -322,7 +334,7 @@ Stats_PlayerKill(attacker, victim)
 	if(GetClientTeam(attacker) == GetClientTeam(victim))
 		return;
 	
-	new iExp = RoundToCeil(GetClientLevel(victim) * GetConVarFloat(g_hCVExpKill));
+	new iExp = RoundToCeil(GetClientLevel(victim) * GetWeaponExperience(sWeapon, WeaponExperience_Kill) + GetWeaponExperience(sWeapon, WeaponExperience_Bonus));
 	new iExpMax = GetConVarInt(g_hCVExpKillMax);
 	// Limit the possible experience to this.
 	if(iExpMax > 0 && iExp > iExpMax)
@@ -571,6 +583,16 @@ public SQL_GetTop10Native(Handle:owner, Handle:hndl, const String:error[], any:d
 	Call_PushString(error);
 	Call_PushCell(extraData);
 	Call_Finish();
+}
+
+// native Float:SMRPG_GetWeaponExperience(const String:sWeapon[], WeaponExperienceType:type);
+public Native_GetWeaponExperience(Handle:plugin, numParams)
+{
+	new String:sWeapon[64], WeaponExperienceType:type;
+	GetNativeString(1, sWeapon, sizeof(sWeapon));
+	type = WeaponExperienceType:GetNativeCell(2);
+	
+	return _:GetWeaponExperience(sWeapon, type);
 }
 
 // rpgsession handling
@@ -1047,6 +1069,71 @@ public Sort2D_NextPlayers(elem1[], elem2[], const array[][], Handle:hndl)
 	return -1;
 }
 
+/**
+ * Extra experience per weapon parsing
+ */
+InitWeaponExperienceConfig()
+{
+	g_hWeaponExperience = CreateTrie();
+}
+
+bool:ReadWeaponExperienceConfig()
+{
+	// Clear all the previous configs first.
+	ClearTrie(g_hWeaponExperience);
+	
+	decl String:sPath[PLATFORM_MAX_PATH];
+	BuildPath(Path_SM, sPath, sizeof(sPath), "configs/smrpg/weapon_experience.cfg");
+	
+	if(!FileExists(sPath))
+		return false;
+	
+	new Handle:hKV = CreateKeyValues("SMRPGWeaponExperience");
+	if(!FileToKeyValues(hKV, sPath))
+		return false;
+	
+	if(!KvGotoFirstSubKey(hKV))
+		return false;
+	
+	
+	new String:sWeapon[64], iWeaponExperience[WeaponExperienceContainer];
+	do {
+		KvGetSectionName(hKV, sWeapon, sizeof(sWeapon));
+	
+		iWeaponExperience[WXP_Damage] = KvGetFloat(hKV, "exp_damage", -1.0);
+		iWeaponExperience[WXP_Kill] = KvGetFloat(hKV, "exp_kill", -1.0);
+		iWeaponExperience[WXP_Bonus] = KvGetFloat(hKV, "exp_bonus", 0.0);
+		
+		SetTrieArray(g_hWeaponExperience, sWeapon, iWeaponExperience[0], _:WeaponExperienceContainer);
+		
+	} while(KvGotoNextKey(hKV));
+	
+	CloseHandle(hKV);
+	return true;
+}
+
+Float:GetWeaponExperience(const String:sWeapon[], WeaponExperienceType:type)
+{
+	new iWeaponExperience[WeaponExperienceContainer];
+	iWeaponExperience[WXP_Damage] = -1.0;
+	iWeaponExperience[WXP_Kill] = -1.0;
+	
+	// We default back to the convar values, if this fails.
+	GetTrieArray(g_hWeaponExperience, sWeapon, iWeaponExperience[0], _:WeaponExperienceContainer);
+	
+	if(iWeaponExperience[WXP_Damage] < 0.0)
+		iWeaponExperience[WXP_Damage] = GetConVarFloat(g_hCVExpDamage);
+	if(iWeaponExperience[WXP_Kill] < 0.0)
+		iWeaponExperience[WXP_Kill] = GetConVarFloat(g_hCVExpKill);
+	if(iWeaponExperience[WXP_Bonus] < 0.0)
+		iWeaponExperience[WXP_Bonus] = 0.0;
+	
+	return Float:iWeaponExperience[type];
+}
+
+/**
+ * Helper functions
+ */
 // Taken from SourceBans 2's sb_bans :)
 SecondsToString(String:sBuffer[], iLength, iSecs, bool:bTextual = true)
 {
