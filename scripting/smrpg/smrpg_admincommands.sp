@@ -20,6 +20,9 @@ RegisterAdminCommands()
 	RegAdminCmd("smrpg_buyupgrade", Cmd_BuyUpgrade, ADMFLAG_ROOT, "Force a player to buy an Upgrade. Usage smrpg_buyupgrade <player name | userid | steamid> <upgrade>", "smrpg");
 	RegAdminCmd("smrpg_sellupgrade", Cmd_SellUpgrade, ADMFLAG_ROOT, "Force a player to sell an Upgrade (full refund). Usage smrpg_sellupgrade <player name | userid | steamid> <upgrade>", "smrpg");
 	RegAdminCmd("smrpg_sellall", Cmd_SellAll, ADMFLAG_ROOT, "Force a player to sell all their Upgrades (full refund). Usage smrpg_sellall <player name | userid | steamid>", "smrpg");
+	
+	RegAdminCmd("smrpg_reload_weaponexperience", Cmd_ReloadWeaponExperience, ADMFLAG_CONFIG, "Reload the weapon_experience.cfg config for individual experience rates per weapon.", "smrpg");
+	
 	RegAdminCmd("smrpg_db_delplayer", Cmd_DBDelPlayer, ADMFLAG_ROOT, "Delete a player entry from the database (this cannot be undone!). Usage: smrpg_db_delplayer <full name | player db id | steamid>", "smrpg");
 	RegAdminCmd("smrpg_db_mass_sell", Cmd_DBMassSell, ADMFLAG_ROOT, "Force everyone in the database (and playing) to sell a specific upgrade. Usage: smrpg_db_mass_sell <upgrade>", "smrpg");
 	RegAdminCmd("smrpg_db_write", Cmd_DBWrite, ADMFLAG_ROOT, "Write current player data to the database", "smrpg");
@@ -818,6 +821,16 @@ public Action:Cmd_DBMassSell(client, args)
 	decl String:sQuery[128];
 	Format(sQuery, sizeof(sQuery), "SELECT player_id, purchasedlevel FROM %s WHERE upgrade_id = %d AND purchasedlevel > 0", TBL_PLAYERUPGRADES, upgrade[UPGR_databaseId]);
 	SQL_TQuery(g_hDatabase, SQL_MassDeleteItem, sQuery, hData);
+	
+	return Plugin_Handled;
+}
+
+public Action:Cmd_ReloadWeaponExperience(client, args)
+{
+	if(ReadWeaponExperienceConfig())
+		ReplyToCommand(client, "SM:RPG > The weapon experience config has been reloaded.");
+	else
+		ReplyToCommand(client, "SM:RPG > Failure reading weapon experience config file in sourcemod/configs/smrpg/weapon_experience.cfg.");
 	
 	return Plugin_Handled;
 }
