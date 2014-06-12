@@ -1099,6 +1099,7 @@ bool:ReadWeaponExperienceConfig()
 	new String:sWeapon[64], iWeaponExperience[WeaponExperienceContainer];
 	do {
 		KvGetSectionName(hKV, sWeapon, sizeof(sWeapon));
+		RemovePrefixFromString("weapon_", sWeapon, sWeapon, sizeof(sWeapon));
 	
 		iWeaponExperience[WXP_Damage] = KvGetFloat(hKV, "exp_damage", -1.0);
 		iWeaponExperience[WXP_Kill] = KvGetFloat(hKV, "exp_kill", -1.0);
@@ -1118,9 +1119,12 @@ Float:GetWeaponExperience(const String:sWeapon[], WeaponExperienceType:type)
 	iWeaponExperience[WXP_Damage] = -1.0;
 	iWeaponExperience[WXP_Kill] = -1.0;
 	
+	new String:sBuffer[64];
+	RemovePrefixFromString("weapon_", sWeapon, sBuffer, sizeof(sBuffer));
 	// We default back to the convar values, if this fails.
-	GetTrieArray(g_hWeaponExperience, sWeapon, iWeaponExperience[0], _:WeaponExperienceContainer);
+	GetTrieArray(g_hWeaponExperience, sBuffer, iWeaponExperience[0], _:WeaponExperienceContainer);
 	
+	// Fall back to default convar values, if unset or invalid.
 	if(iWeaponExperience[WXP_Damage] < 0.0)
 		iWeaponExperience[WXP_Damage] = GetConVarFloat(g_hCVExpDamage);
 	if(iWeaponExperience[WXP_Kill] < 0.0)
@@ -1161,4 +1165,23 @@ SecondsToString(String:sBuffer[], iLength, iSecs, bool:bTextual = true)
 		iSecs     %= 60;
 		Format(sBuffer, iLength, "%02i:%02i:%02i", iHours, iMins, iSecs);
 	}
+}
+
+// This removes a prefix from a string including anything before the prefix.
+// This is useful for TF2's tfweapon_ prefix vs. default weapon_ prefix in other sourcegames.
+stock RemovePrefixFromString(const String:sPrefix[], const String:sInput[], String:sOutput[], maxlen)
+{
+	new iPos = StrContains(sInput, sPrefix, false);
+	// The prefix isn't in the string, just copy the whole string.
+	if(iPos == -1)
+		iPos = 0;
+	// Skip the prefix and all other stuff before it.
+	else
+		iPos += strlen(sPrefix);
+	
+	// Support for inputstring == outputstring?
+	new String:sBuffer[maxlen+1];
+	strcopy(sBuffer, maxlen, sInput[iPos]);
+	
+	strcopy(sOutput, maxlen, sBuffer);
 }
