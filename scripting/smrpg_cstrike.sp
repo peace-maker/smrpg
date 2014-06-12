@@ -12,14 +12,11 @@
 
 new bool:g_bIsCSGO;
 
-new Handle:g_hCVExpKill;
 new Handle:g_hCVExpKillMax;
-new Handle:g_hCVExpDamage;
 new Handle:g_hCVExpTeamwin;
 
 new Handle:g_hCVExpKillAssist;
 
-new Handle:g_hCVExpKnifeDmg;
 new Handle:g_hCVExpHeadshot;
 
 new Handle:g_hCVExpBombPlanted;
@@ -78,7 +75,6 @@ public OnPluginStart()
 	
 	g_hCVExpKillAssist = AutoExecConfig_CreateConVar("smrpg_exp_kill_assist", "10.0", "Experience for assisting in killing a player multiplied by the victim's level", 0, true, 0.0);
 	
-	g_hCVExpKnifeDmg = AutoExecConfig_CreateConVar("smrpg_exp_knifedmg", "8.0", "Experience for knifing an enemy multiplied by the damage done (must be higher than smrpg_exp_damage)", 0, true, 0.0);
 	g_hCVExpHeadshot = AutoExecConfig_CreateConVar("smrpg_exp_headshot", "50.0", "Experience extra for a headshot", 0, true, 0.0);
 	
 	g_hCVExpBombPlanted = AutoExecConfig_CreateConVar("smrpg_exp_bombplanted", "0.15", "Experience multipled by the experience required and the team ratio given for planting the bomb", 0, true, 0.0);
@@ -115,9 +111,7 @@ public OnPluginStart()
 
 public OnAllPluginsLoaded()
 {
-	g_hCVExpKill = FindConVar("smrpg_exp_kill");
 	g_hCVExpKillMax = FindConVar("smrpg_exp_kill_max");
-	g_hCVExpDamage = FindConVar("smrpg_exp_damage");
 	g_hCVExpTeamwin = FindConVar("smrpg_exp_teamwin");
 }
 
@@ -194,7 +188,7 @@ public Event_OnPlayerHurt(Handle:event, const String:error[], bool:dontBroadcast
 	
 	new iDmgHealth = GetEventInt(event, "dmg_health");
 	new iDmgArmor = GetEventInt(event, "dmg_armor");
-	decl String:sWeapon[32];
+	decl String:sWeapon[64];
 	GetEventString(event, "weapon", sWeapon, sizeof(sWeapon));
 	
 	if(attacker == 0 || victim == 0)
@@ -250,16 +244,10 @@ public Event_OnPlayerHurt(Handle:event, const String:error[], bool:dontBroadcast
 		// Don't give any experience at all for knife leveling.
 		if(GetConVarBool(g_hCVEnableAntiKnifeleveling) && g_bKnifeLeveled[attacker])
 			return;
-		
-		if(GetConVarFloat(g_hCVExpKnifeDmg) > GetConVarFloat(g_hCVExpDamage))
-			iExp = RoundToCeil(float(iTotalDmg) * GetConVarFloat(g_hCVExpKnifeDmg));
-		else
-			iExp = RoundToCeil(float(iTotalDmg) * GetConVarFloat(g_hCVExpDamage));
+
 	}
-	else
-	{
-		iExp = RoundToCeil(float(iTotalDmg) * GetConVarFloat(g_hCVExpDamage));
-	}
+	
+	iExp = RoundToCeil(float(iTotalDmg) * SMRPG_GetWeaponExperience(sWeapon, WeaponExperience_Damage));
 	
 	if(StrContains(sWeapon, "knife") != -1)
 		Debug_AddClientExperience(attacker, iExp, true, "cs_playerknife", victim);
@@ -303,7 +291,10 @@ public Event_OnPlayerDeath(Handle:event, const String:error[], bool:dontBroadcas
 	if(GetClientTeam(attacker) == GetClientTeam(victim))
 		return;
 	
-	new iExp = RoundToCeil(SMRPG_GetClientLevel(victim) * GetConVarFloat(g_hCVExpKill));
+	new String:sWeapon[64];
+	GetEventString(event, "weapon", sWeapon, sizeof(sWeapon));
+	
+	new iExp = RoundToCeil(SMRPG_GetClientLevel(victim) * SMRPG_GetWeaponExperience(sWeapon, WeaponExperience_Kill) + SMRPG_GetWeaponExperience(sWeapon, WeaponExperience_Bonus));
 	if(GetEventBool(event, "headshot"))
 		iExp += GetConVarInt(g_hCVExpHeadshot);
 	
