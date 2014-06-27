@@ -971,6 +971,7 @@ DisplayNextPlayersInRanking(client)
 	SQL_TQuery(g_hDatabase, SQL_GetNext10, sQuery, GetClientUserId(client));
 }
 
+#define ENUM_STRUCTS_SUCK_SIZE 5+(MAX_NAME_LENGTH+3/4)
 enum NextPlayersSorting {
 	NP_DBID,
 	NP_rank,
@@ -995,7 +996,7 @@ public SQL_GetNext10(Handle:owner, Handle:hndl, const String:error[], any:userid
 	decl String:sBuffer[128];
 	Format(sBuffer, sizeof(sBuffer), "%T\n-----\n", "Next ranked players", client);
 	
-	new iNextCache[20][NextPlayersSorting], iCount;
+	new iNextCache[20][ENUM_STRUCTS_SUCK_SIZE], iCount;
 	
 	new Handle:hPanel = CreatePanel();
 	SetPanelTitle(hPanel, sBuffer);
