@@ -69,6 +69,9 @@ new Handle:g_hCVFadeOnLevelDefault;
 
 new Handle:g_hCVFadeOnLevelColor;
 
+// List of default core chat commands available to players, which get registered with the smrpg_commandlist plugin.
+new String:g_sDefaultRPGCommands[][] = {"rpgmenu", "rpgrank", "rpginfo", "rpgtop10", "rpgnext", "rpgsession", "rpghelp", "rpgexp"};
+
 #define IF_IGNORE_BOTS(%1) if(IsFakeClient(%1) && (!GetConVarBool(g_hCVBotEnable) || (GetConVarBool(g_hCVBotNeedHuman) && Client_GetCount(true, false) == 0)))
 
 #include "smrpg/smrpg_upgrades.sp"
@@ -286,14 +289,8 @@ public OnPluginEnd()
 {
 	if(LibraryExists("smrpg_commandlist"))
 	{
-		SMRPG_UnregisterCommand("rpgmenu");
-		SMRPG_UnregisterCommand("rpgrank");
-		SMRPG_UnregisterCommand("rpginfo");
-		SMRPG_UnregisterCommand("rpgtop10");
-		SMRPG_UnregisterCommand("rpgnext");
-		SMRPG_UnregisterCommand("rpgsession");
-		SMRPG_UnregisterCommand("rpghelp");
-		SMRPG_UnregisterCommand("rpgexp");
+		for(new i=0;i<sizeof(g_sDefaultRPGCommands);i++)
+			SMRPG_UnregisterCommand(g_sDefaultRPGCommands[i]);
 	}
 	
 	// Try to save the stats!
@@ -322,13 +319,8 @@ public OnLibraryAdded(const String:name[])
 	if(StrEqual(name, "smrpg_commandlist"))
 	{
 		// Register the default rpg commands
-		SMRPG_RegisterCommand("rpgmenu", CommandList_DefaultTranslations);
-		SMRPG_RegisterCommand("rpgrank", CommandList_DefaultTranslations);
-		SMRPG_RegisterCommand("rpginfo", CommandList_DefaultTranslations);
-		SMRPG_RegisterCommand("rpgtop10", CommandList_DefaultTranslations);
-		SMRPG_RegisterCommand("rpgnext", CommandList_DefaultTranslations);
-		SMRPG_RegisterCommand("rpgsession", CommandList_DefaultTranslations);
-		SMRPG_RegisterCommand("rpghelp", CommandList_DefaultTranslations);
+		for(new i=0;i<sizeof(g_sDefaultRPGCommands);i++)
+			SMRPG_RegisterCommand(g_sDefaultRPGCommands[i], CommandList_DefaultTranslations);
 	}
 	else if(StrEqual(name, "clientprefs"))
 	{
