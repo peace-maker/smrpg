@@ -1,0 +1,94 @@
+"Phrases"
+{
+  "Admin command resetdatabase"
+  {
+    "en"  "The database was wiped. All players are on level 1 again."
+  }
+  "Stats reset when levels sum up to"
+  {
+    // 1: Maximum sum of levels of top 10 players. 
+	// 2: Levels remaining until the maximum is reached.
+    "#format"  "{1:d},{2:d}"
+    "en"  "The stats are reset when the levels of the top 10 players sum up to {1}. Still {2} levels left."
+  }
+  "Warning, your stats were reset on"
+  {
+    // 1: Day of last reset of the player.
+	// 2: Month of the last reset of the player.
+	// 3: Year of the last reset of the player.
+    "#format"  "{1:02d},{2:02d},{3:d}"
+    "en"  "{RB}WARNING!{G} Your stats were {RB}reset on {N}{3}-{2}-{1}{G}."
+  }
+  "The whole server got reset, so you're not the only one."
+  {
+    "en"  "The whole server got reset, so you're not the only one."
+  }
+  "This is done automatically regularly."
+  {
+    "en"  "This is done automatically regularly. Type {N}nextreset{G} to see when it's time again."
+  }
+  "Display global reset reason"
+  {
+    // 1: The reason for the last global reset
+    "#format" "{1:s}"
+    "en"  "Reason: {N}{1}"
+  }
+  "Timed reset today"
+  {
+    "en"  "The stats are going to be reset today."
+  }
+  "Timed reset in future"
+  {
+    // 1: "Days" or "Day" phrase from below. Days until reset in readable form.
+	// 2: "Months" or "Month" phrase from below. Months until reset in readable form.
+	// 3: "Years" or "Year" phrase from below. Years until reset in readable form.
+	// 4: Day of the next reset in the future.
+	// 5: Month of the next reset in the future.
+	// 6: Year of the next reset in the future.
+    "#format"  "{1:t},{2:t},{3:t},{4:02d},{5:02d},{6:d}"
+    "en"  "The stats are going to be reset in{3}{2}{1} on {6}-{5}-{4}."
+  }
+  "Day"
+  {
+    // 1: Day until stats are reset. (Always 1, technical reasons)
+    "#format"  "{1:d}"
+    "en"  " {1} day"
+  }
+  "Days"
+  {
+    // 1: Days until stats are reset.
+    "#format"  "{1:d}"
+    "en"  " {1} days"
+  }
+  "Month"
+  {
+    // 1: Month until stats are reset. (Always 1, technical reasons)
+    "#format"  "{1:d}"
+    "en"  " {1} month"
+  }
+  "Months"
+  {
+    // 1: Months until stats are reset.
+    "#format"  "{1:d}"
+    "en"  " {1} months"
+  }
+  "Year"
+  {
+    // 1: Year until stats are reset. (Always 1, technical reasons)
+    "#format"  "{1:d}"
+    "en"  " {1} year"
+  }
+  "Years"
+  {
+    // 1: Years until stats are reset.
+    "#format"  "{1:d}"
+    "en"  " {1} years"
+  }
+  // Ignore this digit and don't print anything!
+  // This is used in the "Timed reset in future" phrase to print nothing, if e.g. there isn't a year left until the reset.
+  "_dnull"
+  {
+    "#format"  "{1:d}"
+    "en"  ""
+  }
+}
