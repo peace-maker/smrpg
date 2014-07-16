@@ -52,6 +52,7 @@ See the available upgrade plugins for examples. You can use the [example upgrade
 * Denial - Keep your weapons the next time you spawn after you've died.
 * Fast Reload (Counter-Strike: Source only) - Increases the reload speed of guns.
 * Fire Grenade - Ignites players damaged by your grenade.
+* Fire Pistol - Ignites players hit with a pistol.
 * Frost Pistol - Slow down players hit with a pistol.
 * Health+ - Increases your maximal health.
 * HP Regeneration - Regenerates HP every second.
