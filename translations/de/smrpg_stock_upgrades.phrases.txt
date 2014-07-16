@@ -189,4 +189,14 @@
 	{
 		"de"			"Erhöht die Nachladegeschwindigkeit deiner Waffen."
 	}
+	
+	"firepistol"
+	{
+		"de"			"Feuerpistole"
+	}
+	
+	"firepistol description"
+	{
+		"de"			"Verbrenne deine Gegner, wenn du sie mit einer Pistole triffst."
+	}
 }

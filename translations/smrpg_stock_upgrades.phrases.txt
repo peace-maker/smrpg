@@ -189,4 +189,14 @@
 	{
 		"en"			"Increases the reload speed of your guns."
 	}
+	
+	"firepistol"
+	{
+		"en"			"Fire Pistol"
+	}
+	
+	"firepistol description"
+	{
+		"en"			"Ignites players hit with a pistol."
+	}
 }
