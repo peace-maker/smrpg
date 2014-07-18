@@ -1,5 +1,6 @@
 #pragma semicolon 1
 #include <sourcemod>
+#include <sdkhooks>
 #include <smrpg>
 #include <smlib>
 
@@ -32,6 +33,13 @@ public OnPluginStart()
 	HookEvent("player_spawn", Event_OnPlayerSpawn);
 	
 	LoadTranslations("smrpg_stock_upgrades.phrases");
+	
+	// Late loading
+	for(new i=1;i<=MaxClients;i++)
+	{
+		if(IsClientInGame(i))
+			OnClientPutInServer(i);
+	}
 }
 
 public OnPluginEnd()
@@ -61,6 +69,11 @@ public OnMapStart()
 	CreateTimer(5.0, Timer_SetVisibilities, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 }
 
+public OnClientPutInServer(client)
+{
+	SDKHook(client, SDKHook_WeaponDropPost, Hook_OnWeaponDropPost);
+}
+
 /**
  * Event callbacks
  */
@@ -83,6 +96,27 @@ public Event_OnPlayerSpawn(Handle:event, const String:name[], bool:dontBroadcast
 		return;
 	
 	SetClientVisibility(client);
+}
+
+/**
+ * SDK Hooks callbacks
+ */
+public Hook_OnWeaponDropPost(client, weapon)
+{
+	if(weapon == INVALID_ENT_REFERENCE || !IsValidEntity(weapon))
+		return;
+	
+	if(!SMRPG_IsEnabled())
+		return;
+	
+	new upgrade[UpgradeInfo];
+	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
+	if(!upgrade[UI_enabled])
+		return;
+	
+	// Render dropped weapons visible again!
+	SetEntityRenderMode(weapon, RENDER_TRANSCOLOR);
+	Entity_SetRenderColor(weapon, -1, -1, -1, 255);
 }
 
 /**
