@@ -61,6 +61,7 @@ See the available upgrade plugins for examples. You can use the [example upgrade
 * Increase Clipsize - Increases the size of a weapon's clip.
 * Long Jump - Boosts your jump speed.
 * Medic - Heals team mates around you.
+* Reduced Gravity - Reduces your gravity and lets you jump higher.
 * Resupply - Regenerates ammo every third second.
 * Shrinking - Make player models smaller.
 * Speed+ - Increase your average movement speed.
@@ -69,6 +70,6 @@ See the available upgrade plugins for examples. You can use the [example upgrade
 
 # Credits
 * SeLfkiLL - author of the original MM:S [CSS:RPG](http://forums.alliedmods.net/showthread.php?t=51039) plugin.
-* arsirc - author of [THC:RPG](https://forums.alliedmods.net/showthread.php?t=123596). Provided the Damage+ and Speed+ upgrade ideas.
+* arsirc - author of [THC:RPG](https://forums.alliedmods.net/showthread.php?t=123596). Provided the Damage+, Speed+ and Gravity- upgrade ideas.
 * SumGuy14 (Aka Soccerdude) - author of [RPGx](https://forums.alliedmods.net/showthread.php?t=56877). Config and visual effect ideas.
 * freddukes - author of [SourceRPG](http://forums.eventscripts.com/viewtopic.php?f=27&t=20789). Config ideas, turbo mode, showing menu on levelup, ...
