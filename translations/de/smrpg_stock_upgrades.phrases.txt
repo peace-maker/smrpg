@@ -199,4 +199,14 @@
 	{
 		"de"			"Verbrenne deine Gegner, wenn du sie mit einer Pistole triffst."
 	}
+	
+	"gravity"
+	{
+		"de"			"Reduzierte Schwerkraft"
+	}
+	
+	"gravity description"
+	{
+		"de"			"Reduziert die Auswirkung der Schwerkraft auf dich, sodass du höher springen kannst."
+	}
 }

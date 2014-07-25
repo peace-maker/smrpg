@@ -199,4 +199,14 @@
 	{
 		"en"			"Ignites players hit with a pistol."
 	}
+	
+	"gravity"
+	{
+		"en"			"Reduced Gravity"
+	}
+	
+	"gravity description"
+	{
+		"en"			"Reduces your gravity and lets you jump higher."
+	}
 }
