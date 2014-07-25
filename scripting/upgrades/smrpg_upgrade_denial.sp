@@ -236,7 +236,10 @@ public Action:Timer_StripPlayer(Handle:timer, any:userid)
 			}
 			iCurrentWeapon = GivePlayerItem(client, g_sDenialSecondary[client]);
 			if(iCurrentWeapon != INVALID_ENT_REFERENCE)
+			{
 				EquipPlayerWeapon(client, iCurrentWeapon);
+				GivePlayerAmmo(client, 1000, Weapon_GetPrimaryAmmoType(iCurrentWeapon), false);
+			}
 		}
 	}
 	
@@ -255,7 +258,10 @@ public Action:Timer_StripPlayer(Handle:timer, any:userid)
 			}
 			iCurrentWeapon = GivePlayerItem(client, g_sDenialPrimary[client]);
 			if(iCurrentWeapon != INVALID_ENT_REFERENCE)
+			{
 				EquipPlayerWeapon(client, iCurrentWeapon);
+				GivePlayerAmmo(client, 1000, Weapon_GetPrimaryAmmoType(iCurrentWeapon), false);
+			}
 		}
 	}
 	
