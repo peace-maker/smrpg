@@ -99,6 +99,8 @@ public Native_RegisterUpgradeType(Handle:plugin, numParams)
 		bAlreadyLoaded = true;
 	}
 	
+	new bool:bWasUnavailable = upgrade[UPGR_unavailable];
+	
 	GetNativeStringLength(3, len);
 	new String:sDescription[len+1];
 	GetNativeString(3, sDescription, len+1);
@@ -240,8 +242,20 @@ public Native_RegisterUpgradeType(Handle:plugin, numParams)
 		}
 	}
 	
-	if(upgrade[UPGR_databaseId] == -1 && !upgrade[UPGR_databaseLoading])
-		CheckUpgradeDatabaseEntry(upgrade);
+	// We're not in the process of fetching the upgrade info from the database.
+	if(!upgrade[UPGR_databaseLoading])
+	{
+		// This upgrade wasn't fetched or inserted into the database yet.
+		if(upgrade[UPGR_databaseId] == -1)
+		{
+			CheckUpgradeDatabaseEntry(upgrade);
+		}
+		// This upgrade was registered already previously and we can use the cached values.
+		else if(bAlreadyLoaded && bWasUnavailable)
+		{
+			RequestFrame(RequestFrame_OnFrame, upgrade[UPGR_index]);
+		}
+	}
 }
 
 // native SMRPG_UnregisterUpgradeType(const String:shortname[]);
@@ -353,7 +367,7 @@ public Native_GetUpgradeInfo(Handle:plugin, numParams)
 		return;
 	}
 	
-	// Keep the future proof. If the calling plugin wants more information than we got, only return as much as we know.
+	// Keep this future proof. If the calling plugin wants more information than we got, only return as much as we know.
 	// If it wants less info, only write less.
 	new arraysize = GetNativeCell(3);
 	if(arraysize > _:UpgradeInfo)
@@ -567,6 +581,33 @@ public Native_CheckUpgradeAccess(Handle:plugin, numParams)
 	}
 	
 	return HasAccessToUpgrade(client, upgrade);
+}
+
+/**
+ * Frame hook callbacks
+ */
+// This is called one frame after some upgrade plugin reregistered itself after reload.
+// This way OnLibraryAdded was run completely in the upgrade plugin and all convars and other stuff is initialized correctly.
+public RequestFrame_OnFrame(any:upgradeindex)
+{
+	new upgrade[InternalUpgradeInfo];
+	GetUpgradeByIndex(upgradeindex, upgrade);
+	
+	// Inform the upgrade plugin, that these players need the effect applied again.
+	for(new i=1;i<=MaxClients;i++)
+	{
+		if(!IsClientInGame(i))
+			continue;
+		
+		if(GetClientSelectedUpgradeLevel(i, upgrade[UPGR_index]) <= 0)
+			continue;
+		
+		// Notify plugin about it.
+		Call_StartFunction(upgrade[UPGR_plugin], upgrade[UPGR_queryCallback]);
+		Call_PushCell(i);
+		Call_PushCell(UpgradeQueryType_Buy);
+		Call_Finish();
+	}
 }
 
 /**
