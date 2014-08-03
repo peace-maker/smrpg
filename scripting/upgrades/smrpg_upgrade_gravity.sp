@@ -43,7 +43,12 @@ public OnPluginStart()
 public OnPluginEnd()
 {
 	if(SMRPG_UpgradeExists(UPGRADE_SHORTNAME))
+	{
+		// Reset all players now that we're gone :'(
+		CheckGravity(true);
+		
 		SMRPG_UnregisterUpgradeType(UPGRADE_SHORTNAME);
+	}
 }
 
 public OnAllPluginsLoaded()
@@ -145,6 +150,17 @@ public SMRPG_TranslateUpgrade(client, const String:shortname[], TranslationType:
 	}
 }
 
+/**
+ * SM:RPG callbacks
+ */
+public SMRPG_OnUpgradeSettingsChanged(const String:shortname[])
+{
+	if(StrEqual(shortname, UPGRADE_SHORTNAME))
+	{
+		CheckGravity(false);
+	}
+}
+
 // Set the gravity correctly
 ApplyGravity(client)
 {
@@ -178,4 +194,45 @@ ApplyGravity(client)
 		fGravity = 0.1;
 	
 	SetEntityGravity(client, fGravity);
+}
+
+// Make sure the gravity is set correctly for all players
+// Also make sure it's reset, when the upgrade is disabled.
+stock CheckGravity(bool:bForceDisable)
+{
+	if(!SMRPG_IsEnabled())
+		return;
+	
+	new upgrade[UpgradeInfo];
+	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
+	
+	for(new i=1;i<=MaxClients;i++)
+	{
+		if(!IsClientInGame(i))
+			continue;
+		
+		// We got disabled? :(
+		if(bForceDisable || !upgrade[UI_enabled])
+		{
+			// Are bots allowed to use this upgrade?
+			if(IsFakeClient(i) && SMRPG_IgnoreBots())
+				continue;
+			
+			// Player didn't buy this upgrade yet.
+			new iLevel = SMRPG_GetClientUpgradeLevel(i, UPGRADE_SHORTNAME);
+			if(iLevel <= 0)
+				continue;
+			
+			if(!SMRPG_RunUpgradeEffect(i, UPGRADE_SHORTNAME))
+				continue; // Some other plugin doesn't want this effect to run
+			
+			// Reset player gravity to default value again.
+			SetEntityGravity(i, 1.0);
+		}
+		// Upgrade is enabled?
+		else
+		{
+			ApplyGravity(i);
+		}
+	}
 }
