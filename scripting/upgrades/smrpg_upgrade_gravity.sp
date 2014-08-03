@@ -6,6 +6,7 @@
  */
 #pragma semicolon 1
 #include <sourcemod>
+#include <sdkhooks>
 #include <smrpg>
 
 // Change the upgrade's shortname to a descriptive abbrevation
@@ -13,6 +14,8 @@
 #define PLUGIN_VERSION "1.0"
 
 new Handle:g_hCVPercent;
+
+new MoveType:g_iOldClientMoveType[MAXPLAYERS+1];
 
 public Plugin:myinfo = 
 {
@@ -28,6 +31,13 @@ public OnPluginStart()
 	HookEvent("player_spawn", Event_OnPlayerSpawn);
 	
 	LoadTranslations("smrpg_stock_upgrades.phrases");
+	
+	// Late loading
+	for(new i=1;i<=MaxClients;i++)
+	{
+		if(IsClientInGame(i))
+			OnClientPutInServer(i);
+	}
 }
 
 public OnPluginEnd()
@@ -53,6 +63,37 @@ public OnLibraryAdded(const String:name[])
 		// Create your convars through the SM:RPG core. That way they are added to your upgrade's own config file in cfg/sourcemod/smrpg/smrpg_upgrade_gravity.cfg!
 		g_hCVPercent = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_gravity_percent", "0.05", "How much should the gravity be reduced per level? Default gravity is 1.0.", _, true, 0.0, true, 0.9);
 	}
+}
+
+public OnClientPutInServer(client)
+{
+	SDKHook(client, SDKHook_PostThinkPost, Hook_OnClientPostThinkPost);
+}
+
+public OnClientDisconnect(client)
+{
+	g_iOldClientMoveType[client] = MOVETYPE_NONE;
+}
+
+/**
+ * SDK Hooks callbacks
+ */
+public Hook_OnClientPostThinkPost(client)
+{
+	new MoveType:iMoveType = GetEntityMoveType(client);
+	
+	if(IsClientInGame(client) && IsPlayerAlive(client))
+	{	
+		
+		// Ladders set the gravity to 0.0 and back to 1.0 when leaving the ladder. Reapply our own value when a player leaves a ladder.
+		// Thanks to DorCoMaNdO! https://forums.alliedmods.net/showthread.php?t=240092
+		if(iMoveType != MOVETYPE_LADDER && g_iOldClientMoveType[client] == MOVETYPE_LADDER)
+		{
+			ApplyGravity(client);
+		}
+	}
+	
+	g_iOldClientMoveType[client] = iMoveType;
 }
 
 /**
