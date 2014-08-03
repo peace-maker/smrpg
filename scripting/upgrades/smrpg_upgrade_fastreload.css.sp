@@ -312,6 +312,9 @@ public Hook_OnReloadPost(weapon, bool:bSuccessful)
 	if(client <= 0)
 		return;
 	
+	if(GetEntProp(weapon, Prop_Send, "m_reloadState") != 2)
+		return;
+	
 	// SM:RPG is disabled?
 	if(!SMRPG_IsEnabled())
 		return;
@@ -345,7 +348,7 @@ public Hook_OnReloadPost(weapon, bool:bSuccessful)
 	// This is the next time Reload is called for shotguns
 	SetEntPropFloat(weapon, Prop_Send, "m_flTimeWeaponIdle", fIdleTimeNew);
 	
-	//PrintToChatAll("%d reloadpost, success %d, reloadstate %d, gametime %f, wep nextattack %f, idle %f, clip1 %d, nextthink %d", weapon, bSuccessful, GetEntProp(weapon, Prop_Send, "m_reloadState"), GetGameTime(), GetEntPropFloat(weapon, Prop_Send, "m_flNextPrimaryAttack"), GetEntPropFloat(weapon, Prop_Send, "m_flTimeWeaponIdle"), Weapon_GetPrimaryClip(weapon), GetEntProp(weapon, Prop_Send, "m_nNextThinkTick"));
+	//PrintToChatAll("%d reloadpost, success %d, reloadstate %d, gametime %f, wep nextattack %f, orig idle: %f, idle %f, clip1 %d, nextthink %d", weapon, bSuccessful, GetEntProp(weapon, Prop_Send, "m_reloadState"), GetGameTime(), GetEntPropFloat(weapon, Prop_Send, "m_flNextPrimaryAttack"), fIdleTime, GetEntPropFloat(weapon, Prop_Send, "m_flTimeWeaponIdle"), Weapon_GetPrimaryClip(weapon), GetEntProp(weapon, Prop_Send, "m_nNextThinkTick"));
 }
 
 stock ResetClientViewModel(client)
