@@ -113,7 +113,7 @@ public Event_OnPlayerSpawn(Handle:event, const String:error[], bool:dontBroadcas
 	if(!IsPlayerAlive(client) || GetClientTeam(client) < 2)
 		return;
 	
-	ApplyGravity(client);
+	ApplyGravity(client, true);
 }
 
 /**
@@ -162,7 +162,7 @@ public SMRPG_OnUpgradeSettingsChanged(const String:shortname[])
 }
 
 // Set the gravity correctly
-ApplyGravity(client)
+ApplyGravity(client, bool:bIgnoreNullLevel = false)
 {
 	// SM:RPG is disabled?
 	if(!SMRPG_IsEnabled())
@@ -180,7 +180,7 @@ ApplyGravity(client)
 	
 	// Player didn't buy this upgrade yet.
 	new iLevel = SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME);
-	if(iLevel <= 0)
+	if(!bIgnoreNullLevel && iLevel <= 0)
 		return;
 	
 	// This calls the SMRPG_OnUpgradeEffect global forward where other plugins can stop you from applying your effect, if it conflicts with theirs.
