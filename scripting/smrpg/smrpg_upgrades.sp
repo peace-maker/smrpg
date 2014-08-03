@@ -44,6 +44,7 @@ enum InternalUpgradeInfo
 
 new Handle:g_hUpgrades;
 new Handle:g_hfwdOnUpgradeEffect;
+new Handle:g_hfwdOnUpgradeSettingsChanged;
 
 RegisterUpgradeNatives()
 {
@@ -65,6 +66,7 @@ RegisterUpgradeNatives()
 RegisterUpgradeForwards()
 {
 	g_hfwdOnUpgradeEffect = CreateGlobalForward("SMRPG_OnUpgradeEffect", ET_Hook, Param_Cell, Param_String);
+	g_hfwdOnUpgradeSettingsChanged = CreateGlobalForward("SMRPG_OnUpgradeSettingsChanged", ET_Ignore, Param_String);
 }
 
 InitUpgrades()
@@ -787,18 +789,21 @@ public ConVar_UpgradeChanged(Handle:convar, const String:oldValue[], const Strin
 		{
 			upgrade[UPGR_enabled] = GetConVarBool(convar);
 			SaveUpgradeConfig(upgrade);
+			Call_OnUpgradeSettingsChanged(upgrade[UPGR_shortName]);
 			break;
 		}
 		else if(upgrade[UPGR_startCostConvar] == convar)
 		{
 			upgrade[UPGR_startCost] = GetConVarInt(convar);
 			SaveUpgradeConfig(upgrade);
+			Call_OnUpgradeSettingsChanged(upgrade[UPGR_shortName]);
 			break;
 		}
 		else if(upgrade[UPGR_incCostConvar] == convar)
 		{
 			upgrade[UPGR_incCost] = GetConVarInt(convar);
 			SaveUpgradeConfig(upgrade);
+			Call_OnUpgradeSettingsChanged(upgrade[UPGR_shortName]);
 			break;
 		}
 		else if(upgrade[UPGR_adminFlagConvar] == convar)
@@ -807,18 +812,21 @@ public ConVar_UpgradeChanged(Handle:convar, const String:oldValue[], const Strin
 			GetConVarString(convar, sValue, sizeof(sValue));
 			upgrade[UPGR_adminFlag] = ReadFlagString(sValue);
 			SaveUpgradeConfig(upgrade);
+			Call_OnUpgradeSettingsChanged(upgrade[UPGR_shortName]);
 			break;
 		}
 		else if(upgrade[UPGR_visualsConvar] == convar)
 		{
 			upgrade[UPGR_enableVisuals] = GetConVarBool(convar);
 			SaveUpgradeConfig(upgrade);
+			Call_OnUpgradeSettingsChanged(upgrade[UPGR_shortName]);
 			break;
 		}
 		else if(upgrade[UPGR_soundsConvar] == convar)
 		{
 			upgrade[UPGR_enableSounds] = GetConVarBool(convar);
 			SaveUpgradeConfig(upgrade);
+			Call_OnUpgradeSettingsChanged(upgrade[UPGR_shortName]);
 			break;
 		}
 	}
@@ -845,6 +853,8 @@ public ConVar_UpgradeMaxLevelChanged(Handle:convar, const String:oldValue[], con
 	upgrade[UPGR_maxLevel] = iNewMaxLevel;
 	SaveUpgradeConfig(upgrade);
 	
+	Call_OnUpgradeSettingsChanged(upgrade[UPGR_shortName]);
+	
 	for(new i=1;i<=MaxClients;i++)
 	{
 		if(!IsClientInGame(i))
@@ -856,4 +866,11 @@ public ConVar_UpgradeMaxLevelChanged(Handle:convar, const String:oldValue[], con
 			TakeClientUpgrade(i, upgrade[UPGR_index]);
 		}
 	}
+}
+
+stock Call_OnUpgradeSettingsChanged(const String:sShortname[])
+{
+	Call_StartForward(g_hfwdOnUpgradeSettingsChanged);
+	Call_PushString(sShortname);
+	Call_Finish();
 }

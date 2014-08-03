@@ -441,3 +441,12 @@ forward Action:SMRPG_OnSellUpgrade(client, const String:shortname[], newlevel);
  * @return >= Plugin_Handled to tell the upgrade to NOT run the effect, Plugin_Continue to let it pass.
  */
 forward Action:SMRPG_OnUpgradeEffect(client, const String:shortname[]);
+
+/**
+ * Called after the default convars of an upgrade have changed.
+ * @see SMRPG_RegisterUpgradeType
+ *
+ * @param shortname      The shortname of the upgrade which settings have changed.
+ * @noreturn
+ */
+forward SMRPG_OnUpgradeSettingsChanged(const String:shortname[]);
