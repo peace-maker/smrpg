@@ -122,7 +122,7 @@ public SMRPG_TranslateUpgrade(client, const String:shortname[], TranslationType:
  */
 public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagetype, weapon, const Float:damageForce[3], const Float:damagePosition[3])
 {
-	if(attacker <= 0 || attacker > MaxClients || victim <= 0 || victim > MaxClients)
+	if(attacker <= 0 || attacker > MaxClients || victim <= 0 || victim > MaxClients || !IsPlayerAlive(victim))
 		return;
 	
 	if(!SMRPG_IsEnabled())
