@@ -318,7 +318,7 @@ Stats_PlayerDamage(attacker, victim, Float:fDamage, const String:sWeapon[])
 	
 	new iExp = RoundToCeil(fDamage * GetWeaponExperience(sWeapon, WeaponExperience_Damage));
 	
-	Stats_AddExperience(attacker, iExp, ExperienceReason_PlayerHurt, true, victim);
+	SMRPG_AddClientExperience(attacker, iExp, ExperienceReason_PlayerHurt, true, victim);
 }
 
 Stats_PlayerKill(attacker, victim, const String:sWeapon[])
@@ -340,7 +340,7 @@ Stats_PlayerKill(attacker, victim, const String:sWeapon[])
 	if(iExpMax > 0 && iExp > iExpMax)
 		iExp = iExpMax;
 	
-	Stats_AddExperience(attacker, iExp, ExperienceReason_PlayerKill, false, victim);
+	SMRPG_AddClientExperience(attacker, iExp, ExperienceReason_PlayerKill, false, victim);
 }
 
 Stats_WinningTeam(iTeam)
@@ -362,7 +362,7 @@ Stats_WinningTeam(iTeam)
 		if(IsClientInGame(i) && GetClientTeam(i) == iTeam)
 		{
 			iExperience = RoundToCeil(float(Stats_LvlToExp(GetClientLevel(i))) * GetConVarFloat(g_hCVExpTeamwin) * fTeamRatio);
-			Stats_AddExperience(i, iExperience, ExperienceReason_RoundEnd, false, -1);
+			SMRPG_AddClientExperience(i, iExperience, ExperienceReason_RoundEnd, false, -1);
 		}
 	}
 }
@@ -461,7 +461,7 @@ ResetAFKPlayer(client)
 /**
  * Native Callbacks
  */
-// native bool:SMRPG_AddClientExperience(client, exp, const String:reason[], bool:bHideNotice, other=-1);
+// native bool:SMRPG_AddClientExperience(client, exp, const String:reason[], bool:bHideNotice, other=-1, SMRPG_ExpTranslationCb:callback=SMRPG_ExpTranslationCb:INVALID_FUNCTION);
 public Native_AddClientExperience(Handle:plugin, numParams)
 {
 	new client = GetNativeCell(1);
