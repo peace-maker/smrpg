@@ -111,11 +111,20 @@ AddPlayer(client, const String:auth[])
 	if(!GetConVarBool(g_hCVEnable))
 		return;
 	
+	new String:sAuth[64];
+	strcopy(sAuth, sizeof(sAuth), auth);
+	
 	if(IsFakeClient(client))
-		return;
+	{
+		if(!GetConVarBool(g_hCVBotSaveStats))
+			return;
+		
+		// Get the bot's name as "steamid"
+		GetClientName(client, sAuth, sizeof(sAuth));
+	}
 	
 	decl String:sQuery[256];
-	Format(sQuery, sizeof(sQuery), "SELECT player_id, level, experience, credits, lastreset, lastseen, showmenu, fadescreen FROM %s WHERE steamid = '%s' ORDER BY level DESC LIMIT 1", TBL_PLAYERS, auth);
+	Format(sQuery, sizeof(sQuery), "SELECT player_id, level, experience, credits, lastreset, lastseen, showmenu, fadescreen FROM %s WHERE steamid = '%s' ORDER BY level DESC LIMIT 1", TBL_PLAYERS, sAuth);
 	
 	SQL_TQuery(g_hDatabase, SQL_GetPlayerInfo, sQuery, GetClientUserId(client));
 }
@@ -125,7 +134,7 @@ InsertPlayer(client)
 	if(!GetConVarBool(g_hCVEnable) || !GetConVarBool(g_hCVSaveData))
 		return;
 	
-	if(IsFakeClient(client))
+	if(IsFakeClient(client) && !GetConVarBool(g_hCVBotSaveStats))
 		return;
 	
 	decl String:sQuery[512];
@@ -133,9 +142,19 @@ InsertPlayer(client)
 	GetClientName(client, sName, sizeof(sName));
 	SQL_EscapeString(g_hDatabase, sName, sNameEscaped, sizeof(sNameEscaped));
 	
-	decl String:sSteamID[32], String:sSteamIDEscaped[65];
-	GetClientAuthString(client, sSteamID, sizeof(sSteamID));
-	SQL_EscapeString(g_hDatabase, sSteamID, sSteamIDEscaped, sizeof(sSteamIDEscaped));
+	decl String:sSteamID[32], String:sSteamIDEscaped[MAX_NAME_LENGTH*2+1];
+	
+	// Store the steamid of the player
+	if(!IsFakeClient(client))
+	{
+		GetClientAuthString(client, sSteamID, sizeof(sSteamID));
+		SQL_EscapeString(g_hDatabase, sSteamID, sSteamIDEscaped, sizeof(sSteamIDEscaped));
+	}
+	// Bots are identified by their name!
+	else
+	{
+		strcopy(sSteamIDEscaped, sizeof(sSteamIDEscaped), sNameEscaped);
+	}
 	
 	Format(sQuery, sizeof(sQuery), "INSERT INTO %s (name, steamid, level, experience, credits, showmenu, lastseen, lastreset) VALUES ('%s', '%s', '%d', '%d', '%d', '%d', '%d', '%d')",
 		TBL_PLAYERS, sNameEscaped, sSteamIDEscaped, GetClientLevel(client), GetClientExperience(client), GetClientCredits(client), ShowMenuOnLevelUp(client), GetTime(), GetTime());
@@ -148,7 +167,7 @@ SaveData(client)
 	if(!GetConVarBool(g_hCVEnable) || !GetConVarBool(g_hCVSaveData))
 		return;
 	
-	if(IsFakeClient(client))
+	if(IsFakeClient(client) && !GetConVarBool(g_hCVBotSaveStats))
 		return;
 	
 	// We're still in the process of loading this client's info from the db. Wait for it..

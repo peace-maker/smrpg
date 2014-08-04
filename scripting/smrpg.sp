@@ -23,6 +23,7 @@ new Handle:g_hPlayerAutoSave;
 // Convars
 new Handle:g_hCVEnable;
 new Handle:g_hCVBotEnable;
+new Handle:g_hCVBotSaveStats;
 new Handle:g_hCVBotNeedHuman;
 new Handle:g_hCVNeedEnemies;
 new Handle:g_hCVEnemiesNotAFK;
@@ -130,6 +131,7 @@ public OnPluginStart()
 	
 	g_hCVEnable = AutoExecConfig_CreateConVar("smrpg_enable", "1", "If set to 1, SM:RPG is enabled, if 0, SM:RPG is disabled", 0, true, 0.0, true, 1.0);
 	g_hCVBotEnable = AutoExecConfig_CreateConVar("smrpg_bot_enable", "1", "If set to 1, bots will be able to use the SM:RPG plugin", 0, true, 0.0, true, 1.0);
+	g_hCVBotSaveStats = AutoExecConfig_CreateConVar("smrpg_bot_save_stats", "0", "If set to 1, the stats of bots are saved per bot name and are restored when the bot is added later again.", 0, true, 0.0, true, 1.0);
 	g_hCVBotNeedHuman = AutoExecConfig_CreateConVar("smrpg_bot_need_human", "1", "Don't allow bots to gain experience while no human player is on the server?", 0, true, 0.0, true, 1.0);
 	g_hCVNeedEnemies = AutoExecConfig_CreateConVar("smrpg_need_enemies", "1", "Don't give any experience if there is no enemy in the opposite team?", 0, true, 0.0, true, 1.0);
 	g_hCVEnemiesNotAFK = AutoExecConfig_CreateConVar("smrpg_enemies_not_afk", "1", "Don't give any experience if all enemies are currently AFK?", 0, true, 0.0, true, 1.0);
@@ -376,9 +378,6 @@ public OnClientPutInServer(client)
 
 public OnClientAuthorized(client, const String:auth[])
 {
-	if(IsFakeClient(client))
-		return;
-	
 	AddPlayer(client, auth);
 }
 
