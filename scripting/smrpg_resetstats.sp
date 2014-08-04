@@ -45,6 +45,7 @@ public OnPluginStart()
 	AutoExecConfig_CleanFile();
 	
 	RegConsoleCmd("sm_nextreset", Cmd_NextReset, "Displays when the next rpg reset will be.");
+	RegConsoleCmd("sm_lastreset", Cmd_LastReset, "Displays when the rpg stats were last reset.");
 	
 	RegAdminCmd("smrpg_db_resetdatabase", Cmd_ResetDatabase, ADMFLAG_ROOT, "Resets all players in the database back to level 1. CANNOT BE UNDON!", "smrpg");
 	
@@ -110,6 +111,29 @@ public Action:Cmd_NextReset(client, args)
 		PrintLevelUntilReset(client);
 	
 	return Plugin_Handled;
+}
+
+public Action:Cmd_LastReset(client, args)
+{
+	new String:sLastReset[32], iLastReset[3];
+	if(SMRPG_GetSetting("last_reset", sLastReset, sizeof(sLastReset)))
+	{
+		new iLastGlobalResetStamp = StringToInt(sLastReset);
+		GetCurrentDate(iLastReset[2], iLastReset[1], iLastReset[0], iLastGlobalResetStamp);
+		Client_Reply(client, "{OG}SM:RPG{N} > {G}The server stats were reset on {N}%d-%d-%d{G}.", iLastReset[2], iLastReset[1], iLastReset[0]);
+		
+		new String:sReason[256];
+		if(SMRPG_GetSetting("reset_reason", sReason, sizeof(sReason)))
+			Client_Reply(client, "{OG}SM:RPG{N} > {G}Reason: {N}%s", sReason);
+	}
+	
+	if(client > 0)
+	{
+		new iLastResetStamp = SMRPG_GetClientLastResetTime(client);
+		GetCurrentDate(iLastReset[2], iLastReset[1], iLastReset[0], iLastResetStamp);
+		Client_Reply(client, "{OG}SM:RPG{N} > {G}Your stats were {RB}reset on {N}%d-%d-%d{G}.", iLastReset[2], iLastReset[1], iLastReset[0]);
+	}
+	return Plugin_Continue;
 }
 
 PrintLevelUntilReset(client)
