@@ -98,6 +98,9 @@ public OnMapStart()
 		if(!SMRPG_GC_PrecacheSound(sKey))
 			break;
 	}
+	
+	SMRPG_GC_PrecacheModel("SpriteBeam");
+	SMRPG_GC_PrecacheModel("SpriteHalo");
 }
 
 public OnClientPutInServer(client)
@@ -288,8 +291,26 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 		g_iIceStabFade[victim] = 0;
 	}
 	
+	new Float:fFreezeTime = GetConVarFloat(g_hCVTimeIncrease)*float(iLevel);
+	
+	new Float:fOrigin[3];
+	GetClientAbsOrigin(victim, fOrigin);
+	fOrigin[2] -= 30.0;
+	
+	new iBeamSprite = SMRPG_GC_GetPrecachedIndex("SpriteBeam");
+	new iHaloSprite = SMRPG_GC_GetPrecachedIndex("SpriteHalo");
+	// Just use the beamsprite as halo, if no halo sprite available
+	if(iHaloSprite == -1)
+		iHaloSprite = iBeamSprite;
+	
+	if(iBeamSprite != -1)
+	{
+		// Create a "cage" around frozen player.
+		TE_SendFourBeamEffectToEnabled(fOrigin, 10.0, 10.0, 120.0, iBeamSprite, iHaloSprite, 0, 66, fFreezeTime/3.0, 10.0, 10.0, 0, 0.0, {0,0,255,255}, 0);
+	}
+	
 	ClearHandle(g_hIceStabUnfreeze[victim]);
-	g_hIceStabUnfreeze[victim] = CreateTimer(GetConVarFloat(g_hCVTimeIncrease)*float(iLevel), Timer_Unfreeze, GetClientUserId(victim), TIMER_FLAG_NO_MAPCHANGE);
+	g_hIceStabUnfreeze[victim] = CreateTimer(fFreezeTime, Timer_Unfreeze, GetClientUserId(victim), TIMER_FLAG_NO_MAPCHANGE);
 }
 
 public Action:Timer_Unfreeze(Handle:timer, any:userid)
@@ -303,4 +324,35 @@ public Action:Timer_Unfreeze(Handle:timer, any:userid)
 		SetEntityMoveType(client, MOVETYPE_WALK);
 	g_iIceStabFade[client] = 254;
 	return Plugin_Stop;
+}
+
+// Thanks to SumGuy14 (Aka SoccerDude)
+// RPGx effects.inc FourBeamEffect
+stock TE_SendFourBeamEffectToEnabled(Float:origin[3], Float:Width, Float:EndWidth, Float:Height, ModelIndex, HaloIndex, StartFrame, FrameRate, Float:Life, 
+                Float:BeamWidth, Float:BeamEndWidth, FadeLength, Float:Amplitude, const Color[4], Speed, Float:delay=0.0)
+{
+	new Float:fPoints[8][3];
+	for(new point=0;point<8;point++)
+	{
+		fPoints[point] = origin;
+	}
+	
+	fPoints[0][0] += Width;
+	fPoints[1][0] -= Width;
+	fPoints[2][1] += Width;
+	fPoints[3][1] -= Width;
+	fPoints[4][0] += EndWidth;
+	fPoints[4][2] += Height;
+	fPoints[5][0] -= EndWidth;
+	fPoints[5][2] += Height;
+	fPoints[6][1] += EndWidth;
+	fPoints[6][2] += Height;
+	fPoints[7][1] -= EndWidth;
+	fPoints[7][2] += Height;
+	
+	for(new i=0;i<4;i++)
+	{
+		TE_SetupBeamPoints(fPoints[i], fPoints[i+4], ModelIndex, HaloIndex, StartFrame, FrameRate, Life, BeamWidth, BeamEndWidth, FadeLength, Amplitude, Color, Speed);
+		SMRPG_TE_SendToAllEnabled(UPGRADE_SHORTNAME, delay);
+	}
 }
