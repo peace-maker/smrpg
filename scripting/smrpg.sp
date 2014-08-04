@@ -20,6 +20,8 @@
 new bool:g_bLateLoaded;
 new Handle:g_hPlayerAutoSave;
 
+new Handle:g_hfwdOnEnableStatusChanged;
+
 // Convars
 new Handle:g_hCVEnable;
 new Handle:g_hCVBotEnable;
@@ -181,6 +183,9 @@ public OnPluginStart()
 	AutoExecConfig_ExecuteFile();
 	AutoExecConfig_CleanFile();
 	
+	// forward SMRPG_OnEnableStatusChanged(bool:bEnabled);
+	g_hfwdOnEnableStatusChanged = CreateGlobalForward("SMRPG_OnEnableStatusChanged", ET_Ignore, Param_Cell);
+	
 	HookConVarChange(g_hCVEnable, ConVar_EnableChanged);
 	HookConVarChange(g_hCVSaveInterval, ConVar_SaveIntervalChanged);
 	HookConVarChange(g_hCVLastExperienceCount, ConVar_LastExperienceCountChanged);
@@ -267,6 +272,15 @@ public ConVar_SaveIntervalChanged(Handle:convar, const String:oldValue[], const 
 
 public ConVar_EnableChanged(Handle:convar, const String:oldValue[], const String:newValue[])
 {
+	if(StrEqual(oldValue, newValue, false))
+		return;
+	
+	// Call the forward.
+	Call_StartForward(g_hfwdOnEnableStatusChanged);
+	Call_PushCell(GetConVarBool(convar));
+	Call_Finish();
+	
+	// Don't need to do anything, if we're enabled or we don't want to save the stats to the database.
 	if(GetConVarBool(convar) || !GetConVarBool(g_hCVSaveData))
 		return;
 	

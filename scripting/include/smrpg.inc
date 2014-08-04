@@ -17,6 +17,14 @@ native bool:SMRPG_IsEnabled();
  */
 native bool:SMRPG_IgnoreBots();
 
+/**
+ * Called when SM:RPG is enabled or disabled. (smrpg_enable)
+ *
+ * @param bEnabled True, if SM:RPG is now enabled, false if it's now disabled.
+ * @noreturn
+ */
+forward SMRPG_OnEnableStatusChanged(bool:bEnabled);
+
 #include <smrpg/smrpg_clients>
 #include <smrpg/smrpg_upgrades>
 #include <smrpg/smrpg_topmenu>
