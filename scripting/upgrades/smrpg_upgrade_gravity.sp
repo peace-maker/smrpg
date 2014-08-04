@@ -89,7 +89,6 @@ public Hook_OnClientPostThinkPost(client)
 	
 	if(IsClientInGame(client) && IsPlayerAlive(client))
 	{	
-		
 		// Ladders set the gravity to 0.0 and back to 1.0 when leaving the ladder. Reapply our own value when a player leaves a ladder.
 		// Thanks to DorCoMaNdO! https://forums.alliedmods.net/showthread.php?t=240092
 		if(iMoveType != MOVETYPE_LADDER && g_iOldClientMoveType[client] == MOVETYPE_LADDER)
@@ -153,11 +152,19 @@ public SMRPG_TranslateUpgrade(client, const String:shortname[], TranslationType:
 /**
  * SM:RPG callbacks
  */
+public SMRPG_OnEnableStatusChanged(bool:bEnabled)
+{
+	CheckGravity(false);
+}
+
 public SMRPG_OnUpgradeSettingsChanged(const String:shortname[])
 {
 	if(StrEqual(shortname, UPGRADE_SHORTNAME))
 	{
-		CheckGravity(false);
+		if(SMRPG_IsEnabled())
+		{
+			CheckGravity(false);
+		}
 	}
 }
 
@@ -200,9 +207,6 @@ ApplyGravity(client, bool:bIgnoreNullLevel = false)
 // Also make sure it's reset, when the upgrade is disabled.
 stock CheckGravity(bool:bForceDisable)
 {
-	if(!SMRPG_IsEnabled())
-		return;
-	
 	new upgrade[UpgradeInfo];
 	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
 	
