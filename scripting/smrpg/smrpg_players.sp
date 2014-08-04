@@ -156,8 +156,8 @@ InsertPlayer(client)
 		strcopy(sSteamIDEscaped, sizeof(sSteamIDEscaped), sNameEscaped);
 	}
 	
-	Format(sQuery, sizeof(sQuery), "INSERT INTO %s (name, steamid, level, experience, credits, showmenu, lastseen, lastreset) VALUES ('%s', '%s', '%d', '%d', '%d', '%d', '%d', '%d')",
-		TBL_PLAYERS, sNameEscaped, sSteamIDEscaped, GetClientLevel(client), GetClientExperience(client), GetClientCredits(client), ShowMenuOnLevelUp(client), GetTime(), GetTime());
+	Format(sQuery, sizeof(sQuery), "INSERT INTO %s (name, steamid, level, experience, credits, showmenu, fadescreen, lastseen, lastreset) VALUES ('%s', '%s', '%d', '%d', '%d', '%d', '%d', '%d', '%d')",
+		TBL_PLAYERS, sNameEscaped, sSteamIDEscaped, GetClientLevel(client), GetClientExperience(client), GetClientCredits(client), ShowMenuOnLevelUp(client), FadeScreenOnLevelUp(client), GetTime(), GetTime());
 	
 	SQL_TQuery(g_hDatabase, SQL_InsertPlayer, sQuery, GetClientUserId(client));
 }
