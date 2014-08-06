@@ -8,6 +8,10 @@
 
 #define PLUGIN_VERSION "1.0"
 
+new Handle:g_hResupplyTimer;
+
+new Handle:g_hCVInterval;
+
 public Plugin:myinfo = 
 {
 	name = "SM:RPG Upgrade > Resupply",
@@ -47,12 +51,27 @@ public OnLibraryAdded(const String:name[])
 	{
 		SMRPG_RegisterUpgradeType("Resupply", UPGRADE_SHORTNAME, "Regenerates ammo every third second.", 20, true, 5, 5, 15, _, SMRPG_BuySell, SMRPG_ActiveQuery);
 		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
+		
+		g_hCVInterval = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_resup_interval", "3", "Set the interval in which the ammo is given in seconds.", 0, true, 0.5);
+		HookConVarChange(g_hCVInterval, ConVar_OnIntervalChanged);
+		
+		// Start the timer with the correct interval.
+		StartResupplyTimer();
 	}
 }
 
 public OnMapStart()
 {
-	CreateTimer(3.0, Timer_Resupply, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
+	// OnMapStart might be called before the smrpg library was registered.
+	if(g_hCVInterval == INVALID_HANDLE)
+		return;
+	
+	StartResupplyTimer();
+}
+
+public OnMapEnd()
+{
+	g_hResupplyTimer = INVALID_HANDLE;
 }
 
 /**
@@ -83,6 +102,9 @@ public SMRPG_TranslateUpgrade(client, const String:shortname[], TranslationType:
 	}
 }
 
+/**
+ * Timer callbacks
+ */
 public Action:Timer_Resupply(Handle:timer)
 {
 	if(!SMRPG_IsEnabled())
@@ -132,6 +154,26 @@ public Action:Timer_Resupply(Handle:timer)
 	}
 	
 	return Plugin_Continue;
+}
+
+/**
+ * Convar hook callbacks
+ */
+public ConVar_OnIntervalChanged(Handle:convar, const String:oldValue[], const String:newValue[])
+{
+	if(StrEqual(oldValue, newValue, false))
+		return;
+	
+	StartResupplyTimer();
+}
+
+/**
+ * Helpers
+ */
+StartResupplyTimer()
+{
+	ClearHandle(g_hResupplyTimer);
+	g_hResupplyTimer = CreateTimer(GetConVarFloat(g_hCVInterval), Timer_Resupply, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 }
 
 /**
