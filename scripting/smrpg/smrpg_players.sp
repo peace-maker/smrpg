@@ -579,6 +579,10 @@ BotPickUpgrade(client)
 			if(!IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled])
 				continue;
 			
+			// Don't buy it, if bots aren't allowed to use it at all..
+			if(!upgrade[UPGR_allowBots])
+				continue;
+			
 			iCost = GetUpgradeCost(iCurrentIndex, GetClientPurchasedUpgradeLevel(client, iCurrentIndex)+1);
 			if(GetClientCredits(client) >= iCost)
 			{

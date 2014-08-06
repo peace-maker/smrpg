@@ -43,12 +43,13 @@ functag public bool:SMRPG_ActiveQueryCB(client);
  * The shortname is like an unique identifier for this upgrade.
  * Other plugins might use the shortname to check for information of the upgrade.
  *
- * This native registers 5 default convars for the plugin and saves them in a seperate config file for the upgrade in cfg/sourcemod/smrpg/smrpg_upgrade_<shortname>.cfg
+ * This native registers 6 default convars for the plugin and saves them in a seperate config file for the upgrade in cfg/sourcemod/smrpg/smrpg_upgrade_<shortname>.cfg
  *  - smrpg_<shortname>_enable     ~ Enable or disable the upgrade. The upgrade needs to check this value and should obey it..
  *  - smrpg_<shortname>_maxlevel   ~ The maximal level a player can buy the upgrade.
  *  - smrpg_<shortname>_cost       ~ The start cost of this item when purchasing level 1.
  *  - smrpg_<shortname>_icost      ~ The amount to increase the cost for each level: cost for level x = startcost + icost * (level-1)
  *  - smrpg_<shortname>_adminflag  ~ The required admin flag to use this plugin.
+ *  - smrpg_<shortname>_allowbots  ~ Are bots allowed to use this upgrade? Defaults to 1.
  *
  * You can add more convars to that file using the SMRPG_CreateUpgradeConVar native.
  *

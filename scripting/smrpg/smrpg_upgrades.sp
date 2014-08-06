@@ -17,6 +17,7 @@ enum InternalUpgradeInfo
 	UPGR_adminFlag, // Admin flag(s) this upgrade is restricted to
 	bool:UPGR_enableVisuals, // Enable the visual effects of this upgrade by default?
 	bool:UPGR_enableSounds, // Enable the audio effects of this upgrade by default?
+	bool:UPGR_allowBots, // Are bots allowed to use this upgrade?
 	Function:UPGR_queryCallback, // callback called, when a player bought/sold the upgrade
 	Function:UPGR_activeCallback, // callback called, to see, if a player is currently under the effect of that upgrade
 	Function:UPGR_translationCallback, // callback called, when the upgrade's name is about to get displayed.
@@ -30,6 +31,7 @@ enum InternalUpgradeInfo
 	Handle:UPGR_adminFlagConvar,
 	Handle:UPGR_visualsConvar,
 	Handle:UPGR_soundsConvar,
+	Handle:UPGR_botsConvar,
 	
 	// Topmenu object ids
 	TopMenuObject:UPGR_topmenuUpgrades,
@@ -219,6 +221,13 @@ public Native_RegisterUpgradeType(Handle:plugin, numParams)
 	upgrade[UPGR_adminFlagConvar] = hCvar;
 	GetConVarString(hCvar, sValue, sizeof(sValue));
 	upgrade[UPGR_adminFlag] = ReadFlagString(sValue);
+	
+	Format(sCvarName, sizeof(sCvarName), "smrpg_%s_allowbots", sShortName);
+	Format(sCvarDescription, sizeof(sCvarDescription), "Allow bots to use the %s upgrade?", sName);
+	hCvar = AutoExecConfig_CreateConVar(sCvarName, "1", sCvarDescription, 0, true, 0.0, true, 1.0);
+	HookConVarChange(hCvar, ConVar_UpgradeChanged);
+	upgrade[UPGR_botsConvar] = hCvar;
+	upgrade[UPGR_allowBots] = GetConVarBool(hCvar);
 	
 	AutoExecConfig_ExecuteFile();
 	
@@ -551,6 +560,12 @@ public Native_RunUpgradeEffect(Handle:plugin, numParams)
 			return false;
 	}
 	
+	// Don't allow bots to use this upgrade at all and don't inform other plugins that this effect would be about to start.
+	if(!upgrade[UPGR_allowBots] && IsFakeClient(client))
+	{
+		return false;
+	}
+	
 	new Action:result;
 	Call_StartForward(g_hfwdOnUpgradeEffect);
 	Call_PushCell(client);
@@ -825,6 +840,13 @@ public ConVar_UpgradeChanged(Handle:convar, const String:oldValue[], const Strin
 		else if(upgrade[UPGR_soundsConvar] == convar)
 		{
 			upgrade[UPGR_enableSounds] = GetConVarBool(convar);
+			SaveUpgradeConfig(upgrade);
+			Call_OnUpgradeSettingsChanged(upgrade[UPGR_shortName]);
+			break;
+		}
+		else if(upgrade[UPGR_botsConvar] == convar)
+		{
+			upgrade[UPGR_allowBots] = GetConVarBool(convar);
 			SaveUpgradeConfig(upgrade);
 			Call_OnUpgradeSettingsChanged(upgrade[UPGR_shortName]);
 			break;
