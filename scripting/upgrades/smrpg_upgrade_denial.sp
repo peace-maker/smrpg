@@ -261,6 +261,9 @@ public Action:Timer_StripPlayer(Handle:timer, any:userid)
 			{
 				EquipPlayerWeapon(client, iCurrentWeapon);
 				GivePlayerAmmo(client, 1000, Weapon_GetPrimaryAmmoType(iCurrentWeapon), false);
+				
+				// Have the player use the new primary weapon by default.
+				Client_SetActiveWeapon(client, iCurrentWeapon);
 			}
 		}
 	}
