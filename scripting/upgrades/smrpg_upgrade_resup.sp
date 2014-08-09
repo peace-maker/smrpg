@@ -118,7 +118,7 @@ public Action:Timer_Resupply(Handle:timer)
 	new bool:bIgnoreBots = SMRPG_IgnoreBots();
 	new bool:bGiveClientAmmoNativeAvailable = GetFeatureStatus(FeatureType_Native, "GivePlayerAmmo") == FeatureStatus_Available;
 	
-	new iLevel, iPrimaryAmmo;
+	new iLevel, iPrimaryAmmo, iPrimaryAmmoType;
 	for(new i=1;i<=MaxClients;i++)
 	{
 		if(!IsClientInGame(i))
@@ -138,13 +138,19 @@ public Action:Timer_Resupply(Handle:timer)
 		
 		LOOP_CLIENTWEAPONS(i, iWeapon, iIndex)
 		{
+			iPrimaryAmmoType = Weapon_GetPrimaryAmmoType(iWeapon);
+			// Grenades and knives have m_iClip1 = -1 or m_iPrimaryAmmoType = -1 respectively.
+			// Don't try to refill those.
+			if(iPrimaryAmmoType < 0 || Weapon_GetPrimaryClip(iWeapon) < 0)
+				continue;
+			
 			// Use the new SDKTools native, if available!
 			if(bGiveClientAmmoNativeAvailable)
 			{
-				GivePlayerAmmo(i, iLevel, Weapon_GetPrimaryAmmoType(iWeapon), true);
+				GivePlayerAmmo(i, iLevel, iPrimaryAmmoType, true);
 			}
 			// Try to use our own gamedata for older sourcemod versions.
-			else if(GiveAmmo(i, iLevel, Weapon_GetPrimaryAmmoType(iWeapon), true) == -1)
+			else if(GiveAmmo(i, iLevel, iPrimaryAmmoType, true) == -1)
 			{
 				// Fall back to non-limit alternative, if sdkcall fails.
 				Client_GetWeaponPlayerAmmoEx(i, iWeapon, iPrimaryAmmo);
