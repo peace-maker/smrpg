@@ -14,6 +14,7 @@
 
 new Handle:g_hCVPercent;
 new Handle:g_hCVMax;
+new Handle:g_hCVIceStabPenalty;
 
 new g_iBeamColor[] = {0,255,0,255}; // green
 
@@ -62,6 +63,7 @@ public OnLibraryAdded(const String:name[])
 		
 		g_hCVPercent = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_vamp_percent", "0.075", "Percent of damage to convert to attacker's health for each level.", 0, true, 0.001);
 		g_hCVMax = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_vamp_maxhp", "70", "Maximum HP the attacker can get at a time. (0 = unlimited)", 0, true, 0.0);
+		g_hCVIceStabPenalty = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_vamp_icestab_penalty", "0.5", "Only give x% of the HP the attacker would receive, if the victim is frozen by icestab.", 0, true, 0.0);
 	}
 }
 
@@ -138,6 +140,12 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 	new Float:fIncrease = float(iLevel) * GetConVarFloat(g_hCVPercent);
 	fIncrease *= damage;
 	fIncrease += 0.5;
+	
+	// Reduce stolen HP if the victim is frozen with icestab
+	if(SMRPG_IsUpgradeActiveOnClient(victim, "icestab"))
+	{
+		fIncrease *= GetConVarFloat(g_hCVIceStabPenalty);
+	}
 	
 	// Don't let the attacker steal more hp than the set max 
 	new iMaxIncrease = GetConVarInt(g_hCVMax);
