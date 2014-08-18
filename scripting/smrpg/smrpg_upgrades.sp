@@ -115,8 +115,13 @@ public Native_RegisterUpgradeType(Handle:plugin, numParams)
 	new iDefaultStartCost = GetNativeCell(7);
 	new iDefaultCostInc = GetNativeCell(8);
 	new iDefaultAdminFlags = GetNativeCell(9);
+#if SOURCEMOD_V_MAJOR >= 1 && SOURCEMOD_V_MINOR >= 7
+	new Function:queryCallback = GetNativeFunction(10);
+	new Function:activeCallback = GetNativeFunction(11);
+#else
 	new Function:queryCallback = Function:GetNativeCell(10);
 	new Function:activeCallback = Function:GetNativeCell(11);
+#endif
 	
 	if(!bAlreadyLoaded)
 	{
@@ -418,7 +423,12 @@ public Native_SetUpgradeTranslationCallback(Handle:plugin, numParams)
 		return;
 	}
 	
+#if SOURCEMOD_V_MAJOR >= 1 && SOURCEMOD_V_MINOR >= 7
+	upgrade[UPGR_translationCallback] = GetNativeFunction(2);
+#else
 	upgrade[UPGR_translationCallback] = Function:GetNativeCell(2);
+#endif
+	
 	SaveUpgradeConfig(upgrade);
 }
 
@@ -443,7 +453,12 @@ public Native_SetUpgradeResetCallback(Handle:plugin, numParams)
 		return;
 	}
 	
+#if SOURCEMOD_V_MAJOR >= 1 && SOURCEMOD_V_MINOR >= 7
+	upgrade[UPGR_resetCallback] = GetNativeFunction(2);
+#else
 	upgrade[UPGR_resetCallback] = Function:GetNativeCell(2);
+#endif
+	
 	SaveUpgradeConfig(upgrade);
 }
 

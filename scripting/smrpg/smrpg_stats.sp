@@ -479,7 +479,12 @@ public Native_AddClientExperience(Handle:plugin, numParams)
 	
 	new bool:bHideNotice = bool:GetNativeCell(4);
 	new other = GetNativeCell(5);
+#if SOURCEMOD_V_MAJOR >= 1 && SOURCEMOD_V_MINOR >= 7
+	new Function:translationCallback = GetNativeFunction(6);
+#else
 	new Function:translationCallback = Function:GetNativeCell(6);
+#endif
+	
 	
 	new bool:bAdded = Stats_AddExperience(client, iExperience, sReason, bHideNotice, other);
 	
@@ -552,12 +557,20 @@ public Native_IsClientAFK(Handle:plugin, numParams)
 
 public Native_GetTop10Players(Handle:plugin, numParams)
 {
-	new Function:callback = GetNativeCell(1);
+#if SOURCEMOD_V_MAJOR >= 1 && SOURCEMOD_V_MINOR >= 7
+	new Function:callback = GetNativeFunction(1);
+#else
+	new Function:callback = Function:GetNativeCell(1);
+#endif
 	new data = GetNativeCell(2);
 	
 	new Handle:hData = CreateDataPack();
 	WritePackCell(hData, _:plugin);
+#if SOURCEMOD_V_MAJOR >= 1 && SOURCEMOD_V_MINOR >= 7
+	WritePackFunction(hData, callback);
+#else
 	WritePackCell(hData, _:callback);
+#endif
 	WritePackCell(hData, data);
 	
 	decl String:sQuery[128];
@@ -569,7 +582,11 @@ public SQL_GetTop10Native(Handle:owner, Handle:hndl, const String:error[], any:d
 {
 	ResetPack(data);
 	new Handle:hPlugin = Handle:ReadPackCell(data);
+#if SOURCEMOD_V_MAJOR >= 1 && SOURCEMOD_V_MINOR >= 7
+	new Function:callback = ReadPackFunction(data);
+#else
 	new Function:callback = Function:ReadPackCell(data);
+#endif
 	new extraData = ReadPackCell(data);
 	CloseHandle(data);
 	
