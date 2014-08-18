@@ -173,6 +173,77 @@ native bool:SMRPG_AddClientExperience(client, exp, const String:reason[], bool:b
 native SMRPG_LevelToExperience(iLevel);
 
 /**
+ * Called when a client's upgrade levels were loaded from the database.
+ * 
+ * @param client         The client who's levels were just loaded.
+ * @noreturn
+ */
+forward SMRPG_OnClientLoaded(client);
+
+/**
+ * Called when the level of a client changes.
+ * You can stop that from happening by returning Plugin_Handled.
+ *
+ * @param client         The client, who's level is going to be changed.
+ * @param oldlevel       The old, current level of the client.
+ * @param newlevel       The new level the client is going to be set to.
+ * @return >= Plugin_Handled to block, Plugin_Continue to let it pass.
+ */
+forward Action:SMRPG_OnClientLevel(client, oldlevel, newlevel);
+
+/**
+ * Called after the level of a client changed.
+ *
+ * @param client         The client, who's level has changed.
+ * @param oldlevel       The old level of the client.
+ * @param newlevel       The new, current level of the client.
+ * @noreturn
+ */
+forward SMRPG_OnClientLevelPost(client, oldlevel, newlevel);
+
+/**
+ * Called when the experience of a client changes.
+ * You can stop that from happening by returning Plugin_Handled.
+ *
+ * @param client         The client, who's experience is going to be changed.
+ * @param oldexp         The old, current experience of the client.
+ * @param newexp         The new experience the client is going to be set to.
+ * @return >= Plugin_Handled to block, Plugin_Continue to let it pass.
+ */
+forward Action:SMRPG_OnClientExperience(client, oldexp, newexp);
+
+/**
+ * Called after the experience of a client changed.
+ *
+ * @param client         The client, who's experience has changed.
+ * @param oldexp         The old experience of the client.
+ * @param newexp         The new, current experience of the client.
+ * @noreturn
+ */
+forward SMRPG_OnClientExperiencePost(client, oldexp, newexp);
+
+/**
+ * Called when the credits of a client changes.
+ * You can stop that from happening by returning Plugin_Handled.
+ *
+ * @param client         The client, who's credits is going to be changed.
+ * @param oldcredits     The old, current credits of the client.
+ * @param newcredits     The new credits the client is going to be set to.
+ * @return >= Plugin_Handled to block, Plugin_Continue to let it pass.
+ */
+forward Action:SMRPG_OnClientCredits(client, oldcredits, newcredits);
+
+/**
+ * Called after the credits of a client changed.
+ *
+ * @param client         The client, who's credits have changed.
+ * @param oldcredits     The old credits of the client.
+ * @param newcredits     The new, current credits of the client.
+ * @noreturn
+ */
+forward SMRPG_OnClientCreditsPost(client, oldcredits, newcredits);
+
+/**
  * List of default reasons the core plugin adds experience to clients for.
  */
 #define ExperienceReason_PlayerHurt "def_playerhurt" // Give experience to the attacker when he hurt an enemy
