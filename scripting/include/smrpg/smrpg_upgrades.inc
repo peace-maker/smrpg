@@ -390,6 +390,16 @@ forward SMRPG_OnClientLoaded(client);
 forward Action:SMRPG_OnClientLevel(client, oldlevel, newlevel);
 
 /**
+ * Called after the level of a client changed.
+ *
+ * @param client         The client, who's level has changed.
+ * @param oldlevel       The old level of the client.
+ * @param newlevel       The new, current level of the client.
+ * @noreturn
+ */
+forward SMRPG_OnClientLevelPost(client, oldlevel, newlevel);
+
+/**
  * Called when the experience of a client changes.
  * You can stop that from happening by returning Plugin_Handled.
  *
@@ -399,6 +409,16 @@ forward Action:SMRPG_OnClientLevel(client, oldlevel, newlevel);
  * @return >= Plugin_Handled to block, Plugin_Continue to let it pass.
  */
 forward Action:SMRPG_OnClientExperience(client, oldexp, newexp);
+
+/**
+ * Called after the experience of a client changed.
+ *
+ * @param client         The client, who's experience has changed.
+ * @param oldexp         The old experience of the client.
+ * @param newexp         The new, current experience of the client.
+ * @noreturn
+ */
+forward SMRPG_OnClientExperiencePost(client, oldexp, newexp);
 
 /**
  * Called when the credits of a client changes.
@@ -412,6 +432,16 @@ forward Action:SMRPG_OnClientExperience(client, oldexp, newexp);
 forward Action:SMRPG_OnClientCredits(client, oldcredits, newcredits);
 
 /**
+ * Called after the credits of a client changed.
+ *
+ * @param client         The client, who's credits have changed.
+ * @param oldcredits     The old credits of the client.
+ * @param newcredits     The new, current credits of the client.
+ * @noreturn
+ */
+forward SMRPG_OnClientCreditsPost(client, oldcredits, newcredits);
+
+/**
  * Called when a client buys an upgrade or in general, when a client's upgrade level increases.
  * You can stop that from happening by returning Plugin_Handled.
  *
@@ -423,6 +453,16 @@ forward Action:SMRPG_OnClientCredits(client, oldcredits, newcredits);
 forward Action:SMRPG_OnBuyUpgrade(client, const String:shortname[], newlevel);
 
 /**
+ * Called after a client bought an upgrade or in general, when a client's upgrade level increased.
+ *
+ * @param client         The client who bought an upgrade.
+ * @param shortname      The upgrade shortname of the upgrade bought.
+ * @param newlevel       The new level, the client's upgrade is set to.
+ * @noreturn
+ */
+forward SMRPG_OnBuyUpgradePost(client, const String:shortname[], newlevel);
+
+/**
  * Called when a client sells an upgrade or in general, when a client's upgrade level decreases.
  * You can stop that from happening by returning Plugin_Handled.
  *
@@ -432,6 +472,16 @@ forward Action:SMRPG_OnBuyUpgrade(client, const String:shortname[], newlevel);
  * @return >= Plugin_Handled to block the client from selling that upgrade, Plugin_Continue to let it pass.
  */
 forward Action:SMRPG_OnSellUpgrade(client, const String:shortname[], newlevel);
+
+/**
+ * Called after a client sold an upgrade or in general, when a client's upgrade level decreased.
+ *
+ * @param client         The client who sold an upgrade.
+ * @param shortname      The upgrade shortname of the upgrade sold.
+ * @param newlevel       The new level, the client's upgrade is set to.
+ * @noreturn
+ */
+forward SMRPG_OnSellUpgradePost(client, const String:shortname[], newlevel);
 
 /**
  * Called when an upgrade is about to start his effect on a client.

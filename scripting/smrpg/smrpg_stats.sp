@@ -21,6 +21,7 @@ new g_iPlayerSessionStartStats[MAXPLAYERS+1][SessionStats];
 new bool:g_bBackToStatsMenu[MAXPLAYERS+1];
 
 new Handle:g_hfwdOnAddExperience;
+new Handle:g_hfwdOnAddExperiencePost;
 
 // AFK Handling
 enum AFKInfo {
@@ -65,6 +66,8 @@ RegisterStatsForwards()
 {
 	// forward Action:SMRPG_OnAddExperience(client, const String:reason[], &iExperience, other);
 	g_hfwdOnAddExperience = CreateGlobalForward("SMRPG_OnAddExperience", ET_Hook, Param_Cell, Param_String, Param_CellByRef, Param_Cell);
+	// forward SMRPG_OnAddExperiencePost(client, const String:reason[], iExperience, other);
+	g_hfwdOnAddExperiencePost = CreateGlobalForward("SMRPG_OnAddExperiencePost", ET_Ignore, Param_Cell, Param_String, Param_Cell, Param_Cell);
 }
 
 /* Calculate the experience needed for this level */
@@ -297,6 +300,8 @@ bool:Stats_AddExperience(client, iExperience, const String:sReason[], bool:bHide
 	if(GetClientExperience(client) >= iExpRequired)
 		Stats_PlayerNewLevel(client, Stats_CalcLvlInc(GetClientLevel(client), GetClientExperience(client)));
 	
+	Stats_CallOnExperiencePostForward(client, sReason, iExperience, other);
+	
 	if(!bHideNotice && GetConVarBool(g_hCVExpNotice))
 		PrintHintText(client, "%t", "Experience Gained Hintbox", iExperience, GetClientExperience(client), Stats_LvlToExp(GetClientLevel(client)));
 	
@@ -378,6 +383,17 @@ Action:Stats_CallOnExperienceForward(client, const String:sReason[], &iExperienc
 	Call_PushCell(other);
 	Call_Finish(result);
 	return result;
+}
+
+// forward SMRPG_OnAddExperiencePost(client, const String:reason[], iExperience, other);
+Stats_CallOnExperiencePostForward(client, const String:sReason[], iExperience, other)
+{
+	Call_StartForward(g_hfwdOnAddExperiencePost);
+	Call_PushCell(client);
+	Call_PushString(sReason);
+	Call_PushCell(iExperience);
+	Call_PushCell(other);
+	Call_Finish();
 }
 
 // AFK Handling

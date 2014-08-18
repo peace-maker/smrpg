@@ -4,10 +4,15 @@
 
 // Forwards
 new Handle:g_hfwdOnBuyUpgrade;
+new Handle:g_hfwdOnBuyUpgradePost;
 new Handle:g_hfwdOnSellUpgrade;
+new Handle:g_hfwdOnSellUpgradePost;
 new Handle:g_hfwdOnClientLevel;
+new Handle:g_hfwdOnClientLevelPost;
 new Handle:g_hfwdOnClientExperience;
+new Handle:g_hfwdOnClientExperiencePost;
 new Handle:g_hfwdOnClientCredits;
+new Handle:g_hfwdOnClientCreditsPost;
 
 new Handle:g_hfwdOnClientLoaded;
 
@@ -62,15 +67,25 @@ RegisterPlayerForwards()
 {
 	// forward Action:SMRPG_OnBuyUpgrade(client, const String:shortname[], newlevel);
 	g_hfwdOnBuyUpgrade = CreateGlobalForward("SMRPG_OnBuyUpgrade", ET_Hook, Param_Cell, Param_String, Param_Cell);
+	// forward SMRPG_OnBuyUpgradePost(client, const String:shortname[], newlevel);
+	g_hfwdOnBuyUpgradePost = CreateGlobalForward("SMRPG_OnBuyUpgradePost", ET_Ignore, Param_Cell, Param_String, Param_Cell);
 	// forward Action:SMRPG_OnSellUpgrade(client, const String:shortname[], newlevel);
 	g_hfwdOnSellUpgrade = CreateGlobalForward("SMRPG_OnSellUpgrade", ET_Hook, Param_Cell, Param_String, Param_Cell);
+	// forward SMRPG_OnSellUpgradePost(client, const String:shortname[], newlevel);
+	g_hfwdOnSellUpgradePost = CreateGlobalForward("SMRPG_OnSellUpgradePost", ET_Ignore, Param_Cell, Param_String, Param_Cell);
 	
 	// forward Action:SMRPG_OnClientLevel(client, oldlevel, newlevel);
 	g_hfwdOnClientLevel = CreateGlobalForward("SMRPG_OnClientLevel", ET_Hook, Param_Cell, Param_Cell, Param_Cell);
+	// forward SMRPG_OnClientLevelPost(client, oldlevel, newlevel);
+	g_hfwdOnClientLevelPost = CreateGlobalForward("SMRPG_OnClientLevelPost", ET_Ignore, Param_Cell, Param_Cell, Param_Cell);
 	// forward Action:SMRPG_OnClientExperience(client, oldexp, newexp);
 	g_hfwdOnClientExperience = CreateGlobalForward("SMRPG_OnClientExperience", ET_Hook, Param_Cell, Param_Cell, Param_Cell);
+	// forward SMRPG_OnClientExperiencePost(client, oldexp, newexp);
+	g_hfwdOnClientExperiencePost = CreateGlobalForward("SMRPG_OnClientExperiencePost", ET_Ignore, Param_Cell, Param_Cell, Param_Cell);
 	// forward Action:SMRPG_OnClientCredits(client, oldcredits, newcredits);
 	g_hfwdOnClientCredits = CreateGlobalForward("SMRPG_OnClientCredits", ET_Hook, Param_Cell, Param_Cell, Param_Cell);
+	// forward SMRPG_OnClientCreditsPost(client, oldcredits, newcredits);
+	g_hfwdOnClientCreditsPost = CreateGlobalForward("SMRPG_OnClientCreditsPost", ET_Ignore, Param_Cell, Param_Cell, Param_Cell);
 	
 	// forward SMRPG_OnClientLoaded(client);
 	g_hfwdOnClientLoaded = CreateGlobalForward("SMRPG_OnClientLoaded", ET_Ignore, Param_Cell);
@@ -466,6 +481,12 @@ bool:GiveClientUpgrade(client, iUpgradeIndex)
 	// Also have it select the new higher upgrade level.
 	SetClientSelectedUpgradeLevel(client, iUpgradeIndex, iCurrentLevel);
 	
+	Call_StartForward(g_hfwdOnBuyUpgradePost);
+	Call_PushCell(client);
+	Call_PushString(upgrade[UPGR_shortName]);
+	Call_PushCell(iCurrentLevel);
+	Call_Finish();
+	
 	return true;
 }
 
@@ -527,6 +548,12 @@ bool:TakeClientUpgrade(client, iUpgradeIndex)
 	
 	// Actually update the upgrade level.
 	SetClientPurchasedUpgradeLevel(client, iUpgradeIndex, iCurrentLevel);
+	
+	Call_StartForward(g_hfwdOnSellUpgradePost);
+	Call_PushCell(client);
+	Call_PushString(upgrade[UPGR_shortName]);
+	Call_PushCell(iCurrentLevel);
+	Call_Finish();
 	
 	return true;
 }
@@ -639,7 +666,14 @@ bool:SetClientCredits(client, iCredits)
 	if(result > Plugin_Continue)
 		return false;
 	
+	new iOldCredits = g_iPlayerInfo[client][PLR_credits];
 	g_iPlayerInfo[client][PLR_credits] = iCredits;
+	
+	Call_StartForward(g_hfwdOnClientCreditsPost);
+	Call_PushCell(client);
+	Call_PushCell(iOldCredits);
+	Call_PushCell(iCredits);
+	Call_Finish();
 	
 	return true;
 }
@@ -666,7 +700,14 @@ bool:SetClientLevel(client, iLevel)
 	if(result > Plugin_Continue)
 		return false;
 	
+	new iOldLevel = g_iPlayerInfo[client][PLR_level];
 	g_iPlayerInfo[client][PLR_level] = iLevel;
+	
+	Call_StartForward(g_hfwdOnClientLevelPost);
+	Call_PushCell(client);
+	Call_PushCell(iOldLevel);
+	Call_PushCell(iLevel);
+	Call_Finish();
 	
 	return true;
 }
@@ -693,7 +734,14 @@ bool:SetClientExperience(client, iExperience)
 	if(result > Plugin_Continue)
 		return false;
 	
+	new iOldExperience = g_iPlayerInfo[client][PLR_experience];
 	g_iPlayerInfo[client][PLR_experience] = iExperience;
+	
+	Call_StartForward(g_hfwdOnClientExperiencePost);
+	Call_PushCell(client);
+	Call_PushCell(iOldExperience);
+	Call_PushCell(iExperience);
+	Call_Finish();
 	
 	return true;
 }

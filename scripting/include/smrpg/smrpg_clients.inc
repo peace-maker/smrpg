@@ -194,6 +194,18 @@ native SMRPG_LevelToExperience(iLevel);
 forward Action:SMRPG_OnAddExperience(client, const String:reason[], &iExperience, other);
 
 /**
+ * Called after a client received some experience.
+ * The core calls this with the above defined reasons.
+ *
+ * @param client         The client, which got some experience.
+ * @param reason         The reason why this client got experience.
+ * @param iExperience    The experience to given to the player.
+ * @param other          The other entity which was involved in adding this experience. e.g. the victim which was hurt. -1 if no other particular entity was involved.
+ * @noreturn
+ */
+forward SMRPG_OnAddExperiencePost(client, const String:reason[], iExperience, other);
+
+/**
  * Types of experience multipliers that can be set individually per weapon.
  */
 enum WeaponExperienceType {
