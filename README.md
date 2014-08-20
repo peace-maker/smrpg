@@ -61,6 +61,7 @@ See the available upgrade plugins for examples. You can use the [example upgrade
 * Increase Clipsize - Increases the size of a weapon's clip.
 * Long Jump - Boosts your jump speed.
 * Medic - Heals team mates around you.
+* Poison Smoke (Counter-Strike: Source only) - Damages players inside the smoke of a smoke grenade.
 * Reduced Gravity - Reduces your gravity and lets you jump higher.
 * Resupply - Regenerates ammo every third second.
 * Shrinking - Make player models smaller.

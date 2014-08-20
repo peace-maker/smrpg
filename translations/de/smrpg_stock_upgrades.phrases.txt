@@ -209,4 +209,14 @@
 	{
 		"de"			"Reduziert die Auswirkung der Schwerkraft auf dich, sodass du höher springen kannst."
 	}
+	
+	"poisonsmoke"
+	{
+		"de"			"Giftiger Rauch"
+	}
+	
+	"poisonsmoke description"
+	{
+		"de"			"Vergiftet Spieler, die im Rauch einer Rauchgranate stehen."
+	}
 }

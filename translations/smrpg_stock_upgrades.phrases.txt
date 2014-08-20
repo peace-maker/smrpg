@@ -209,4 +209,14 @@
 	{
 		"en"			"Reduces your gravity and lets you jump higher."
 	}
+	
+	"poisonsmoke"
+	{
+		"en"			"Poison Smoke"
+	}
+	
+	"poisonsmoke description"
+	{
+		"en"			"Damages players inside the smoke of a smoke grenade"
+	}
 }
