@@ -65,8 +65,14 @@ public SQL_OnConnect(Handle:owner, Handle:hndl, const String:error[], any:data)
 		else
 			SQL_LockedFastQuery(g_hDatabase, "SET NAMES 'UTF8'");
 	}
-	else
+	else if(StrEqual(sDriverIdent, "sqlite", false))
+	{
 		g_DriverType = Driver_SQLite;
+	}
+	else
+	{
+		SetFailState("Unknown SQL driver: %s. Aborting..", sDriverIdent);
+	}
 	
 	// Create the player table
 	decl String:sQuery[1024];
