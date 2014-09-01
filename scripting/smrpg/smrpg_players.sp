@@ -118,7 +118,7 @@ InitPlayer(client)
 	}
 }
 
-AddPlayer(client, const String:auth[])
+AddPlayer(client)
 {
 	if(!g_hDatabase)
 		return;
@@ -126,20 +126,27 @@ AddPlayer(client, const String:auth[])
 	if(!GetConVarBool(g_hCVEnable))
 		return;
 	
-	new String:sAuth[64];
-	strcopy(sAuth, sizeof(sAuth), auth);
-	
+
+	decl String:sQuery[256];
 	if(IsFakeClient(client))
 	{
 		if(!GetConVarBool(g_hCVBotSaveStats))
 			return;
 		
-		// Get the bot's name as "steamid"
-		GetClientName(client, sAuth, sizeof(sAuth));
+		// Lookup bot levels depending on their names.
+		decl String:sName[MAX_NAME_LENGTH], String:sNameEscaped[MAX_NAME_LENGTH*2+1];
+		GetClientName(client, sName, sizeof(sName));
+		SQL_EscapeString(g_hDatabase, sName, sNameEscaped, sizeof(sNameEscaped));
+		Format(sQuery, sizeof(sQuery), "SELECT player_id, level, experience, credits, lastreset, lastseen, showmenu, fadescreen FROM %s WHERE steamid IS NULL AND name = '%s' ORDER BY level DESC LIMIT 1", TBL_PLAYERS, sNameEscaped);
 	}
-	
-	decl String:sQuery[256];
-	Format(sQuery, sizeof(sQuery), "SELECT player_id, level, experience, credits, lastreset, lastseen, showmenu, fadescreen FROM %s WHERE steamid = '%s' ORDER BY level DESC LIMIT 1", TBL_PLAYERS, sAuth);
+	else
+	{
+		new iAccountId = GetSteamAccountID(client);
+		if(!iAccountId)
+			return;
+		
+		Format(sQuery, sizeof(sQuery), "SELECT player_id, level, experience, credits, lastreset, lastseen, showmenu, fadescreen FROM %s WHERE steamid = %d ORDER BY level DESC LIMIT 1", TBL_PLAYERS, iAccountId);
+	}
 	
 	SQL_TQuery(g_hDatabase, SQL_GetPlayerInfo, sQuery, GetClientUserId(client));
 }
@@ -157,22 +164,18 @@ InsertPlayer(client)
 	GetClientName(client, sName, sizeof(sName));
 	SQL_EscapeString(g_hDatabase, sName, sNameEscaped, sizeof(sNameEscaped));
 	
-	decl String:sSteamID[32], String:sSteamIDEscaped[MAX_NAME_LENGTH*2+1];
-	
 	// Store the steamid of the player
 	if(!IsFakeClient(client))
 	{
-		GetClientAuthString(client, sSteamID, sizeof(sSteamID));
-		SQL_EscapeString(g_hDatabase, sSteamID, sSteamIDEscaped, sizeof(sSteamIDEscaped));
+		Format(sQuery, sizeof(sQuery), "INSERT INTO %s (name, steamid, level, experience, credits, showmenu, fadescreen, lastseen, lastreset) VALUES ('%s', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d')",
+			TBL_PLAYERS, sNameEscaped, GetSteamAccountID(client), GetClientLevel(client), GetClientExperience(client), GetClientCredits(client), ShowMenuOnLevelUp(client), FadeScreenOnLevelUp(client), GetTime(), GetTime());
 	}
 	// Bots are identified by their name!
 	else
 	{
-		strcopy(sSteamIDEscaped, sizeof(sSteamIDEscaped), sNameEscaped);
+		Format(sQuery, sizeof(sQuery), "INSERT INTO %s (name, steamid, level, experience, credits, showmenu, fadescreen, lastseen, lastreset) VALUES ('%s', NULL, '%d', '%d', '%d', '%d', '%d', '%d', '%d')",
+			TBL_PLAYERS, sNameEscaped, GetClientLevel(client), GetClientExperience(client), GetClientCredits(client), ShowMenuOnLevelUp(client), FadeScreenOnLevelUp(client), GetTime(), GetTime());
 	}
-	
-	Format(sQuery, sizeof(sQuery), "INSERT INTO %s (name, steamid, level, experience, credits, showmenu, fadescreen, lastseen, lastreset) VALUES ('%s', '%s', '%d', '%d', '%d', '%d', '%d', '%d', '%d')",
-		TBL_PLAYERS, sNameEscaped, sSteamIDEscaped, GetClientLevel(client), GetClientExperience(client), GetClientCredits(client), ShowMenuOnLevelUp(client), FadeScreenOnLevelUp(client), GetTime(), GetTime());
 	
 	SQL_TQuery(g_hDatabase, SQL_InsertPlayer, sQuery, GetClientUserId(client));
 }

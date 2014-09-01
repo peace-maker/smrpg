@@ -392,7 +392,7 @@ public OnClientPutInServer(client)
 
 public OnClientAuthorized(client, const String:auth[])
 {
-	AddPlayer(client, auth);
+	AddPlayer(client);
 }
 
 public OnClientDisconnect(client)

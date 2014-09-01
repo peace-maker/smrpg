@@ -1,7 +1,7 @@
 CREATE TABLE players (
 	player_id INTEGER PRIMARY KEY AUTO_INCREMENT, 
 	name VARCHAR(64) NOT NULL DEFAULT ' ', 
-	steamid VARCHAR(64) NOT NULL DEFAULT '0' UNIQUE, 
+	steamid INTEGER DEFAULT NULL UNIQUE, 
 	level INTEGER DEFAULT '1', 
 	experience INTEGER DEFAULT '0', 
 	credits INTEGER DEFAULT '0', 
@@ -9,13 +9,13 @@ CREATE TABLE players (
 	fadescreen INTEGER DEFAULT '1', 
 	lastseen INTEGER DEFAULT '0', 
 	lastreset INTEGER DEFAULT '0'
-);
+) DEFAULT CHARSET=utf8;
 
 CREATE TABLE upgrades (
 	upgrade_id INTEGER PRIMARY KEY AUTO_INCREMENT, 
 	shortname VARCHAR(32) UNIQUE NOT NULL, 
 	date_added INTEGER
-);
+) DEFAULT CHARSET=utf8;
 
 CREATE TABLE player_upgrades (
 	player_id INTEGER, 
@@ -26,11 +26,11 @@ CREATE TABLE player_upgrades (
 	visuals INTEGER DEFAULT '1', 
 	sounds INTEGER DEFAULT '1', 
 	PRIMARY KEY(player_id, upgrade_id)
-);
+) DEFAULT CHARSET=utf8;
 
 CREATE TABLE settings (
 	setting VARCHAR(64) PRIMARY KEY NOT NULL, 
 	value VARCHAR(256) NOT NULL
-);
+) DEFAULT CHARSET=utf8;
 
-INSERT INTO settings (setting, value) VALUES ('version', '100');
+INSERT INTO settings (setting, value) VALUES ('version', '101');

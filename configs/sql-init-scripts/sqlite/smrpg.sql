@@ -1,7 +1,7 @@
 CREATE TABLE players (
 	player_id INTEGER PRIMARY KEY AUTOINCREMENT, 
 	name VARCHAR(64) NOT NULL DEFAULT ' ', 
-	steamid VARCHAR(64) NOT NULL DEFAULT '0' UNIQUE, 
+	steamid INTEGER DEFAULT NULL UNIQUE, 
 	level INTEGER DEFAULT '1', 
 	experience INTEGER DEFAULT '0', 
 	credits INTEGER DEFAULT '0', 
@@ -33,4 +33,4 @@ CREATE TABLE settings (
 	value VARCHAR(256) NOT NULL
 );
 
-INSERT INTO settings (setting, value) VALUES ('version', '100');
+INSERT INTO settings (setting, value) VALUES ('version', '101');

@@ -7,7 +7,11 @@
 #define TBL_UPGRADES "upgrades"
 #define TBL_SETTINGS "settings"
 
-#define DATABASE_VERSION 100
+#define DBVER_INIT 100       // Initial database version
+#define DBVER_UPDATE_1 101   // Update 01.09.2014. Store steamids in accountid form instead of STEAM_X:Y:Z (steamid column varchar -> int)
+
+// Newest database version
+#define DATABASE_VERSION DBVER_UPDATE_1
 
 new Handle:g_hDatabase;
 new g_iSequence = -1;
@@ -76,7 +80,7 @@ public SQL_OnConnect(Handle:owner, Handle:hndl, const String:error[], any:data)
 	
 	// Create the player table
 	decl String:sQuery[1024];
-	Format(sQuery, sizeof(sQuery), "CREATE TABLE IF NOT EXISTS %s (player_id INTEGER PRIMARY KEY %s, name VARCHAR(64) NOT NULL DEFAULT ' ', steamid VARCHAR(64) NOT NULL DEFAULT '0' UNIQUE, level INTEGER DEFAULT '1', experience INTEGER DEFAULT '0', credits INTEGER DEFAULT '0', showmenu INTEGER DEFAULT '1', fadescreen INTEGER DEFAULT '1', lastseen INTEGER DEFAULT '0', lastreset INTEGER DEFAULT '0')", TBL_PLAYERS, (g_DriverType == Driver_MySQL ? "AUTO_INCREMENT" : "AUTOINCREMENT"));
+	Format(sQuery, sizeof(sQuery), "CREATE TABLE IF NOT EXISTS %s (player_id INTEGER PRIMARY KEY %s, name VARCHAR(64) NOT NULL DEFAULT ' ', steamid INTEGER DEFAULT NULL UNIQUE, level INTEGER DEFAULT '1', experience INTEGER DEFAULT '0', credits INTEGER DEFAULT '0', showmenu INTEGER DEFAULT '1', fadescreen INTEGER DEFAULT '1', lastseen INTEGER DEFAULT '0', lastreset INTEGER DEFAULT '0')", TBL_PLAYERS, (g_DriverType == Driver_MySQL ? "AUTO_INCREMENT" : "AUTOINCREMENT"));
 	if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
 	{
 		decl String:sError[256];
@@ -133,12 +137,11 @@ public SQL_OnConnect(Handle:owner, Handle:hndl, const String:error[], any:data)
 	DatabaseMaid();
 	
 	// Add all already connected players now
-	decl String:sAuthId[32];
 	for(new i=1;i<=MaxClients;i++)
 	{
-		if(IsClientInGame(i) && !IsFakeClient(i) && IsClientAuthorized(i) && GetClientAuthString(i, sAuthId, sizeof(sAuthId)))
+		if(IsClientInGame(i) && !IsFakeClient(i) && IsClientAuthorized(i))
 		{
-			AddPlayer(i, sAuthId);
+			AddPlayer(i);
 		}
 	}
 }
@@ -174,6 +177,92 @@ CheckDatabaseVersion()
 	if(iVersion < DATABASE_VERSION)
 	{
 		// Perform database updates here..
+		if(iVersion < DBVER_UPDATE_1)
+		{
+			if(g_DriverType == Driver_MySQL)
+			{
+				// Save steamids as accountid integers instead of STEAM_X:Y:Z
+				decl String:sQuery[512];
+				// Allow NULL as steamid value
+				Format(sQuery, sizeof(sQuery), "ALTER TABLE %s CHANGE steamid steamid VARCHAR(64) CHARACTER SET utf8 COLLATE utf8_general_ci NULL", TBL_PLAYERS);
+				if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
+				{
+					FailDatabaseUpdateError(DBVER_UPDATE_1, sQuery);
+					return;
+				}
+				
+				// Set bot's steamid to NULL
+				Format(sQuery, sizeof(sQuery), "UPDATE %s SET steamid = NULL WHERE steamid NOT LIKE 'STEAM_%'", TBL_PLAYERS);
+				if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
+				{
+					FailDatabaseUpdateError(DBVER_UPDATE_1, sQuery);
+					return;
+				}
+				
+				// Convert STEAM_X:Y:Z steamids to account ids
+				Format(sQuery, sizeof(sQuery), "UPDATE %s SET steamid = CAST(SUBSTRING(steamid, 9, 1) AS UNSIGNED) + CAST(SUBSTRING(steamid, 11) * 2 AS UNSIGNED) WHERE steamid LIKE 'STEAM_%'", TBL_PLAYERS);
+				if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
+				{
+					FailDatabaseUpdateError(DBVER_UPDATE_1, sQuery);
+					return;
+				}
+				
+				// Save the steamids as integers now.
+				Format(sQuery, sizeof(sQuery), "ALTER TABLE %s CHANGE steamid steamid INTEGER NULL", TBL_PLAYERS);
+				if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
+				{
+					FailDatabaseUpdateError(DBVER_UPDATE_1, sQuery);
+					return;
+				}
+			}
+			else if(g_DriverType == Driver_SQLite)
+			{
+				// Save steamids as accountid integers instead of STEAM_X:Y:Z
+				decl String:sQuery[512];
+				// Create a new table with the changed steamid field.
+				// SQLite doesn't support altering column types of existing tables.
+				Format(sQuery, sizeof(sQuery), "CREATE TABLE %s_X (player_id INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR(64) NOT NULL DEFAULT ' ', steamid INTEGER DEFAULT NULL UNIQUE, level INTEGER DEFAULT '1', experience INTEGER DEFAULT '0', credits INTEGER DEFAULT '0', showmenu INTEGER DEFAULT '1', fadescreen INTEGER DEFAULT '1', lastseen INTEGER DEFAULT '0', lastreset INTEGER DEFAULT '0');", TBL_PLAYERS);
+				if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
+				{
+					FailDatabaseUpdateError(DBVER_UPDATE_1, sQuery);
+					return;
+				}
+				
+				// Insert all bots with NULL steamid.
+				Format(sQuery, sizeof(sQuery), "INSERT INTO %s_X SELECT player_id, name, NULL, level, experience, credits, showmenu, fadescreen, lastseen, lastreset FROM %s WHERE steamid NOT LIKE 'STEAM_%';", TBL_PLAYERS, TBL_PLAYERS);
+				if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
+				{
+					FailDatabaseUpdateError(DBVER_UPDATE_1, sQuery);
+					return;
+				}
+				
+				// Insert all players and convert the steamid to accountid.
+				Format(sQuery, sizeof(sQuery), "INSERT INTO %s_X SELECT player_id, name, CAST(SUBSTRING(steamid, 9, 1) AS INTEGER) + CAST(SUBSTRING(steamid, 11) * 2 AS INTEGER), level, experience, credits, showmenu, fadescreen, lastseen, lastreset FROM %s WHERE steamid LIKE 'STEAM_%';", TBL_PLAYERS, TBL_PLAYERS);
+				if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
+				{
+					FailDatabaseUpdateError(DBVER_UPDATE_1, sQuery);
+					return;
+				}
+				
+				// Drop the old player table.
+				Format(sQuery, sizeof(sQuery), "DROP TABLE %s;", TBL_PLAYERS);
+				if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
+				{
+					FailDatabaseUpdateError(DBVER_UPDATE_1, sQuery);
+					return;
+				}
+				
+				// Rename the copied new one to match the correct table name of the old table.
+				Format(sQuery, sizeof(sQuery), "ALTER TABLE %s_X RENAME TO %s;", TBL_PLAYERS, TBL_PLAYERS);
+				if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
+				{
+					FailDatabaseUpdateError(DBVER_UPDATE_1, sQuery);
+					return;
+				}
+			}
+		}
+		
+		// We're on a higher version now.
 		IntToString(DATABASE_VERSION, sValue, sizeof(sValue));
 		SetSetting("version", sValue);
 	}
@@ -181,6 +270,13 @@ CheckDatabaseVersion()
 	{
 		LogError("Database version %d is newer than supported by this plugin (%d). There might be problems with incompatible database structures!", iVersion, DATABASE_VERSION);
 	}
+}
+
+FailDatabaseUpdateError(iVersion, const String:sQuery[])
+{
+	decl String:sError[256];
+	SQL_GetError(g_hDatabase, sError, sizeof(sError));
+	SetFailState("Failed to update the database to version %d. The plugin might not run correctly. Query: %s    Error: %s", iVersion, sQuery, sError);
 }
 
 DatabaseMaid()
@@ -224,7 +320,9 @@ DatabaseMaid()
 	}
 	else
 	{
-		LogError("DatabaseMaid: player expire query failed");
+		decl String:sError[256];
+		SQL_GetError(g_hDatabase, sError, sizeof(sError));
+		LogError("DatabaseMaid: player expire query failed: %s", sError);
 	}
 	
 	// Reduce sqlite database file size.
