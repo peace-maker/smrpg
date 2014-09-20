@@ -237,7 +237,7 @@ CheckDatabaseVersion()
 				}
 				
 				// Insert all players and convert the steamid to accountid.
-				Format(sQuery, sizeof(sQuery), "INSERT INTO %s_X SELECT player_id, name, CAST(SUBSTRING(steamid, 9, 1) AS INTEGER) + CAST(SUBSTRING(steamid, 11) * 2 AS INTEGER), level, experience, credits, showmenu, fadescreen, lastseen, lastreset FROM %s WHERE steamid LIKE 'STEAM_%';", TBL_PLAYERS, TBL_PLAYERS);
+				Format(sQuery, sizeof(sQuery), "INSERT INTO %s_X SELECT player_id, name, CAST(SUBSTR(steamid, 9, 1) AS INTEGER) + CAST(SUBSTR(steamid, 11) * 2 AS INTEGER), level, experience, credits, showmenu, fadescreen, lastseen, lastreset FROM %s WHERE steamid LIKE 'STEAM_%';", TBL_PLAYERS, TBL_PLAYERS);
 				if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
 				{
 					FailDatabaseUpdateError(DBVER_UPDATE_1, sQuery);

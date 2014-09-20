@@ -17,7 +17,7 @@ CREATE TABLE players_X (
 INSERT INTO players_X SELECT player_id, name, NULL, level, experience, credits, showmenu, fadescreen, lastseen, lastreset FROM players WHERE steamid NOT LIKE 'STEAM_%';
 
 -- Insert all players and convert the steamid to accountid.
-INSERT INTO players_X SELECT player_id, name, CAST(SUBSTRING(steamid, 9, 1) AS INTEGER) + CAST(SUBSTRING(steamid, 11) * 2 AS INTEGER), level, experience, credits, showmenu, fadescreen, lastseen, lastreset FROM players WHERE steamid LIKE 'STEAM_%';
+INSERT INTO players_X SELECT player_id, name, CAST(SUBSTR(steamid, 9, 1) AS INTEGER) + CAST(SUBSTR(steamid, 11) * 2 AS INTEGER), level, experience, credits, showmenu, fadescreen, lastseen, lastreset FROM players WHERE steamid LIKE 'STEAM_%';
 
 -- Drop the old player table.
 DROP TABLE players;
