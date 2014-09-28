@@ -192,7 +192,7 @@ CheckDatabaseVersion()
 				}
 				
 				// Set bot's steamid to NULL
-				Format(sQuery, sizeof(sQuery), "UPDATE %s SET steamid = NULL WHERE steamid NOT LIKE 'STEAM_%'", TBL_PLAYERS);
+				Format(sQuery, sizeof(sQuery), "UPDATE %s SET steamid = NULL WHERE steamid NOT LIKE 'STEAM_%%'", TBL_PLAYERS);
 				if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
 				{
 					FailDatabaseUpdateError(DBVER_UPDATE_1, sQuery);
@@ -200,7 +200,7 @@ CheckDatabaseVersion()
 				}
 				
 				// Convert STEAM_X:Y:Z steamids to account ids
-				Format(sQuery, sizeof(sQuery), "UPDATE %s SET steamid = CAST(SUBSTRING(steamid, 9, 1) AS UNSIGNED) + CAST(SUBSTRING(steamid, 11) * 2 AS UNSIGNED) WHERE steamid LIKE 'STEAM_%'", TBL_PLAYERS);
+				Format(sQuery, sizeof(sQuery), "UPDATE %s SET steamid = CAST(SUBSTRING(steamid, 9, 1) AS UNSIGNED) + CAST(SUBSTRING(steamid, 11) * 2 AS UNSIGNED) WHERE steamid LIKE 'STEAM_%%'", TBL_PLAYERS);
 				if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
 				{
 					FailDatabaseUpdateError(DBVER_UPDATE_1, sQuery);
@@ -229,7 +229,7 @@ CheckDatabaseVersion()
 				}
 				
 				// Insert all bots with NULL steamid.
-				Format(sQuery, sizeof(sQuery), "INSERT INTO %s_X SELECT player_id, name, NULL, level, experience, credits, showmenu, fadescreen, lastseen, lastreset FROM %s WHERE steamid NOT LIKE 'STEAM_%';", TBL_PLAYERS, TBL_PLAYERS);
+				Format(sQuery, sizeof(sQuery), "INSERT INTO %s_X SELECT player_id, name, NULL, level, experience, credits, showmenu, fadescreen, lastseen, lastreset FROM %s WHERE steamid NOT LIKE 'STEAM_%%';", TBL_PLAYERS, TBL_PLAYERS);
 				if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
 				{
 					FailDatabaseUpdateError(DBVER_UPDATE_1, sQuery);
@@ -237,7 +237,7 @@ CheckDatabaseVersion()
 				}
 				
 				// Insert all players and convert the steamid to accountid.
-				Format(sQuery, sizeof(sQuery), "INSERT INTO %s_X SELECT player_id, name, CAST(SUBSTR(steamid, 9, 1) AS INTEGER) + CAST(SUBSTR(steamid, 11) * 2 AS INTEGER), level, experience, credits, showmenu, fadescreen, lastseen, lastreset FROM %s WHERE steamid LIKE 'STEAM_%';", TBL_PLAYERS, TBL_PLAYERS);
+				Format(sQuery, sizeof(sQuery), "INSERT INTO %s_X SELECT player_id, name, CAST(SUBSTR(steamid, 9, 1) AS INTEGER) + CAST(SUBSTR(steamid, 11) * 2 AS INTEGER), level, experience, credits, showmenu, fadescreen, lastseen, lastreset FROM %s WHERE steamid LIKE 'STEAM_%%';", TBL_PLAYERS, TBL_PLAYERS);
 				if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
 				{
 					FailDatabaseUpdateError(DBVER_UPDATE_1, sQuery);
