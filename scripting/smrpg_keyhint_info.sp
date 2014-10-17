@@ -29,7 +29,7 @@ new Float:g_fExperienceAverage[MAXPLAYERS+1];
 
 public Plugin:myinfo = 
 {
-	name = "SMRPG > Key Hint Infopanel",
+	name = "SM:RPG > Key Hint Infopanel",
 	author = "Jannik \"Peace-Maker\" Hartung",
 	description = "Shows some RPG stats in a panel on the screen",
 	version = PLUGIN_VERSION,
