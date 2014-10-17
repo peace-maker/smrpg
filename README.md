@@ -59,6 +59,7 @@ See the available upgrade plugins for examples. You can use the [example upgrade
 * Ice Stab - Freeze a player in place when knifing him.
 * Impulse - Gain speed for a short time when being shot.
 * Increase Clipsize - Increases the size of a weapon's clip.
+* Increase Firerate - Increases the firerate of weapons.
 * Long Jump - Boosts your jump speed.
 * Medic - Heals team mates around you.
 * Poison Smoke (Counter-Strike: Source only) - Damages players inside the smoke of a smoke grenade.

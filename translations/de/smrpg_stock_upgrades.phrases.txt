@@ -219,4 +219,14 @@
 	{
 		"de"			"Vergiftet Spieler, die im Rauch einer Rauchgranate stehen."
 	}
+	
+	"firerate"
+	{
+		"de"			"Feuerrate erhöhen"
+	}
+	
+	"firerate description"
+	{
+		"de"			"Erhöht die Feuerrate deiner Schusswaffen."
+	}
 }

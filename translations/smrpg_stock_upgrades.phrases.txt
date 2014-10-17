@@ -219,4 +219,14 @@
 	{
 		"en"			"Damages players inside the smoke of a smoke grenade"
 	}
+	
+	"firerate"
+	{
+		"en"			"Increase firerate"
+	}
+	
+	"firerate description"
+	{
+		"en"			"Increases the firerate of weapons."
+	}
 }
