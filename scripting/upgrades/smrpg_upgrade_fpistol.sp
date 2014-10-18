@@ -134,9 +134,7 @@ public SMRPG_BuySell(client, UpgradeQueryType:type)
 
 public bool:SMRPG_ActiveQuery(client)
 {
-	new upgrade[UpgradeInfo];
-	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
-	return SMRPG_IsEnabled() && upgrade[UI_enabled] && SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME) > 0 && g_hFPistolResetSpeed[client] != INVALID_HANDLE;
+	return g_hFPistolResetSpeed[client] != INVALID_HANDLE;
 }
 
 // Some plugin wants this effect to end?

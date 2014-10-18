@@ -84,10 +84,7 @@ public SMRPG_BuySell(client, UpgradeQueryType:type)
 
 public bool:SMRPG_ActiveQuery(client)
 {
-	// This is a passive effect, so it's always active, if the player got at least level 1
-	new upgrade[UpgradeInfo];
-	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
-	return SMRPG_IsEnabled() && upgrade[UI_enabled] && SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME) > 0;
+	return g_hExtinguishTimer[client] != INVALID_HANDLE;
 }
 
 // Some plugin wants this effect to end?
