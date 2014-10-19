@@ -13,6 +13,7 @@
 
 #include "smrpg_effects/rendercolor.sp"
 #include "smrpg_effects/freeze.sp"
+#include "smrpg_effects/ignite.sp"
 
 public Plugin:myinfo = 
 {
@@ -28,6 +29,7 @@ public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
 	RegPluginLibrary("smrpg_effects");
 	RegisterFreezeNatives();
 	RegisterRenderColorNatives();
+	RegisterIgniteNatives();
 	
 	return APLRes_Success;
 }
@@ -37,6 +39,7 @@ public OnPluginStart()
 	SMRPG_GC_CheckSharedMaterialsAndSounds();
 	
 	RegisterFreezeForwards();
+	RegisterIgniteForwards();
 	
 	HookEvent("player_spawn", Event_OnPlayerSpawn);
 	HookEvent("player_death", Event_OnPlayerDeath);
@@ -62,8 +65,9 @@ public OnClientPutInServer(client)
 
 public OnClientDisconnect(client)
 {
-	ResetFreezeClient(client);
 	ResetRenderColorClient(client);
+	ResetFreezeClient(client);
+	ResetIgniteClient(client, true);
 }
 
 /**
@@ -76,6 +80,7 @@ public Event_OnPlayerSpawn(Handle:event, const String:error[], bool:dontBroadcas
 		return;
 
 	ResetFreezeClient(client);
+	ResetIgniteClient(client, false);
 	ApplyDefaultRenderColor(client);
 }
 
@@ -86,6 +91,7 @@ public Event_OnPlayerDeath(Handle:event, const String:error[], bool:dontBroadcas
 		return;
 
 	ResetFreezeClient(client);
+	ResetIgniteClient(client, false);
 }
 
 /**

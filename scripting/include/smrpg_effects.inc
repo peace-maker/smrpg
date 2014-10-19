@@ -37,6 +37,36 @@ native SMRPG_UnfreezeClient(client);
 native bool:SMRPG_IsClientFrozen(client);
 
 /**
+ * Ignites a client. Can play optional effects on him.
+ *
+ * @param client             The client index.
+ * @param fTime              The time to let the player burn.
+ * @param sUpgradeName       Upgrade shortname which issues the ignition. Used to see if clients want to see the visual/sound effects.
+ * @param bFadeColor         Fade the player's model from red to normal?
+ * @return                   True if client was ignited, false otherwise.
+ * @error                    Invalid client index.
+ */
+native bool:SMRPG_IgniteClient(client, Float:fTime, const String:sUpgradeName[], bool:bFadeColor=true);
+
+/**
+ * Extinguish a client, if he was ignited by SMRPG_IgniteClient previously.
+ *
+ * @param client             The client index.
+ * @noreturn
+ * @error                    Invalid client index or client not burning.
+ */
+native SMRPG_ExtinguishClient(client);
+
+/**
+ * Checks whether a client is ignited by this plugin.
+ *
+ * @param client             The client index.
+ * @return                   True if burning, false otherwise.
+ * @error                    Invalid client index.
+ */
+native bool:SMRPG_IsClientBurning(client);
+
+/**
  * Set the default color of the player to reset to after some effects are run.
  * Color is not touched, if set to -1.
  *
@@ -137,6 +167,32 @@ forward SMRPG_OnClientFrozen(client, Float:fTime);
  */
 forward SMRPG_OnClientUnfrozen(client);
 
+/**
+ * Called when a client is about to be ignited for fTime seconds.
+ *
+ * @param client     The client index.
+ * @param &fTime     The time to burn for. You can change it and return Plugin_Changed.
+ * @return           >= Plugin_Handled to block, Plugin_Continue to allow burning.
+ */
+forward Action:SMRPG_OnClientIgnite(client, &Float:fTime);
+
+/**
+ * Called when a client was ignited for fTime seconds.
+ *
+ * @param client     The client index.
+ * @param fTime      The time to freeze for.
+ * @noreturn
+ */
+forward SMRPG_OnClientIgnited(client, Float:fTime);
+
+/**
+ * Called when a client was extinguished.
+ *
+ * @param client     The client index.
+ * @noreturn
+ */
+forward SMRPG_OnClientExtinguished(client);
+
 public SharedPlugin:__pl_smrpg_effects = 
 {
 	name = "smrpg_effects",
@@ -154,6 +210,10 @@ public __pl_smrpg_effects_SetNTVOptional()
 	MarkNativeAsOptional("SMRPG_FreezeClient");
 	MarkNativeAsOptional("SMRPG_UnfreezeClient");
 	MarkNativeAsOptional("SMRPG_IsClientFrozen");
+	
+	MarkNativeAsOptional("SMRPG_IgniteClient");
+	MarkNativeAsOptional("SMRPG_ExtinguishClient");
+	MarkNativeAsOptional("SMRPG_IsClientBurning");
 	
 	MarkNativeAsOptional("SMRPG_SetClientDefaultColor");
 	MarkNativeAsOptional("SMRPG_SetClientRenderColor");
