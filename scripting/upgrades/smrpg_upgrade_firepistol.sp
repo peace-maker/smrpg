@@ -3,14 +3,13 @@
 #include <sdktools>
 #include <sdkhooks>
 #include <smrpg>
+#include <smrpg_effects>
 #include <smlib>
 
 #define UPGRADE_SHORTNAME "firepistol"
 #define PLUGIN_VERSION "1.0"
 
 new Handle:g_hCVTimeIncrease;
-
-new Handle:g_hExtinguishPlayer[MAXPLAYERS+1];
 
 public Plugin:myinfo = 
 {
@@ -23,9 +22,6 @@ public Plugin:myinfo =
 
 public OnPluginStart()
 {
-	HookEvent("player_spawn", Event_OnResetEffect);
-	HookEvent("player_death", Event_OnResetEffect);
-
 	LoadTranslations("smrpg_stock_upgrades.phrases");
 
 	// Account for late loading
@@ -65,23 +61,6 @@ public OnClientPutInServer(client)
 	SDKHook(client, SDKHook_OnTakeDamagePost, Hook_OnTakeDamagePost);
 }
 
-public OnClientDisconnect(client)
-{
-	SMRPG_ResetEffect(client);
-}
-
-/**
- * Event callbacks
- */
-public Event_OnResetEffect(Handle:event, const String:error[], bool:dontBroadcast)
-{
-	new client = GetClientOfUserId(GetEventInt(event, "userid"));
-	if(!client)
-		return;
-
-	SMRPG_ResetEffect(client);
-}
-
 /**
  * SM:RPG Upgrade callbacks
  */
@@ -92,15 +71,14 @@ public SMRPG_BuySell(client, UpgradeQueryType:type)
 
 public bool:SMRPG_ActiveQuery(client)
 {
-	return g_hExtinguishPlayer[client] != INVALID_HANDLE;
+	return SMRPG_IsClientBurning(client);
 }
 
 // Some plugin wants this effect to end?
 public SMRPG_ResetEffect(client)
 {
-	if(g_hExtinguishPlayer[client] != INVALID_HANDLE && IsClientInGame(client))
-		TriggerTimer(g_hExtinguishPlayer[client]);
-	ClearHandle(g_hExtinguishPlayer[client]);
+	if(SMRPG_IsClientBurning(client))
+		SMRPG_ExtinguishClient(client);
 }
 
 public SMRPG_TranslateUpgrade(client, const String:shortname[], TranslationType:type, String:translation[], maxlen)
@@ -132,7 +110,7 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 		return;
 	
 	// This player is already burning. Don't stack the effect and wait until he stopped to be able to burn him again.
-	if(g_hExtinguishPlayer[victim] != INVALID_HANDLE)
+	if(SMRPG_IsClientBurning(victim))
 		return;
 	
 	// Are bots allowed to use this upgrade?
@@ -162,25 +140,6 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 	if(!SMRPG_RunUpgradeEffect(victim, UPGRADE_SHORTNAME))
 		return; // Some other plugin doesn't want this effect to run
 	
-	ClearHandle(g_hExtinguishPlayer[victim]);
-	
 	new Float:fTime = float(iLevel)*GetConVarFloat(g_hCVTimeIncrease);
-	IgniteEntity(victim, fTime);
-	g_hExtinguishPlayer[victim] = CreateTimer(fTime, Timer_ExtinguishPlayer, GetClientUserId(victim), TIMER_FLAG_NO_MAPCHANGE);
-}
-
-/**
- * Timer callbacks
- */
-public Action:Timer_ExtinguishPlayer(Handle:timer, any:userid)
-{
-	new client = GetClientOfUserId(userid);
-	if(!client)
-		return Plugin_Stop;
-	
-	g_hExtinguishPlayer[client] = INVALID_HANDLE;
-	
-	ExtinguishEntity(client);
-	
-	return Plugin_Stop;
+	SMRPG_IgniteClient(victim, fTime, UPGRADE_SHORTNAME);
 }
