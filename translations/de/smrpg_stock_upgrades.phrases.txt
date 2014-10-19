@@ -229,4 +229,14 @@
 	{
 		"de"			"Erhöht die Feuerrate deiner Schusswaffen."
 	}
+	
+	"icenade"
+	{
+		"de"			"Eisgranate"
+	}
+	
+	"icenade description"
+	{
+		"de"			"Friert deinen Gegner ein, wenn du ihn mit einer Granate triffst."
+	}
 }

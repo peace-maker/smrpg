@@ -229,4 +229,14 @@
 	{
 		"en"			"Increases the firerate of weapons."
 	}
+	
+	"icenade"
+	{
+		"en"			"Ice Grenade"
+	}
+	
+	"icenade description"
+	{
+		"en"			"Freeze a player in place when damaging him with your grenade."
+	}
 }
