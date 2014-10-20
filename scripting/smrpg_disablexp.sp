@@ -26,6 +26,8 @@ public OnPluginStart()
 	
 	LoadTranslations("common.phrases");
 	
+	HookEvent("player_disconnect", Event_OnPlayerDisconnect);
+	
 	// See if the menu plugin is already ready
 	new Handle:topmenu;
 	if (LibraryExists("adminmenu") && ((topmenu = GetAdminTopMenu()) != INVALID_HANDLE))
@@ -35,8 +37,13 @@ public OnPluginStart()
 	}
 }
 
-public OnClientDisconnect(client)
+// Only reset on real disconnects. Don't care for mapchanges.
+public Event_OnPlayerDisconnect(Handle:event, const String:name[], bool:dontBroadcast)
 {
+	new client = GetClientOfUserId(GetEventInt(event, "userid"));
+	if(!client)
+		return;
+	
 	// TODO: Remember setting over disconnects? (clientpref)
 	g_bDisableExperience[client] = false;
 }
@@ -45,7 +52,11 @@ public Action:Cmd_ToggleExp(client, args)
 {
 	if(args < 1)
 	{
-		ReplyToCommand(client, "SM:RPG > Toggle experience gaining for a player. Usage sm_toggleexp <name|steamid|#userid>");
+		// Open the menu if no target specified.
+		if(!client)
+			ReplyToCommand(client, "SM:RPG > Toggle experience gaining for a player. Usage sm_toggleexp <name|steamid|#userid>");
+		else
+			DisplayPlayerList(client);
 		return Plugin_Handled;
 	}
 	
@@ -64,6 +75,8 @@ public Action:Cmd_ToggleExp(client, args)
 		ReplyToCommand(client, "{OG}SM:RPG{N} > {G}Disabled experience for %N. No more experience for that one.", iTarget);
 	else
 		ReplyToCommand(client, "{OG}SM:RPG{N} > {G}Enabled experience for %N again.", iTarget);
+	
+	LogAction(client, iTarget, "%L %s experience gaining for %L.", client, (g_bDisableExperience[iTarget]?"disabled":"enabled"), iTarget);
 	
 	return Plugin_Handled;
 }
@@ -124,7 +137,7 @@ public TopMenu_AdminHandleToggleExp(Handle:topmenu, TopMenuAction:action, TopMen
 	}
 }
 
-DisplayPlayerList(client)
+DisplayPlayerList(client, iPosition=0)
 {
 	new Handle:hMenu = CreateMenu(Menu_HandlePlayerlist);
 	SetMenuExitBackButton(hMenu, true);
@@ -146,7 +159,7 @@ DisplayPlayerList(client)
 		AddMenuItem(hMenu, sUserId, sBuffer);
 	}
 	
-	DisplayMenu(hMenu, client, MENU_TIME_FOREVER);
+	DisplayMenuAtItem(hMenu, client, iPosition, MENU_TIME_FOREVER);
 }
 
 public Menu_HandlePlayerlist(Handle:menu, MenuAction:action, param1, param2)
@@ -157,7 +170,7 @@ public Menu_HandlePlayerlist(Handle:menu, MenuAction:action, param1, param2)
 	}
 	else if(action == MenuAction_Cancel)
 	{
-		if(param2 == MenuCancel_ExitBack)
+		if(param2 == MenuCancel_ExitBack && g_hTopMenu != INVALID_HANDLE)
 			RedisplayAdminMenu(g_hTopMenu, param1);
 	}
 	else if(action == MenuAction_Select)
@@ -170,8 +183,9 @@ public Menu_HandlePlayerlist(Handle:menu, MenuAction:action, param1, param2)
 		if(iTarget > 0)
 		{
 			g_bDisableExperience[iTarget] = !g_bDisableExperience[iTarget];
+			LogAction(param1, iTarget, "%L %s experience gaining for %L.", param1, (g_bDisableExperience[iTarget]?"disabled":"enabled"), iTarget);
 		}
 		
-		RedisplayAdminMenu(g_hTopMenu, param1);
+		DisplayPlayerList(param1, GetMenuSelectionPosition());
 	}
 }
