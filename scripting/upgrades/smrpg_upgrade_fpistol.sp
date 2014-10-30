@@ -3,6 +3,7 @@
 #include <sdktools>
 #include <sdkhooks>
 #include <smrpg>
+#include <smrpg_effects>
 #include <smrpg_helper>
 #include <smrpg_sharedmaterials>
 #include <smlib>
@@ -11,9 +12,6 @@
 #define PLUGIN_VERSION "1.0"
 
 new Handle:g_hCVTimeIncrease;
-
-new Float:g_fFPistolLastSpeed[MAXPLAYERS+1];
-new Handle:g_hFPistolResetSpeed[MAXPLAYERS+1];
 
 new Handle:g_hWeaponSpeeds;
 
@@ -43,9 +41,6 @@ public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
 
 public OnPluginStart()
 {
-	HookEvent("player_spawn", Event_OnResetEffect);
-	HookEvent("player_death", Event_OnResetEffect);
-
 	LoadTranslations("smrpg_stock_upgrades.phrases");
 	
 	SMRPG_GC_CheckSharedMaterialsAndSounds();
@@ -113,18 +108,6 @@ public OnClientDisconnect(client)
 }
 
 /**
- * Event callbacks
- */
-public Event_OnResetEffect(Handle:event, const String:error[], bool:dontBroadcast)
-{
-	new client = GetClientOfUserId(GetEventInt(event, "userid"));
-	if(!client)
-		return;
-
-	SMRPG_ResetEffect(client);
-}
-
-/**
  * SM:RPG Upgrade callbacks
  */
 public SMRPG_BuySell(client, UpgradeQueryType:type)
@@ -134,16 +117,13 @@ public SMRPG_BuySell(client, UpgradeQueryType:type)
 
 public bool:SMRPG_ActiveQuery(client)
 {
-	return g_hFPistolResetSpeed[client] != INVALID_HANDLE;
+	return SMRPG_IsClientLaggedMovementChanged(client, LMT_Slower, true);
 }
 
 // Some plugin wants this effect to end?
 public SMRPG_ResetEffect(client)
 {
-	if(g_hFPistolResetSpeed[client] != INVALID_HANDLE && IsClientInGame(client))
-		TriggerTimer(g_hFPistolResetSpeed[client]);
-	ClearHandle(g_hFPistolResetSpeed[client]);
-	g_fFPistolLastSpeed[client] = 0.0;
+	SMRPG_ResetClientLaggedMovement(client, LMT_Slower);
 }
 
 public SMRPG_TranslateUpgrade(client, const String:shortname[], TranslationType:type, String:translation[], maxlen)
@@ -159,20 +139,15 @@ public SMRPG_TranslateUpgrade(client, const String:shortname[], TranslationType:
 }
 
 /**
- * SM:RPG public callbacks
+ * SM:RPG Effect Hub callbacks
  */
-public Action:SMRPG_OnUpgradeEffect(client, const String:shortname[])
+public SMRPG_OnClientLaggedMovementReset(client, LaggedMovementType:type)
 {
-	// We only care for the impulse effect
-	if(!StrEqual(shortname, "impulse"))
-		return Plugin_Continue;
-	
-	// This client isn't slowed down by the frostpistol. Allow impulse to apply its effect.
-	if(g_hFPistolResetSpeed[client] == INVALID_HANDLE)
-		return Plugin_Continue;
-	
-	// Frostpistol is active. Block impulse.
-	return Plugin_Handled;
+	if(type == LMT_Slower)
+	{
+		// Reset the blue color, if we set it before.
+		SMRPG_ResetClientToDefaultColor(client, true, true, true, false);
+	}
 }
 
 /**
@@ -222,75 +197,26 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 	if(!SMRPG_RunUpgradeEffect(victim, UPGRADE_SHORTNAME))
 		return; // Some other plugin doesn't want this effect to run
 	
-	// Don't have impulse going wonky
-	SMRPG_ResetUpgradeEffectOnClient(victim, "impulse");
+	new Float:fTime = float(iLevel) * GetConVarFloat(g_hCVTimeIncrease);
 	
-	//new Float:fOldLaggedMovementValue = GetEntPropFloat(victim, Prop_Send, "m_flLaggedMovementValue");
-	new Float:fOldLaggedMovementValue = 1.0;
-	
-	if(g_hFPistolResetSpeed[victim] == INVALID_HANDLE)
+	if(SMRPG_ChangeClientLaggedMovement(victim, fTime, fSpeed))
 	{
-		g_fFPistolLastSpeed[victim] = fSpeed;
-		SetEntPropFloat(victim, Prop_Send, "m_flLaggedMovementValue", fSpeed);
-	}
-	else
-	{
-		// Player got shot by a different player with higher damage before?
-		if(g_fFPistolLastSpeed[victim] > fSpeed)
+		// Emit some icy sound
+		if(g_iFreezeSoundCount > 0)
 		{
-			g_fFPistolLastSpeed[victim] = fSpeed;
-			SetEntPropFloat(victim, Prop_Send, "m_flLaggedMovementValue", fSpeed);
+			decl String:sKey[64];
+			Format(sKey, sizeof(sKey), "SoundFPistolFreeze%d", GetRandomInt(1, g_iFreezeSoundCount));
+			// Only play it to players who enabled sounds for this upgrade
+			SMRPG_EmitSoundToAllEnabled(UPGRADE_SHORTNAME, SMRPG_GC_GetKeyValue(sKey), victim, SNDCHAN_AUTO, SNDLEVEL_NORMAL, SND_NOFLAGS, 0.8, SNDPITCH_NORMAL, victim);
 		}
-		// Don't extend the timer, if the player is already slowed down for that speed.
-		else
+		
+		// TODO: Move to laggedmovement effect hub slowdown
+		// If the victim doesn't want any effect, don't show it to anyone..................
+		if(SMRPG_ClientWantsCosmetics(victim, UPGRADE_SHORTNAME, SMRPG_FX_Visuals))
 		{
-			return;
+			SMRPG_SetClientRenderColor(victim, 0, 0, 255, -1);
 		}
 	}
-	
-	// Emit some icy sound
-	if(g_iFreezeSoundCount > 0)
-	{
-		decl String:sKey[64];
-		Format(sKey, sizeof(sKey), "SoundFPistolFreeze%d", GetRandomInt(1, g_iFreezeSoundCount));
-		// Only play it to players who enabled sounds for this upgrade
-		SMRPG_EmitSoundToAllEnabled(UPGRADE_SHORTNAME, SMRPG_GC_GetKeyValue(sKey), victim, SNDCHAN_AUTO, SNDLEVEL_NORMAL, SND_NOFLAGS, 0.8, SNDPITCH_NORMAL, victim);
-	}
-	
-	// If the victim doesn't want any effect, don't show it to anyone..................
-	if(SMRPG_ClientWantsCosmetics(victim, UPGRADE_SHORTNAME, SMRPG_FX_Visuals))
-	{
-		SetEntityRenderMode(victim, RENDER_TRANSCOLOR);
-		Entity_SetRenderColor(victim, 0, 0, 255, -1);
-	}
-	
-	ClearHandle(g_hFPistolResetSpeed[victim]);
-	
-	new Handle:hData;
-	g_hFPistolResetSpeed[victim] = CreateDataTimer(float(iLevel)*GetConVarFloat(g_hCVTimeIncrease), Timer_ResetSpeed, hData, TIMER_FLAG_NO_MAPCHANGE);
-	WritePackCell(hData, GetClientUserId(victim));
-	WritePackFloat(hData, fOldLaggedMovementValue);
-	ResetPack(hData);
-}
-
-/**
- * Timer callbacks
- */
-public Action:Timer_ResetSpeed(Handle:timer, any:data)
-{
-	new userid = ReadPackCell(data);
-	new Float:fOldLaggedMovementValue = ReadPackFloat(data);
-	
-	new client = GetClientOfUserId(userid);
-	if(!client)
-		return Plugin_Stop;
-	
-	g_hFPistolResetSpeed[client] = INVALID_HANDLE;
-	
-	SetEntPropFloat(client, Prop_Send, "m_flLaggedMovementValue", fOldLaggedMovementValue);
-	Entity_SetRenderColor(client, 255, 255, 255, -1);
-	
-	return Plugin_Stop;
 }
 
 /**
