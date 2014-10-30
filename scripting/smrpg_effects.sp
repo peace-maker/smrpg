@@ -14,6 +14,7 @@
 #include "smrpg_effects/rendercolor.sp"
 #include "smrpg_effects/freeze.sp"
 #include "smrpg_effects/ignite.sp"
+#include "smrpg_effects/laggedmovement.sp"
 
 public Plugin:myinfo = 
 {
@@ -30,6 +31,7 @@ public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
 	RegisterFreezeNatives();
 	RegisterRenderColorNatives();
 	RegisterIgniteNatives();
+	RegisterLaggedMovementNatives();
 	
 	return APLRes_Success;
 }
@@ -40,6 +42,7 @@ public OnPluginStart()
 	
 	RegisterFreezeForwards();
 	RegisterIgniteForwards();
+	RegisterLaggedMovementForwards();
 	
 	HookEvent("player_spawn", Event_OnPlayerSpawn);
 	HookEvent("player_death", Event_OnPlayerDeath);
@@ -68,6 +71,7 @@ public OnClientDisconnect(client)
 	ResetRenderColorClient(client);
 	ResetFreezeClient(client);
 	ResetIgniteClient(client, true);
+	ResetLaggedMovementClient(client);
 }
 
 /**
@@ -82,6 +86,7 @@ public Event_OnPlayerSpawn(Handle:event, const String:error[], bool:dontBroadcas
 	ResetFreezeClient(client);
 	ResetIgniteClient(client, false);
 	ApplyDefaultRenderColor(client);
+	ResetLaggedMovementClient(client);
 }
 
 public Event_OnPlayerDeath(Handle:event, const String:error[], bool:dontBroadcast)
@@ -92,6 +97,7 @@ public Event_OnPlayerDeath(Handle:event, const String:error[], bool:dontBroadcas
 
 	ResetFreezeClient(client);
 	ResetIgniteClient(client, false);
+	ResetLaggedMovementClient(client);
 }
 
 /**
