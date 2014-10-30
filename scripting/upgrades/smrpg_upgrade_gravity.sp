@@ -122,7 +122,7 @@ public Event_OnPlayerSpawn(Handle:event, const String:error[], bool:dontBroadcas
 public SMRPG_BuySell(client, UpgradeQueryType:type)
 {
 	if(IsClientInGame(client) && IsPlayerAlive(client) && GetClientTeam(client) > 1)
-		ApplyGravity(client);
+		ApplyGravity(client, true);
 }
 
 public bool:SMRPG_ActiveQuery(client)
