@@ -199,7 +199,7 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 	
 	new Float:fTime = float(iLevel) * GetConVarFloat(g_hCVTimeIncrease);
 	
-	if(SMRPG_ChangeClientLaggedMovement(victim, fTime, fSpeed))
+	if(SMRPG_ChangeClientLaggedMovement(victim, fSpeed, fTime))
 	{
 		// Emit some icy sound
 		if(g_iFreezeSoundCount > 0)
