@@ -66,6 +66,13 @@ new Handle:g_hCVIgnoreLevelBarrier;
 new Handle:g_hCVAllowPresentUpgradeUsage;
 new Handle:g_hCVDisableLevelSelection;
 
+#define SHOW_TEAMLOCK_NONE 0
+#define SHOW_TEAMLOCK_BOUGHT 1
+#define SHOW_TEAMLOCK_ALL 2
+new Handle:g_hCVShowUpgradesOfOtherTeam;
+new Handle:g_hCVBuyUpgradesOfOtherTeam;
+new Handle:g_hCVShowTeamlockNoticeOwnTeam;
+
 new Handle:g_hCVShowUpgradePurchase;
 new Handle:g_hCVShowMenuOnLevelDefault;
 new Handle:g_hCVFadeOnLevelDefault;
@@ -173,6 +180,9 @@ public OnPluginStart()
 	g_hCVIgnoreLevelBarrier = AutoExecConfig_CreateConVar("smrpg_ignore_level_barrier", "0", "Ignore the hardcoded maxlevels for the upgrades and allow to set the maxlevel as high as you want. THIS MIGHT BE BAD!", 0, true, 0.0, true, 1.0);
 	g_hCVAllowPresentUpgradeUsage = AutoExecConfig_CreateConVar("smrpg_allow_present_upgrade_usage", "0", "Allow players to use the upgrades they already have levels for, if they normally wouldn't have access to the upgrade due to the adminflags.\nThis allows admins to give upgrades to players they aren't able to buy themselves.", 0, true, 0.0, true, 1.0);
 	g_hCVDisableLevelSelection = AutoExecConfig_CreateConVar("smrpg_disable_level_selection", "0", "Don't allow players to change the selected levels of their upgrades to a lower level than they already purchased?", 0, true, 0.0, true, 1.0);
+	g_hCVShowUpgradesOfOtherTeam = AutoExecConfig_CreateConVar("smrpg_show_upgrades_teamlock", "1", "Show the upgrades if they are locked to the other team?\n\t0: Don't show teamlocked upgrades at all.\n\t1: Show upgrades if the player already bought a level while being in the other team.\n\t2: Always show all upgrades.", 0, true, 0.0, true, 2.0);
+	g_hCVBuyUpgradesOfOtherTeam = AutoExecConfig_CreateConVar("smrpg_buy_upgrades_teamlock", "0", "Allow players to buy upgrades of the other team, even if they can't use them in the current team?", 0, true, 0.0, true, 1.0);
+	g_hCVShowTeamlockNoticeOwnTeam = AutoExecConfig_CreateConVar("smrpg_show_teamlock_notice_own_team", "0", "Always show the team restriction of the upgrade in the menu, even if the player is in the correct team?", 0, true, 0.0, true, 1.0);
 	
 	g_hCVShowUpgradePurchase = AutoExecConfig_CreateConVar("smrpg_show_upgrade_purchase_in_chat", "0", "Show a message to all in chat when a player buys an upgrade.", 0, true, 0.0, true, 1.0);
 	g_hCVShowMenuOnLevelDefault = AutoExecConfig_CreateConVar("smrpg_show_menu_on_levelup", "0", "Show the rpg menu when a player levels up by default? Players can change it in their settings individually afterwards.", 0, true, 0.0, true, 1.0);
