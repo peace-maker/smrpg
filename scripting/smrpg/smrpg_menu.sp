@@ -204,7 +204,7 @@ public TopMenu_HandleUpgrades(Handle:topmenu, TopMenuAction:action, TopMenuObjec
 			if(!IsClientInLockedTeam(param, upgrade) && upgrade[UPGR_teamlock] < GetTeamCount())
 			{
 				GetTeamName(upgrade[UPGR_teamlock], sTeamlock, sizeof(sTeamlock));
-				Format(sTeamlock, sizeof(sTeamlock), " (TEAM %s ONLY!)", sTeamlock);
+				Format(sTeamlock, sizeof(sTeamlock), " (%T)", "Is teamlocked", param, sTeamlock);
 			}
 			
 			decl String:sTranslatedName[MAX_UPGRADE_NAME_LENGTH];
@@ -240,7 +240,7 @@ public TopMenu_HandleUpgrades(Handle:topmenu, TopMenuAction:action, TopMenuObjec
 			{
 				// Still show it, but disable access, if the client bought it while being in the other team.
 				if(iLevel > 0)
-					buffer[0]= ITEMDRAW_DISABLED;
+					buffer[0] = ITEMDRAW_DISABLED;
 				else
 					buffer[0] = ITEMDRAW_IGNORE;
 				return;
@@ -317,7 +317,7 @@ public TopMenu_HandleSell(Handle:topmenu, TopMenuAction:action, TopMenuObject:ob
 			if(!IsClientInLockedTeam(param, upgrade) && upgrade[UPGR_teamlock] < GetTeamCount())
 			{
 				GetTeamName(upgrade[UPGR_teamlock], sTeamlock, sizeof(sTeamlock));
-				Format(sTeamlock, sizeof(sTeamlock), " (TEAM %s ONLY!)", sTeamlock);
+				Format(sTeamlock, sizeof(sTeamlock), " (%T)", "Is teamlocked", param, sTeamlock);
 			}
 			
 			decl String:sTranslatedName[MAX_UPGRADE_NAME_LENGTH];
@@ -465,7 +465,7 @@ public TopMenu_HandleUpgradeSettings(Handle:topmenu, TopMenuAction:action, TopMe
 			if(!IsClientInLockedTeam(param, upgrade) && upgrade[UPGR_teamlock] < GetTeamCount())
 			{
 				GetTeamName(upgrade[UPGR_teamlock], sTeamlock, sizeof(sTeamlock));
-				Format(sTeamlock, sizeof(sTeamlock), " (TEAM %s ONLY!)", sTeamlock);
+				Format(sTeamlock, sizeof(sTeamlock), " (%T)", "Is teamlocked", param, sTeamlock);
 			}
 			
 			new iPurchasedLevel = GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index]);
