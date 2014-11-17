@@ -505,7 +505,7 @@ public Event_OnPlayerSay(Handle:event, const String:error[], bool:dontBroadcast)
 				if(iObsMode == OBS_MODE_IN_EYE || iObsMode == OBS_MODE_CHASE)
 				{
 					new iTarget = Client_GetObserverTarget(client);
-					if(iTarget > 0)
+					if(iTarget > 0 && iTarget <= MaxClients)
 					{
 						DisplayOtherUpgradesMenu(client, iTarget);
 						return;
