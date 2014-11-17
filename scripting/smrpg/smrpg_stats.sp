@@ -2,8 +2,13 @@
 #include <sourcemod>
 #include <smlib>
 
+// Allow to refetch the rank every 20 seconds.
+#define RANK_CACHE_UPDATE_INTERVAL 20
+
 new g_iCachedRank[MAXPLAYERS+1] = {-1,...};
+new g_iNextCacheUpdate[MAXPLAYERS+1];
 new g_iCachedRankCount = 0;
+new g_iNextCacheCountUpdate;
 
 enum SessionStats {
 	SS_JoinTime,
@@ -862,6 +867,7 @@ UpdateClientRank(client)
 	decl String:sQuery[128];
 	Format(sQuery, sizeof(sQuery), "SELECT COUNT(*) FROM %s WHERE level > '%d' OR (level = '%d' AND experience > '%d')", TBL_PLAYERS, GetClientLevel(client), GetClientLevel(client), GetClientExperience(client));
 	SQL_TQuery(g_hDatabase, SQL_GetClientRank, sQuery, GetClientUserId(client));
+	g_iNextCacheUpdate[client] = GetTime() + RANK_CACHE_UPDATE_INTERVAL;
 }
 
 GetClientRank(client)
@@ -869,13 +875,16 @@ GetClientRank(client)
 	if(IsFakeClient(client))
 		return -1;
 	
-	UpdateClientRank(client);
+	// Only update the cache, if we actually used it for a while.
+	if(g_iNextCacheUpdate[client] < GetTime())
+		UpdateClientRank(client);
 	return g_iCachedRank[client];
 }
 
 ClearClientRankCache(client)
 {
 	g_iCachedRank[client] = -1;
+	g_iNextCacheUpdate[client] = 0;
 }
 
 public SQL_GetClientRank(Handle:owner, Handle:hndl, const String:error[], any:userid)
@@ -905,11 +914,14 @@ UpdateRankCount()
 	decl String:sQuery[128];
 	Format(sQuery, sizeof(sQuery), "SELECT COUNT(*) FROM %s", TBL_PLAYERS);
 	SQL_TQuery(g_hDatabase, SQL_GetRankCount, sQuery);
+	g_iNextCacheCountUpdate = GetTime() + RANK_CACHE_UPDATE_INTERVAL;
 }
 
 GetRankCount()
 {
-	UpdateRankCount();
+	// Only update the cache, if we actually used it for a while.
+	if(g_iNextCacheCountUpdate < GetTime())
+		UpdateRankCount();
 	
 	if(g_iCachedRankCount > 0)
 		return g_iCachedRankCount;
