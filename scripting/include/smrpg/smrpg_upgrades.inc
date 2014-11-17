@@ -240,6 +240,7 @@ enum UpgradeInfo
 	UI_startCost, // The amount of credits the first level costs
 	UI_incCost, // The amount of credits each level costs more
 	UI_adminFlag, // The admin flag(s) (ADMFLAG_*) this upgrade is restricted to. (See SMRPG_CheckUpgradeAccess and SMRPG_RunUpgradeEffect)
+	UI_teamlock, // The team this upgrade is restricted to. 0 = Disabled, 2 = RED/Terrorist team, 3 = BLU/Counter-Terrorist team
 	String:UI_name[MAX_UPGRADE_NAME_LENGTH],
 	String:UI_shortName[MAX_UPGRADE_SHORTNAME_LENGTH], // shortname used as unique identifier in all commands and database
 	String:UI_description[MAX_UPGRADE_DESCRIPTION_LENGTH]

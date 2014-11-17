@@ -594,7 +594,7 @@ BotPickUpgrade(client)
 	for(new i=0;i<iSize;i++)
 		PushArrayCell(hRandomBuying, i);
 	
-	while(GetClientCredits(client))
+	while(GetClientCredits(client) > 0)
 	{
 		// Shuffle the order of upgrades randomly. That way the bot won't upgrade one upgrade as much as he can before trying another one.
 		Array_Shuffle(hRandomBuying);
@@ -611,6 +611,10 @@ BotPickUpgrade(client)
 			
 			// Don't buy it, if bots aren't allowed to use it at all..
 			if(!upgrade[UPGR_allowBots])
+				continue;
+			
+			// Don't let him buy upgrades, which are restricted to the other team.
+			if(!IsClientInLockedTeam(client, upgrade))
 				continue;
 			
 			iCost = GetUpgradeCost(iCurrentIndex, GetClientPurchasedUpgradeLevel(client, iCurrentIndex)+1);

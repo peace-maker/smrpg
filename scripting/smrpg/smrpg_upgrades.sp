@@ -18,6 +18,7 @@ enum InternalUpgradeInfo
 	bool:UPGR_enableVisuals, // Enable the visual effects of this upgrade by default?
 	bool:UPGR_enableSounds, // Enable the audio effects of this upgrade by default?
 	bool:UPGR_allowBots, // Are bots allowed to use this upgrade?
+	UPGR_teamlock, // Can only players of a certain team use this upgrade?
 	Function:UPGR_queryCallback, // callback called, when a player bought/sold the upgrade
 	Function:UPGR_activeCallback, // callback called, to see, if a player is currently under the effect of that upgrade
 	Function:UPGR_translationCallback, // callback called, when the upgrade's name is about to get displayed.
@@ -32,6 +33,7 @@ enum InternalUpgradeInfo
 	Handle:UPGR_visualsConvar,
 	Handle:UPGR_soundsConvar,
 	Handle:UPGR_botsConvar,
+	Handle:UPGR_teamlockConvar,
 	
 	// Topmenu object ids
 	TopMenuObject:UPGR_topmenuUpgrades,
@@ -234,6 +236,13 @@ public Native_RegisterUpgradeType(Handle:plugin, numParams)
 	upgrade[UPGR_botsConvar] = hCvar;
 	upgrade[UPGR_allowBots] = GetConVarBool(hCvar);
 	
+	Format(sCvarName, sizeof(sCvarName), "smrpg_%s_teamlock", sShortName);
+	Format(sCvarDescription, sizeof(sCvarDescription), "Restrict access to the %s upgrade to a team?\nOptions:\n\t0: Disable restriction and allow the upgrade to be used by players in any team.\n\t2: Only allow players of the RED/Terrorist team to use this upgrade.\n\t3: Only allow players of the BLU/Counter-Terrorist team to use this upgrade.", sName);
+	hCvar = AutoExecConfig_CreateConVar(sCvarName, "0", sCvarDescription, 0, true, 0.0, true, 3.0);
+	HookConVarChange(hCvar, ConVar_UpgradeChanged);
+	upgrade[UPGR_teamlockConvar] = hCvar;
+	upgrade[UPGR_teamlock] = GetConVarInt(hCvar);
+	
 	AutoExecConfig_ExecuteFile();
 	
 	//AutoExecConfig_CleanFile();
@@ -396,8 +405,10 @@ public Native_GetUpgradeInfo(Handle:plugin, numParams)
 	publicUpgrade[UI_startCost] = upgrade[UPGR_startCost];
 	publicUpgrade[UI_incCost] = upgrade[UPGR_incCost];
 	publicUpgrade[UI_adminFlag] = upgrade[UPGR_adminFlag];
+	publicUpgrade[UI_teamlock] = upgrade[UPGR_teamlock];
 	strcopy(publicUpgrade[UI_name], MAX_UPGRADE_NAME_LENGTH, upgrade[UPGR_name]);
 	strcopy(publicUpgrade[UI_shortName], MAX_UPGRADE_SHORTNAME_LENGTH, upgrade[UPGR_shortName]);
+	strcopy(publicUpgrade[UI_description], MAX_UPGRADE_DESCRIPTION_LENGTH, upgrade[UPGR_description]);
 	
 	SetNativeArray(2, publicUpgrade[0], arraysize);
 }
@@ -574,6 +585,10 @@ public Native_RunUpgradeEffect(Handle:plugin, numParams)
 		if(iLevel <= 0 || !GetConVarBool(g_hCVAllowPresentUpgradeUsage))
 			return false;
 	}
+	
+	// Block the effect from running, if the client is in the wrong team and there is a teamlock on the upgrade.
+	if(!IsClientInLockedTeam(client, upgrade))
+		return false;
 	
 	// Don't allow bots to use this upgrade at all and don't inform other plugins that this effect would be about to start.
 	if(!upgrade[UPGR_allowBots] && IsFakeClient(client))
@@ -763,6 +778,22 @@ stock bool:HasAccessToUpgrade(client, upgrade[InternalUpgradeInfo])
 	return CheckCommandAccess(client, sFlag, upgrade[UPGR_adminFlag], true);
 }
 
+// Checks whether a client is in the correct team, if the upgrade is locked to one.
+stock bool:IsClientInLockedTeam(client, upgrade[InternalUpgradeInfo])
+{
+	// This upgrade isn't locked at all. No restriction.
+	if(upgrade[UPGR_teamlock] <= 1)
+		return true;
+
+	new iTeam = GetClientTeam(client);
+	// Always grant access to all upgrades, if the player is in spectator mode.
+	if(iTeam <= 1)
+		return true;
+	
+	// See if the player is in the allowed team.
+	return iTeam == upgrade[UPGR_teamlock];
+}
+
 GetUpgradeTranslatedName(client, iUpgradeIndex, String:name[], maxlen)
 {
 	new upgrade[InternalUpgradeInfo];
@@ -862,6 +893,16 @@ public ConVar_UpgradeChanged(Handle:convar, const String:oldValue[], const Strin
 		else if(upgrade[UPGR_botsConvar] == convar)
 		{
 			upgrade[UPGR_allowBots] = GetConVarBool(convar);
+			SaveUpgradeConfig(upgrade);
+			Call_OnUpgradeSettingsChanged(upgrade[UPGR_shortName]);
+			break;
+		}
+		else if(upgrade[UPGR_teamlockConvar] == convar)
+		{
+			upgrade[UPGR_teamlock] = GetConVarInt(convar);
+			// Guarantee to have "0" when disabled.
+			if(upgrade[UPGR_teamlock] == 1)
+				upgrade[UPGR_teamlock] = 0;
 			SaveUpgradeConfig(upgrade);
 			Call_OnUpgradeSettingsChanged(upgrade[UPGR_shortName]);
 			break;

@@ -841,6 +841,14 @@ ShowUpgradeManageMenu(client)
 	Format(sBuffer, sizeof(sBuffer), "Increase Cost: %d", upgrade[UPGR_incCost]);
 	AddMenuItem(hMenu, "icost", sBuffer);
 	
+	new String:sTeamlock[128] = "None";
+	if(upgrade[UPGR_teamlock] >= 1 && upgrade[UPGR_teamlock] < GetTeamCount())
+	{
+		GetTeamName(upgrade[UPGR_teamlock], sTeamlock, sizeof(sTeamlock));
+	}
+	Format(sBuffer, sizeof(sBuffer), "Teamlock: %s", sTeamlock);
+	AddMenuItem(hMenu, "teamlock", sBuffer);
+	
 	if(upgrade[UPGR_visualsConvar] != INVALID_HANDLE)
 	{
 		Format(sBuffer, sizeof(sBuffer), "Visual effects: %T", upgrade[UPGR_enableVisuals]?"On":"Off", client);
@@ -911,6 +919,24 @@ public Menu_HandleUpgradeDetails(Handle:menu, MenuAction:action, param1, param2)
 		else if(StrEqual(sInfo, "icost"))
 		{
 			ShowUpgradePropertyChangeMenu(param1, ChangeProp_Icost);
+		}
+		else if(StrEqual(sInfo, "teamlock"))
+		{
+			new iTeamlock = upgrade[UPGR_teamlock];
+			iTeamlock++;
+			if(iTeamlock <= 1)
+				iTeamlock = 2; // Skip the spectator team..
+			else if(iTeamlock >= GetTeamCount())
+				iTeamlock = 0; // Toggle in a ring.
+			
+			// Get the correct name for the log.
+			new String:sTeam[128] = "None";
+			if(iTeamlock > 1)
+				GetTeamName(iTeamlock, sTeam, sizeof(sTeam));
+			
+			SetConVarInt(upgrade[UPGR_teamlockConvar], iTeamlock);
+			LogAction(param1, -1, "%L toggled the teamlock on upgrade %s temporarily to restrict to team \"%s\".", param1, upgrade[UPGR_name], sTeam);
+			ShowUpgradeManageMenu(param1);
 		}
 		else if(StrEqual(sInfo, "visuals"))
 		{
