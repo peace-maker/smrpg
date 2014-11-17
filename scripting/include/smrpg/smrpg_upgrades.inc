@@ -43,13 +43,14 @@ functag public bool:SMRPG_ActiveQueryCB(client);
  * The shortname is like an unique identifier for this upgrade.
  * Other plugins might use the shortname to check for information of the upgrade.
  *
- * This native registers 6 default convars for the plugin and saves them in a seperate config file for the upgrade in cfg/sourcemod/smrpg/smrpg_upgrade_<shortname>.cfg
+ * This native registers 7 default convars for the upgrade and saves them in a seperate config file in cfg/sourcemod/smrpg/smrpg_upgrade_<shortname>.cfg
  *  - smrpg_<shortname>_enable     ~ Enable or disable the upgrade. The upgrade needs to check this value and should obey it..
  *  - smrpg_<shortname>_maxlevel   ~ The maximal level a player can buy the upgrade.
  *  - smrpg_<shortname>_cost       ~ The start cost of this item when purchasing level 1.
  *  - smrpg_<shortname>_icost      ~ The amount to increase the cost for each level: cost for level x = startcost + icost * (level-1)
- *  - smrpg_<shortname>_adminflag  ~ The required admin flag to use this plugin.
+ *  - smrpg_<shortname>_adminflag  ~ The required admin flag to use this upgrade.
  *  - smrpg_<shortname>_allowbots  ~ Are bots allowed to use this upgrade? Defaults to 1.
+ *  - smrpg_<shortname>_teamlock   ~ Restrict access to this upgrade to a team? 0 = Disable, 2: RED/Terrorist team, 3: BLU/Counter-Terrorist team. Defaults to 0.
  *
  * You can add more convars to that file using the SMRPG_CreateUpgradeConVar native.
  *
@@ -58,7 +59,7 @@ functag public bool:SMRPG_ActiveQueryCB(client);
  * @param description       A verbose description of the upgrade. Shown in the rpghelp menu.
  * @param maxlevelbarrier   Hardcoded limit you don't want the maxlevel to exceed. You can't set the maxlevel higher than this. This value can't be changed during runtime. (0 doesn't limit the maxlevel)
  * @param bDefaultEnable    Do you want this upgrade to be enabled by default? Default value of the _enable convar.
- * @param iDefaultMaxLevel  The default maxlevel of this plugin. Players won't be able to buy more levels of this upgrade than this. Default value of the _maxlevel convar.
+ * @param iDefaultMaxLevel  The default maxlevel of this upgrade. Players won't be able to buy more levels of this upgrade than this. Default value of the _maxlevel convar.
  * @param iDefaultStartCost The default start costs to buy level 1 of this upgrade. Default of the _cost convar.
  * @param iDefaultCostInc   The default incremential cost to buy higher levels of this upgrade. See _icost comment above. Default of the _icost convar.
  * @param iAdminFlags       Restrict this upgrade to players with certain flags. See ADMFLAG_* defines. Set to 0 to have it usable by everyone by default.
