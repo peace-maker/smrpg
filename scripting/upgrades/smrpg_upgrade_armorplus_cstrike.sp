@@ -98,6 +98,10 @@ public SMRPG_BuySell(client, UpgradeQueryType:type)
 	if(!IsClientInGame(client))
 		return;
 	
+	// Are bots allowed to use this upgrade?
+	if(IsFakeClient(client) && SMRPG_IgnoreBots())
+		return;
+	
 	new upgrade[UpgradeInfo];
 	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
 	

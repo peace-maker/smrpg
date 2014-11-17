@@ -90,6 +90,10 @@ public SMRPG_BuySell(client, UpgradeQueryType:type)
 	if(!IsClientInGame(client))
 		return;
 	
+	// Are bots allowed to use this upgrade?
+	if(IsFakeClient(client) && SMRPG_IgnoreBots())
+		return;
+	
 	new upgrade[UpgradeInfo];
 	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
 	
@@ -147,6 +151,10 @@ GetClientMaxHealth(client)
 	new upgrade[UpgradeInfo];
 	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
 	if(!upgrade[UI_enabled])
+		return iDefaultMaxHealth;
+	
+	// Are bots allowed to use this upgrade?
+	if(IsFakeClient(client) && SMRPG_IgnoreBots())
 		return iDefaultMaxHealth;
 	
 	// Player didn't buy this upgrade yet.
