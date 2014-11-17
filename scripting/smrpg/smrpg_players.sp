@@ -40,6 +40,9 @@ enum PlayerInfo
 
 new g_iPlayerInfo[MAXPLAYERS+1][PlayerInfo];
 new bool:g_bFirstLoaded[MAXPLAYERS+1];
+// Bot stats are saved per name, because they don't have a steamid.
+// Remember the name the bot joined with, so we use the same name everytime - even if some other plugin changes the name later.
+new String:g_sOriginalBotName[MAXPLAYERS+1][MAX_NAME_LENGTH];
 
 RegisterPlayerNatives()
 {
@@ -94,7 +97,7 @@ RegisterPlayerForwards()
 /**
  * Player stats management
  */
-InitPlayer(client)
+InitPlayer(client, bool:bGetBotName = true)
 {
 	g_bFirstLoaded[client] = true;
 	
@@ -116,6 +119,12 @@ InitPlayer(client)
 		// level 0 for all upgrades
 		InitPlayerNewUpgrade(client);
 	}
+	
+	// Save the name the bot joined with, so we fetch the right info, even if some plugin changes the name of the bot afterwards.
+	if(bGetBotName && IsFakeClient(client))
+	{
+		GetClientName(client, g_sOriginalBotName[client], sizeof(g_sOriginalBotName[]));
+	}
 }
 
 AddPlayer(client)
@@ -134,9 +143,8 @@ AddPlayer(client)
 			return;
 		
 		// Lookup bot levels depending on their names.
-		decl String:sName[MAX_NAME_LENGTH], String:sNameEscaped[MAX_NAME_LENGTH*2+1];
-		GetClientName(client, sName, sizeof(sName));
-		SQL_EscapeString(g_hDatabase, sName, sNameEscaped, sizeof(sNameEscaped));
+		decl String:sNameEscaped[MAX_NAME_LENGTH*2+1];
+		SQL_EscapeString(g_hDatabase, g_sOriginalBotName[client], sNameEscaped, sizeof(sNameEscaped));
 		Format(sQuery, sizeof(sQuery), "SELECT player_id, level, experience, credits, lastreset, lastseen, showmenu, fadescreen FROM %s WHERE steamid IS NULL AND name = '%s' ORDER BY level DESC LIMIT 1", TBL_PLAYERS, sNameEscaped);
 	}
 	else
@@ -162,6 +170,11 @@ InsertPlayer(client)
 	decl String:sQuery[512];
 	decl String:sName[MAX_NAME_LENGTH], String:sNameEscaped[MAX_NAME_LENGTH*2+1];
 	GetClientName(client, sName, sizeof(sName));
+	// Make sure to keep the original bot name.
+	if(IsFakeClient(client))
+	{
+		sName = g_sOriginalBotName[client];
+	}
 	SQL_EscapeString(g_hDatabase, sName, sNameEscaped, sizeof(sNameEscaped));
 	
 	// Store the steamid of the player
@@ -200,6 +213,11 @@ SaveData(client)
 	
 	decl String:sName[MAX_NAME_LENGTH], String:sNameEscaped[MAX_NAME_LENGTH*2+1];
 	GetClientName(client, sName, sizeof(sName));
+	// Make sure to keep the original bot name.
+	if(IsFakeClient(client))
+	{
+		sName = g_sOriginalBotName[client];
+	}
 	SQL_EscapeString(g_hDatabase, sName, sNameEscaped, sizeof(sNameEscaped));
 	
 	decl String:sQuery[8192];
@@ -285,7 +303,7 @@ ResetStats(client)
 	g_iPlayerInfo[client][PLR_credits] = GetConVarInt(g_hCVCreditsStart);
 }
 
-RemovePlayer(client)
+RemovePlayer(client, bool:bKeepBotName = false)
 {
 	ResetStats(client);
 	ClearHandle(g_iPlayerInfo[client][PLR_upgrades]);
@@ -295,6 +313,9 @@ RemovePlayer(client)
 	g_iPlayerInfo[client][PLR_fadeOnLevelup] = GetConVarBool(g_hCVFadeOnLevelDefault);
 	g_iPlayerInfo[client][PLR_lastReset] = 0;
 	g_iPlayerInfo[client][PLR_lastSeen] = 0;
+	
+	if(!bKeepBotName)
+		g_sOriginalBotName[client][0] = '\0';
 }
 
 GetPlayerLastReset(client)

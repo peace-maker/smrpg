@@ -362,8 +362,9 @@ public Native_ResetAllPlayers(Handle:plugin, numParams)
 		{
 			if(IsClientInGame(i))
 			{
-				RemovePlayer(i);
-				InitPlayer(i);
+				// Keep the original bot names intact, to avoid saving renamed bots.
+				RemovePlayer(i, true);
+				InitPlayer(i, false);
 				InsertPlayer(i);
 			}
 		}
