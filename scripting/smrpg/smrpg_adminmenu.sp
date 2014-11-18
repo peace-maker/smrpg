@@ -435,7 +435,7 @@ ShowPlayerUpgradeManageMenu(client)
 	
 	new iSize = GetUpgradeCount();
 	new upgrade[InternalUpgradeInfo], iCurrentLevel;
-	new String:sTranslatedName[MAX_UPGRADE_NAME_LENGTH], String:sLine[128], String:sIndex[8], String:sPermissions[30];
+	new String:sTranslatedName[MAX_UPGRADE_NAME_LENGTH], String:sLine[128], String:sIndex[8], String:sPermissions[30], String:sTeamlock[32];
 	for(new i=0;i<iSize;i++)
 	{
 		iCurrentLevel = GetClientPurchasedUpgradeLevel(iTarget, i);
@@ -448,6 +448,7 @@ ShowPlayerUpgradeManageMenu(client)
 		GetUpgradeTranslatedName(client, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
 		
 		sPermissions[0] = 0;
+		sTeamlock[0] = 0;
 		
 		// Print the required adminflags in a readable way
 		if(upgrade[UPGR_adminFlag] > 0)
@@ -463,14 +464,21 @@ ShowPlayerUpgradeManageMenu(client)
 		else if(upgrade[UPGR_adminFlag] > 0)
 			Format(sPermissions, sizeof(sPermissions), "%s OK", sPermissions);
 		
+		// Print the required team
+		if(upgrade[UPGR_teamlock] > 1 && upgrade[UPGR_teamlock] < GetTeamCount())
+		{
+			GetTeamName(upgrade[UPGR_teamlock], sTeamlock, sizeof(sTeamlock));
+			Format(sTeamlock, sizeof(sTeamlock), " (teamlock: %s)", sTeamlock);
+		}
+		
 		IntToString(i, sIndex, sizeof(sIndex));
 		if(iCurrentLevel >= upgrade[UPGR_maxLevel])
 		{
-			Format(sLine, sizeof(sLine), "%s Lvl MAX %d/%d%s", sTranslatedName, iCurrentLevel, upgrade[UPGR_maxLevel], sPermissions);
+			Format(sLine, sizeof(sLine), "%s Lvl MAX %d/%d%s%s", sTranslatedName, iCurrentLevel, upgrade[UPGR_maxLevel], sPermissions, sTeamlock);
 		}
 		else
 		{
-			Format(sLine, sizeof(sLine), "%s Lvl %d/%d%s", sTranslatedName, iCurrentLevel, upgrade[UPGR_maxLevel], sPermissions);
+			Format(sLine, sizeof(sLine), "%s Lvl %d/%d%s%s", sTranslatedName, iCurrentLevel, upgrade[UPGR_maxLevel], sPermissions, sTeamlock);
 		}
 		
 		AddMenuItem(hMenu, sIndex, sLine);
