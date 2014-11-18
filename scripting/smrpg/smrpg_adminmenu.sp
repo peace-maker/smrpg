@@ -435,7 +435,7 @@ ShowPlayerUpgradeManageMenu(client)
 	
 	new iSize = GetUpgradeCount();
 	new upgrade[InternalUpgradeInfo], iCurrentLevel;
-	new String:sTranslatedName[MAX_UPGRADE_NAME_LENGTH], String:sLine[128], String:sIndex[8], String:sPermissions[30];
+	new String:sTranslatedName[MAX_UPGRADE_NAME_LENGTH], String:sLine[128], String:sIndex[8], String:sPermissions[30], String:sTeamlock[32];
 	for(new i=0;i<iSize;i++)
 	{
 		iCurrentLevel = GetClientPurchasedUpgradeLevel(iTarget, i);
@@ -448,6 +448,7 @@ ShowPlayerUpgradeManageMenu(client)
 		GetUpgradeTranslatedName(client, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
 		
 		sPermissions[0] = 0;
+		sTeamlock[0] = 0;
 		
 		// Print the required adminflags in a readable way
 		if(upgrade[UPGR_adminFlag] > 0)
@@ -463,14 +464,21 @@ ShowPlayerUpgradeManageMenu(client)
 		else if(upgrade[UPGR_adminFlag] > 0)
 			Format(sPermissions, sizeof(sPermissions), "%s OK", sPermissions);
 		
+		// Print the required team
+		if(upgrade[UPGR_teamlock] > 1 && upgrade[UPGR_teamlock] < GetTeamCount())
+		{
+			GetTeamName(upgrade[UPGR_teamlock], sTeamlock, sizeof(sTeamlock));
+			Format(sTeamlock, sizeof(sTeamlock), " (teamlock: %s)", sTeamlock);
+		}
+		
 		IntToString(i, sIndex, sizeof(sIndex));
 		if(iCurrentLevel >= upgrade[UPGR_maxLevel])
 		{
-			Format(sLine, sizeof(sLine), "%s Lvl MAX %d/%d%s", sTranslatedName, iCurrentLevel, upgrade[UPGR_maxLevel], sPermissions);
+			Format(sLine, sizeof(sLine), "%s Lvl MAX %d/%d%s%s", sTranslatedName, iCurrentLevel, upgrade[UPGR_maxLevel], sPermissions, sTeamlock);
 		}
 		else
 		{
-			Format(sLine, sizeof(sLine), "%s Lvl %d/%d%s", sTranslatedName, iCurrentLevel, upgrade[UPGR_maxLevel], sPermissions);
+			Format(sLine, sizeof(sLine), "%s Lvl %d/%d%s%s", sTranslatedName, iCurrentLevel, upgrade[UPGR_maxLevel], sPermissions, sTeamlock);
 		}
 		
 		AddMenuItem(hMenu, sIndex, sLine);
@@ -841,6 +849,14 @@ ShowUpgradeManageMenu(client)
 	Format(sBuffer, sizeof(sBuffer), "Increase Cost: %d", upgrade[UPGR_incCost]);
 	AddMenuItem(hMenu, "icost", sBuffer);
 	
+	new String:sTeamlock[128] = "None";
+	if(upgrade[UPGR_teamlock] >= 1 && upgrade[UPGR_teamlock] < GetTeamCount())
+	{
+		GetTeamName(upgrade[UPGR_teamlock], sTeamlock, sizeof(sTeamlock));
+	}
+	Format(sBuffer, sizeof(sBuffer), "Teamlock: %s", sTeamlock);
+	AddMenuItem(hMenu, "teamlock", sBuffer);
+	
 	if(upgrade[UPGR_visualsConvar] != INVALID_HANDLE)
 	{
 		Format(sBuffer, sizeof(sBuffer), "Visual effects: %T", upgrade[UPGR_enableVisuals]?"On":"Off", client);
@@ -911,6 +927,24 @@ public Menu_HandleUpgradeDetails(Handle:menu, MenuAction:action, param1, param2)
 		else if(StrEqual(sInfo, "icost"))
 		{
 			ShowUpgradePropertyChangeMenu(param1, ChangeProp_Icost);
+		}
+		else if(StrEqual(sInfo, "teamlock"))
+		{
+			new iTeamlock = upgrade[UPGR_teamlock];
+			iTeamlock++;
+			if(iTeamlock <= 1)
+				iTeamlock = 2; // Skip the spectator team..
+			else if(iTeamlock >= GetTeamCount())
+				iTeamlock = 0; // Toggle in a ring.
+			
+			// Get the correct name for the log.
+			new String:sTeam[128] = "None";
+			if(iTeamlock > 1)
+				GetTeamName(iTeamlock, sTeam, sizeof(sTeam));
+			
+			SetConVarInt(upgrade[UPGR_teamlockConvar], iTeamlock);
+			LogAction(param1, -1, "%L toggled the teamlock on upgrade %s temporarily to restrict to team \"%s\".", param1, upgrade[UPGR_name], sTeam);
+			ShowUpgradeManageMenu(param1);
 		}
 		else if(StrEqual(sInfo, "visuals"))
 		{

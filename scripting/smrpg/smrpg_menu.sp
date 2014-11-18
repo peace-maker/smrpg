@@ -199,6 +199,14 @@ public TopMenu_HandleUpgrades(Handle:topmenu, TopMenuAction:action, TopMenuObjec
 			if(!IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled])
 				return;
 			
+			// Show the team this upgrade is locked to, if it is.
+			new String:sTeamlock[128];
+			if((!IsClientInLockedTeam(param, upgrade) || upgrade[UPGR_teamlock] > 1 && GetConVarBool(g_hCVShowTeamlockNoticeOwnTeam)) && upgrade[UPGR_teamlock] < GetTeamCount())
+			{
+				GetTeamName(upgrade[UPGR_teamlock], sTeamlock, sizeof(sTeamlock));
+				Format(sTeamlock, sizeof(sTeamlock), " (%T)", "Is teamlocked", param, sTeamlock);
+			}
+			
 			decl String:sTranslatedName[MAX_UPGRADE_NAME_LENGTH];
 			GetUpgradeTranslatedName(param, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
 			
@@ -206,11 +214,11 @@ public TopMenu_HandleUpgrades(Handle:topmenu, TopMenuAction:action, TopMenuObjec
 			
 			if(iCurrentLevel >= upgrade[UPGR_maxLevel])
 			{
-				Format(buffer, maxlength, "%s Lvl %d MAX [%T: MAX]", sTranslatedName, iCurrentLevel, "Cost", param);
+				Format(buffer, maxlength, "%s Lvl %d MAX [%T: MAX]%s", sTranslatedName, iCurrentLevel, "Cost", param, sTeamlock);
 			}
 			else
 			{
-				Format(buffer, maxlength, "%s Lvl %d [%T: %d]", sTranslatedName, iCurrentLevel+1, "Cost", param, GetUpgradeCost(upgrade[UPGR_index], iCurrentLevel+1));
+				Format(buffer, maxlength, "%s Lvl %d [%T: %d]%s", sTranslatedName, iCurrentLevel+1, "Cost", param, GetUpgradeCost(upgrade[UPGR_index], iCurrentLevel+1), sTeamlock);
 			}
 		}
 		case TopMenuAction_DrawOption:
@@ -226,9 +234,16 @@ public TopMenu_HandleUpgrades(Handle:topmenu, TopMenuAction:action, TopMenuObjec
 				return;
 			}
 			
+			new iLevel = GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index]);
+			// The upgrade is teamlocked and the client is in the wrong team.
+			if(!IsClientInLockedTeam(param, upgrade))
+			{
+				buffer[0] |= GetItemDrawFlagsForTeamlock(iLevel, true);
+			}
+			
 			// Don't let players buy upgrades they already maxed out.
-			if(GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index]) >= upgrade[UPGR_maxLevel])
-				buffer[0] = ITEMDRAW_DISABLED;
+			if(iLevel >= upgrade[UPGR_maxLevel])
+				buffer[0] |= ITEMDRAW_DISABLED;
 		}
 		case TopMenuAction_SelectOption:
 		{
@@ -295,10 +310,18 @@ public TopMenu_HandleSell(Handle:topmenu, TopMenuAction:action, TopMenuObject:ob
 			if(!IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled])
 				return;
 			
+			// Show the team this upgrade is locked to, if it is.
+			new String:sTeamlock[128];
+			if((!IsClientInLockedTeam(param, upgrade) || upgrade[UPGR_teamlock] > 1 && GetConVarBool(g_hCVShowTeamlockNoticeOwnTeam)) && upgrade[UPGR_teamlock] < GetTeamCount())
+			{
+				GetTeamName(upgrade[UPGR_teamlock], sTeamlock, sizeof(sTeamlock));
+				Format(sTeamlock, sizeof(sTeamlock), " (%T)", "Is teamlocked", param, sTeamlock);
+			}
+			
 			decl String:sTranslatedName[MAX_UPGRADE_NAME_LENGTH];
 			GetUpgradeTranslatedName(param, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
 			
-			Format(buffer, maxlength, "%s Lvl %d [%T: %d]", sTranslatedName, GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index]), "Sale", param, GetUpgradeSale(upgrade[UPGR_index], GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index])));
+			Format(buffer, maxlength, "%s Lvl %d [%T: %d]%s", sTranslatedName, GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index]), "Sale", param, GetUpgradeSale(upgrade[UPGR_index], GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index])), sTeamlock);
 		}
 		case TopMenuAction_DrawOption:
 		{
@@ -322,9 +345,15 @@ public TopMenu_HandleSell(Handle:topmenu, TopMenuAction:action, TopMenuObject:ob
 				return;
 			}
 			
+			// The upgrade is teamlocked and the client is in the wrong team.
+			if(!IsClientInLockedTeam(param, upgrade))
+			{
+				buffer[0] |= GetItemDrawFlagsForTeamlock(iCurrentLevel, false);
+			}
+			
 			// There is nothing to sell..
 			if(iCurrentLevel <= 0)
-				buffer[0] = ITEMDRAW_DISABLED;
+				buffer[0] |= ITEMDRAW_DISABLED;
 		}
 		case TopMenuAction_SelectOption:
 		{
@@ -428,6 +457,14 @@ public TopMenu_HandleUpgradeSettings(Handle:topmenu, TopMenuAction:action, TopMe
 			if(!IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled])
 				return;
 			
+			// Show the team this upgrade is locked to, if it is.
+			new String:sTeamlock[128];
+			if((!IsClientInLockedTeam(param, upgrade) || upgrade[UPGR_teamlock] > 1 && GetConVarBool(g_hCVShowTeamlockNoticeOwnTeam)) && upgrade[UPGR_teamlock] < GetTeamCount())
+			{
+				GetTeamName(upgrade[UPGR_teamlock], sTeamlock, sizeof(sTeamlock));
+				Format(sTeamlock, sizeof(sTeamlock), " (%T)", "Is teamlocked", param, sTeamlock);
+			}
+			
 			new iPurchasedLevel = GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index]);
 			new iSelectedLevel = GetClientSelectedUpgradeLevel(param, upgrade[UPGR_index]);
 			decl String:sBuffer[128];
@@ -435,7 +472,7 @@ public TopMenu_HandleUpgradeSettings(Handle:topmenu, TopMenuAction:action, TopMe
 			if(!GetConVarBool(g_hCVDisableLevelSelection))
 				Format(sBuffer, sizeof(sBuffer), "%s Lvl %d/%d", sBuffer, iSelectedLevel, iPurchasedLevel);
 			
-			Format(sBuffer, sizeof(sBuffer), "%s [%T]", sBuffer, IsClientUpgradeEnabled(param, upgrade[UPGR_index])?"On":"Off", param);
+			Format(sBuffer, sizeof(sBuffer), "%s [%T]%s", sBuffer, IsClientUpgradeEnabled(param, upgrade[UPGR_index])?"On":"Off", param, sTeamlock);
 			strcopy(buffer, maxlength, sBuffer);
 		}
 		case TopMenuAction_DrawOption:
@@ -457,6 +494,14 @@ public TopMenu_HandleUpgradeSettings(Handle:topmenu, TopMenuAction:action, TopMe
 			if(!HasAccessToUpgrade(param, upgrade) && iCurrentLevel <= 0)
 			{
 				buffer[0] = ITEMDRAW_IGNORE;
+				return;
+			}
+			
+			// Don't show the upgrade, if it's teamlocked, the client is in the wrong team and didn't buy it before.
+			// Make sure to show it, if we're set to show all.
+			if(!IsClientInLockedTeam(param, upgrade))
+			{
+				buffer[0] |= GetItemDrawFlagsForTeamlock(iCurrentLevel, false);
 				return;
 			}
 		}
@@ -768,7 +813,18 @@ public TopMenu_HandleHelp(Handle:topmenu, TopMenuAction:action, TopMenuObject:ob
 			if(!IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled])
 				return;
 			
-			GetUpgradeTranslatedName(param, upgrade[UPGR_index], buffer, maxlength);
+			// Show the team this upgrade is locked to, if it is.
+			new String:sTeamlock[128];
+			if((!IsClientInLockedTeam(param, upgrade) || upgrade[UPGR_teamlock] > 1 && GetConVarBool(g_hCVShowTeamlockNoticeOwnTeam)) && upgrade[UPGR_teamlock] < GetTeamCount())
+			{
+				GetTeamName(upgrade[UPGR_teamlock], sTeamlock, sizeof(sTeamlock));
+				Format(sTeamlock, sizeof(sTeamlock), " (%T)", "Is teamlocked", param, sTeamlock);
+			}
+			
+			new String:sDescription[MAX_UPGRADE_DESCRIPTION_LENGTH];
+			GetUpgradeTranslatedName(param, upgrade[UPGR_index], sDescription, sizeof(sDescription));
+			
+			Format(buffer, maxlength, "%s%s", sDescription, sTeamlock);
 		}
 		case TopMenuAction_DrawOption:
 		{
@@ -789,6 +845,14 @@ public TopMenu_HandleHelp(Handle:topmenu, TopMenuAction:action, TopMenuObject:ob
 			if(!HasAccessToUpgrade(param, upgrade) && iCurrentLevel <= 0)
 			{
 				buffer[0] = ITEMDRAW_IGNORE;
+				return;
+			}
+			
+			// Don't show the upgrade, if it's teamlocked, the client is in the wrong team and didn't buy the upgrade before.
+			// Make sure to show it, if we're set to show all.
+			if(!IsClientInLockedTeam(param, upgrade))
+			{
+				buffer[0] |= GetItemDrawFlagsForTeamlock(iCurrentLevel, false);
 				return;
 			}
 		}
@@ -833,7 +897,7 @@ DisplayOtherUpgradesMenu(client, targetClient)
 		GetUpgradeByIndex(i, upgrade);
 		
 		// Don't show disabled items in the menu.
-		if(!IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled] || !HasAccessToUpgrade(targetClient, upgrade))
+		if(!IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled] || !HasAccessToUpgrade(targetClient, upgrade) || !IsClientInLockedTeam(targetClient, upgrade))
 			continue;
 		
 		GetUpgradeTranslatedName(client, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
@@ -881,4 +945,45 @@ TopMenuObject:GetUpgradeSettingsCategory()
 TopMenuObject:GetHelpCategory()
 {
 	return g_TopMenuHelp;
+}
+
+// Handle the logic of the smrpg_show_upgrades_teamlock convar.
+GetItemDrawFlagsForTeamlock(iLevel, bool:bBuyMenu)
+{
+	new iShowTeamlock = GetConVarInt(g_hCVShowUpgradesOfOtherTeam);
+	switch(iShowTeamlock)
+	{
+		case SHOW_TEAMLOCK_NONE:
+		{
+			return ITEMDRAW_IGNORE;
+		}
+		case SHOW_TEAMLOCK_BOUGHT:
+		{
+			// The client bought it while being in the other team.
+			if(iLevel > 0)
+			{
+				// Show it, but don't let him buy it.
+				if(bBuyMenu && !GetConVarBool(g_hCVBuyUpgradesOfOtherTeam))
+				{
+					return ITEMDRAW_DISABLED;
+				}
+				// else let him use it.
+			}
+			// The client doesn't have the upgrade. Don't show it.
+			else
+			{
+				return ITEMDRAW_IGNORE;
+			}
+		}
+		case SHOW_TEAMLOCK_ALL:
+		{
+			// Show it, but don't let him buy it.
+			if(bBuyMenu && !GetConVarBool(g_hCVBuyUpgradesOfOtherTeam))
+			{
+				return ITEMDRAW_DISABLED;
+			}
+			// else let him use it.
+		}
+	}
+	return 0;
 }
