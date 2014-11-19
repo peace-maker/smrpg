@@ -105,7 +105,19 @@ public Hook_OnClientPostThinkPost(client)
  */
 public Event_OnPlayerSpawn(Handle:event, const String:error[], bool:dontBroadcast)
 {
-	new client = GetClientOfUserId(GetEventInt(event, "userid"));
+	new userid = GetEventInt(event, "userid");
+	// Set the gravity one frame after the player spawned, 
+	// so we make sure other plugins, which randomly reset 
+	// the gravity to 1.0 at spawn don't overwrite our effect.
+	RequestFrame(Frame_OnPlayerSpawnPost, userid);
+}
+
+/**
+ * RequestFrame callbacks to run one frame later.
+ */
+public Frame_OnPlayerSpawnPost(any:userid)
+{
+	new client = GetClientOfUserId(userid);
 	if(!client)
 		return;
 
