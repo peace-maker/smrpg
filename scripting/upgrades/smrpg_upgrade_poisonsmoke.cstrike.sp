@@ -24,6 +24,7 @@ enum GrenadeInfo {
 new Handle:g_hThrownGrenades;
 
 new Handle:g_hCVFriendlyFire;
+new Handle:g_hCVIgnoreFriendlyFire;
 new Handle:g_hCVBaseDamage;
 new Handle:g_hCVIncDamage;
 new Handle:g_hCVColorT;
@@ -92,8 +93,9 @@ public OnLibraryAdded(const String:name[])
 		SMRPG_SetUpgradeDefaultCosmeticEffect(UPGRADE_SHORTNAME, SMRPG_FX_Visuals, true);
 		
 		// Create your convars through the SM:RPG core. That way they are added to your upgrade's own config file in cfg/sourcemod/smrpg/smrpg_upgrade_example.cfg!
-		g_hCVBaseDamage = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_posionsmoke_basedamage", "3", "The minimum damage the posion smoke inflicts.", _, true, 0.0);
-		g_hCVIncDamage = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_posionsmoke_incdamage", "2", "How much damage multiplied by the upgrade level should we add to the base damage?", _, true, 1.0);
+		g_hCVIgnoreFriendlyFire = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_poisonsmoke_ignoreff", "0", "Ignore the setting of mp_friendlyfire and don't allow team damage by poison smoke at all?", _, true, 0.0, true 1.0);
+		g_hCVBaseDamage = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_poisonsmoke_basedamage", "3", "The minimum damage the poison smoke inflicts.", _, true, 0.0);
+		g_hCVIncDamage = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_poisonsmoke_incdamage", "2", "How much damage multiplied by the upgrade level should we add to the base damage?", _, true, 1.0);
 		g_hCVColorT = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_poisonsmoke_color_t", "20 250 50", "What color should the smoke be for grenades thrown by terrorists? Format: \"red green blue\" from 0 - 255.", FCVAR_PLUGIN);
 		g_hCVColorCT = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_poisonsmoke_color_ct", "20 250 50", "What color should the smoke be for grenades thrown by counter-terrorists? Format: \"red green blue\" from 0 - 255.", FCVAR_PLUGIN);
 		g_hCVInterval = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_poisonsmoke_damage_interval", "1", "Deal damage every x seconds.", _, true, 0.1);
@@ -355,9 +357,10 @@ public Action:Timer_CheckDamage(Handle:timer, any:entityref)
 	GetEntPropVector(entity, Prop_Send, "m_vecOrigin", fParticleOrigin);
 	
 	new bool:bFriendlyFire = GetConVarBool(g_hCVFriendlyFire);
+	new bool:bIgnoreFriendlyFire = GetConVarBool(g_hCVIgnoreFriendlyFire);
 	for(new i=1;i<=MaxClients;i++)
 	{
-		if(IsClientInGame(i) && IsPlayerAlive(i) && (bFriendlyFire || GetClientTeam(i) != iGrenade[GR_team]))
+		if(IsClientInGame(i) && IsPlayerAlive(i) && (bFriendlyFire && !bIgnoreFriendlyFire || GetClientTeam(i) != iGrenade[GR_team]))
 		{
 			GetClientAbsOrigin(i, fPlayerOrigin);
 			if(GetVectorDistance(fParticleOrigin, fPlayerOrigin) <= 220)
