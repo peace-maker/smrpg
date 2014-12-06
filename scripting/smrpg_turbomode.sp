@@ -310,10 +310,22 @@ public TopMenu_AdminHandleTurboMode(Handle:topmenu, TopMenuAction:action, TopMen
 	}
 	else if (action == TopMenuAction_SelectOption)
 	{
-		Cmd_TurboMode(param, 0);
-		if(IsClientInGame(param))
-		{
-			RedisplayAdminMenu(topmenu, param);
-		}
+		// Make sure to toggle turbo mode after the menu closed.
+		// SM doesn't like clients to disconnect during a menu callback.
+		RequestFrame(Frame_AfterMenuHandle, GetClientUserId(param));
+	}
+}
+
+public Frame_AfterMenuHandle(any:userid)
+{
+	new client = GetClientOfUserId(userid);
+	if(!client)
+		return;
+	
+	// Toggle turbo mode
+	Cmd_TurboMode(client, 0);
+	if(IsClientInGame(client))
+	{
+		RedisplayAdminMenu(g_hTopMenu, client);
 	}
 }
