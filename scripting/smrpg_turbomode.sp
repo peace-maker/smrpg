@@ -311,6 +311,9 @@ public TopMenu_AdminHandleTurboMode(Handle:topmenu, TopMenuAction:action, TopMen
 	else if (action == TopMenuAction_SelectOption)
 	{
 		Cmd_TurboMode(param, 0);
-		RedisplayAdminMenu(topmenu, param);
+		if(IsClientInGame(param))
+		{
+			RedisplayAdminMenu(topmenu, param);
+		}
 	}
 }
