@@ -5,7 +5,7 @@
 	// 1: How many times faster are players earning experience (e.g. 1.5)
 	// 2: How many times faster are players earning credits (e.g. 1.8)
 	"#format"	"{1:.2f},{2:.2f}"
-    "en"  "{RB}Turbo mode enabled!{G} Experience earned increase {N}{1}x{G} and credits {N}{1}x{G} faster! Stats are not permanent."
+    "en"  "{RB}Turbo mode enabled!{G} Experience earned increase {N}{1}x{G} and credits {N}{2}x{G} faster! Stats are not permanent."
   }
   "Turbo mode disabled"
   {

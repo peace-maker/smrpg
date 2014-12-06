@@ -4,7 +4,7 @@
   {
 	// 1: How many times faster are players earning experience (e.g. 1.5)
 	// 2: How many times faster are players earning credits (e.g. 1.8)
-    "de"  "{RB}Turbomodus aktiviert!{G} Du bekommst {N}{1}x{G} schneller Erfahrung und {N}{1}x{G} mehr Kredite! Die Stats werden nicht gespeichert."
+    "de"  "{RB}Turbomodus aktiviert!{G} Du bekommst {N}{1}x{G} schneller Erfahrung und {N}{2}x{G} mehr Kredite! Die Stats werden nicht gespeichert."
   }
   "Turbo mode disabled"
   {
