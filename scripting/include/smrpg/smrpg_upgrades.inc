@@ -432,3 +432,21 @@ forward Action:SMRPG_OnUpgradeEffect(client, const String:shortname[]);
  * @noreturn
  */
 forward SMRPG_OnUpgradeSettingsChanged(const String:shortname[]);
+
+/**
+ * Called when an upgrade is registered.
+ * It's not guaranteed that upgrade levels are loaded for players yet.
+ * @see SMRPG_OnClientLoaded.
+ *
+ * @param shortname      The shortname of the loaded upgrade.
+ * @noreturn
+ */
+forward SMRPG_OnUpgradeRegistered(const String:shortname[]);
+
+/**
+ * Called when an upgrade is unregistered from the core and is no longer available.
+ *
+ * @param shortname      The shortname of the loaded upgrade.
+ * @noreturn
+ */
+forward SMRPG_OnUpgradeUnregistered(const String:shortname[]);

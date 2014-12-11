@@ -49,6 +49,8 @@ enum InternalUpgradeInfo
 new Handle:g_hUpgrades;
 new Handle:g_hfwdOnUpgradeEffect;
 new Handle:g_hfwdOnUpgradeSettingsChanged;
+new Handle:g_hfwdOnUpgradeRegistered;
+new Handle:g_hfwdOnUpgradeUnregistered;
 
 RegisterUpgradeNatives()
 {
@@ -71,6 +73,8 @@ RegisterUpgradeForwards()
 {
 	g_hfwdOnUpgradeEffect = CreateGlobalForward("SMRPG_OnUpgradeEffect", ET_Hook, Param_Cell, Param_String);
 	g_hfwdOnUpgradeSettingsChanged = CreateGlobalForward("SMRPG_OnUpgradeSettingsChanged", ET_Ignore, Param_String);
+	g_hfwdOnUpgradeRegistered = CreateGlobalForward("SMRPG_OnUpgradeRegistered", ET_Ignore, Param_String);
+	g_hfwdOnUpgradeUnregistered = CreateGlobalForward("SMRPG_OnUpgradeUnregistered", ET_Ignore, Param_String);
 }
 
 InitUpgrades()
@@ -273,11 +277,17 @@ public Native_RegisterUpgradeType(Handle:plugin, numParams)
 		// This upgrade wasn't fetched or inserted into the database yet.
 		if(upgrade[UPGR_databaseId] == -1)
 		{
+			// Inform other plugins, that this upgrade is loaded.
+			CallUpgradeRegisteredForward(sShortName);
+			
 			CheckUpgradeDatabaseEntry(upgrade);
 		}
 		// This upgrade was registered already previously and we can use the cached values.
 		else if(bAlreadyLoaded && bWasUnavailable)
 		{
+			// Inform other plugins, that this upgrade is loaded.
+			CallUpgradeRegisteredForward(sShortName);
+			
 			RequestFrame(RequestFrame_OnFrame, upgrade[UPGR_index]);
 		}
 	}
@@ -305,6 +315,12 @@ public Native_UnregisterUpgradeType(Handle:plugin, numParams)
 			// Set this upgrade as unavailable! Don't process anything in the future.
 			upgrade[UPGR_unavailable] = true;
 			SaveUpgradeConfig(upgrade);
+			
+			// Inform other plugins, that this upgrade is unloaded.
+			Call_StartForward(g_hfwdOnUpgradeUnregistered);
+			Call_PushString(sShortName);
+			Call_Finish();
+			
 			return;
 		}
 	}
@@ -831,6 +847,14 @@ GetUpgradeTranslatedDescription(client, iUpgradeIndex, String:description[], max
 	Call_PushCell(TranslationType_Description);
 	Call_PushStringEx(description, maxlen, SM_PARAM_STRING_UTF8|SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
 	Call_PushCell(maxlen);
+	Call_Finish();
+}
+
+CallUpgradeRegisteredForward(const String:sShortName[])
+{
+	// Inform other plugins, that this upgrade is loaded.
+	Call_StartForward(g_hfwdOnUpgradeRegistered);
+	Call_PushString(sShortName);
 	Call_Finish();
 }
 
