@@ -80,7 +80,7 @@ public SQL_OnConnect(Handle:owner, Handle:hndl, const String:error[], any:data)
 	
 	// Create the player table
 	decl String:sQuery[1024];
-	Format(sQuery, sizeof(sQuery), "CREATE TABLE IF NOT EXISTS %s (player_id INTEGER PRIMARY KEY %s, name VARCHAR(64) NOT NULL DEFAULT ' ', steamid INTEGER DEFAULT NULL UNIQUE, level INTEGER DEFAULT '1', experience INTEGER DEFAULT '0', credits INTEGER DEFAULT '0', showmenu INTEGER DEFAULT '1', fadescreen INTEGER DEFAULT '1', lastseen INTEGER DEFAULT '0', lastreset INTEGER DEFAULT '0')", TBL_PLAYERS, (g_DriverType == Driver_MySQL ? "AUTO_INCREMENT" : "AUTOINCREMENT"));
+	Format(sQuery, sizeof(sQuery), "CREATE TABLE IF NOT EXISTS %s (player_id INTEGER PRIMARY KEY %s, name VARCHAR(64) NOT NULL DEFAULT ' ', steamid INTEGER DEFAULT NULL UNIQUE, level INTEGER DEFAULT 1, experience INTEGER DEFAULT 0, credits INTEGER DEFAULT 0, showmenu INTEGER DEFAULT 1, fadescreen INTEGER DEFAULT 1, lastseen INTEGER DEFAULT 0, lastreset INTEGER DEFAULT 0)", TBL_PLAYERS, (g_DriverType == Driver_MySQL ? "AUTO_INCREMENT" : "AUTOINCREMENT"));
 	if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
 	{
 		decl String:sError[256];
@@ -90,7 +90,7 @@ public SQL_OnConnect(Handle:owner, Handle:hndl, const String:error[], any:data)
 	}
 	
 	// Create the player -> upgrades table.
-	Format(sQuery, sizeof(sQuery), "CREATE TABLE IF NOT EXISTS %s (player_id INTEGER, upgrade_id INTEGER, purchasedlevel INTEGER NOT NULL, selectedlevel INTEGER NOT NULL, enabled INTEGER DEFAULT '1', visuals INTEGER DEFAULT '1', sounds INTEGER DEFAULT '1', PRIMARY KEY(player_id, upgrade_id))", TBL_PLAYERUPGRADES);
+	Format(sQuery, sizeof(sQuery), "CREATE TABLE IF NOT EXISTS %s (player_id INTEGER, upgrade_id INTEGER, purchasedlevel INTEGER NOT NULL, selectedlevel INTEGER NOT NULL, enabled INTEGER DEFAULT 1, visuals INTEGER DEFAULT 1, sounds INTEGER DEFAULT 1, PRIMARY KEY(player_id, upgrade_id))", TBL_PLAYERUPGRADES);
 	if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
 	{
 		decl String:sError[256];
@@ -221,7 +221,7 @@ CheckDatabaseVersion()
 				decl String:sQuery[512];
 				// Create a new table with the changed steamid field.
 				// SQLite doesn't support altering column types of existing tables.
-				Format(sQuery, sizeof(sQuery), "CREATE TABLE %s_X (player_id INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR(64) NOT NULL DEFAULT ' ', steamid INTEGER DEFAULT NULL UNIQUE, level INTEGER DEFAULT '1', experience INTEGER DEFAULT '0', credits INTEGER DEFAULT '0', showmenu INTEGER DEFAULT '1', fadescreen INTEGER DEFAULT '1', lastseen INTEGER DEFAULT '0', lastreset INTEGER DEFAULT '0');", TBL_PLAYERS);
+				Format(sQuery, sizeof(sQuery), "CREATE TABLE %s_X (player_id INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR(64) NOT NULL DEFAULT ' ', steamid INTEGER DEFAULT NULL UNIQUE, level INTEGER DEFAULT 1, experience INTEGER DEFAULT 0, credits INTEGER DEFAULT 0, showmenu INTEGER DEFAULT 1, fadescreen INTEGER DEFAULT 1, lastseen INTEGER DEFAULT 0, lastreset INTEGER DEFAULT 0);", TBL_PLAYERS);
 				if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
 				{
 					FailDatabaseUpdateError(DBVER_UPDATE_1, sQuery);
@@ -292,11 +292,11 @@ DatabaseMaid()
 	// Have players expire after x days and delete them from the database?
 	if(GetConVarInt(g_hCVPlayerExpire) > 0)
 	{
-		Format(sQuery, sizeof(sQuery), "OR lastseen <= '%d'", GetTime()-(86400*GetConVarInt(g_hCVPlayerExpire)));
+		Format(sQuery, sizeof(sQuery), "OR lastseen <= %d", GetTime()-(86400*GetConVarInt(g_hCVPlayerExpire)));
 	}
 	
 	// Delete players who are Level 1 and haven't played for 3 days
-	Format(sQuery, sizeof(sQuery), "SELECT player_id FROM %s WHERE (level <= '1' AND lastseen <= '%d') %s", TBL_PLAYERS, GetTime()-259200, sQuery);
+	Format(sQuery, sizeof(sQuery), "SELECT player_id FROM %s WHERE (level <= 1 AND lastseen <= %d) %s", TBL_PLAYERS, GetTime()-259200, sQuery);
 	SQL_LockDatabase(g_hDatabase);
 	new Handle:hResult = SQL_Query(g_hDatabase, sQuery);
 	SQL_UnlockDatabase(g_hDatabase);
@@ -310,10 +310,10 @@ DatabaseMaid()
 			
 			iPlayerId = SQL_FetchInt(hResult, 0);
 			
-			Format(sQuery, sizeof(sQuery), "DELETE FROM %s WHERE player_id = '%d'", TBL_PLAYERUPGRADES, iPlayerId);
+			Format(sQuery, sizeof(sQuery), "DELETE FROM %s WHERE player_id = %d", TBL_PLAYERUPGRADES, iPlayerId);
 			SQL_LockedFastQuery(g_hDatabase, sQuery);
 			
-			Format(sQuery, sizeof(sQuery), "DELETE FROM %s WHERE player_id = '%d'", TBL_PLAYERS, iPlayerId);
+			Format(sQuery, sizeof(sQuery), "DELETE FROM %s WHERE player_id = %d", TBL_PLAYERS, iPlayerId);
 			SQL_LockedFastQuery(g_hDatabase, sQuery);
 		}
 		CloseHandle(hResult);

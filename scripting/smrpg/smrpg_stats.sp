@@ -865,7 +865,7 @@ public Menu_HandleLastExperience(Handle:menu, MenuAction:action, param1, param2)
 UpdateClientRank(client)
 {
 	decl String:sQuery[128];
-	Format(sQuery, sizeof(sQuery), "SELECT COUNT(*) FROM %s WHERE level > '%d' OR (level = '%d' AND experience > '%d')", TBL_PLAYERS, GetClientLevel(client), GetClientLevel(client), GetClientExperience(client));
+	Format(sQuery, sizeof(sQuery), "SELECT COUNT(*) FROM %s WHERE level > %d OR (level = %d AND experience > %d)", TBL_PLAYERS, GetClientLevel(client), GetClientLevel(client), GetClientExperience(client));
 	SQL_TQuery(g_hDatabase, SQL_GetClientRank, sQuery, GetClientUserId(client));
 	g_iNextCacheUpdate[client] = GetTime() + RANK_CACHE_UPDATE_INTERVAL;
 }

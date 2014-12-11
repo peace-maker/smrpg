@@ -180,13 +180,13 @@ InsertPlayer(client)
 	// Store the steamid of the player
 	if(!IsFakeClient(client))
 	{
-		Format(sQuery, sizeof(sQuery), "INSERT INTO %s (name, steamid, level, experience, credits, showmenu, fadescreen, lastseen, lastreset) VALUES ('%s', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d')",
+		Format(sQuery, sizeof(sQuery), "INSERT INTO %s (name, steamid, level, experience, credits, showmenu, fadescreen, lastseen, lastreset) VALUES ('%s', %d, %d, %d, %d, %d, %d, %d, %d)",
 			TBL_PLAYERS, sNameEscaped, GetSteamAccountID(client), GetClientLevel(client), GetClientExperience(client), GetClientCredits(client), ShowMenuOnLevelUp(client), FadeScreenOnLevelUp(client), GetTime(), GetTime());
 	}
 	// Bots are identified by their name!
 	else
 	{
-		Format(sQuery, sizeof(sQuery), "INSERT INTO %s (name, steamid, level, experience, credits, showmenu, fadescreen, lastseen, lastreset) VALUES ('%s', NULL, '%d', '%d', '%d', '%d', '%d', '%d', '%d')",
+		Format(sQuery, sizeof(sQuery), "INSERT INTO %s (name, steamid, level, experience, credits, showmenu, fadescreen, lastseen, lastreset) VALUES ('%s', NULL, %d, %d, %d, %d, %d, %d, %d)",
 			TBL_PLAYERS, sNameEscaped, GetClientLevel(client), GetClientExperience(client), GetClientCredits(client), ShowMenuOnLevelUp(client), FadeScreenOnLevelUp(client), GetTime(), GetTime());
 	}
 	
@@ -221,7 +221,7 @@ SaveData(client)
 	SQL_EscapeString(g_hDatabase, sName, sNameEscaped, sizeof(sNameEscaped));
 	
 	decl String:sQuery[8192];
-	Format(sQuery, sizeof(sQuery), "UPDATE %s SET name = '%s', level = '%d', experience = '%d', credits = '%d', showmenu = '%d', fadescreen = '%d', lastseen = '%d', lastreset = '%d' WHERE player_id = '%d'", TBL_PLAYERS, sNameEscaped, GetClientLevel(client), GetClientExperience(client), GetClientCredits(client), ShowMenuOnLevelUp(client), FadeScreenOnLevelUp(client), GetTime(), g_iPlayerInfo[client][PLR_lastReset], g_iPlayerInfo[client][PLR_dbId]);
+	Format(sQuery, sizeof(sQuery), "UPDATE %s SET name = '%s', level = %d, experience = %d, credits = %d, showmenu = %d, fadescreen = %d, lastseen = %d, lastreset = %d WHERE player_id = %d", TBL_PLAYERS, sNameEscaped, GetClientLevel(client), GetClientExperience(client), GetClientCredits(client), ShowMenuOnLevelUp(client), FadeScreenOnLevelUp(client), GetTime(), g_iPlayerInfo[client][PLR_lastReset], g_iPlayerInfo[client][PLR_dbId]);
 	SQL_TQuery(g_hDatabase, SQL_DoNothing, sQuery);
 	
 	// Remember when we last saved his stats

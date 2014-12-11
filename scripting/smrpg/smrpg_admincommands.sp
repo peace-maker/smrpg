@@ -755,7 +755,7 @@ public Action:Cmd_DBDelPlayer(client, args)
 			RemovePlayer(iTarget);
 		
 		WritePackCell(hPack, iTarget);
-		Format(sQuery, sizeof(sQuery), "SELECT player_id, name FROM %s WHERE player_id = '%d'", TBL_PLAYERS, iPlayerID);
+		Format(sQuery, sizeof(sQuery), "SELECT player_id, name FROM %s WHERE player_id = %d", TBL_PLAYERS, iPlayerID);
 		SQL_TQuery(g_hDatabase, SQL_CheckDeletePlayer, sQuery, hPack);
 	}
 	// Match as name
