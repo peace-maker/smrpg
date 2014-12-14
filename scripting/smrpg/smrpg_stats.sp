@@ -36,6 +36,7 @@ enum AFKInfo {
 	AFK_deathTime
 }
 new g_PlayerAFKInfo[MAXPLAYERS+1][AFKInfo];
+new bool:g_bPlayerSpawnProtected[MAXPLAYERS+1];
 
 // Individual weapon experience settings
 new Handle:g_hWeaponExperience;
@@ -62,6 +63,8 @@ RegisterStatsNatives()
 	
 	// native bool:SMRPG_IsClientAFK(client);
 	CreateNative("SMRPG_IsClientAFK", Native_IsClientAFK);
+	// native bool:SMRPG_IsClientSpawnProtected(client);
+	CreateNative("SMRPG_IsClientSpawnProtected", Native_IsClientSpawnProtected);
 	
 	// native Float:SMRPG_GetWeaponExperience(const String:sWeapon[], WeaponExperienceType:type);
 	CreateNative("SMRPG_GetWeaponExperience", Native_GetWeaponExperience);
@@ -322,6 +325,10 @@ Stats_PlayerDamage(attacker, victim, Float:fDamage, const String:sWeapon[])
 	if(IsClientAFK(victim))
 		return;
 	
+	// Don't give the attacker any exp when his victim just spawned and didn't do anything at all yet.
+	if(IsClientSpawnProtected(victim))
+		return;
+	
 	// Ignore teamattack
 	if(GetClientTeam(attacker) == GetClientTeam(victim))
 		return;
@@ -338,6 +345,10 @@ Stats_PlayerKill(attacker, victim, const String:sWeapon[])
 	
 	// Don't give the attacker any exp when his victim was afk.
 	if(IsClientAFK(victim))
+		return;
+	
+	// Don't give the attacker any exp when his victim just spawned and didn't do anything at all yet.
+	if(IsClientSpawnProtected(victim))
 		return;
 	
 	// Ignore teamattack
@@ -479,6 +490,19 @@ ResetAFKPlayer(client)
 	Array_Copy(g_PlayerAFKInfo[client][AFK_lastPosition], Float:{0.0,0.0,0.0}, 3);
 }
 
+// Spawn Protection handling
+bool:IsClientSpawnProtected(client)
+{
+	if(!GetConVarBool(g_hCVSpawnProtect))
+		return false;
+	return g_bPlayerSpawnProtected[client];
+}
+
+ResetSpawnProtection(client)
+{
+	g_bPlayerSpawnProtected[client] = false;
+}
+
 /**
  * Native Callbacks
  */
@@ -574,6 +598,18 @@ public Native_IsClientAFK(Handle:plugin, numParams)
 	}
 	
 	return IsClientAFK(client);
+}
+
+public Native_IsClientSpawnProtected(Handle:plugin, numParams)
+{
+	new client = GetNativeCell(1);
+	if(client < 0 || client > MaxClients)
+	{
+		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
+		return false;
+	}
+	
+	return IsClientSpawnProtected(client);
 }
 
 public Native_GetTop10Players(Handle:plugin, numParams)

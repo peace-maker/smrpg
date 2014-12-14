@@ -200,6 +200,10 @@ public Event_OnPlayerHurt(Handle:event, const String:error[], bool:dontBroadcast
 	if(SMRPG_IsClientAFK(victim))
 		return;
 	
+	// Don't give the attacker any exp when his victim just spawned and didn't do anything at all yet.
+	if(SMRPG_IsClientSpawnProtected(victim))
+		return;
+	
 	// Ignore teamattack
 	if(GetClientTeam(attacker) == GetClientTeam(victim))
 		return;
@@ -273,6 +277,10 @@ public Event_OnPlayerDeath(Handle:event, const String:error[], bool:dontBroadcas
 		return;
 	
 	if(SMRPG_IsClientAFK(victim))
+		return;
+	
+	// Don't give the attacker any exp when his victim just spawned and didn't do anything at all yet.
+	if(SMRPG_IsClientSpawnProtected(victim))
 		return;
 	
 	// Give the assisting player some exp.

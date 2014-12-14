@@ -134,6 +134,15 @@ native SMRPG_GetClientLastSeenTime(client);
 native bool:SMRPG_IsClientAFK(client);
 
 /**
+ * Check if a client just spawned and hasn't pressed any buttons yet.
+ *
+ * @param client				The client index
+ * @return	True if player just spawned, false otherwise.
+ * @error Invalid client index
+ */
+native bool:SMRPG_IsClientSpawnProtected(client);
+
+/**
  * Called when the core wants a reason string to be translated so it's displayed in the recent added experience panel.
  * Should look like
  *   15 exp. for killing (name of [other])
