@@ -203,7 +203,7 @@ public Action:Timer_CalculateEstimatedLevelupTime(Handle:timer)
 	}
 }
 
-public Action:SMRPG_OnAddExperience(client, const String:reason[], &iExperience, other)
+public SMRPG_OnAddExperiencePost(client, const String:reason[], iExperience, other)
 {
 	g_iLastExperience[client] = iExperience;
 	g_iExperienceThisMinute[client] += iExperience;
