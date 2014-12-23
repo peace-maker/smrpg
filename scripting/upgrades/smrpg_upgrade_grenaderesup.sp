@@ -283,6 +283,8 @@ StartGrenadeResupplyTimer(client, grenadeEntry[GrenadeEntry])
 	
 	// Calculate the time until we give back the grenade.
 	new Float:fTime = GetGrenadeBaseDelay(grenadeEntry) - GetGrenadeDelayDecrease(grenadeEntry) * (iLevel-1);
+	if(fTime <= 0.0)
+		fTime = 0.1;
 	
 	new playerGrenade[PlayerGrenade];
 	GetPlayerGrenadeByIndex(client, grenadeEntry[GE_index], playerGrenade);
