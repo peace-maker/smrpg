@@ -371,7 +371,7 @@ stock GetDaysUntilNextReset(iNextReset[3])
 	//PrintToServer("Next reset on %d-%d-%d", iFirstYear, iFirstMonth, iFirstDay);
 	
 	new iDays;
-	while(iCurrentMonth < iFirstMonth && iCurrentYear <= iFirstYear)
+	while(iCurrentYear < iFirstYear || (iCurrentMonth < iFirstMonth && iCurrentYear == iFirstYear))
 	{
 		iDays += g_iDaysInMonth[iCurrentMonth];
 		
