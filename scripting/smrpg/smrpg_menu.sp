@@ -716,6 +716,15 @@ public TopMenu_HandleSettings(Handle:topmenu, TopMenuAction:action, TopMenuObjec
 				Format(buffer, maxlength, "%T: %T", "Fade screen on levelup", param, FadeScreenOnLevelUp(param)?"Yes":"No", param);
 			}
 		}
+		case TopMenuAction_DrawOption:
+		{
+			if(StrEqual(sName, "resetstats"))
+			{
+				// Don't show the reset stats option, if disabled.
+				if(!GetConVarBool(g_hCVAllowSelfReset))
+					buffer[0] = ITEMDRAW_IGNORE;
+			}
+		}
 		case TopMenuAction_SelectOption:
 		{
 			if(StrEqual(sName, "resetstats"))
@@ -749,11 +758,16 @@ public Menu_ConfirmResetStats(Handle:menu, MenuAction:action, param1, param2)
 			return 0;
 		}
 		
-		ResetStats(param1);
-		SetPlayerLastReset(param1, GetTime());
-		
-		Client_PrintToChat(param1, false, "%t", "Stats have been reset");
-		LogMessage("%L reset his own rpg stats on purpose.", param1);
+		// Are players allowed to reset themselves?
+		// Player might still had the menu open while this setting changed.
+		if(GetConVarBool(g_hCVAllowSelfReset))
+		{
+			ResetStats(param1);
+			SetPlayerLastReset(param1, GetTime());
+			
+			Client_PrintToChat(param1, false, "%t", "Stats have been reset");
+			LogMessage("%L reset his own rpg stats on purpose.", param1);
+		}
 		
 		DisplaySettingsMenu(param1);
 	}

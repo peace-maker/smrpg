@@ -33,6 +33,7 @@ new Handle:g_hCVDebug;
 new Handle:g_hCVSaveData;
 new Handle:g_hCVSaveInterval;
 new Handle:g_hCVPlayerExpire;
+new Handle:g_hCVAllowSelfReset;
 
 new Handle:g_hCVBotMaxlevel;
 new Handle:g_hCVBotMaxlevelReset;
@@ -149,6 +150,7 @@ public OnPluginStart()
 	g_hCVSaveData = AutoExecConfig_CreateConVar("smrpg_save_data", "1", "If disabled, the database won't be updated (this means player data won't be saved!)", 0, true, 0.0, true, 1.0);
 	g_hCVSaveInterval = AutoExecConfig_CreateConVar("smrpg_save_interval", "150", "Interval (in seconds) that player data is auto saved (0 = off)", 0, true, 0.0);
 	g_hCVPlayerExpire = AutoExecConfig_CreateConVar("smrpg_player_expire", "30", "Sets how many days until an unused player account is deleted (0 = never)", 0, true, 0.0);
+	g_hCVAllowSelfReset = AutoExecConfig_CreateConVar("smrpg_allow_selfreset", "1", "Are players allowed to reset their own rpg stats in the settings menu?", 0, true, 0.0, true, 1.0);
 	
 	g_hCVBotMaxlevel = AutoExecConfig_CreateConVar("smrpg_bot_maxlevel", "250", "The maximum level a bot can reach until its stats are reset (0 = infinite)", 0, true, 0.0);
 	g_hCVBotMaxlevelReset = AutoExecConfig_CreateConVar("smrpg_bot_maxlevel_reset", "1", "Reset the bot to level 1, if the bot reaches the maxlevel for bots?", 0, true, 0.0, true, 1.0);
