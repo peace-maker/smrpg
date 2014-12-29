@@ -239,4 +239,14 @@
 	{
 		"de"			"Friert deinen Gegner ein, wenn du ihn mit einer Granate triffst."
 	}
+	
+	"antidote"
+	{
+		"de"			"Gegengift"
+	}
+	
+	"antidote description"
+	{
+		"de"			"Verkürzt die Dauer von negativen Effekten gegen dich, wie Verbrennung oder Verlangsamung."
+	}
 }

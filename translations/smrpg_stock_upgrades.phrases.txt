@@ -239,4 +239,14 @@
 	{
 		"en"			"Freeze a player in place when damaging him with your grenade."
 	}
+	
+	"antidote"
+	{
+		"en"			"Antidote"
+	}
+	
+	"antidote description"
+	{
+		"en"			"Shorten the duration of bad effects like freezing, burning or slowdown on you."
+	}
 }
