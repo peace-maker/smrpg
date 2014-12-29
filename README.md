@@ -19,13 +19,23 @@ When an upgrade registers itself at the core, it'll automatically be added to th
 Server admins can install a new upgrade simply by loading the upgrade plugin.
 
 # Compile requirements
-* [smlib](https://github.com/bcserv/smlib)
+* [smlib git master](https://github.com/bcserv/smlib)
 * [AutoExecConfig](https://github.com/Impact123/AutoExecConfig)
 * (optional) [DHooks](https://forums.alliedmods.net/showthread.php?t=180114) for Speed+ upgrade
 
 # Installation
-* Compile the core plugin (see Compile requirements)
+* Compile the core smrpg plugin (see Compile requirements)
 * If there is a seperate experience module for your game (currently only cstrike), compile and upload that too.
+* Compile all optional features if you want them.
+  * smrpg_resetstats - Automatically reset the stats on different conditions and display next reset date in chat.
+  * smrpg_commandlist - Teach players about different available rpg related chat commands.
+  * smrpg_effects - Central library to apply similar upgrade effects. Required by some upgrades!
+  * smrpg_keyhint_info (On CS:S) - Display rpg stats and more info permanently on the screen.
+  * smrpg_chatxpstats - Display infos in chat about gained experience for a kill or during the whole last life.
+  * smrpg_gifting - Allow players to give other players rpg credits as a gift.
+  * smrpg_turbomode - Increase the experience and credits rate for one map, but don't save the stats. For fun events.
+  * smrpg_antisuicide - Punish players who commit suicide during a fight by taking some experience.
+  * smrpg_disablexp - Admin option to temporarily disable experience for individual players.
 * Compile all the upgrades you want to use
 * Upload the .smx files as well as the configs, gamedata and translations to your gameserver
 * Add a "smrpg" section to your databases.cfg. Both mysql and sqlite are supported.
@@ -46,6 +56,7 @@ Have a look at the [include files](https://github.com/peace-maker/smrpg/blob/mas
 See the available upgrade plugins for examples. You can use the [example upgrade](https://github.com/peace-maker/smrpg/blob/master/scripting/upgrades/smrpg_upgrade_example.sp) as a skeleton.
 
 # Available upgrades
+* Antidote - Reduce duration of bad effects against you like burning, freezing or slow down.
 * Armor+ (Counter-Strike only) - Increases your maximal armor.
 * Armor Regeneration (Counter-Strike only) - Regenerates armor every second.
 * Damage+ - Deal additional damage on enemies.
