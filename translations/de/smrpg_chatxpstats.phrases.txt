@@ -15,11 +15,11 @@
 	
 	"Print xp for last kill in chat"
 	{
-		"de"			"Schreibe verdiente Erfahrung für letzten Kill in den Chat"
+		"de"			"Schreibe verdiente Erfahrung für letzten Kill in Chat"
 	}
 
 	"Print total xp last life in chat"
 	{
-		"de"			"Schreibe insgesamt vor letztem Tod verdiente Erfahrung in den Chat"
+		"de"			"Schreibe vor letztem Tod verdiente Erfahrung in Chat"
 	}
 }
