@@ -901,10 +901,12 @@ public SQL_CheckDeletePlayer(Handle:owner, Handle:hndl, const String:error[], an
 	if(GetConVarBool(g_hCVSaveData))
 	{
 		decl String:sQuery[128];
+		new Handle:hTransaction = SQL_CreateTransaction();
 		Format(sQuery, sizeof(sQuery), "DELETE FROM %s WHERE player_id = %d", TBL_PLAYERUPGRADES, iPlayerId);
-		SQL_TQuery(g_hDatabase, SQL_DoNothing, sQuery);
+		SQL_AddQuery(hTransaction, sQuery);
 		Format(sQuery, sizeof(sQuery), "DELETE FROM %s WHERE player_id = %d", TBL_PLAYERS, iPlayerId);
-		SQL_TQuery(g_hDatabase, SQL_DoNothing, sQuery);
+		SQL_AddQuery(hTransaction, sQuery);
+		SQL_ExecuteTransaction(g_hDatabase, hTransaction, _, SQLTxn_LogFailure);
 		
 		if(iTarget != -1)
 			g_iPlayerInfo[iTarget][PLR_dbId] = -1;
@@ -965,6 +967,10 @@ public SQL_MassDeleteItem(Handle:owner, Handle:hndl, const String:error[], any:d
 		// Give players full refund for their upgrades.
 		new iOldLevel, iAddCredits, iPlayerID;
 		decl String:sQuery[128];
+		
+		// Update all players at once instead of firing lots of single update queries.
+		new Handle:hTransaction = SQL_CreateTransaction();
+		
 		while(SQL_MoreRows(hndl))
 		{
 			if(!SQL_FetchRow(hndl))
@@ -992,9 +998,11 @@ public SQL_MassDeleteItem(Handle:owner, Handle:hndl, const String:error[], any:d
 			while(iOldLevel > 0)
 				iAddCredits += GetUpgradeCost(iIndex, iOldLevel--);
 			
-			Format(sQuery, sizeof(sQuery), "UPDATE %s SET credits = (credits + %d) WHERE player_id = %d", TBL_UPGRADES, iAddCredits, iPlayerID);
-			SQL_TQuery(g_hDatabase, SQL_DoNothing, sQuery);
+			Format(sQuery, sizeof(sQuery), "UPDATE %s SET credits = (credits + %d) WHERE player_id = %d", TBL_PLAYERS, iAddCredits, iPlayerID);
+			SQL_AddQuery(hTransaction, sQuery);
 		}
+		
+		SQL_ExecuteTransaction(g_hDatabase, hTransaction, _, SQLTxn_LogFailure);
 		
 		// Reset all players to upgrade level 0
 		Format(sQuery, sizeof(sQuery), "UPDATE %s SET purchasedlevel = 0, selectedlevel = 0 WHERE upgrade_id = %d", TBL_PLAYERUPGRADES, upgrade[UPGR_databaseId]);

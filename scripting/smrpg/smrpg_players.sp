@@ -193,7 +193,7 @@ InsertPlayer(client)
 	SQL_TQuery(g_hDatabase, SQL_InsertPlayer, sQuery, GetClientUserId(client));
 }
 
-SaveData(client)
+SaveData(client, Handle:hTransaction=INVALID_HANDLE)
 {
 	if(!GetConVarBool(g_hCVEnable) || !GetConVarBool(g_hCVSaveData))
 		return;
@@ -222,16 +222,20 @@ SaveData(client)
 	
 	decl String:sQuery[8192];
 	Format(sQuery, sizeof(sQuery), "UPDATE %s SET name = '%s', level = %d, experience = %d, credits = %d, showmenu = %d, fadescreen = %d, lastseen = %d, lastreset = %d WHERE player_id = %d", TBL_PLAYERS, sNameEscaped, GetClientLevel(client), GetClientExperience(client), GetClientCredits(client), ShowMenuOnLevelUp(client), FadeScreenOnLevelUp(client), GetTime(), g_iPlayerInfo[client][PLR_lastReset], g_iPlayerInfo[client][PLR_dbId]);
-	SQL_TQuery(g_hDatabase, SQL_DoNothing, sQuery);
+	// Add the query to the transaction instead of running it right away.
+	if(hTransaction != INVALID_HANDLE)
+		SQL_AddQuery(hTransaction, sQuery);
+	else
+		SQL_TQuery(g_hDatabase, SQL_DoNothing, sQuery);
 	
 	// Remember when we last saved his stats
 	g_iPlayerInfo[client][PLR_lastSeen] = GetTime();
 	
 	// Save upgrade levels
-	SavePlayerUpgradeLevels(client);
+	SavePlayerUpgradeLevels(client, hTransaction);
 }
 
-SavePlayerUpgradeLevels(client)
+SavePlayerUpgradeLevels(client, Handle:hTransaction=INVALID_HANDLE)
 {
 	// Save upgrade levels
 	new iSize = GetUpgradeCount();
@@ -257,7 +261,11 @@ SavePlayerUpgradeLevels(client)
 	}
 	if(iAdded > 0)
 	{
-		SQL_TQuery(g_hDatabase, SQL_DoNothing, sQuery);
+		// Add the query to the transaction instead of running it right away.
+		if(hTransaction != INVALID_HANDLE)
+			SQL_AddQuery(hTransaction, sQuery);
+		else
+			SQL_TQuery(g_hDatabase, SQL_DoNothing, sQuery);
 	}
 }
 
@@ -266,11 +274,17 @@ SaveAllPlayers()
 	if(!GetConVarBool(g_hCVEnable) || !GetConVarBool(g_hCVSaveData))
 		return;
 	
+	// Save all players at once instead of firing seperate queries for every player.
+	// This is to optimize sqlite usage.
+	new Handle:hTransaction = SQL_CreateTransaction();
+	
 	for(new i=1;i<=MaxClients;i++)
 	{
 		if(IsClientInGame(i) && IsClientAuthorized(i))
-			SaveData(i);
+			SaveData(i, hTransaction);
 	}
+	
+	SQL_ExecuteTransaction(g_hDatabase, hTransaction, _, SQLTxn_LogFailure);
 }
 
 ResetStats(client)

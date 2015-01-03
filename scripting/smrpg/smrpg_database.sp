@@ -297,33 +297,7 @@ DatabaseMaid()
 	
 	// Delete players who are Level 1 and haven't played for 3 days
 	Format(sQuery, sizeof(sQuery), "SELECT player_id FROM %s WHERE (level <= 1 AND lastseen <= %d) %s", TBL_PLAYERS, GetTime()-259200, sQuery);
-	SQL_LockDatabase(g_hDatabase);
-	new Handle:hResult = SQL_Query(g_hDatabase, sQuery);
-	SQL_UnlockDatabase(g_hDatabase);
-	if(hResult != INVALID_HANDLE)
-	{
-		new iPlayerId;
-		while(SQL_MoreRows(hResult))
-		{
-			if(!SQL_FetchRow(hResult))
-				continue;
-			
-			iPlayerId = SQL_FetchInt(hResult, 0);
-			
-			Format(sQuery, sizeof(sQuery), "DELETE FROM %s WHERE player_id = %d", TBL_PLAYERUPGRADES, iPlayerId);
-			SQL_LockedFastQuery(g_hDatabase, sQuery);
-			
-			Format(sQuery, sizeof(sQuery), "DELETE FROM %s WHERE player_id = %d", TBL_PLAYERS, iPlayerId);
-			SQL_LockedFastQuery(g_hDatabase, sQuery);
-		}
-		CloseHandle(hResult);
-	}
-	else
-	{
-		decl String:sError[256];
-		SQL_GetError(g_hDatabase, sError, sizeof(sError));
-		LogError("DatabaseMaid: player expire query failed: %s", sError);
-	}
+	SQL_TQuery(g_hDatabase, SQL_DeleteExpiredPlayers, sQuery);
 	
 	// Reduce sqlite database file size.
 	if(g_DriverType == Driver_SQLite)
@@ -352,10 +326,12 @@ public Native_ResetAllPlayers(Handle:plugin, numParams)
 	// Delete all player information?
 	if(bHardReset)
 	{
+		new Handle:hTransaction = SQL_CreateTransaction();
 		Format(sQuery, sizeof(sQuery), "DELETE FROM %s", TBL_PLAYERUPGRADES);
-		SQL_TQuery(g_hDatabase, SQL_DoNothing, sQuery);
+		SQL_AddQuery(hTransaction, sQuery);
 		Format(sQuery, sizeof(sQuery), "DELETE FROM %s", TBL_PLAYERS);
-		SQL_TQuery(g_hDatabase, SQL_DoNothing, sQuery);
+		SQL_AddQuery(hTransaction, sQuery);
+		SQL_ExecuteTransaction(g_hDatabase, hTransaction, _, SQLTxn_LogFailure);
 		
 		// Reset all ingame players and readd them into the database.
 		for(new i=1;i<=MaxClients;i++)
@@ -372,10 +348,12 @@ public Native_ResetAllPlayers(Handle:plugin, numParams)
 	// Keep the player settings
 	else
 	{
+		new Handle:hTransaction = SQL_CreateTransaction();
 		Format(sQuery, sizeof(sQuery), "UPDATE %s SET level = 1, experience = 0, credits = %d, lastreset = %d", TBL_PLAYERS, GetConVarInt(g_hCVCreditsStart), GetTime());
-		SQL_TQuery(g_hDatabase, SQL_DoNothing, sQuery);
+		SQL_AddQuery(hTransaction, sQuery);
 		Format(sQuery, sizeof(sQuery), "UPDATE %s SET purchasedlevel = 0, selectedlevel = 0, enabled = 1", TBL_PLAYERUPGRADES);
-		SQL_TQuery(g_hDatabase, SQL_DoNothing, sQuery);
+		SQL_AddQuery(hTransaction, sQuery);
+		SQL_ExecuteTransaction(g_hDatabase, hTransaction, _, SQLTxn_LogFailure);
 		
 		// Just reset all ingame players too
 		for(new i=1;i<=MaxClients;i++)
@@ -410,6 +388,11 @@ public SQL_DoNothing(Handle:owner, Handle:hndl, const String:error[], any:data)
 	{
 		LogError("Error executing query: %s", error);
 	}
+}
+
+public SQLTxn_LogFailure(Handle:db, any:data, numQueries, const String:error[], failIndex, any:queryData[])
+{
+	LogError("Error executing query %d of %d queries: %s", failIndex, numQueries, error);
 }
 
 public SQL_GetUpgradeInfo(Handle:owner, Handle:hndl, const String:error[], any:index)
@@ -461,6 +444,35 @@ public SQL_InsertNewUpgrade(Handle:owner, Handle:hndl, const String:error[], any
 	upgrade[UPGR_databaseLoading] = false;
 	upgrade[UPGR_databaseId] = SQL_GetInsertId(owner);
 	SaveUpgradeConfig(upgrade);
+}
+
+// Delete all players which weren't seen on the server for too a long time.
+public SQL_DeleteExpiredPlayers(Handle:owner, Handle:hndl, const String:error[], any:data)
+{
+	if(hndl == INVALID_HANDLE || strlen(error) > 0)
+	{
+		LogError("DatabaseMaid: player expire query failed: %s", error);
+	}
+	
+	// Delete them at once.
+	new Handle:hTransaction = SQL_CreateTransaction();
+	
+	new iPlayerId, String:sQuery[128];
+	while(SQL_MoreRows(hndl))
+	{
+		if(!SQL_FetchRow(hndl))
+			continue;
+		
+		iPlayerId = SQL_FetchInt(hndl, 0);
+		
+		Format(sQuery, sizeof(sQuery), "DELETE FROM %s WHERE player_id = %d", TBL_PLAYERUPGRADES, iPlayerId);
+		SQL_AddQuery(hTransaction, sQuery);
+		
+		Format(sQuery, sizeof(sQuery), "DELETE FROM %s WHERE player_id = %d", TBL_PLAYERS, iPlayerId);
+		SQL_AddQuery(hTransaction, sQuery);
+	}
+	
+	SQL_ExecuteTransaction(g_hDatabase, hTransaction, _, SQLTxn_LogFailure);
 }
 
 /**
