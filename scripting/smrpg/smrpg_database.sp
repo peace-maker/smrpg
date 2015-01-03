@@ -64,10 +64,7 @@ public SQL_OnConnect(Handle:owner, Handle:hndl, const String:error[], any:data)
 	if(StrEqual(sDriverIdent, "mysql", false))
 	{
 		g_DriverType = Driver_MySQL;
-		if(GetFeatureStatus(FeatureType_Native, "SQL_SetCharset") == FeatureStatus_Available)
-			SQL_SetCharset(g_hDatabase, "utf8");
-		else
-			SQL_LockedFastQuery(g_hDatabase, "SET NAMES 'UTF8'");
+		SQL_SetCharset(g_hDatabase, "utf8");
 	}
 	else if(StrEqual(sDriverIdent, "sqlite", false))
 	{

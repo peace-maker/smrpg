@@ -24,8 +24,7 @@ new g_iSelectedSettingsUpgrade[MAXPLAYERS+1] = {-1,...};
 RegisterTopMenu()
 {
 	g_hRPGTopMenu = CreateTopMenu(TopMenu_DefaultCategoryHandler);
-	if(GetFeatureStatus(FeatureType_Native, "SetTopMenuTitleCaching") == FeatureStatus_Available)
-		SetTopMenuTitleCaching(g_hRPGTopMenu, false);
+	SetTopMenuTitleCaching(g_hRPGTopMenu, false);
 	
 	g_TopMenuUpgrades = AddToTopMenu(g_hRPGTopMenu, RPGMENU_UPGRADES, TopMenuObject_Category, TopMenu_DefaultCategoryHandler, INVALID_TOPMENUOBJECT);
 	g_TopMenuSell = AddToTopMenu(g_hRPGTopMenu, RPGMENU_SELL, TopMenuObject_Category, TopMenu_DefaultCategoryHandler, INVALID_TOPMENUOBJECT);
@@ -129,10 +128,7 @@ DisplayMainMenu(client)
 
 DisplayUpgradesMenu(client)
 {
-	if(GetFeatureStatus(FeatureType_Native, "DisplayTopMenuCategory") == FeatureStatus_Available)
-		DisplayTopMenuCategory(g_hRPGTopMenu, g_TopMenuUpgrades, client);
-	else
-		DisplayTopMenu(g_hRPGTopMenu, client, TopMenuPosition_Start); // Fallback to just displaying the rpgmenu if running "old" sourcemod version.
+	DisplayTopMenuCategory(g_hRPGTopMenu, g_TopMenuUpgrades, client);
 }
 
 /**
@@ -146,24 +142,7 @@ public TopMenu_DefaultCategoryHandler(Handle:topmenu, TopMenuAction:action, TopM
 		case TopMenuAction_DisplayTitle:
 		{
 			// Always display the current credits in the title
-			if(GetFeatureStatus(FeatureType_Native, "SetTopMenuTitleCaching") == FeatureStatus_Available)
-				Format(buffer, maxlength, "%T\n-----\n", "Credits", param, GetClientCredits(param));
-			// If this version of sourcemod doesn't support changing the topmenu title dynamically, don't print the credits..
-			else
-			{
-				if(object_id == g_TopMenuUpgrades)
-					Format(buffer, maxlength, "%T\n-----\n", "Upgrades", param);
-				else if(object_id == g_TopMenuSell)
-					Format(buffer, maxlength, "%T\n-----\n", "Sell", param);
-				else if(object_id == g_TopMenuUpgradeSettings)
-					Format(buffer, maxlength, "%T\n-----\n", "Upgrade Settings", param);
-				else if(object_id == g_TopMenuStats)
-					Format(buffer, maxlength, "%T\n-----\n", "Stats", param);
-				else if(object_id == g_TopMenuSettings)
-					Format(buffer, maxlength, "%T\n-----\n", "Settings", param);
-				else if(object_id == g_TopMenuHelp)
-					Format(buffer, maxlength, "%T\n-----\n", "Help", param);
-			}
+			Format(buffer, maxlength, "%T\n-----\n", "Credits", param, GetClientCredits(param));
 		}
 		case TopMenuAction_DisplayOption:
 		{
@@ -625,10 +604,7 @@ public Menu_HandleUpgradeSettings(Handle:menu, MenuAction:action, param1, param2
 
 DisplayStatsMenu(client)
 {
-	if(GetFeatureStatus(FeatureType_Native, "DisplayTopMenuCategory") == FeatureStatus_Available)
-		DisplayTopMenuCategory(g_hRPGTopMenu, g_TopMenuStats, client);
-	else
-		DisplayTopMenu(g_hRPGTopMenu, client, TopMenuPosition_Start); // Fallback to just displaying the rpgmenu if running "old" sourcemod version.
+	DisplayTopMenuCategory(g_hRPGTopMenu, g_TopMenuStats, client);
 }
 
 public TopMenu_HandleStats(Handle:topmenu, TopMenuAction:action, TopMenuObject:object_id, param, String:buffer[], maxlength)
@@ -688,10 +664,7 @@ public TopMenu_HandleStats(Handle:topmenu, TopMenuAction:action, TopMenuObject:o
 
 DisplaySettingsMenu(client)
 {
-	if(GetFeatureStatus(FeatureType_Native, "DisplayTopMenuCategory") == FeatureStatus_Available)
-		DisplayTopMenuCategory(g_hRPGTopMenu, g_TopMenuSettings, client);
-	else
-		DisplayTopMenu(g_hRPGTopMenu, client, TopMenuPosition_Start); // Fallback to just displaying the rpgmenu if running "old" sourcemod version.
+	DisplayTopMenuCategory(g_hRPGTopMenu, g_TopMenuSettings, client);
 }
 
 public TopMenu_HandleSettings(Handle:topmenu, TopMenuAction:action, TopMenuObject:object_id, param, String:buffer[], maxlength)
@@ -805,10 +778,7 @@ public Menu_ConfirmResetStats(Handle:menu, MenuAction:action, param1, param2)
 
 DisplayHelpMenu(client)
 {
-	if(GetFeatureStatus(FeatureType_Native, "DisplayTopMenuCategory") == FeatureStatus_Available)
-		DisplayTopMenuCategory(g_hRPGTopMenu, g_TopMenuHelp, client);
-	else
-		DisplayTopMenu(g_hRPGTopMenu, client, TopMenuPosition_Start); // Fallback to just displaying the rpgmenu if running "old" sourcemod version.
+	DisplayTopMenuCategory(g_hRPGTopMenu, g_TopMenuHelp, client);
 }
 
 public TopMenu_HandleHelp(Handle:topmenu, TopMenuAction:action, TopMenuObject:object_id, param, String:buffer[], maxlength)
