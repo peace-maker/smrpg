@@ -126,8 +126,7 @@ public SMRPG_OnAddExperiencePost(client, const String:reason[], iExperience, oth
 	
 	if(other > 0
 	&& (StrEqual(reason, ExperienceReason_PlayerKill)
-	|| StrEqual(reason, "cs_playerkill")
-	|| StrEqual(reason, "cs_playerknife")))
+	|| StrEqual(reason, "cs_playerkill")))
 	{
 		if(g_bClientPrintKillXP[client])
 			Client_PrintToChat(client, false, "{OG}SM:RPG{N} > {G}%t", "Earned experience for kill", iExperience, other);
