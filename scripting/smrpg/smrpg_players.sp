@@ -32,7 +32,7 @@ enum PlayerInfo
 	PLR_dbId,
 	bool:PLR_showMenuOnLevelup,
 	bool:PLR_fadeOnLevelup,
-	bool:PLR_triedToLoadData,
+	bool:PLR_dataLoadedFromDB,
 	Handle:PLR_upgrades,
 	PLR_lastReset,
 	PLR_lastSeen
@@ -105,7 +105,7 @@ InitPlayer(client, bool:bGetBotName = true)
 	g_iPlayerInfo[client][PLR_experience] = 0;
 	g_iPlayerInfo[client][PLR_credits] = GetConVarInt(g_hCVCreditsStart);
 	g_iPlayerInfo[client][PLR_dbId] = -1;
-	g_iPlayerInfo[client][PLR_triedToLoadData] = false;
+	g_iPlayerInfo[client][PLR_dataLoadedFromDB] = false;
 	g_iPlayerInfo[client][PLR_showMenuOnLevelup] = GetConVarBool(g_hCVShowMenuOnLevelDefault);
 	g_iPlayerInfo[client][PLR_fadeOnLevelup] = GetConVarBool(g_hCVFadeOnLevelDefault);
 	g_iPlayerInfo[client][PLR_lastReset] = GetTime();
@@ -202,7 +202,7 @@ SaveData(client, Handle:hTransaction=INVALID_HANDLE)
 		return;
 	
 	// We're still in the process of loading this client's info from the db. Wait for it..
-	if(!g_iPlayerInfo[client][PLR_triedToLoadData])
+	if(!g_iPlayerInfo[client][PLR_dataLoadedFromDB])
 		return;
 	
 	if(g_iPlayerInfo[client][PLR_dbId] < 0)
@@ -322,7 +322,7 @@ RemovePlayer(client, bool:bKeepBotName = false)
 	ResetStats(client);
 	ClearHandle(g_iPlayerInfo[client][PLR_upgrades]);
 	g_iPlayerInfo[client][PLR_dbId] = -1;
-	g_iPlayerInfo[client][PLR_triedToLoadData] = false;
+	g_iPlayerInfo[client][PLR_dataLoadedFromDB] = false;
 	g_iPlayerInfo[client][PLR_showMenuOnLevelup] = GetConVarBool(g_hCVShowMenuOnLevelDefault);
 	g_iPlayerInfo[client][PLR_fadeOnLevelup] = GetConVarBool(g_hCVFadeOnLevelDefault);
 	g_iPlayerInfo[client][PLR_lastReset] = 0;
@@ -799,6 +799,7 @@ public SQL_GetPlayerInfo(Handle:owner, Handle:hndl, const String:error[], any:us
 	
 	if(hndl == INVALID_HANDLE || strlen(error) > 0)
 	{
+		// TODO: Retry later?
 		LogError("Unable to load player data (%s)", error);
 		CallOnClientLoaded(client);
 		return;
@@ -869,7 +870,7 @@ public SQL_GetPlayerUpgrades(Handle:owner, Handle:hndl, const String:error[], an
 		SavePlayerUpgradeInfo(client, upgrade[UPGR_index], playerupgrade);
 	}
 	
-	g_iPlayerInfo[client][PLR_triedToLoadData] = true;
+	g_iPlayerInfo[client][PLR_dataLoadedFromDB] = true;
 	
 	CheckItemMaxLevels(client);
 	
@@ -897,7 +898,7 @@ public SQL_InsertPlayer(Handle:owner, Handle:hndl, const String:error[], any:use
 	// Insert upgrade level info
 	SavePlayerUpgradeLevels(client);
 	
-	g_iPlayerInfo[client][PLR_triedToLoadData] = true;
+	g_iPlayerInfo[client][PLR_dataLoadedFromDB] = true;
 	CallOnClientLoaded(client);
 }
 
@@ -1256,8 +1257,6 @@ public Native_ClientWantsCosmetics(Handle:plugin, numParams)
  */
 CallOnClientLoaded(client)
 {
-	g_iPlayerInfo[client][PLR_triedToLoadData] = true;
-	
 	// Only call that forward once per player
 	if(!g_bFirstLoaded[client])
 		return;
