@@ -10,7 +10,7 @@ SM:RPG is a generic RPG (Role Playing Game) plugin. Players earn experience by k
 The credits can be used to buy upgrades which give the player an advantage against his enemies.
 
 This plugin tries to be as game independent as possible. If some upgrade or core feature isn't working in your game, leave a comment.
-There's a seperate plugin for CS:S to give proper experience on game events like bomb exploded or hostage rescued.
+There's a seperate plugin for Counter-Strike: Source/Global Offensive to give proper experience on game events like bomb exploded or hostage rescued.
 
 # Modular upgrades
 All upgrades are standalone plugins that register with the core. The core smrpg plugin handles the levels, experience and credits of a player as well as the upgrade levels.
