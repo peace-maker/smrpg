@@ -36,7 +36,7 @@ public Plugin:myinfo =
 {
 	name = "SM:RPG Upgrade > Grenade Resupply",
 	author = "Jannik \"Peace-Maker\" Hartung",
-	description = "Grenade resupply upgrade for SM:RPG. Regenerates grenades x seconds after use.",
+	description = "Grenade resupply upgrade for SM:RPG. Regenerates grenades x seconds after you threw them.",
 	version = PLUGIN_VERSION,
 	url = "http://www.wcfan.de/"
 }
@@ -85,8 +85,8 @@ public OnLibraryAdded(const String:name[])
 	// Register this upgrade in SM:RPG
 	if(StrEqual(name, "smrpg"))
 	{
-		SMRPG_RegisterUpgradeType("Grenade Resupply", UPGRADE_SHORTNAME, "Regenerates grenades x seconds after use.", 20, true, 5, 5, 15, _, SMRPG_BuySell, SMRPG_ActiveQuery);
-		//SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
+		SMRPG_RegisterUpgradeType("Grenade Resupply", UPGRADE_SHORTNAME, "Regenerates grenades x seconds after you threw them.", 20, true, 5, 5, 15, _, SMRPG_BuySell, SMRPG_ActiveQuery);
+		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
 	}
 }
 
