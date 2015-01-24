@@ -24,6 +24,7 @@ enum PlayerGrenade {
 	PG_ammo
 }
 
+new bool:g_bLateLoaded;
 new Handle:g_hGrenadeConfig;
 
 new Float:g_fDefaultDelay = 40.0;
@@ -40,6 +41,18 @@ public Plugin:myinfo =
 	url = "http://www.wcfan.de/"
 }
 
+public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
+{
+	new EngineVersion:engine = GetEngineVersion();
+	if(engine != Engine_CSS && engine != Engine_CSGO)
+	{
+		Format(error, err_max, "This plugin is for use in Counter-Strike games only. Bad engine version %d.", engine);
+		return APLRes_SilentFailure;
+	}
+	g_bLateLoaded = late;
+	return APLRes_Success;
+}
+
 public OnPluginStart()
 {
 	LoadTranslations("smrpg_stock_upgrades.phrases");
@@ -47,6 +60,7 @@ public OnPluginStart()
 	
 	HookEvent("player_spawn", Event_OnPlayerSpawn);
 	HookEvent("player_death", Event_OnPlayerDeath);
+	HookEvent("weapon_fire", Event_OnWeaponFire);
 	
 	for(new i=1;i<=MaxClients;i++)
 	{
@@ -80,13 +94,33 @@ public OnMapStart()
 {
 	if(!LoadResupplyDelayConfig())
 		SetFailState("Can't find or parse the config file in configs/smrpg/grenade_resupply_delay.cfg");
+	
+	// Handle lateloading and setup our data structures to include grenades players might already own.
+	if(g_bLateLoaded)
+	{
+		new String:sClassname[GRENADE_CLASSNAME_LENGTH], grenadeEntry[GrenadeEntry];
+		for(new i=1;i<=MaxClients;i++)
+		{
+			if(IsClientInGame(i))
+			{
+				// See if players already hold some of the grenades we want to resupply.
+				LOOP_CLIENTWEAPONS(i, iWeapon, iIndex)
+				{
+					GetEntityClassname(iWeapon, sClassname, sizeof(sClassname));
+					if(!GetGrenadeEntryByName(sClassname, grenadeEntry))
+						continue;
+					
+					Hook_OnWeaponEquipPost(i, iWeapon);
+				}
+			}
+		}
+		g_bLateLoaded = false;
+	}
 }
 
 public OnClientPutInServer(client)
 {
-	SDKHook(client, SDKHook_WeaponDropPost, Hook_OnWeaponDropPost);
 	SDKHook(client, SDKHook_WeaponEquipPost, Hook_OnWeaponEquipPost);
-	
 }
 
 public OnClientDisconnect(client)
@@ -117,6 +151,22 @@ public Event_OnPlayerDeath(Handle:event, const String:name[], bool:dontBroadcast
 	ResetResupplyTimers(client, true);
 }
 
+public Event_OnWeaponFire(Handle:event, const String:name[], bool:dontBroadcast)
+{
+	new client = GetClientOfUserId(GetEventInt(event, "userid"));
+	if(!client)
+		return;
+	
+	new String:sWeapon[64];
+	GetEventString(event, "weapon", sWeapon, sizeof(sWeapon));
+	
+	new grenadeEntry[GrenadeEntry];
+	if(!GetGrenadeEntryByName(sWeapon, grenadeEntry))
+		return;
+	
+	StartGrenadeResupplyTimer(client, grenadeEntry);
+}
+
 /**
  * SM:RPG Upgrade callbacks
  */
@@ -145,30 +195,9 @@ public SMRPG_TranslateUpgrade(client, const String:shortname[], TranslationType:
 	}
 }
 
-
-
-public Hook_OnWeaponDropPost(client, weapon)
-{
-	if(client <= 0 || client > MaxClients || !IsClientInGame(client))
-		return;
-
-	if(weapon <= 0 || !IsValidEntity(weapon))
-		return;
-	
-	decl String:sClassname[64];
-	GetEntityClassname(weapon, sClassname, sizeof(sClassname));
-	
-	new grenadeEntry[GrenadeEntry];
-	if(!GetGrenadeEntryByName(sClassname, grenadeEntry))
-		return;
-	
-	// See if we got the ammo type yet.
-	CheckGrenadeAmmoType(weapon, grenadeEntry);
-	
-	// TODO: Find better generic way to detect use of grenades. Nades are also dropped on death..
-	StartGrenadeResupplyTimer(client, grenadeEntry);
-}
-
+/**
+ * SDK Hooks callbacks
+ */
 public Hook_OnWeaponEquipPost(client, weapon)
 {
 	if(client <= 0 || client > MaxClients || !IsClientInGame(client))
@@ -242,11 +271,11 @@ public Action:Timer_ResupplyPlayer(Handle:timer, Handle:data)
 		return Plugin_Handled;
 	
 	// Give the grenade!
-	GivePlayerAmmo(client, 1, grenadeEntry[GE_ammoType], true);
+	GivePlayerItem(client, grenadeEntry[GE_classname]);
 	
 	iPrimaryAmmo = GetClientAmmoOfType(client, grenadeEntry[GE_ammoType]);
 	// Did he have more grenades at once one time ago?
-	if(playerGrenade[PG_ammo] < iPrimaryAmmo)
+	if(iPrimaryAmmo < playerGrenade[PG_ammo])
 	{
 		// Start next resupply timer right away.
 		StartGrenadeResupplyTimer(client, grenadeEntry);
@@ -386,7 +415,7 @@ bool:GetGrenadeEntryByName(const String:sClassname[], grenadeEntry[GrenadeEntry]
 	for(new i=0;i<iSize;i++)
 	{
 		GetGrenadeEntryByIndex(i, grenadeEntry);
-		if(StrEqual(sClassname, grenadeEntry[GE_classname], false))
+		if(StrContains(grenadeEntry[GE_classname], sClassname, false) != -1)
 			return true;
 	}
 	return false;
