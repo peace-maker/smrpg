@@ -162,8 +162,8 @@ functag public SMRPG_ExpTranslationCb(client, const String:reason[], iExperience
  * Adds experience to a client.
  * If he gets enough experience to level up, he levels up.
  *
- * @param client         The client
- * @param level          The experience to add
+ * @param client         The client index.
+ * @param level          The experience to add. Changed to the actual amount given, if some other plugin altered it in the SMRPG_OnAddExperience forward.
  * @param reason         The reason this experience was added.
  * @param bHideNotice    Set to true, if you want a notification displayed in the HintText area on the client's screen, telling him the amount of experience he just earned, or to false if not.
  * @param other          Optional index of other client involved in the reason for this experience. e.g. the victim which was hurt. Set to -1 if no other particular entity was involved.
@@ -171,7 +171,7 @@ functag public SMRPG_ExpTranslationCb(client, const String:reason[], iExperience
  * @return               True if the experience was added, false otherwise.
  * @error Invalid client index
  */
-native bool:SMRPG_AddClientExperience(client, exp, const String:reason[], bool:bHideNotice, other=-1, SMRPG_ExpTranslationCb:callback=SMRPG_ExpTranslationCb:INVALID_FUNCTION);
+native bool:SMRPG_AddClientExperience(client, &exp, const String:reason[], bool:bHideNotice, other=-1, SMRPG_ExpTranslationCb:callback=SMRPG_ExpTranslationCb:INVALID_FUNCTION);
 
 /**
  * Calculate the amount of experience needed to reach the next level.

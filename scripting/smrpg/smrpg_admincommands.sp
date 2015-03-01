@@ -230,7 +230,10 @@ public Action:Cmd_SetExp(client, args)
 	new iOldExperience = GetClientExperience(iTarget);
 	
 	if(iExperience > iOldExperience)
-		Stats_AddExperience(iTarget, iExperience-iOldExperience, ExperienceReason_Admin, false, -1);
+	{
+		new iNewExperience = iExperience-iOldExperience;
+		Stats_AddExperience(iTarget, iNewExperience, ExperienceReason_Admin, false, -1);
+	}
 	else
 		SetClientExperience(iTarget, iExperience);
 	

@@ -49,7 +49,7 @@ enum WeaponExperienceContainer {
 
 RegisterStatsNatives()
 {
-	// native bool:SMRPG_AddClientExperience(client, exp, const String:reason[], bool:bHideNotice, other=-1);
+	// native bool:SMRPG_AddClientExperience(client, exp, const String:reason[], bool:bHideNotice, other=-1, SMRPG_ExpTranslationCb:callback=SMRPG_ExpTranslationCb:INVALID_FUNCTION);
 	CreateNative("SMRPG_AddClientExperience", Native_AddClientExperience);
 	// native SMRPG_LevelToExperience(iLevel);
 	CreateNative("SMRPG_LevelToExperience", Native_LevelToExperience);
@@ -210,7 +210,7 @@ Stats_PlayerNewLevel(client, iLevelIncrease)
 	}
 }
 
-bool:Stats_AddExperience(client, iExperience, const String:sReason[], bool:bHideNotice, other)
+bool:Stats_AddExperience(client, &iExperience, const String:sReason[], bool:bHideNotice, other)
 {
 	// Nothing to add?
 	if(iExperience <= 0)
@@ -506,7 +506,7 @@ ResetSpawnProtection(client)
 /**
  * Native Callbacks
  */
-// native bool:SMRPG_AddClientExperience(client, exp, const String:reason[], bool:bHideNotice, other=-1, SMRPG_ExpTranslationCb:callback=SMRPG_ExpTranslationCb:INVALID_FUNCTION);
+// native bool:SMRPG_AddClientExperience(client, &exp, const String:reason[], bool:bHideNotice, other=-1, SMRPG_ExpTranslationCb:callback=SMRPG_ExpTranslationCb:INVALID_FUNCTION);
 public Native_AddClientExperience(Handle:plugin, numParams)
 {
 	new client = GetNativeCell(1);
@@ -516,7 +516,7 @@ public Native_AddClientExperience(Handle:plugin, numParams)
 		return false;
 	}
 	
-	new iExperience = GetNativeCell(2);
+	new iExperience = GetNativeCellRef(2);
 	new iLen;
 	GetNativeStringLength(3, iLen);
 	new String:sReason[iLen+1];
@@ -530,8 +530,10 @@ public Native_AddClientExperience(Handle:plugin, numParams)
 	new Function:translationCallback = Function:GetNativeCell(6);
 #endif
 	
-	
+	new iOriginalExperience = iExperience;
 	new bool:bAdded = Stats_AddExperience(client, iExperience, sReason, bHideNotice, other);
+	if(iOriginalExperience != iExperience)
+		SetNativeCellRef(2, iExperience);
 	
 	if(bAdded && !IsFakeClient(client))
 	{
