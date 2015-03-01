@@ -493,16 +493,24 @@ Debug_AddClientExperience(client, exp, bool:bHideNotice, const String:sReason[],
 	new iOldExperience = SMRPG_GetClientExperience(client);
 	new iOldNeeded = SMRPG_LevelToExperience(iOldLevel);
 	
-	SMRPG_AddClientExperience(client, exp, sReason, bHideNotice, victim, SMRPG_TranslateExperienceReason);
+	new iOriginalExperience = exp;
+	new bool:bAdded = SMRPG_AddClientExperience(client, exp, sReason, bHideNotice, victim, SMRPG_TranslateExperienceReason);
 	
 	new iNewLevel = SMRPG_GetClientLevel(client);
-	new String:sAttackerAuth[40], String:sVictimString[256], String:sLevelInc[32];
+	new String:sAttackerAuth[40], String:sVictimString[256], String:sLevelInc[32], String:sChangedExperience[32];
 	GetClientAuthString(client, sAttackerAuth, sizeof(sAttackerAuth));
 	if(victim > 0)
 		Format(sVictimString, sizeof(sVictimString), " %N (lvl %d)", victim, SMRPG_GetClientLevel(victim));
 	if(iNewLevel != iOldLevel)
 		Format(sLevelInc, sizeof(sLevelInc), " (now lvl %d [%d/%d])", iNewLevel, SMRPG_GetClientExperience(client), SMRPG_LevelToExperience(iNewLevel));
-	DebugLog("%N <%s> (lvl %d [%d/%d]) got %d exp%s for %s%s.", client, sAttackerAuth, iOldLevel, iOldExperience, iOldNeeded, exp, sLevelInc, sReason, sVictimString);
+	
+	if(iOriginalExperience != exp)
+		Format(sChangedExperience, sizeof(sChangedExperience), " (intended %d)", iOriginalExperience);
+	
+	if(bAdded)
+		DebugLog("%N <%s> (lvl %d [%d/%d]) got %d%s exp%s for %s%s.", client, sAttackerAuth, iOldLevel, iOldExperience, iOldNeeded, exp, sChangedExperience, sLevelInc, sReason, sVictimString);
+	else
+		DebugLog("%N <%s> (lvl %d [%d/%d]) was going to get %d%s exp%s for %s%s, but was blocked by a plugin.", client, sAttackerAuth, iOldLevel, iOldExperience, iOldNeeded, exp, sChangedExperience, sLevelInc, sReason, sVictimString);
 #endif
 }
 
