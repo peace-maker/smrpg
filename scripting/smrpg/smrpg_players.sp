@@ -195,6 +195,9 @@ InsertPlayer(client)
 
 SaveData(client, Handle:hTransaction=INVALID_HANDLE)
 {
+	if(g_hDatabase == INVALID_HANDLE)
+		return;
+	
 	if(!GetConVarBool(g_hCVEnable) || !GetConVarBool(g_hCVSaveData))
 		return;
 	
@@ -271,6 +274,9 @@ SavePlayerUpgradeLevels(client, Handle:hTransaction=INVALID_HANDLE)
 
 SaveAllPlayers()
 {
+	if(g_hDatabase == INVALID_HANDLE)
+		return;
+	
 	if(!GetConVarBool(g_hCVEnable) || !GetConVarBool(g_hCVSaveData))
 		return;
 	
