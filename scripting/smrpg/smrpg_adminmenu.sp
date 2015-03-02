@@ -120,7 +120,8 @@ ShowPlayerDetailMenu(client)
 	
 	AddMenuItem(hMenu, "stats", "Manage RPG stats");
 	AddMenuItem(hMenu, "upgrades", "Manage upgrades");
-	AddMenuItem(hMenu, "reset", "Reset player");
+	if(CheckCommandAccess(client, "smrpg_resetstats", ADMFLAG_ROOT))
+		AddMenuItem(hMenu, "reset", "Reset player");
 	AddMenuItem(hMenu, "", "", ITEMDRAW_DISABLED|ITEMDRAW_SPACER);
 	decl String:sBuffer[256];
 	Format(sBuffer, sizeof(sBuffer), "%T", "Level", client, GetClientLevel(iTarget));
@@ -193,7 +194,7 @@ public Menu_HandlePlayerResetConfirm(Handle:menu, MenuAction:action, param1, par
 		decl String:sInfo[32];
 		GetMenuItem(menu, param2, sInfo, sizeof(sInfo));
 		
-		if(StrEqual(sInfo, "no"))
+		if(StrEqual(sInfo, "no") || !CheckCommandAccess(param1, "smrpg_resetstats", ADMFLAG_ROOT))
 		{
 			ShowPlayerDetailMenu(param1);
 			return 0;
@@ -430,8 +431,11 @@ ShowPlayerUpgradeManageMenu(client)
 	
 	new iTarget = g_iCurrentMenuTarget[client];
 	
-	AddMenuItem(hMenu, "give_all", "Give all upgrades at no costs");
-	AddMenuItem(hMenu, "", "", ITEMDRAW_SPACER);
+	if(CheckCommandAccess(client, "smrpg_giveall", ADMFLAG_ROOT))
+	{
+		AddMenuItem(hMenu, "give_all", "Give all upgrades at no costs");
+		AddMenuItem(hMenu, "", "", ITEMDRAW_SPACER);
+	}
 	
 	new iSize = GetUpgradeCount();
 	new upgrade[InternalUpgradeInfo], iCurrentLevel;
@@ -510,7 +514,7 @@ public Menu_HandlePlayerUpgradeSelect(Handle:menu, MenuAction:action, param1, pa
 		GetMenuItem(menu, param2, sInfo, sizeof(sInfo));
 		
 		g_iCurrentPage[param1] = GetMenuSelectionPosition();
-		if(StrEqual(sInfo, "give_all"))
+		if(StrEqual(sInfo, "give_all") && CheckCommandAccess(param1, "smrpg_giveall", ADMFLAG_ROOT))
 		{
 			new Handle:hMenu = CreateMenu(Menu_HandlePlayerGiveAllConfirm, MENU_ACTIONS_DEFAULT|MenuAction_DisplayItem);
 			SetMenuExitBackButton(hMenu, true);
@@ -549,7 +553,7 @@ public Menu_HandlePlayerGiveAllConfirm(Handle:menu, MenuAction:action, param1, p
 		decl String:sInfo[32];
 		GetMenuItem(menu, param2, sInfo, sizeof(sInfo));
 		
-		if(StrEqual(sInfo, "no"))
+		if(StrEqual(sInfo, "no") || !CheckCommandAccess(param1, "smrpg_giveall", ADMFLAG_ROOT))
 		{
 			ShowPlayerUpgradeManageMenu(param1);
 			return 0;
@@ -609,12 +613,18 @@ ShowPlayerUpgradeLevelMenu(client)
 	SetMenuExitBackButton(hMenu, true);
 	SetMenuTitle(hMenu, "Change %N's upgrade level\n%s: %d/%d", g_iCurrentMenuTarget[client], sTranslatedName, GetClientPurchasedUpgradeLevel(g_iCurrentMenuTarget[client], iItemIndex), upgrade[UPGR_maxLevel]);
 	
-	AddMenuItem(hMenu, "reset", "Reset upgrade to 0 with full refund\n");
-	AddMenuItem(hMenu, "give", "Give level at no costs");
-	AddMenuItem(hMenu, "buy", "Force to buy level\n");
-	AddMenuItem(hMenu, "take", "Take level with full refund");
-	AddMenuItem(hMenu, "sell", "Force to sell level");
-	AddMenuItem(hMenu, "max", "Set to maximal level at no costs");
+	if(CheckCommandAccess(client, "smrpg_setupgradelvl", ADMFLAG_ROOT))
+		AddMenuItem(hMenu, "reset", "Reset upgrade to 0 with full refund\n");
+	if(CheckCommandAccess(client, "smrpg_giveupgrade", ADMFLAG_ROOT))
+		AddMenuItem(hMenu, "give", "Give level at no costs");
+	if(CheckCommandAccess(client, "smrpg_buyupgrade", ADMFLAG_ROOT))
+		AddMenuItem(hMenu, "buy", "Force to buy level\n");
+	if(CheckCommandAccess(client, "smrpg_takeupgrade", ADMFLAG_ROOT))
+		AddMenuItem(hMenu, "take", "Take level with full refund");
+	if(CheckCommandAccess(client, "smrpg_sellupgrade", ADMFLAG_ROOT))
+		AddMenuItem(hMenu, "sell", "Force to sell level");
+	if(CheckCommandAccess(client, "smrpg_setupgradelvl", ADMFLAG_ROOT))
+		AddMenuItem(hMenu, "max", "Set to maximal level at no costs");
 	
 	DisplayMenu(hMenu, client, MENU_TIME_FOREVER);
 }
