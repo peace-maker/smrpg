@@ -183,7 +183,7 @@ public Native_RegisterUpgradeType(Handle:plugin, numParams)
 	
 	// Make sure the subfolder exists.
 	if(!DirExists("cfg/sourcemod/smrpg"))
-		CreateDirectory("cfg/sourcemod/smrpg", 0755);
+		CreateDirectory("cfg/sourcemod/smrpg", FPERM_U_READ|FPERM_U_WRITE|FPERM_U_EXEC|FPERM_G_READ|FPERM_G_WRITE|FPERM_G_EXEC|FPERM_O_READ|FPERM_O_EXEC);
 	
 	Format(sCvarName, sizeof(sCvarName), "smrpg_upgrade_%s", sShortName);
 	AutoExecConfig_SetFile(sCvarName, "sourcemod/smrpg");
