@@ -207,7 +207,6 @@ public SMRPG_OnAddExperiencePost(client, const String:reason[], iExperience, oth
 {
 	g_iLastExperience[client] = iExperience;
 	g_iExperienceThisMinute[client] += iExperience;
-	return Plugin_Continue;
 }
 
 /**
