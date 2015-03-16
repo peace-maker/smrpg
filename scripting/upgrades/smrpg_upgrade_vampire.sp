@@ -135,6 +135,13 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 	if(iLevel <= 0)
 		return;
 	
+	new iOldHealth = GetClientHealth(attacker);
+	new iMaxHealth = SMRPG_Health_GetClientMaxHealth(attacker);
+		
+	// Don't reset the health, if the player gained more by other means.
+	if(iOldHealth >= iMaxHealth)
+		return;
+	
 	if(!SMRPG_RunUpgradeEffect(attacker, UPGRADE_SHORTNAME))
 		return; // Some other plugin doesn't want this effect to run
 	
@@ -154,9 +161,7 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 	if(iMaxIncrease > 0 && iIncrease > iMaxIncrease)
 		iIncrease = iMaxIncrease;
 	
-	new iOldHealth = GetClientHealth(attacker);
 	new iNewHealth = iOldHealth + iIncrease;
-	new iMaxHealth = SMRPG_Health_GetClientMaxHealth(attacker);
 	// Limit health gain to maxhealth
 	if(iNewHealth > iMaxHealth)
 		iNewHealth = iMaxHealth;
