@@ -104,16 +104,21 @@ public Action:Timer_IncreaseHealth(Handle:timer)
 		if(iLevel <= 0)
 			continue;
 		
+		new iOldHealth = GetClientHealth(i);
+		new iMaxHealth = SMRPG_Health_GetClientMaxHealth(i);
+		// Don't reset the health, if the player gained more by other means.
+		if(iOldHealth >= iMaxHealth)
+			continue;
+		
 		if(!SMRPG_RunUpgradeEffect(i, UPGRADE_SHORTNAME))
 			continue; // Some other plugin doesn't want this effect to run
 		
-		new iNewHealth = GetClientHealth(i)+iLevel;
-		new iMaxHealth = SMRPG_Health_GetClientMaxHealth(i);
+		new iNewHealth = iOldHealth + iLevel;
 		// Limit the regeneration to the maxhealth.
 		if(iNewHealth > iMaxHealth)
-			SetEntityHealth(i, iMaxHealth);
-		else
-			SetEntityHealth(i, iNewHealth);
+			iNewHealth = iMaxHealth;
+		
+		SetEntityHealth(i, iNewHealth);
 	}
 	
 	return Plugin_Continue;
