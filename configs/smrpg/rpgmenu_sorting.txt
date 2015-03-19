@@ -1,6 +1,12 @@
 /**
  * You may re-order items here for your own menu.  Any items not explicitly 
  * sorted will be sorted by their final translated phrases for each given client.
+ *
+ * To change order of the upgrades in the menus, you'll have to prefix the short name of the upgrade:
+ * RPGUpgradesMenu: rpgupgrade_xxx
+ * RPGSellMenu: rpgsell_xxx
+ * RPGUpgradeSettingsMenu: rpgupgrsettings_xxx
+ * RPGHelpMenu: rpghelp_xxx
  */
 
 "Menu"
