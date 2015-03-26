@@ -626,7 +626,7 @@ bool:SellClientUpgrade(client, iUpgradeIndex)
 // Have bots buy upgrades too :)
 BotPickUpgrade(client)
 {
-	new bool:bUpgradeBought, iCost, iCurrentIndex;
+	new bool:bUpgradeBought, iCurrentIndex;
 	
 	new iSize = GetUpgradeCount();
 	new upgrade[InternalUpgradeInfo];
@@ -658,16 +658,14 @@ BotPickUpgrade(client)
 			if(!IsClientInLockedTeam(client, upgrade))
 				continue;
 			
-			iCost = GetUpgradeCost(iCurrentIndex, GetClientPurchasedUpgradeLevel(client, iCurrentIndex)+1);
-			if(GetClientCredits(client) >= iCost)
-			{
-				BuyClientUpgrade(client, iCurrentIndex);
+			if(BuyClientUpgrade(client, iCurrentIndex))
 				bUpgradeBought = true;
-			}
 		}
 		if(!bUpgradeBought)
 			break; /* Couldn't afford anything */
 	}
+	
+	CloseHandle(hRandomBuying);
 }
 
 /**
