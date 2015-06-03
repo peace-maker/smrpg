@@ -75,7 +75,7 @@ public OnLibraryAdded(const String:name[])
 		SMRPG_SetUpgradeDefaultCosmeticEffect(UPGRADE_SHORTNAME, SMRPG_FX_Sounds, true);
 		SMRPG_SetUpgradeDefaultCosmeticEffect(UPGRADE_SHORTNAME, SMRPG_FX_Visuals, true);
 		
-		g_hCVTimeIncrease = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_fpistol_inc", "0.1", "How many seconds are players slowed down multiplied by level?", 0, true, 0.0);
+		g_hCVTimeIncrease = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_fpistol_inc", "0.1", "How many seconds are players slowed down multiplied by level?", 0, true, 0.1);
 	}
 }
 
@@ -198,7 +198,9 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 		return; // Some other plugin doesn't want this effect to run
 	
 	new Float:fTime = float(iLevel) * GetConVarFloat(g_hCVTimeIncrease);
-	
+	if(fTime <= 0.0)
+		return; // Silly convar settings?
+
 	if(SMRPG_ChangeClientLaggedMovement(victim, fSpeed, fTime))
 	{
 		// Emit some icy sound
