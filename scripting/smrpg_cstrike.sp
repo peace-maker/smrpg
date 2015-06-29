@@ -498,7 +498,7 @@ Debug_AddClientExperience(client, exp, bool:bHideNotice, const String:sReason[],
 	
 	new iNewLevel = SMRPG_GetClientLevel(client);
 	new String:sAttackerAuth[40], String:sVictimString[256], String:sLevelInc[32], String:sChangedExperience[32];
-	GetClientAuthString(client, sAttackerAuth, sizeof(sAttackerAuth));
+	GetClientAuthId(client, AuthId_Engine, sAttackerAuth, sizeof(sAttackerAuth));
 	if(victim > 0)
 		Format(sVictimString, sizeof(sVictimString), " %N (lvl %d)", victim, SMRPG_GetClientLevel(victim));
 	if(iNewLevel != iOldLevel)

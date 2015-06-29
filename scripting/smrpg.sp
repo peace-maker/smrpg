@@ -3,6 +3,7 @@
 #include <sdktools>
 #include <sdkhooks>
 #include <topmenus>
+#include <regex>
 #include <smlib>
 #include <smrpg>
 #include <autoexecconfig>

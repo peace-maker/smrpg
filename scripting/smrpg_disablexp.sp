@@ -89,7 +89,7 @@ public Action:Cmd_ListDisabledExp(client, args)
 		if(!IsClientInGame(i))
 			continue;
 		
-		if(!GetClientAuthString(i, sAuth, sizeof(sAuth)))
+		if(!GetClientAuthId(i, AuthId_Engine, sAuth, sizeof(sAuth)))
 			sAuth[0] = 0;
 		
 		ReplyToCommand(client, "SM:RPG > %N <%s>: %s", i, sAuth, (g_bDisableExperience[i]?"Disabled":"Enabled"));
@@ -151,7 +151,7 @@ DisplayPlayerList(client, iPosition=0)
 		if(!IsClientInGame(i) || (bIgnoreBots && IsFakeClient(i)) || IsClientSourceTV(i) || IsClientReplay(i))
 			continue;
 		
-		if(!GetClientAuthString(i, sAuth, sizeof(sAuth)))
+		if(!GetClientAuthId(i, AuthId_Engine, sAuth, sizeof(sAuth)))
 			sAuth[0] = 0;
 		
 		Format(sBuffer, sizeof(sBuffer), "%N <%s>: %T", i, sAuth, (g_bDisableExperience[i]?"Off":"On"), client);

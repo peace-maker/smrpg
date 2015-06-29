@@ -46,8 +46,8 @@ public Action:Cmd_PlayerInfo(client, args)
 	new playerInfo[PlayerInfo];
 	GetClientRPGInfo(iTarget, playerInfo);
 	
-	decl String:sSteamID[32];
-	GetClientAuthString(iTarget, sSteamID, sizeof(sSteamID));
+	new String:sSteamID[64];
+	GetClientAuthId(iTarget, AuthId_Engine, sSteamID, sizeof(sSteamID));
 	ReplyToCommand(client, "SM:RPG Info: Index: %d, UserID: %d, SteamID: %s, Database ID: %d, AFK: %d", iTarget, GetClientUserId(iTarget), sSteamID, playerInfo[PLR_dbId], IsClientAFK(iTarget));
 	
 	ReplyToCommand(client, "SM:RPG Stats: Level: %d, Experience: %d/%d, Credits: %d, Rank: %d/%d", GetClientLevel(iTarget), GetClientExperience(iTarget), Stats_LvlToExp(GetClientLevel(iTarget)), GetClientCredits(iTarget), GetClientRank(iTarget), GetRankCount());
@@ -740,14 +740,15 @@ public Action:Cmd_DBDelPlayer(client, args)
 	WritePackString(hPack, sTarget);
 	
 	// Match as steamid
-	if(IsValidSteamID(sTarget))
+	new iAccountId = GetAccountIdFromSteamId(sTarget);
+	if(iAccountId != -1)
 	{
 		new iTarget = FindClientBySteamID(sTarget);
 		if(iTarget != -1)
 			RemovePlayer(iTarget);
 		
 		WritePackCell(hPack, iTarget);
-		Format(sQuery, sizeof(sQuery), "SELECT player_id, name FROM %s WHERE steamid = '%s'", TBL_PLAYERS, sTarget);
+		Format(sQuery, sizeof(sQuery), "SELECT player_id, name FROM %s WHERE steamid = %d", TBL_PLAYERS, iAccountId);
 		SQL_TQuery(g_hDatabase, SQL_CheckDeletePlayer, sQuery, hPack);
 	}
 	// Match as playerid
@@ -1124,53 +1125,60 @@ public SQL_PrintUpgradeUsage(Handle:owner, Handle:hndl, const String:error[], an
 /**
  * Helpers
  */
-stock bool:IsValidSteamID(String:sSteamID[])
+/**
+ * Converts a steamid to the accountid.
+ */
+stock GetAccountIdFromSteamId(String:sSteamID[])
 {
-	if(strlen(sSteamID) < 10)
-		return false;
+	static Handle:hSteam2 = INVALID_HANDLE;
+	static Handle:hSteam3 = INVALID_HANDLE;
 	
-	if(StrContains(sSteamID, "STEAM_") != 0)
-		return false;
+	if (hSteam2 == INVALID_HANDLE)
+		hSteam2 = CompileRegex("^STEAM_[0-9]:([0-9]):([0-9]+)$");
+	if (hSteam3 == INVALID_HANDLE)
+		hSteam3 = CompileRegex("^\\[U:[0-9]:([0-9]+)\\]$");
 	
-	new iOffset = 6, bool:bSHITSOURCEPAWN = true;
-	for(new repeats=0;repeats<3;repeats++)
+	new String:sBuffer[64];
+	
+	// Steam2 format?
+	if (hSteam2 != INVALID_HANDLE && MatchRegex(hSteam2, sSteamID) == 3)
 	{
-		while(bSHITSOURCEPAWN)
-		{
-			if(!sSteamID[iOffset])
-			{
-				if(repeats != 2)
-					return false;
-				else
-					break;
-			}
-			else if(IsCharNumeric(sSteamID[iOffset]))
-			{
-				iOffset++;
-				continue;
-			}
-			else if(sSteamID[iOffset] == ':')
-			{
-				iOffset++;
-				break;
-			}
-			else
-			{
-				return false;
-			}
-		}
+		if(!GetRegexSubString(hSteam2, 1, sBuffer, sizeof(sBuffer)))
+			return -1;
+		
+		new Y = StringToInt(sBuffer);
+		if(!GetRegexSubString(hSteam2, 2, sBuffer, sizeof(sBuffer)))
+			return -1;
+		
+		new Z = StringToInt(sBuffer);
+		return Z*2 + Y;
 	}
-	return true;
+	
+	// Steam3 format?
+	if (hSteam3 != INVALID_HANDLE && MatchRegex(hSteam3, sSteamID) == 2)
+	{
+		if(!GetRegexSubString(hSteam3, 1, sBuffer, sizeof(sBuffer)))
+			return -1;
+		
+		return StringToInt(sBuffer);
+	}
+	
+	return -1;
 }
 
 stock FindClientBySteamID(const String:sSteamID[])
 {
-	decl String:sTemp[MAX_NAME_LENGTH];
+	decl String:sTemp[64];
 	for(new i=1;i<=MaxClients;i++)
 	{
-		if(IsClientInGame(i) && IsClientAuthorized(i) && GetClientAuthString(i, sTemp, sizeof(sTemp)))
+		if(IsClientInGame(i) && IsClientAuthorized(i))
 		{
-			if(StrEqual(sSteamID, sTemp))
+			// Check Steam2 format.
+			if(GetClientAuthId(i, AuthId_Steam2, sTemp, sizeof(sTemp)) && StrEqual(sSteamID, sTemp))
+				return i;
+			
+			// And Steam3 format.
+			if(GetClientAuthId(i, AuthId_Steam3, sTemp, sizeof(sTemp)) && StrEqual(sSteamID, sTemp))
 				return i;
 		}
 	}
