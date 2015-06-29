@@ -902,6 +902,9 @@ public Menu_HandleLastExperience(Handle:menu, MenuAction:action, param1, param2)
 
 UpdateClientRank(client)
 {
+	if(!g_hDatabase)
+		return;
+	
 	decl String:sQuery[128];
 	Format(sQuery, sizeof(sQuery), "SELECT COUNT(*) FROM %s WHERE level > %d OR (level = %d AND experience > %d)", TBL_PLAYERS, GetClientLevel(client), GetClientLevel(client), GetClientExperience(client));
 	SQL_TQuery(g_hDatabase, SQL_GetClientRank, sQuery, GetClientUserId(client));
@@ -949,6 +952,9 @@ public SQL_GetClientRank(Handle:owner, Handle:hndl, const String:error[], any:us
 
 UpdateRankCount()
 {
+	if(!g_hDatabase)
+		return;
+	
 	decl String:sQuery[128];
 	Format(sQuery, sizeof(sQuery), "SELECT COUNT(*) FROM %s", TBL_PLAYERS);
 	SQL_TQuery(g_hDatabase, SQL_GetRankCount, sQuery);
@@ -1002,6 +1008,9 @@ PrintRankToChat(client, sendto)
 
 stock DisplayTop10Menu(client)
 {
+	if(!g_hDatabase)
+		return; // TODO: Print message about database problems.
+
 	decl String:sQuery[128];
 	Format(sQuery, sizeof(sQuery), "SELECT name, level, experience, credits FROM %s ORDER BY level DESC, experience DESC LIMIT 10", TBL_PLAYERS);
 	SQL_TQuery(g_hDatabase, SQL_GetTop10, sQuery, GetClientUserId(client));
@@ -1049,6 +1058,9 @@ public Panel_DoNothing(Handle:menu, MenuAction:action, param1, param2)
 
 DisplayNextPlayersInRanking(client)
 {
+	if(!g_hDatabase)
+		return; // TODO: Print message about database problems.
+	
 	decl String:sQuery[512];
 	Format(sQuery, sizeof(sQuery), "SELECT player_id, name, level, experience, credits, (SELECT COUNT(*) FROM %s ps WHERE p.level < ps.level OR (p.level = ps.level AND p.experience < ps.experience))+1 AS rank FROM %s p WHERE level > %d OR (level = %d AND experience >= %d) ORDER BY level ASC, experience ASC LIMIT 20", TBL_PLAYERS, TBL_PLAYERS, GetClientLevel(client), GetClientLevel(client), GetClientExperience(client));
 	SQL_TQuery(g_hDatabase, SQL_GetNext10, sQuery, GetClientUserId(client));
