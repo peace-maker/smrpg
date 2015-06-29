@@ -1187,7 +1187,7 @@ bool:ReadWeaponExperienceConfig()
 	
 		iWeaponExperience[WXP_Damage] = KvGetFloat(hKV, "exp_damage", -1.0);
 		iWeaponExperience[WXP_Kill] = KvGetFloat(hKV, "exp_kill", -1.0);
-		iWeaponExperience[WXP_Bonus] = KvGetFloat(hKV, "exp_bonus", 0.0);
+		iWeaponExperience[WXP_Bonus] = KvGetFloat(hKV, "exp_bonus", -1.0);
 		
 		SetTrieArray(g_hWeaponExperience, sWeapon, iWeaponExperience[0], _:WeaponExperienceContainer);
 		
@@ -1202,6 +1202,7 @@ Float:GetWeaponExperience(const String:sWeapon[], WeaponExperienceType:type)
 	new iWeaponExperience[WeaponExperienceContainer];
 	iWeaponExperience[WXP_Damage] = -1.0;
 	iWeaponExperience[WXP_Kill] = -1.0;
+	iWeaponExperience[WXP_Bonus] = -1.0;
 	
 	new String:sBuffer[64];
 	RemovePrefixFromString("weapon_", sWeapon, sBuffer, sizeof(sBuffer));
@@ -1214,7 +1215,7 @@ Float:GetWeaponExperience(const String:sWeapon[], WeaponExperienceType:type)
 	if(iWeaponExperience[WXP_Kill] < 0.0)
 		iWeaponExperience[WXP_Kill] = GetConVarFloat(g_hCVExpKill);
 	if(iWeaponExperience[WXP_Bonus] < 0.0)
-		iWeaponExperience[WXP_Bonus] = 0.0;
+		iWeaponExperience[WXP_Bonus] = GetConVarFloat(g_hCVExpKillBonus);
 	
 	return Float:iWeaponExperience[type];
 }

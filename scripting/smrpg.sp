@@ -55,6 +55,7 @@ new Handle:g_hCVExpInc;
 
 new Handle:g_hCVExpDamage;
 new Handle:g_hCVExpKill;
+new Handle:g_hCVExpKillBonus;
 new Handle:g_hCVExpKillMax;
 
 new Handle:g_hCVExpTeamwin;
@@ -166,6 +167,7 @@ public OnPluginStart()
 	
 	g_hCVExpDamage = AutoExecConfig_CreateConVar("smrpg_exp_damage", "1.0", "Experience for hurting an enemy multiplied by the damage done", 0, true, 0.0);
 	g_hCVExpKill = AutoExecConfig_CreateConVar("smrpg_exp_kill", "15.0", "Experience for a kill multiplied by the victim's level", 0, true, 0.0);
+	g_hCVExpKillBonus = AutoExecConfig_CreateConVar("smrpg_exp_kill_bonus", "0.0", "Extra constant experience to give on top of the regular experience on a kill.", 0, true, 0.0);
 	g_hCVExpKillMax = AutoExecConfig_CreateConVar("smrpg_exp_kill_max", "0.0", "Maximum experience a player can ever earn for killing someone. (0 = unlimited)", 0, true, 0.0);
 	
 	g_hCVExpTeamwin = AutoExecConfig_CreateConVar("smrpg_exp_teamwin", "0.15", "Experience multipled by the experience required and the team ratio given to a team for completing the objective", 0, true, 0.0);
