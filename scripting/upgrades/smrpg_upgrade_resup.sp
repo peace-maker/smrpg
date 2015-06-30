@@ -12,6 +12,10 @@ new Handle:g_hResupplyTimer;
 
 new Handle:g_hCVInterval;
 
+// CS:GO specific
+new EngineVersion:g_Engine;
+new Handle:g_hGiveReserveAmmo;
+
 public Plugin:myinfo = 
 {
 	name = "SM:RPG Upgrade > Resupply",
@@ -24,6 +28,39 @@ public Plugin:myinfo =
 public OnPluginStart()
 {
 	LoadTranslations("smrpg_stock_upgrades.phrases");
+	g_Engine = GetEngineVersion();
+	
+	// CS:GO stores reserved ammo on weapons now instead of on the players.
+	if (g_Engine == Engine_CSGO)
+	{
+		new Handle:hGConf = LoadGameConfigFile("smrpg_resup.games");
+		if (hGConf == INVALID_HANDLE)
+		{
+			SetFailState("Can't find smrpg_resup.games.txt gamedata file.");
+		}
+		
+		StartPrepSDKCall(SDKCall_Entity);
+		if (!PrepSDKCall_SetFromConf(hGConf, SDKConf_Signature, "CBaseCombatWeapon::GiveReserveAmmo"))
+		{
+			CloseHandle(hGConf);
+			SetFailState("Can't find CBaseCombatWeapon::GiveReserveAmmo signature.");
+		}
+		// CBaseCombatWeapon::GiveReserveAmmo(AmmoPosition_t, int, bool, CBaseCombatCharacter *)
+		PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain); // ammo position 1 = primary, 2 = secondary
+		PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain); // amount of ammo to give
+		PrepSDKCall_AddParameter(SDKType_Bool, SDKPass_Plain); // suppress ammo pickup sound
+		PrepSDKCall_AddParameter(SDKType_CBasePlayer, SDKPass_Pointer, VDECODE_FLAG_ALLOWNULL); // optional owner. tries weapon owner if null.
+		// if owner has ammo of that weapon's ammotype in his m_iAmmo, add to this array like before.
+		// if the owner doesn't have ammo in m_iAmmo, use the new m_iPrimaryReserveAmmoCount props.
+		PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain); // return amount of bullets missing until the max is reached including what we're about to add with this call..
+		g_hGiveReserveAmmo = EndPrepSDKCall();
+		
+		CloseHandle(hGConf);
+		if (g_hGiveReserveAmmo == INVALID_HANDLE)
+		{
+			SetFailState("Failed to prepare CBaseCombatWeapon::GiveReserveAmmo SDK call.");
+		}
+	}
 }
 
 public OnPluginEnd()
@@ -136,7 +173,17 @@ public Action:Timer_Resupply(Handle:timer)
 			if(iPrimaryAmmoType < 0 || Weapon_GetPrimaryClip(iWeapon) < 0)
 				continue;
 			
-			GivePlayerAmmo(i, iLevel, iPrimaryAmmoType, true);
+			if (g_Engine == Engine_CSGO)
+			{
+				if (g_hGiveReserveAmmo != INVALID_HANDLE)
+				{
+					SDKCall(g_hGiveReserveAmmo, iWeapon, 1, iLevel, true, -1);
+				}
+			}
+			else
+			{
+				GivePlayerAmmo(i, iLevel, iPrimaryAmmoType, true);
+			}
 		}
 	}
 	
