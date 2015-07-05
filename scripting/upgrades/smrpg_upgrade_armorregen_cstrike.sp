@@ -9,6 +9,8 @@
 
 #define PLUGIN_VERSION "1.0"
 
+new Handle:g_hCVGiveHelmet;
+
 public Plugin:myinfo = 
 {
 	name = "SM:RPG Upgrade > Armor regeneration",
@@ -52,6 +54,8 @@ public OnLibraryAdded(const String:name[])
 	{
 		SMRPG_RegisterUpgradeType("Armor regeneration", UPGRADE_SHORTNAME, "Regenerates armor every second.", 15, true, 5, 5, 10, _, SMRPG_BuySell, SMRPG_ActiveQuery);
 		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
+		
+		g_hCVGiveHelmet = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_armorregen_give_helmet", "1", "Give players helmet after they regenerated to 100% of their armor?", 0, true, 0.0, true, 1.0);
 	}
 }
 
@@ -123,7 +127,12 @@ public Action:Timer_IncreaseArmor(Handle:timer)
 		
 		// He already is regenerated completely.
 		if(iCurrentArmor >= iMaxArmor)
+		{
+			// Give him an helmet now.
+			if (GetConVarBool(g_hCVGiveHelmet) && !GetEntProp(i, Prop_Send, "m_bHasHelmet"))
+				SetEntProp(i, Prop_Send, "m_bHasHelmet", 1);
 			continue;
+		}
 		
 		iNewArmor = iCurrentArmor+iLevel;
 		if(iNewArmor > iMaxArmor)
