@@ -92,7 +92,7 @@ public OnPluginStart()
 	g_hCVEnableAntiKnifeleveling = AutoExecConfig_CreateConVar("smrpg_anti_knifelevel", "1", "Stop giving exp to players who knife each other too often in a time frame?", 0, true, 0.0, true, 1.0);
 	
 	AutoExecConfig_ExecuteFile();
-	AutoExecConfig_CleanFile();
+	//AutoExecConfig_CleanFile();
 	
 	LoadTranslations("smrpg_cstrike.phrases");
 	

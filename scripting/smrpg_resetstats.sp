@@ -42,7 +42,7 @@ public OnPluginStart()
 	g_hCVAutoReset = AutoExecConfig_CreateConVar("smrpg_resetstats_autoreset", "0", "Reset the database automatically when one of the reset conditions is true?", _, true, 0.0, true, 1.0);
 	
 	AutoExecConfig_ExecuteFile();
-	AutoExecConfig_CleanFile();
+	//AutoExecConfig_CleanFile();
 	
 	RegConsoleCmd("sm_nextreset", Cmd_NextReset, "Displays when the next rpg reset will be.");
 	RegConsoleCmd("sm_lastreset", Cmd_LastReset, "Displays when the rpg stats were last reset.");

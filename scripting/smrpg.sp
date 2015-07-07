@@ -192,7 +192,7 @@ public OnPluginStart()
 	g_hCVFadeOnLevelColor = AutoExecConfig_CreateConVar("smrpg_fade_screen_on_levelup_color", "255 215 0 40", "RGBA color to fade the screen in for a short time after levelup. Default is a golden shine.", 0);
 	
 	AutoExecConfig_ExecuteFile();
-	AutoExecConfig_CleanFile();
+	//AutoExecConfig_CleanFile();
 	
 	// forward SMRPG_OnEnableStatusChanged(bool:bEnabled);
 	g_hfwdOnEnableStatusChanged = CreateGlobalForward("SMRPG_OnEnableStatusChanged", ET_Ignore, Param_Cell);
