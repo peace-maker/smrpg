@@ -48,6 +48,7 @@ Server admins can install a new upgrade simply by loading the upgrade plugin.
 	}
 ```
 * Start your server. The core config files are generated in [mod]/cfg/sourcemod/ and the config files for the single upgrades in [mod]/cfg/sourcemod/smrpg.
+* Next to the above generated config files there are additional config files in [mod]/addons/sourcemod/configs/smrpg.
 
 # API
 Developers can easily add new upgrades using the extensive API provided by the core.

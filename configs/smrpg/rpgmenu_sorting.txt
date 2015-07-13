@@ -7,6 +7,10 @@
  * RPGSellMenu: rpgsell_xxx
  * RPGUpgradeSettingsMenu: rpgupgrsettings_xxx
  * RPGHelpMenu: rpghelp_xxx
+ *
+ * You can find the short name of upgrades in parentheses behind the readable name
+ * in the smrpg_listupgrades command output or from the name of the generated config file:
+ * [mod]/cfg/sourcemod/smrpg/smrpg_upgrade_xxx.cfg where xxx is the short name.
  */
 
 "Menu"
