@@ -101,6 +101,8 @@ public Action:SMRPG_OnClientFreeze(client, &Float:fTime)
 	
 	// Shorten the time by x%.
 	fTime -= fTime * fReduce;
+	if (fTime <= 0.0)
+		return Plugin_Handled;
 	
 	return Plugin_Changed;
 }
@@ -113,6 +115,8 @@ public Action:SMRPG_OnClientIgnite(client, &Float:fTime)
 	
 	// Shorten the time by x%.
 	fTime -= fTime * fReduce;
+	if (fTime <= 0.0)
+		return Plugin_Handled;
 	
 	return Plugin_Changed;
 }
@@ -129,6 +133,8 @@ public Action:SMRPG_OnClientLaggedMovementChange(client, LaggedMovementType:type
 	
 	// Shorten the time by x%.
 	fTime -= fTime * fReduce;
+	if (fTime <= 0.0)
+		return Plugin_Handled;
 	
 	return Plugin_Changed;
 }
