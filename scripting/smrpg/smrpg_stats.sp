@@ -140,7 +140,7 @@ Stats_PlayerNewLevel(client, iLevelIncrease)
 			else
 			{
 				// Only increase so much until we reach the maxlevel.
-				iLevelIncrease = iMaxLevel - iNewLevel;
+				iLevelIncrease = iMaxLevel - GetClientLevel(client);
 			}
 		}
 	}
