@@ -1454,7 +1454,7 @@ public SQL_CheckDeletePlayer(Handle:owner, Handle:hndl, const String:error[], an
 	if(GetConVarBool(g_hCVSaveData))
 	{
 		decl String:sQuery[128];
-		new Handle:hTransaction = SQL_CreateTransaction();
+		new Transaction:hTransaction = SQL_CreateTransaction();
 		Format(sQuery, sizeof(sQuery), "DELETE FROM %s WHERE player_id = %d", TBL_PLAYERUPGRADES, iPlayerId);
 		SQL_AddQuery(hTransaction, sQuery);
 		Format(sQuery, sizeof(sQuery), "DELETE FROM %s WHERE player_id = %d", TBL_PLAYERS, iPlayerId);
@@ -1522,7 +1522,7 @@ public SQL_MassDeleteItem(Handle:owner, Handle:hndl, const String:error[], any:d
 		decl String:sQuery[128];
 		
 		// Update all players at once instead of firing lots of single update queries.
-		new Handle:hTransaction = SQL_CreateTransaction();
+		new Transaction:hTransaction = SQL_CreateTransaction();
 		
 		while(SQL_MoreRows(hndl))
 		{

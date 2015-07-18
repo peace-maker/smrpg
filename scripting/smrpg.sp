@@ -88,6 +88,12 @@ new String:g_sDefaultRPGCommands[][] = {"rpgmenu", "rpgrank", "rpginfo", "rpgtop
 
 #define IF_IGNORE_BOTS(%1) if(IsFakeClient(%1) && (!GetConVarBool(g_hCVBotEnable) || (GetConVarBool(g_hCVBotNeedHuman) && Client_GetCount(true, false) == 0)))
 
+// Compatibility hack to suppress compiler errors on sourcemod 1.6
+// SourceMod 1.7 added a Transaction methodmap.
+#if SOURCEMOD_V_MAJOR == 1 && SOURCEMOD_V_MINOR < 7
+#define Transaction Handle
+#endif
+
 #include "smrpg/smrpg_upgrades.sp"
 #include "smrpg/smrpg_database.sp"
 #include "smrpg/smrpg_settings.sp"

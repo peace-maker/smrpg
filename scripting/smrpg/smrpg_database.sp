@@ -323,7 +323,7 @@ public Native_ResetAllPlayers(Handle:plugin, numParams)
 	// Delete all player information?
 	if(bHardReset)
 	{
-		new Handle:hTransaction = SQL_CreateTransaction();
+		new Transaction:hTransaction = SQL_CreateTransaction();
 		Format(sQuery, sizeof(sQuery), "DELETE FROM %s", TBL_PLAYERUPGRADES);
 		SQL_AddQuery(hTransaction, sQuery);
 		Format(sQuery, sizeof(sQuery), "DELETE FROM %s", TBL_PLAYERS);
@@ -345,7 +345,7 @@ public Native_ResetAllPlayers(Handle:plugin, numParams)
 	// Keep the player settings
 	else
 	{
-		new Handle:hTransaction = SQL_CreateTransaction();
+		new Transaction:hTransaction = SQL_CreateTransaction();
 		Format(sQuery, sizeof(sQuery), "UPDATE %s SET level = 1, experience = 0, credits = %d, lastreset = %d", TBL_PLAYERS, GetConVarInt(g_hCVCreditsStart), GetTime());
 		SQL_AddQuery(hTransaction, sQuery);
 		Format(sQuery, sizeof(sQuery), "UPDATE %s SET purchasedlevel = 0, selectedlevel = 0, enabled = 1", TBL_PLAYERUPGRADES);
@@ -452,7 +452,7 @@ public SQL_DeleteExpiredPlayers(Handle:owner, Handle:hndl, const String:error[],
 	}
 	
 	// Delete them at once.
-	new Handle:hTransaction = SQL_CreateTransaction();
+	new Transaction:hTransaction = SQL_CreateTransaction();
 	
 	new iPlayerId, String:sQuery[128];
 	while(SQL_MoreRows(hndl))

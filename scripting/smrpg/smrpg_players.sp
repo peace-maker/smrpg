@@ -193,7 +193,7 @@ InsertPlayer(client)
 	SQL_TQuery(g_hDatabase, SQL_InsertPlayer, sQuery, GetClientUserId(client));
 }
 
-SaveData(client, Handle:hTransaction=INVALID_HANDLE)
+SaveData(client, Transaction:hTransaction=Transaction:INVALID_HANDLE)
 {
 	if(g_hDatabase == INVALID_HANDLE)
 		return;
@@ -238,7 +238,7 @@ SaveData(client, Handle:hTransaction=INVALID_HANDLE)
 	SavePlayerUpgradeLevels(client, hTransaction);
 }
 
-SavePlayerUpgradeLevels(client, Handle:hTransaction=INVALID_HANDLE)
+SavePlayerUpgradeLevels(client, Transaction:hTransaction=Transaction:INVALID_HANDLE)
 {
 	// Save upgrade levels
 	new iSize = GetUpgradeCount();
@@ -282,7 +282,7 @@ SaveAllPlayers()
 	
 	// Save all players at once instead of firing seperate queries for every player.
 	// This is to optimize sqlite usage.
-	new Handle:hTransaction = SQL_CreateTransaction();
+	new Transaction:hTransaction = SQL_CreateTransaction();
 	
 	for(new i=1;i<=MaxClients;i++)
 	{
