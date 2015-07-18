@@ -82,38 +82,105 @@ public Action:Cmd_PlayerInfo(client, args)
 
 public Action:Cmd_ResetStats(client, args)
 {
-	decl String:sText[256];
-	GetCmdArgString(sText, sizeof(sText));
-	TrimString(sText);
-	new iTarget = FindTarget(client, sText, false, false);
-	if(iTarget == -1)
+	decl String:sTarget[256];
+	GetCmdArgString(sTarget, sizeof(sTarget));
+	TrimString(sTarget);
+	
+	decl String:sTargetName[MAX_TARGET_LENGTH];
+	new iTargetList[MAXPLAYERS], iTargetCount;
+	new bool:tn_is_ml;
+	if((iTargetCount = ProcessTargetString(sTarget,
+							client, 
+							iTargetList,
+							sizeof(iTargetList),
+							0,
+							sTargetName,
+							sizeof(sTargetName),
+							tn_is_ml)) <= 0)
+	{
+		ReplyToTargetError(client, iTargetCount);
 		return Plugin_Handled;
+	}
 	
-	ResetStats(iTarget);
-	SetPlayerLastReset(iTarget, GetTime());
+	for(new i=0;i<iTargetCount;i++)
+	{
+		ResetStats(iTargetList[i]);
+		SetPlayerLastReset(iTargetList[i], GetTime());
+		
+		LogAction(client, iTargetList[i], "%L permanently reset all stats of player %L.", client, iTargetList[i]);
+	}
 	
-	LogAction(client, iTarget, "%L permanently reset all stats of player %L.", client, iTarget);
-	ReplyToCommand(client, "SM:RPG resetstats: %N's stats have been permanently reset", iTarget);
+	if(tn_is_ml)
+	{
+		LogAction(client, -1, "%L permanently reset all stats for %T (%d players).", client, sTargetName, LANG_SERVER, iTargetCount);
+		ReplyToCommand(client, "SM:RPG resetstats: Stats have been permanently reset for %t (%d players).", sTargetName, iTargetCount);
+	}
+	else
+	{
+		ReplyToCommand(client, "SM:RPG resetstats: %N's stats have been permanently reset.", iTargetList[0]);
+	}
 	
 	return Plugin_Handled;
 }
 
 public Action:Cmd_ResetExp(client, args)
 {
-	decl String:sText[256];
-	GetCmdArgString(sText, sizeof(sText));
-	TrimString(sText);
-	new iTarget = FindTarget(client, sText, false, false);
-	if(iTarget == -1)
-		return Plugin_Handled;
+	decl String:sTarget[256];
+	GetCmdArgString(sTarget, sizeof(sTarget));
+	TrimString(sTarget);
 	
-	if(SetClientExperience(iTarget, 0))
+	decl String:sTargetName[MAX_TARGET_LENGTH];
+	new iTargetList[MAXPLAYERS], iTargetCount;
+	new bool:tn_is_ml;
+	if((iTargetCount = ProcessTargetString(sTarget,
+							client, 
+							iTargetList,
+							sizeof(iTargetList),
+							0,
+							sTargetName,
+							sizeof(sTargetName),
+							tn_is_ml)) <= 0)
 	{
-		LogAction(client, iTarget, "%L reset experience of player %L.", client, iTarget);
-		ReplyToCommand(client, "SM:RPG resetexp: %N's experience has been reset", iTarget);
+		ReplyToTargetError(client, iTargetCount);
+		return Plugin_Handled;
+	}
+	
+	new iFailedTargets[MAXPLAYERS];
+	new iFailedCount;
+	for(new i=0;i<iTargetCount;i++)
+	{
+		if(SetClientExperience(iTargetList[i], 0))
+		{
+			LogAction(client, iTargetList[i], "%L reset experience of player %L.", client, iTargetList[i]);
+		}
+		else
+		{
+			iFailedTargets[iFailedCount++] = iTargetList[i];
+		}
+	}
+	
+	if(tn_is_ml)
+	{
+		LogAction(client, -1, "%L reset experience for %T (%d players).", client, sTargetName, LANG_SERVER, iTargetCount);
+		ReplyToCommand(client, "SM:RPG resetexp: Experience has been reset for %t (%d players).", sTargetName, iTargetCount);
+		if(iFailedCount > 0)
+		{
+			decl String:sFailedList[1024];
+			Format(sFailedList, sizeof(sFailedList), "SM:RPG resetexp: Can't reset experience for %d client(s) (blocked by other plugin): ", iFailedCount);
+			for(new i=0;i<iFailedCount;i++)
+			{
+				Format(sFailedList, sizeof(sFailedList), "%s%s %N", sFailedList, (i>0?",":""), iFailedTargets[i]);
+			}
+			ReplyToCommand(client, "%s.", sFailedList);
+		}
 	}
 	else
-		ReplyToCommand(client, "SM:RPG resetexp: Can't reset %N's experience. Some other plugin doesn't want this to happen.");
+	{
+		if(iFailedCount == 0)
+			ReplyToCommand(client, "SM:RPG resetexp: %N's experience has been reset.", iTargetList[0]);
+		else
+			ReplyToCommand(client, "SM:RPG resetexp: Can't reset %N's experience. Some other plugin doesn't want this to happen.", iTargetList[0]);
+	}
 	
 	return Plugin_Handled;
 }
@@ -126,12 +193,9 @@ public Action:Cmd_SetLvl(client, args)
 		return Plugin_Handled;
 	}
 	
-	decl String:sPlayer[64];
-	GetCmdArg(1, sPlayer, sizeof(sPlayer));
-	TrimString(sPlayer);
-	new iTarget = FindTarget(client, sPlayer, false, false);
-	if(iTarget == -1)
-		return Plugin_Handled;
+	decl String:sTarget[256];
+	GetCmdArg(1, sTarget, sizeof(sTarget));
+	TrimString(sTarget);
 	
 	decl String:sLevel[16];
 	GetCmdArg(2, sLevel, sizeof(sLevel));
@@ -139,29 +203,80 @@ public Action:Cmd_SetLvl(client, args)
 	
 	if(iLevel < 1)
 	{
-		ReplyToCommand(client, "SM:RPG: Minimum level is 1!");
+		ReplyToCommand(client, "SM:RPG setlvl: Minimum level is 1!");
 		return Plugin_Handled;
 	}
 	
-	new iOldLevel = GetClientLevel(iTarget);
-	
-	// Do a proper level up
-	if(iLevel > iOldLevel)
+	decl String:sTargetName[MAX_TARGET_LENGTH];
+	new iTargetList[MAXPLAYERS], iTargetCount;
+	new bool:tn_is_ml;
+	if((iTargetCount = ProcessTargetString(sTarget,
+							client, 
+							iTargetList,
+							sizeof(iTargetList),
+							0,
+							sTargetName,
+							sizeof(sTargetName),
+							tn_is_ml)) <= 0)
 	{
-		Stats_PlayerNewLevel(iTarget, iLevel-iOldLevel);
+		ReplyToTargetError(client, iTargetCount);
+		return Plugin_Handled;
 	}
-	// Decrease level manually, don't touch the credits/items
+	
+	new iLastOldLevel;
+	new iFailedTargets[MAXPLAYERS], iFailedOldLevels[MAXPLAYERS];
+	new iFailedCount;
+	for(new i=0;i<iTargetCount;i++)
+	{
+		iLastOldLevel = GetClientLevel(iTargetList[i]);
+		// Don't touch players who already are on the desired level.
+		if(iLastOldLevel == iLevel)
+			continue;
+		
+		// Do a proper level up
+		if(iLevel > iLastOldLevel)
+		{
+			Stats_PlayerNewLevel(iTargetList[i], iLevel-iLastOldLevel);
+		}
+		// Decrease level manually, don't touch the credits/items
+		else
+		{
+			SetClientLevel(iTargetList[i], iLevel);
+			SetClientExperience(iTargetList[i], 0);
+			
+			if(GetConVarBool(g_hCVAnnounceNewLvl))
+				Client_PrintToChatAll(false, "%t", "Client level changed", iTargetList[i], GetClientLevel(iTargetList[i]));
+		}
+		
+		LogAction(client, iTargetList[i], "%L set level of %L from %d to %d.", client, iTargetList[i], iLastOldLevel, GetClientLevel(iTargetList[i]));
+		
+		// Didn't change to the desired new level completely?
+		if(GetClientLevel(iTargetList[i]) != iLevel)
+		{
+			iFailedOldLevels[iFailedCount] = iLastOldLevel;
+			iFailedTargets[iFailedCount++] = iTargetList[i];
+		}
+	}
+	
+	if(tn_is_ml)
+	{
+		LogAction(client, -1, "%L set level of %T (%d players) to %d.", client, sTargetName, LANG_SERVER, iTargetCount, iLevel);
+		ReplyToCommand(client, "SM:RPG setlvl: Level has been set to %d for %t (%d players).", iLevel, sTargetName, iTargetCount);
+		if(iFailedCount > 0)
+		{
+			decl String:sFailedList[1024];
+			Format(sFailedList, sizeof(sFailedList), "SM:RPG setlvl: %d clients failed: ", iFailedCount);
+			for(new i=0;i<iFailedCount;i++)
+			{
+				Format(sFailedList, sizeof(sFailedList), "%s%s%N (level: %d, old: %d)", sFailedList, (i>0?", ":""), iFailedTargets[i], GetClientLevel(iFailedTargets[0]), iFailedOldLevels[0]);
+			}
+			ReplyToCommand(client, "%s.", sFailedList);
+		}
+	}
 	else
 	{
-		SetClientLevel(iTarget, iLevel);
-		SetClientExperience(iTarget, 0);
-		
-		if(GetConVarBool(g_hCVAnnounceNewLvl))
-			Client_PrintToChatAll(false, "%t", "Client level changed", iTarget, GetClientLevel(iTarget));
+		ReplyToCommand(client, "SM:RPG setlvl: %N has been set to level %d (previously level %d)", iTargetList[0], GetClientLevel(iTargetList[0]), iLastOldLevel);
 	}
-	
-	LogAction(client, iTarget, "%L set level of %L from %d to %d.", client, iTarget, iOldLevel, GetClientLevel(iTarget));
-	ReplyToCommand(client, "SM:RPG setlvl: %N has been set to Level %d (previously Level %d)", iTarget, GetClientLevel(iTarget), iOldLevel);
 	
 	return Plugin_Handled;
 }
@@ -174,12 +289,9 @@ public Action:Cmd_AddLvl(client, args)
 		return Plugin_Handled;
 	}
 	
-	decl String:sPlayer[64];
-	GetCmdArg(1, sPlayer, sizeof(sPlayer));
-	TrimString(sPlayer);
-	new iTarget = FindTarget(client, sPlayer, false, false);
-	if(iTarget == -1)
-		return Plugin_Handled;
+	decl String:sTarget[256];
+	GetCmdArg(1, sTarget, sizeof(sTarget));
+	TrimString(sTarget);
 	
 	decl String:sLevel[16];
 	GetCmdArg(2, sLevel, sizeof(sLevel));
@@ -187,17 +299,66 @@ public Action:Cmd_AddLvl(client, args)
 	
 	if(iLevelIncrease < 1)
 	{
-		ReplyToCommand(client, "SM:RPG: You have to add at least 1 level!");
+		ReplyToCommand(client, "SM:RPG addlvl: You have to add at least 1 level!");
 		return Plugin_Handled;
 	}
 	
-	new iOldLevel = GetClientLevel(iTarget);
+	decl String:sTargetName[MAX_TARGET_LENGTH];
+	new iTargetList[MAXPLAYERS], iTargetCount;
+	new bool:tn_is_ml;
+	if((iTargetCount = ProcessTargetString(sTarget,
+							client, 
+							iTargetList,
+							sizeof(iTargetList),
+							0,
+							sTargetName,
+							sizeof(sTargetName),
+							tn_is_ml)) <= 0)
+	{
+		ReplyToTargetError(client, iTargetCount);
+		return Plugin_Handled;
+	}
 	
-	Stats_PlayerNewLevel(iTarget, iLevelIncrease);
+	new iLastOldLevel;
+	new iFailedTargets[MAXPLAYERS], iFailedOldLevels[MAXPLAYERS];
+	new iFailedCount;
+	for(new i=0;i<iTargetCount;i++)
+	{
+		iLastOldLevel = GetClientLevel(iTargetList[i]);
+		
+		// Do a proper level up
+		Stats_PlayerNewLevel(iTargetList[i], iLevelIncrease);
+
+		LogAction(client, iTargetList[i], "%L added max. %d levels to %L. He leveled up from level %d to %d.", client, iLevelIncrease, iTargetList[i], iLastOldLevel, GetClientLevel(iTargetList[i]));
+		
+		// Didn't change to the desired new level completely?
+		if(GetClientLevel(iTargetList[i]) != iLastOldLevel+iLevelIncrease)
+		{
+			iFailedOldLevels[iFailedCount] = iLastOldLevel;
+			iFailedTargets[iFailedCount++] = iTargetList[i];
+		}
+	}
 	
-	LogAction(client, iTarget, "%L added %d levels to %L. He leveled up from level %d to %d.", client, iLevelIncrease, iTarget, iOldLevel, GetClientLevel(iTarget));
-	ReplyToCommand(client, "SM:RPG addlvl: %N has been set to Level %d (previously Level %d)", iTarget, GetClientLevel(iTarget), iOldLevel);
-	
+	if(tn_is_ml)
+	{
+		LogAction(client, -1, "%L added %d levels to %T (%d players).", client, iLevelIncrease, sTargetName, LANG_SERVER, iTargetCount);
+		ReplyToCommand(client, "SM:RPG addlvl: Added %d levels to %t (%d players).", iLevelIncrease, sTargetName, iTargetCount);
+		if(iFailedCount > 0)
+		{
+			decl String:sFailedList[1024];
+			Format(sFailedList, sizeof(sFailedList), "SM:RPG addlvl: %d clients failed: ", iFailedCount);
+			for(new i=0;i<iFailedCount;i++)
+			{
+				Format(sFailedList, sizeof(sFailedList), "%s%s%N (level: %d, old: %d)", sFailedList, (i>0?", ":""), iFailedTargets[i], GetClientLevel(iFailedTargets[0]), iFailedOldLevels[0]);
+			}
+			ReplyToCommand(client, "%s.", sFailedList);
+		}
+	}
+	else
+	{
+		ReplyToCommand(client, "SM:RPG addlvl: %N has been set to level %d (previously level %d)", iTargetList[0], GetClientLevel(iTargetList[0]), iLastOldLevel);
+	}
+
 	return Plugin_Handled;
 }
 
@@ -209,12 +370,9 @@ public Action:Cmd_SetExp(client, args)
 		return Plugin_Handled;
 	}
 	
-	decl String:sPlayer[64];
-	GetCmdArg(1, sPlayer, sizeof(sPlayer));
-	TrimString(sPlayer);
-	new iTarget = FindTarget(client, sPlayer, false, false);
-	if(iTarget == -1)
-		return Plugin_Handled;
+	decl String:sTarget[256];
+	GetCmdArg(1, sTarget, sizeof(sTarget));
+	TrimString(sTarget);
 	
 	decl String:sExperience[16];
 	GetCmdArg(2, sExperience, sizeof(sExperience));
@@ -222,24 +380,54 @@ public Action:Cmd_SetExp(client, args)
 	
 	if(iExperience < 0)
 	{
-		ReplyToCommand(client, "SM:RPG: Experience must be >= 0!");
+		ReplyToCommand(client, "SM:RPG setexp: Experience must be >= 0!");
 		return Plugin_Handled;
 	}
 	
-	new iOldLevel = GetClientLevel(iTarget);
-	new iOldExperience = GetClientExperience(iTarget);
-	
-	if(iExperience > iOldExperience)
+	decl String:sTargetName[MAX_TARGET_LENGTH];
+	new iTargetList[MAXPLAYERS], iTargetCount;
+	new bool:tn_is_ml;
+	if((iTargetCount = ProcessTargetString(sTarget,
+							client, 
+							iTargetList,
+							sizeof(iTargetList),
+							0,
+							sTargetName,
+							sizeof(sTargetName),
+							tn_is_ml)) <= 0)
 	{
-		new iNewExperience = iExperience-iOldExperience;
-		Stats_AddExperience(iTarget, iNewExperience, ExperienceReason_Admin, false, -1);
+		ReplyToTargetError(client, iTargetCount);
+		return Plugin_Handled;
+	}
+	
+	new iLastOldLevel, iLastOldExperience;
+	for(new i=0;i<iTargetCount;i++)
+	{
+		iLastOldLevel = GetClientLevel(iTargetList[i]);
+		iLastOldExperience = GetClientExperience(iTargetList[i]);
+		
+		// Do a proper level up if enough experience.
+		if(iExperience > iLastOldExperience)
+		{
+			new iNewExperience = iExperience-iLastOldExperience;
+			Stats_AddExperience(iTargetList[i], iNewExperience, ExperienceReason_Admin, false, -1);
+		}
+		else
+			SetClientExperience(iTargetList[i], iExperience);
+		
+		LogAction(client, iTargetList[i], "%L set experience of %L to %d. He is now level %d and has %d/%d experience (previously level %d with %d/%d experience)", client, iTargetList[i], iExperience, GetClientLevel(iTargetList[i]), GetClientExperience(iTargetList[i]), Stats_LvlToExp(GetClientLevel(iTargetList[i])), iLastOldLevel, iLastOldExperience, Stats_LvlToExp(iLastOldLevel));
+	}
+	
+	if(tn_is_ml)
+	{
+		LogAction(client, -1, "%L set experience of %T (%d players) to %d.", client, sTargetName, LANG_SERVER, iTargetCount, iExperience);
+		ReplyToCommand(client, "SM:RPG setexp: Experience has been set to %d for %t (%d players).", iExperience, sTargetName, iTargetCount);
 	}
 	else
-		SetClientExperience(iTarget, iExperience);
-	
-	LogAction(client, iTarget, "%L set experience of %L to %d. He is now Level %d and has %d/%d Experience (previously Level %d with %d/%d Experience)", client, iTarget, iExperience, GetClientLevel(iTarget), GetClientExperience(iTarget), Stats_LvlToExp(GetClientLevel(iTarget)), iOldLevel, iOldExperience, Stats_LvlToExp(iOldLevel));
-	ReplyToCommand(client, "SM:RPG setexp: %N is now Level %d and has %d/%d Experience (previously Level %d with %d/%d Experience)", iTarget, GetClientLevel(iTarget), GetClientExperience(iTarget), Stats_LvlToExp(GetClientLevel(iTarget)), iOldLevel, iOldExperience, Stats_LvlToExp(iOldLevel));
-	
+	{
+		ReplyToCommand(client, "SM:RPG setexp: %N is now level %d and has %d/%d experience (previously level %d with %d/%d experience)", iTargetList[0], GetClientLevel(iTargetList[0]), GetClientExperience(iTargetList[0]), Stats_LvlToExp(GetClientLevel(iTargetList[0])), iLastOldLevel, iLastOldExperience, Stats_LvlToExp(iLastOldLevel));
+	}
+
 	return Plugin_Handled;
 }
 
@@ -251,12 +439,9 @@ public Action:Cmd_AddExp(client, args)
 		return Plugin_Handled;
 	}
 	
-	decl String:sPlayer[64];
-	GetCmdArg(1, sPlayer, sizeof(sPlayer));
-	TrimString(sPlayer);
-	new iTarget = FindTarget(client, sPlayer, false, false);
-	if(iTarget == -1)
-		return Plugin_Handled;
+	decl String:sTarget[256];
+	GetCmdArg(1, sTarget, sizeof(sTarget));
+	TrimString(sTarget);
 	
 	decl String:sExperienceIncrease[16];
 	GetCmdArg(2, sExperienceIncrease, sizeof(sExperienceIncrease));
@@ -264,17 +449,47 @@ public Action:Cmd_AddExp(client, args)
 	
 	if(iExperienceIncrease < 1)
 	{
-		ReplyToCommand(client, "SM:RPG: You have to add at least 1 experience!");
+		ReplyToCommand(client, "SM:RPG addexp: You have to add at least 1 experience!");
 		return Plugin_Handled;
 	}
 	
-	new iOldLevel = GetClientLevel(iTarget);
-	new iOldExperience = GetClientExperience(iTarget);
+	decl String:sTargetName[MAX_TARGET_LENGTH];
+	new iTargetList[MAXPLAYERS], iTargetCount;
+	new bool:tn_is_ml;
+	if((iTargetCount = ProcessTargetString(sTarget,
+							client, 
+							iTargetList,
+							sizeof(iTargetList),
+							0,
+							sTargetName,
+							sizeof(sTargetName),
+							tn_is_ml)) <= 0)
+	{
+		ReplyToTargetError(client, iTargetCount);
+		return Plugin_Handled;
+	}
 	
-	Stats_AddExperience(iTarget, iExperienceIncrease, ExperienceReason_Admin, false, -1);
+	new iLastOldLevel, iLastOldExperience;
+	for(new i=0;i<iTargetCount;i++)
+	{
+		iLastOldLevel = GetClientLevel(iTargetList[i]);
+		iLastOldExperience = GetClientExperience(iTargetList[i]);
+		
+		// Do a proper level up if enough experience.
+		Stats_AddExperience(iTargetList[i], iExperienceIncrease, ExperienceReason_Admin, false, -1);
+		
+		LogAction(client, iTargetList[i], "%L added %d experience to %L. He is now level %d and has %d/%d experience (previously level %d with %d/%d experience)", client, iExperienceIncrease, iTargetList[i], GetClientLevel(iTargetList[i]), GetClientExperience(iTargetList[i]), Stats_LvlToExp(GetClientLevel(iTargetList[i])), iLastOldLevel, iLastOldExperience, Stats_LvlToExp(iLastOldLevel));
+	}
 	
-	LogAction(client, iTarget, "%L added %d experience to %L. He is now Level %d and has %d/%d Experience (previously Level %d with %d/%d Experience)", client, iExperienceIncrease, iTarget, GetClientLevel(iTarget), GetClientExperience(iTarget), Stats_LvlToExp(GetClientLevel(iTarget)), iOldLevel, iOldExperience, Stats_LvlToExp(iOldLevel));
-	ReplyToCommand(client, "SM:RPG setexp: %N is now Level %d and has %d/%d Experience (previously Level %d with %d/%d Experience)", iTarget, GetClientLevel(iTarget), GetClientExperience(iTarget), Stats_LvlToExp(GetClientLevel(iTarget)), iOldLevel, iOldExperience, Stats_LvlToExp(iOldLevel));
+	if(tn_is_ml)
+	{
+		LogAction(client, -1, "%L added %d experience to %T (%d players).", client, iExperienceIncrease, sTargetName, LANG_SERVER, iTargetCount);
+		ReplyToCommand(client, "SM:RPG addexp: %d experience has been added for %t (%d players).", iExperienceIncrease, sTargetName, iTargetCount);
+	}
+	else
+	{
+		ReplyToCommand(client, "SM:RPG addexp: %N is now level %d and has %d/%d experience (previously level %d with %d/%d experience)", iTargetList[0], GetClientLevel(iTargetList[0]), GetClientExperience(iTargetList[0]), Stats_LvlToExp(GetClientLevel(iTargetList[0])), iLastOldLevel, iLastOldExperience, Stats_LvlToExp(iLastOldLevel));
+	}
 	
 	return Plugin_Handled;
 }
@@ -287,12 +502,9 @@ public Action:Cmd_SetCredits(client, args)
 		return Plugin_Handled;
 	}
 	
-	decl String:sPlayer[64];
-	GetCmdArg(1, sPlayer, sizeof(sPlayer));
-	TrimString(sPlayer);
-	new iTarget = FindTarget(client, sPlayer, false, false);
-	if(iTarget == -1)
-		return Plugin_Handled;
+	decl String:sTarget[256];
+	GetCmdArg(1, sTarget, sizeof(sTarget));
+	TrimString(sTarget);
 	
 	decl String:sCredits[16];
 	GetCmdArg(2, sCredits, sizeof(sCredits));
@@ -300,17 +512,46 @@ public Action:Cmd_SetCredits(client, args)
 	
 	if(iCredits < 0)
 	{
-		ReplyToCommand(client, "SM:RPG: Credits have to be >= 0!");
+		ReplyToCommand(client, "SM:RPG setcredits: Credits have to be >= 0!");
 		return Plugin_Handled;
 	}
 	
-	new iOldCredits = GetClientCredits(iTarget);
+	decl String:sTargetName[MAX_TARGET_LENGTH];
+	new iTargetList[MAXPLAYERS], iTargetCount;
+	new bool:tn_is_ml;
+	if((iTargetCount = ProcessTargetString(sTarget,
+							client, 
+							iTargetList,
+							sizeof(iTargetList),
+							0,
+							sTargetName,
+							sizeof(sTargetName),
+							tn_is_ml)) <= 0)
+	{
+		ReplyToTargetError(client, iTargetCount);
+		return Plugin_Handled;
+	}
 	
-	SetClientCredits(iTarget, iCredits);
+	new iLastOldCredits;
+	for(new i=0;i<iTargetCount;i++)
+	{
+		iLastOldCredits = GetClientCredits(iTargetList[i]);
+		
+		SetClientCredits(iTargetList[i], iCredits);
+		
+		LogAction(client, iTargetList[i], "%L set credits of %L from %d to %d.", client, iTargetList[i], iLastOldCredits, GetClientCredits(iTargetList[i]));
+	}
 	
-	LogAction(client, iTarget, "%L set credits of %L from %d to %d.", client, iTarget, iOldCredits, GetClientCredits(iTarget));
-	ReplyToCommand(client, "SM:RPG setcredits: %N now has %d Credits (previously had %d Credits)", iTarget, GetClientCredits(iTarget), iOldCredits);
-	
+	if(tn_is_ml)
+	{
+		LogAction(client, -1, "%L set credits of %T to %d (%d players).", client, sTargetName, LANG_SERVER, iCredits, iTargetCount);
+		ReplyToCommand(client, "SM:RPG setcredits: Set credits of %t to %d (%d players).", sTargetName, iCredits, iTargetCount);
+	}
+	else
+	{
+		ReplyToCommand(client, "SM:RPG setcredits: %N now has %d credits (previously had %d credits)", iTargetList[0], GetClientCredits(iTargetList[0]), iLastOldCredits);
+	}
+
 	return Plugin_Handled;
 }
 
@@ -322,12 +563,9 @@ public Action:Cmd_AddCredits(client, args)
 		return Plugin_Handled;
 	}
 	
-	decl String:sPlayer[64];
-	GetCmdArg(1, sPlayer, sizeof(sPlayer));
-	TrimString(sPlayer);
-	new iTarget = FindTarget(client, sPlayer, false, false);
-	if(iTarget == -1)
-		return Plugin_Handled;
+	decl String:sTarget[256];
+	GetCmdArg(1, sTarget, sizeof(sTarget));
+	TrimString(sTarget);
 	
 	decl String:sCredits[16];
 	GetCmdArg(2, sCredits, sizeof(sCredits));
@@ -335,16 +573,45 @@ public Action:Cmd_AddCredits(client, args)
 	
 	if(iCredits < 1)
 	{
-		ReplyToCommand(client, "SM:RPG: You have to add at least 1 credit!");
+		ReplyToCommand(client, "SM:RPG addcredits: You have to add at least 1 credit!");
 		return Plugin_Handled;
 	}
 	
-	new iOldCredits = GetClientCredits(iTarget);
+	decl String:sTargetName[MAX_TARGET_LENGTH];
+	new iTargetList[MAXPLAYERS], iTargetCount;
+	new bool:tn_is_ml;
+	if((iTargetCount = ProcessTargetString(sTarget,
+							client, 
+							iTargetList,
+							sizeof(iTargetList),
+							0,
+							sTargetName,
+							sizeof(sTargetName),
+							tn_is_ml)) <= 0)
+	{
+		ReplyToTargetError(client, iTargetCount);
+		return Plugin_Handled;
+	}
 	
-	SetClientCredits(iTarget, iOldCredits+iCredits);
+	new iLastOldCredits;
+	for(new i=0;i<iTargetCount;i++)
+	{
+		iLastOldCredits = GetClientCredits(iTargetList[i]);
+		
+		SetClientCredits(iTargetList[i], iLastOldCredits+iCredits);
+		
+		LogAction(client, iTargetList[i], "%L added %d credits to %L. The credits changed from %d to %d.", client, iCredits, iTargetList[i], iLastOldCredits, GetClientCredits(iTargetList[i]));
+	}
 	
-	LogAction(client, iTarget, "%L added %d credits to %L. The credits changed from %d to %d.", client, iCredits, iTarget, iOldCredits, GetClientCredits(iTarget));
-	ReplyToCommand(client, "SM:RPG addcredits: %N now has %d Credits (previously had %d Credits)", iTarget, GetClientCredits(iTarget), iOldCredits);
+	if(tn_is_ml)
+	{
+		LogAction(client, -1, "%L added %d credits to %T (%d players).", client, iCredits, sTargetName, LANG_SERVER, iTargetCount);
+		ReplyToCommand(client, "SM:RPG addcredits: Added %d credits to %t (%d players).", iCredits, sTargetName, iTargetCount);
+	}
+	else
+	{
+		ReplyToCommand(client, "SM:RPG addcredits: %N got %d credits and now has %d credits (previously had %d credits)", iTargetList[0], iCredits, GetClientCredits(iTargetList[0]), iLastOldCredits);
+	}
 	
 	return Plugin_Handled;
 }
@@ -386,12 +653,9 @@ public Action:Cmd_SetUpgradeLvl(client, args)
 		return Plugin_Handled;
 	}
 	
-	decl String:sPlayer[64];
-	GetCmdArg(1, sPlayer, sizeof(sPlayer));
-	TrimString(sPlayer);
-	new iTarget = FindTarget(client, sPlayer, false, false);
-	if(iTarget == -1)
-		return Plugin_Handled;
+	decl String:sTarget[256];
+	GetCmdArg(1, sTarget, sizeof(sTarget));
+	TrimString(sTarget);
 	
 	decl String:sUpgrade[MAX_UPGRADE_SHORTNAME_LENGTH];
 	GetCmdArg(2, sUpgrade, sizeof(sUpgrade));
@@ -415,36 +679,66 @@ public Action:Cmd_SetUpgradeLvl(client, args)
 	
 	if(iLevel < 0)
 	{
-		ReplyToCommand(client, "SM:RPG: Upgrade levels start at 0!");
+		ReplyToCommand(client, "SM:RPG setupgradelvl: Upgrade levels start at 0!");
 		return Plugin_Handled;
 	}
 	
 	new iIndex = upgrade[UPGR_index];
-	new iOldLevel = GetClientPurchasedUpgradeLevel(iTarget, iIndex);
 	
-	// Item level increased
-	if(iOldLevel < iLevel)
+	decl String:sTargetName[MAX_TARGET_LENGTH];
+	new iTargetList[MAXPLAYERS], iTargetCount;
+	new bool:tn_is_ml;
+	if((iTargetCount = ProcessTargetString(sTarget,
+							client, 
+							iTargetList,
+							sizeof(iTargetList),
+							0,
+							sTargetName,
+							sizeof(sTargetName),
+							tn_is_ml)) <= 0)
 	{
-		while(GetClientPurchasedUpgradeLevel(iTarget, iIndex) < iLevel)
-		{
-			// If some plugin doesn't want any more upgrade levels, stop trying.
-			if(!GiveClientUpgrade(iTarget, iIndex))
-				break;
-		}
+		ReplyToTargetError(client, iTargetCount);
+		return Plugin_Handled;
 	}
-	// Item level decreased..
+	
+	new iLastOldUpgradeLevel;
+	for(new i=0;i<iTargetCount;i++)
+	{
+		iLastOldUpgradeLevel = GetClientPurchasedUpgradeLevel(iTargetList[i], iIndex);
+		
+		// Item level increased
+		if(iLastOldUpgradeLevel < iLevel)
+		{
+			while(GetClientPurchasedUpgradeLevel(iTargetList[i], iIndex) < iLevel)
+			{
+				// If some plugin doesn't want any more upgrade levels, stop trying.
+				if(!GiveClientUpgrade(iTargetList[i], iIndex))
+					break;
+			}
+		}
+		// Item level decreased..
+		else
+		{
+			while(GetClientPurchasedUpgradeLevel(iTargetList[i], iIndex) > iLevel)
+			{
+				// If some plugin doesn't want any less upgrade levels, stop trying.
+				if(!TakeClientUpgrade(iTargetList[i], iIndex))
+					break;
+			}
+		}
+		
+		LogAction(client, iTargetList[i], "%L set %L level of upgrade %s from %d to %d at no charge.", client, iTargetList[i], upgrade[UPGR_name], iLastOldUpgradeLevel, GetClientPurchasedUpgradeLevel(iTargetList[i], iIndex));
+	}
+	
+	if(tn_is_ml)
+	{
+		LogAction(client, -1, "%L set level of upgrade %s to %d for %T (%d players).", client, upgrade[UPGR_name], iLevel, sTargetName, LANG_SERVER, iTargetCount);
+		ReplyToCommand(client, "SM:RPG setupgradelvl: Set level upgrade %s to %d for %t (%d players).", upgrade[UPGR_name], iLevel, sTargetName, iTargetCount);
+	}
 	else
 	{
-		while(GetClientPurchasedUpgradeLevel(iTarget, iIndex) > iLevel)
-		{
-			// If some plugin doesn't want any less upgrade levels, stop trying.
-			if(!TakeClientUpgrade(iTarget, iIndex))
-				break;
-		}
+		ReplyToCommand(client, "SM:RPG setupgradelvl: %N now has %s level %d (previously level %d)", iTargetList[0], upgrade[UPGR_name], GetClientPurchasedUpgradeLevel(iTargetList[0], iIndex), iLastOldUpgradeLevel);
 	}
-	
-	LogAction(client, iTarget, "%L set %L level of upgrade %s from %d to %d at no charge.", client, iTarget, upgrade[UPGR_name], iOldLevel, GetClientPurchasedUpgradeLevel(iTarget, iIndex));
-	ReplyToCommand(client, "SM:RPG setupgradelvl: %N now has %s Level %d (previously Level %d)", iTarget, upgrade[UPGR_name], GetClientPurchasedUpgradeLevel(iTarget, iIndex), iOldLevel);
 	
 	return Plugin_Handled;
 }
@@ -457,12 +751,9 @@ public Action:Cmd_GiveUpgrade(client, args)
 		return Plugin_Handled;
 	}
 	
-	decl String:sPlayer[64];
-	GetCmdArg(1, sPlayer, sizeof(sPlayer));
-	TrimString(sPlayer);
-	new iTarget = FindTarget(client, sPlayer, false, false);
-	if(iTarget == -1)
-		return Plugin_Handled;
+	decl String:sTarget[256];
+	GetCmdArg(1, sTarget, sizeof(sTarget));
+	TrimString(sTarget);
 	
 	decl String:sUpgrade[MAX_UPGRADE_SHORTNAME_LENGTH];
 	GetCmdArg(2, sUpgrade, sizeof(sUpgrade));
@@ -471,27 +762,76 @@ public Action:Cmd_GiveUpgrade(client, args)
 	new upgrade[InternalUpgradeInfo];
 	if(!GetUpgradeByShortname(sUpgrade, upgrade) || !IsValidUpgrade(upgrade))
 	{
-		ReplyToCommand(client, "SM:RPG: There is no upgrade with name \"%s\".", sUpgrade);
+		ReplyToCommand(client, "SM:RPG giveupgrade: There is no upgrade with name \"%s\".", sUpgrade);
 		return Plugin_Handled;
 	}
 	
 	new iIndex = upgrade[UPGR_index];
-	new iOldLevel = GetClientPurchasedUpgradeLevel(iTarget, iIndex);
 	
-	if(iOldLevel >= upgrade[UPGR_maxLevel])
+	decl String:sTargetName[MAX_TARGET_LENGTH];
+	new iTargetList[MAXPLAYERS], iTargetCount;
+	new bool:tn_is_ml;
+	if((iTargetCount = ProcessTargetString(sTarget,
+							client, 
+							iTargetList,
+							sizeof(iTargetList),
+							0,
+							sTargetName,
+							sizeof(sTargetName),
+							tn_is_ml)) <= 0)
 	{
-		ReplyToCommand(client, "SM:RPG giveupgrade: %N has the maximum Level for %s (Level %d)", iTarget, upgrade[UPGR_name], iOldLevel);
+		ReplyToTargetError(client, iTargetCount);
 		return Plugin_Handled;
 	}
 	
-	if(!GiveClientUpgrade(iTarget, iIndex))
+	new iLastOldUpgradeLevel;
+	new iCountAlreadyMaxed;
+	new iFailedTargets[MAXPLAYERS], iFailedCount;
+	for(new i=0;i<iTargetCount;i++)
 	{
-		ReplyToCommand(client, "SM:RPG giveupgrade: Upgrade refused to upgrade.");
-		return Plugin_Handled;
+		iLastOldUpgradeLevel = GetClientPurchasedUpgradeLevel(iTargetList[i], iIndex);
+		
+		if(iLastOldUpgradeLevel >= upgrade[UPGR_maxLevel])
+		{
+			iCountAlreadyMaxed++;
+			continue;
+		}
+		
+		if(!GiveClientUpgrade(iTargetList[i], iIndex))
+		{
+			iFailedTargets[iFailedCount++] = iTargetList[i];
+			continue;
+		}
+		
+		LogAction(client, iTargetList[i], "%L gave %L a level of upgrade %s at no charge. It changed from level %d to %d.", client, iTargetList[i], upgrade[UPGR_name], iLastOldUpgradeLevel, GetClientPurchasedUpgradeLevel(iTargetList[i], iIndex));
 	}
 	
-	LogAction(client, iTarget, "%L gave %L a level of upgrade %s at no charge. It changed from level %d to %d.", client, iTarget, upgrade[UPGR_name], iOldLevel, GetClientPurchasedUpgradeLevel(iTarget, iIndex));
-	ReplyToCommand(client, "SM:RPG giveupgrade: %N now has %s Level %d (previously Level %d)", iTarget, upgrade[UPGR_name], GetClientPurchasedUpgradeLevel(iTarget, iIndex), iOldLevel);
+	if(tn_is_ml)
+	{
+		LogAction(client, -1, "%L gave a level of upgrade %s to %T (%d players).", client, upgrade[UPGR_name], sTargetName, LANG_SERVER, iTargetCount);
+		ReplyToCommand(client, "SM:RPG giveupgrade: Gave a level of upgrade %s to %t (%d players).", upgrade[UPGR_name], sTargetName, iTargetCount);
+		if(iCountAlreadyMaxed > 0)
+			ReplyToCommand(client, "SM:RPG giveupgrade: %d players already had it on max.", iCountAlreadyMaxed);
+		if(iFailedCount > 0)
+		{
+			decl String:sFailedList[1024];
+			Format(sFailedList, sizeof(sFailedList), "SM:RPG giveupgrade: %d clients failed: ", iFailedCount);
+			for(new i=0;i<iFailedCount;i++)
+			{
+				Format(sFailedList, sizeof(sFailedList), "%s%s%N ", sFailedList, (i>0?", ":""), iFailedTargets[i]);
+			}
+			ReplyToCommand(client, "%s.", sFailedList);
+		}
+	}
+	else
+	{
+		if(iCountAlreadyMaxed > 0)
+			ReplyToCommand(client, "SM:RPG giveupgrade: %N has the maximum level for %s (level %d)", iTargetList[0], upgrade[UPGR_name], iLastOldUpgradeLevel);
+		else if(iFailedCount > 0)
+			ReplyToCommand(client, "SM:RPG giveupgrade: Tried to give %N a level for upgrade %s, but it refused to level up.", iTargetList[0], upgrade[UPGR_name]);
+		else
+			ReplyToCommand(client, "SM:RPG giveupgrade: %N now has %s level %d (previously level %d)", iTargetList[0], upgrade[UPGR_name], GetClientPurchasedUpgradeLevel(iTargetList[0], iIndex), iLastOldUpgradeLevel);
+	}
 	
 	return Plugin_Handled;
 }
@@ -504,27 +844,54 @@ public Action:Cmd_GiveAll(client, args)
 		return Plugin_Handled;
 	}
 	
-	decl String:sPlayer[64];
-	GetCmdArg(1, sPlayer, sizeof(sPlayer));
-	TrimString(sPlayer);
-	new iTarget = FindTarget(client, sPlayer, false, false);
-	if(iTarget == -1)
+	decl String:sTarget[256];
+	GetCmdArg(1, sTarget, sizeof(sTarget));
+	TrimString(sTarget);
+	
+	decl String:sTargetName[MAX_TARGET_LENGTH];
+	new iTargetList[MAXPLAYERS], iTargetCount;
+	new bool:tn_is_ml;
+	if((iTargetCount = ProcessTargetString(sTarget,
+							client, 
+							iTargetList,
+							sizeof(iTargetList),
+							0,
+							sTargetName,
+							sizeof(sTargetName),
+							tn_is_ml)) <= 0)
+	{
+		ReplyToTargetError(client, iTargetCount);
 		return Plugin_Handled;
+	}
 	
 	new iSize = GetUpgradeCount();
 	new upgrade[InternalUpgradeInfo];
-	for(new i=0;i<iSize;i++)
+	for(new i=0;i<iTargetCount;i++)
 	{
-		GetUpgradeByIndex(i, upgrade);
-		if(!IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled])
-			continue;
+		// Run through all upgrades
+		for(new u=0;u<iSize;u++)
+		{
+			GetUpgradeByIndex(u, upgrade);
+			if(!IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled])
+				continue;
+			
+			// TODO: Obey adminflags and bot restrictions!
+			SetClientPurchasedUpgradeLevel(iTargetList[i], u, upgrade[UPGR_maxLevel]);
+			SetClientSelectedUpgradeLevel(iTargetList[i], u, upgrade[UPGR_maxLevel]);
+		}
 		
-		SetClientPurchasedUpgradeLevel(iTarget, i, upgrade[UPGR_maxLevel]);
-		SetClientSelectedUpgradeLevel(iTarget, i, upgrade[UPGR_maxLevel]);
+		LogAction(client, iTargetList[i], "%L set all upgrades of %L to the maximal level at no charge.", client, iTargetList[i]);
 	}
 	
-	LogAction(client, iTarget, "%L set all upgrades of %L to the maximal level at no charge.", client, iTarget);
-	ReplyToCommand(client, "SM:RPG giveall: %N now has all Upgrades on max.", iTarget);
+	if(tn_is_ml)
+	{
+		LogAction(client, -1, "%L gave all upgrades to %T (%d players) at no charge.", client, sTargetName, LANG_SERVER, iTargetCount);
+		ReplyToCommand(client, "SM:RPG giveall: Gave all upgrades to %t (%d players) at no charge.", sTargetName, iTargetCount);
+	}
+	else
+	{
+		ReplyToCommand(client, "SM:RPG giveall: %N now has all Upgrades on max.", iTargetList[0]);
+	}
 	
 	return Plugin_Handled;
 }
@@ -537,12 +904,9 @@ public Action:Cmd_TakeUpgrade(client, args)
 		return Plugin_Handled;
 	}
 	
-	decl String:sPlayer[64];
-	GetCmdArg(1, sPlayer, sizeof(sPlayer));
-	TrimString(sPlayer);
-	new iTarget = FindTarget(client, sPlayer, false, false);
-	if(iTarget == -1)
-		return Plugin_Handled;
+	decl String:sTarget[256];
+	GetCmdArg(1, sTarget, sizeof(sTarget));
+	TrimString(sTarget);
 	
 	decl String:sUpgrade[MAX_UPGRADE_SHORTNAME_LENGTH];
 	GetCmdArg(2, sUpgrade, sizeof(sUpgrade));
@@ -551,27 +915,77 @@ public Action:Cmd_TakeUpgrade(client, args)
 	new upgrade[InternalUpgradeInfo];
 	if(!GetUpgradeByShortname(sUpgrade, upgrade) || !IsValidUpgrade(upgrade))
 	{
-		ReplyToCommand(client, "SM:RPG: There is no upgrade with name \"%s\".", sUpgrade);
+		ReplyToCommand(client, "SM:RPG takeupgrade: There is no upgrade with shortname \"%s\".", sUpgrade);
+		return Plugin_Handled;
+	}
+	
+	decl String:sTargetName[MAX_TARGET_LENGTH];
+	new iTargetList[MAXPLAYERS], iTargetCount;
+	new bool:tn_is_ml;
+	if((iTargetCount = ProcessTargetString(sTarget,
+							client, 
+							iTargetList,
+							sizeof(iTargetList),
+							0,
+							sTargetName,
+							sizeof(sTargetName),
+							tn_is_ml)) <= 0)
+	{
+		ReplyToTargetError(client, iTargetCount);
 		return Plugin_Handled;
 	}
 	
 	new iIndex = upgrade[UPGR_index];
-	new iOldLevel = GetClientPurchasedUpgradeLevel(iTarget, iIndex);
 	
-	if(iOldLevel <= 0)
+	new iLastOldUpgradeLevel;
+	new iCountDontOwn;
+	new iFailedTargets[MAXPLAYERS], iFailedCount;
+	for(new i=0;i<iTargetCount;i++)
 	{
-		ReplyToCommand(client, "SM:RPG takeupgrade: %N doesn't have %s", iTarget, upgrade[UPGR_name]);
-		return Plugin_Handled;
+		iLastOldUpgradeLevel = GetClientPurchasedUpgradeLevel(iTargetList[i], iIndex);
+		
+		// Client doesn't have that upgrade. Can't take it away.
+		if(iLastOldUpgradeLevel <= 0)
+		{
+			iCountDontOwn++;
+			continue;
+		}
+		
+		if(!TakeClientUpgrade(iTargetList[i], iIndex))
+		{
+			iFailedTargets[iFailedCount++] = iTargetList[i];
+			continue;
+		}
+		
+		LogAction(client, iTargetList[i], "%L took a level of upgrade %s from %L with no refund. Changed upgrade level from %d to %d.", client, upgrade[UPGR_name], iTargetList[i], iLastOldUpgradeLevel, GetClientPurchasedUpgradeLevel(iTargetList[i], iIndex));
 	}
 	
-	if(!TakeClientUpgrade(iTarget, iIndex))
+	if(tn_is_ml)
 	{
-		ReplyToCommand(client, "SM:RPG takeupgrade: Upgrade refused to downgrade.");
-		return Plugin_Handled;
+		LogAction(client, -1, "%L took a level of upgrade %s from %T (%d players).", client, upgrade[UPGR_name], sTargetName, LANG_SERVER, iTargetCount);
+		ReplyToCommand(client, "SM:RPG takeupgrade: Took a level of upgrade %s from %t (%d players).", upgrade[UPGR_name], sTargetName, iTargetCount);
+		if(iCountDontOwn > 0)
+			ReplyToCommand(client, "SM:RPG takeupgrade: %d players didn't own the upgrade at all.", iCountDontOwn);
+		if(iFailedCount > 0)
+		{
+			decl String:sFailedList[1024];
+			Format(sFailedList, sizeof(sFailedList), "SM:RPG takeupgrade: %d clients failed: ", iFailedCount);
+			for(new i=0;i<iFailedCount;i++)
+			{
+				Format(sFailedList, sizeof(sFailedList), "%s%s%N ", sFailedList, (i>0?", ":""), iFailedTargets[i]);
+			}
+			ReplyToCommand(client, "%s.", sFailedList);
+		}
 	}
-	
-	LogAction(client, iTarget, "%L took a level of upgrade %s from %L with no refund. Changed upgrade level from %d to %d.", client, upgrade[UPGR_name], iTarget, iOldLevel, GetClientPurchasedUpgradeLevel(iTarget, iIndex));
-	ReplyToCommand(client, "SM:RPG takeupgrade: %N now has %s Level %d (previously Level %d)", iTarget, upgrade[UPGR_name], GetClientPurchasedUpgradeLevel(iTarget, iIndex), iOldLevel);
+	else
+	{
+		if(iCountDontOwn > 0)
+			ReplyToCommand(client, "SM:RPG takeupgrade: %N doesn't have upgrade %s.", iTargetList[0], upgrade[UPGR_name]);
+		else if(iFailedCount > 0)
+			ReplyToCommand(client, "SM:RPG takeupgrade: Tried to take a level of upgrade %s from %N, but it refused to level down.", upgrade[UPGR_name], iTargetList[0]);
+		else
+			ReplyToCommand(client, "SM:RPG takeupgrade: %N now has %s level %d (previously level %d)", iTargetList[0], upgrade[UPGR_name], GetClientPurchasedUpgradeLevel(iTargetList[0], iIndex), iLastOldUpgradeLevel);
+	}
 	
 	return Plugin_Handled;
 }
@@ -584,12 +998,9 @@ public Action:Cmd_BuyUpgrade(client, args)
 		return Plugin_Handled;
 	}
 	
-	decl String:sPlayer[64];
-	GetCmdArg(1, sPlayer, sizeof(sPlayer));
-	TrimString(sPlayer);
-	new iTarget = FindTarget(client, sPlayer, false, false);
-	if(iTarget == -1)
-		return Plugin_Handled;
+	decl String:sTarget[256];
+	GetCmdArg(1, sTarget, sizeof(sTarget));
+	TrimString(sTarget);
 	
 	decl String:sUpgrade[MAX_UPGRADE_SHORTNAME_LENGTH];
 	GetCmdArg(2, sUpgrade, sizeof(sUpgrade));
@@ -598,34 +1009,99 @@ public Action:Cmd_BuyUpgrade(client, args)
 	new upgrade[InternalUpgradeInfo];
 	if(!GetUpgradeByShortname(sUpgrade, upgrade) || !IsValidUpgrade(upgrade))
 	{
-		ReplyToCommand(client, "SM:RPG: There is no upgrade with name \"%s\".", sUpgrade);
+		ReplyToCommand(client, "SM:RPG buyupgrade: There is no upgrade with shortname \"%s\".", sUpgrade);
+		return Plugin_Handled;
+	}
+	
+	decl String:sTargetName[MAX_TARGET_LENGTH];
+	new iTargetList[MAXPLAYERS], iTargetCount;
+	new bool:tn_is_ml;
+	if((iTargetCount = ProcessTargetString(sTarget,
+							client, 
+							iTargetList,
+							sizeof(iTargetList),
+							0,
+							sTargetName,
+							sizeof(sTargetName),
+							tn_is_ml)) <= 0)
+	{
+		ReplyToTargetError(client, iTargetCount);
 		return Plugin_Handled;
 	}
 	
 	new iIndex = upgrade[UPGR_index];
-	new iOldLevel = GetClientPurchasedUpgradeLevel(iTarget, iIndex);
 	
-	if(iOldLevel >= upgrade[UPGR_maxLevel])
+	new iLastOldUpgradeLevel;
+	new iCountAlreadyMaxed;
+	new iPoorTargets[MAXPLAYERS], iPoorCount;
+	new iFailedTargets[MAXPLAYERS], iFailedCount;
+	for(new i=0;i<iTargetCount;i++)
 	{
-		ReplyToCommand(client, "SM:RPG buyupgrade: %N has the maximum Level for %s (Level %d)", iTarget, upgrade[UPGR_name], iOldLevel);
-		return Plugin_Handled;
+		iLastOldUpgradeLevel = GetClientPurchasedUpgradeLevel(iTargetList[i], iIndex);
+		
+		// Already has the maximum level, don't need to buy another one.
+		if(iLastOldUpgradeLevel >= upgrade[UPGR_maxLevel])
+		{
+			iCountAlreadyMaxed++;
+			continue;
+		}
+		
+		// Doesn't have enough credits.
+		new iCost = GetUpgradeCost(iIndex, iLastOldUpgradeLevel);
+		if(iCost > GetClientCredits(iTargetList[i]))
+		{
+			iPoorTargets[iPoorCount++] = iTargetList[i];
+			continue;
+		}
+		
+		// Try to buy the upgrade.
+		if(!BuyClientUpgrade(iTargetList[i], iIndex))
+		{
+			iFailedTargets[iFailedCount++] = iTargetList[i];
+			continue;
+		}
+		
+		LogAction(client, iTargetList[i], "%L forced %L to buy a level of upgrade %s. The upgrade level changed from %d to %d", client, iTargetList[i], upgrade[UPGR_name], iLastOldUpgradeLevel, GetClientPurchasedUpgradeLevel(iTargetList[i], iIndex));
 	}
 	
-	new iCost = GetUpgradeCost(iIndex, iOldLevel);
-	if(iCost > GetClientCredits(iTarget))
+	if(tn_is_ml)
 	{
-		ReplyToCommand(client, "SM:RPG buyupgrade: %N doesn't have enough credits to purchase %s (%d/%d)", iTarget, upgrade[UPGR_name], GetClientCredits(iTarget), iCost);
-		return Plugin_Handled;
+		LogAction(client, -1, "%L forced %T (%d players) to buy a level of upgrade %s.", client, sTargetName, LANG_SERVER, iTargetCount, upgrade[UPGR_name]);
+		ReplyToCommand(client, "SM:RPG buyupgrade: Made %t (%d players) buy a level of upgrade %s.", sTargetName, iTargetCount, upgrade[UPGR_name]);
+		if(iCountAlreadyMaxed > 0)
+			ReplyToCommand(client, "SM:RPG buyupgrade: %d players already had the upgrade at the maximal level.", iCountAlreadyMaxed);
+		if(iPoorCount > 0)
+		{
+			decl String:sPoorList[1024];
+			Format(sPoorList, sizeof(sPoorList), "SM:RPG buyupgrade: %d clients don't have enough credits: ", iPoorCount);
+			for(new i=0;i<iPoorCount;i++)
+			{
+				Format(sPoorList, sizeof(sPoorList), "%s%s%N ", sPoorList, (i>0?", ":""), iPoorTargets[i]);
+			}
+			ReplyToCommand(client, "%s.", sPoorList);
+		}
+		if(iFailedCount > 0)
+		{
+			decl String:sFailedList[1024];
+			Format(sFailedList, sizeof(sFailedList), "SM:RPG buyupgrade: %d clients failed: ", iFailedCount);
+			for(new i=0;i<iFailedCount;i++)
+			{
+				Format(sFailedList, sizeof(sFailedList), "%s%s%N ", sFailedList, (i>0?", ":""), iFailedTargets[i]);
+			}
+			ReplyToCommand(client, "%s.", sFailedList);
+		}
 	}
-	
-	if(!BuyClientUpgrade(iTarget, iIndex))
+	else
 	{
-		ReplyToCommand(client, "SM:RPG buyupgrade: Upgrade refused to upgrade.");
-		return Plugin_Handled;
+		if(iCountAlreadyMaxed > 0)
+			ReplyToCommand(client, "SM:RPG buyupgrade: %N has the maximum level for %s (level %d).", iTargetList[0], upgrade[UPGR_name], iLastOldUpgradeLevel);
+		else if(iPoorCount > 0)
+			ReplyToCommand(client, "SM:RPG buyupgrade: %N doesn't have enough credits to purchase %s (%d/%d).", iTargetList[0], upgrade[UPGR_name], GetClientCredits(iTargetList[0]), GetUpgradeCost(iIndex, iLastOldUpgradeLevel));
+		else if(iFailedCount > 0)
+			ReplyToCommand(client, "SM:RPG buyupgrade: Tried to make %N buy a level of upgrade %s, but it refused to level up.", iTargetList[0], upgrade[UPGR_name]);
+		else
+			ReplyToCommand(client, "SM:RPG buyupgrade: %N now has %s level %d (previously level %d).", iTargetList[0], upgrade[UPGR_name], GetClientPurchasedUpgradeLevel(iTargetList[0], iIndex), iLastOldUpgradeLevel);
 	}
-	
-	LogAction(client, iTarget, "%L forced %L to buy a level of upgrade %s. The upgrade level changed from %d to %d", client, iTarget, upgrade[UPGR_name], iOldLevel, GetClientPurchasedUpgradeLevel(iTarget, iIndex));
-	ReplyToCommand(client, "SM:RPG buyupgrade: %N now has %s Level %d (previously Level %d)", iTarget, upgrade[UPGR_name], GetClientPurchasedUpgradeLevel(iTarget, iIndex), iOldLevel);
 	
 	return Plugin_Handled;
 }
@@ -638,12 +1114,9 @@ public Action:Cmd_SellUpgrade(client, args)
 		return Plugin_Handled;
 	}
 	
-	decl String:sPlayer[64];
-	GetCmdArg(1, sPlayer, sizeof(sPlayer));
-	TrimString(sPlayer);
-	new iTarget = FindTarget(client, sPlayer, false, false);
-	if(iTarget == -1)
-		return Plugin_Handled;
+	decl String:sTarget[256];
+	GetCmdArg(1, sTarget, sizeof(sTarget));
+	TrimString(sTarget);
 	
 	decl String:sUpgrade[MAX_UPGRADE_SHORTNAME_LENGTH];
 	GetCmdArg(2, sUpgrade, sizeof(sUpgrade));
@@ -652,31 +1125,81 @@ public Action:Cmd_SellUpgrade(client, args)
 	new upgrade[InternalUpgradeInfo];
 	if(!GetUpgradeByShortname(sUpgrade, upgrade) || !IsValidUpgrade(upgrade))
 	{
-		ReplyToCommand(client, "SM:RPG: There is no upgrade with name \"%s\".", sUpgrade);
+		ReplyToCommand(client, "SM:RPG sellupgrade: There is no upgrade with name \"%s\".", sUpgrade);
+		return Plugin_Handled;
+	}
+	
+	decl String:sTargetName[MAX_TARGET_LENGTH];
+	new iTargetList[MAXPLAYERS], iTargetCount;
+	new bool:tn_is_ml;
+	if((iTargetCount = ProcessTargetString(sTarget,
+							client, 
+							iTargetList,
+							sizeof(iTargetList),
+							0,
+							sTargetName,
+							sizeof(sTargetName),
+							tn_is_ml)) <= 0)
+	{
+		ReplyToTargetError(client, iTargetCount);
 		return Plugin_Handled;
 	}
 	
 	new iIndex = upgrade[UPGR_index];
-	new iOldLevel = GetClientPurchasedUpgradeLevel(iTarget, iIndex);
 	
-	if(iOldLevel <= 0)
+	new iLastOldUpgradeLevel;
+	new iCountDontOwn;
+	new iFailedTargets[MAXPLAYERS], iFailedCount;
+	for(new i=0;i<iTargetCount;i++)
 	{
-		ReplyToCommand(client, "SM:RPG sellupgrade: %N doesn't have %s", iTarget, upgrade[UPGR_name]);
-		return Plugin_Handled;
+		iLastOldUpgradeLevel = GetClientPurchasedUpgradeLevel(iTargetList[i], iIndex);
+		
+		// Client doesn't have that upgrade. Can't take it away.
+		if(iLastOldUpgradeLevel <= 0)
+		{
+			iCountDontOwn++;
+			continue;
+		}
+		
+		if(!TakeClientUpgrade(iTargetList[i], iIndex))
+		{
+			iFailedTargets[iFailedCount++] = iTargetList[i];
+			continue;
+		}
+		
+		// Full refund!
+		new iUpgradeCosts = GetUpgradeCost(iIndex, iLastOldUpgradeLevel);
+		SetClientCredits(iTargetList[i], GetClientCredits(iTargetList[i]) + iUpgradeCosts);
+		
+		LogAction(client, iTargetList[i], "%L forced %L to sell a level of upgrade %s with full refund of the costs. The upgrade level changed from %d to %d and he received %d credits.", client, iTargetList[i], upgrade[UPGR_name], iLastOldUpgradeLevel, GetClientPurchasedUpgradeLevel(iTargetList[i], iIndex), iUpgradeCosts);
 	}
 	
-	if(!TakeClientUpgrade(iTarget, iIndex))
+	if(tn_is_ml)
 	{
-		ReplyToCommand(client, "SM:RPG sellupgrade: Upgrade refused to downgrade.");
-		return Plugin_Handled;
+		LogAction(client, -1, "%L forced %T (%d players) to sell a level of upgrade %s with full refund.", client, sTargetName, LANG_SERVER, iTargetCount, upgrade[UPGR_name]);
+		ReplyToCommand(client, "SM:RPG sellupgrade: Forced %t (%d players) to sell a level of upgrade %s with full refund.", sTargetName, iTargetCount, upgrade[UPGR_name]);
+		if(iCountDontOwn > 0)
+			ReplyToCommand(client, "SM:RPG sellupgrade: %d players didn't own the upgrade at all.", iCountDontOwn);
+		if(iFailedCount > 0)
+		{
+			decl String:sFailedList[1024];
+			Format(sFailedList, sizeof(sFailedList), "SM:RPG sellupgrade: %d clients failed: ", iFailedCount);
+			for(new i=0;i<iFailedCount;i++)
+			{
+				Format(sFailedList, sizeof(sFailedList), "%s%s%N ", sFailedList, (i>0?", ":""), iFailedTargets[i]);
+			}
+			ReplyToCommand(client, "%s.", sFailedList);
+		}
 	}
-	
-	// Full refund!
-	new iUpgradeCosts = GetUpgradeCost(iIndex, iOldLevel);
-	SetClientCredits(iTarget, GetClientCredits(iTarget) + iUpgradeCosts);
-	
-	LogAction(client, iTarget, "%L forced %L to sell a level of upgrade %s with full refund of the costs. The upgrade level changed from %d to %d and he received %d credits.", client, iTarget, upgrade[UPGR_name], iOldLevel, GetClientPurchasedUpgradeLevel(iTarget, iIndex), iUpgradeCosts);
-	ReplyToCommand(client, "SM:RPG sellupgrade: %N now has %s Level %d (previously Level %d) and received %d credits.", iTarget, upgrade[UPGR_name], GetClientPurchasedUpgradeLevel(iTarget, iIndex), iOldLevel, iUpgradeCosts);
+	else
+	{
+		if(iCountDontOwn > 0)
+			ReplyToCommand(client, "SM:RPG sellupgrade: %N doesn't have upgrade %s.", iTargetList[0], upgrade[UPGR_name]);
+		else if(iFailedCount > 0)
+			ReplyToCommand(client, "SM:RPG sellupgrade: Tried to force %N to sell a level of upgrade %s with full refund, but it refused to level down.", iTargetList[0], upgrade[UPGR_name]);
+		else
+			ReplyToCommand(client, "SM:RPG sellupgrade: %N sold one level of upgrade %s with full refund, is now on level %d (previously level %d) and received %d credits.", iTargetList[0], upgrade[UPGR_name], GetClientPurchasedUpgradeLevel(iTargetList[0], iIndex), iLastOldUpgradeLevel, GetUpgradeCost(iIndex, iLastOldUpgradeLevel));
+	}
 	
 	return Plugin_Handled;
 }
@@ -689,34 +1212,60 @@ public Action:Cmd_SellAll(client, args)
 		return Plugin_Handled;
 	}
 	
-	decl String:sPlayer[64];
-	GetCmdArg(1, sPlayer, sizeof(sPlayer));
-	TrimString(sPlayer);
-	new iTarget = FindTarget(client, sPlayer, false, false);
-	if(iTarget == -1)
+	decl String:sTarget[256];
+	GetCmdArg(1, sTarget, sizeof(sTarget));
+	TrimString(sTarget);
+	
+	decl String:sTargetName[MAX_TARGET_LENGTH];
+	new iTargetList[MAXPLAYERS], iTargetCount;
+	new bool:tn_is_ml;
+	if((iTargetCount = ProcessTargetString(sTarget,
+							client, 
+							iTargetList,
+							sizeof(iTargetList),
+							0,
+							sTargetName,
+							sizeof(sTargetName),
+							tn_is_ml)) <= 0)
+	{
+		ReplyToTargetError(client, iTargetCount);
 		return Plugin_Handled;
+	}
 	
 	new iSize = GetUpgradeCount();
 	new upgrade[InternalUpgradeInfo];
-	new iCreditsReturned;
-	
-	for(new i=0;i<iSize;i++)
+	new iLastCreditsReturned;
+	for(new i=0;i<iTargetCount;i++)
 	{
-		GetUpgradeByIndex(i, upgrade);
-		if(!IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled])
-			continue;
-		
-		while(GetClientPurchasedUpgradeLevel(iTarget, i) > 0)
+		// Run through all upgrades
+		for(new u=0;u<iSize;u++)
 		{
-			if(!TakeClientUpgrade(iTarget, i))
-				break;
-			iCreditsReturned += GetUpgradeCost(i, GetClientPurchasedUpgradeLevel(iTarget, i)+1);
-			SetClientCredits(iTarget, GetClientCredits(iTarget) + GetUpgradeCost(i, GetClientPurchasedUpgradeLevel(iTarget, i)+1));
+			GetUpgradeByIndex(u, upgrade);
+			if(!IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled])
+				continue;
+			
+			while(GetClientPurchasedUpgradeLevel(iTargetList[i], u) > 0)
+			{
+				if(!TakeClientUpgrade(iTargetList[i], u))
+					break;
+				// Full refund.
+				iLastCreditsReturned += GetUpgradeCost(u, GetClientPurchasedUpgradeLevel(iTargetList[i], u)+1);
+				SetClientCredits(iTargetList[i], GetClientCredits(iTargetList[i]) + GetUpgradeCost(u, GetClientPurchasedUpgradeLevel(iTargetList[i], u)+1));
+			}
 		}
+		
+		LogAction(client, iTargetList[i], "%L forced %L to sell all enabled upgrades with full refund of the costs for each level. He got %d credits and now has %d.", client, iTargetList[i], iLastCreditsReturned, GetClientCredits(iTargetList[i]));
 	}
 	
-	LogAction(client, iTarget, "%L Forced %L to sell all enabled upgrades with full refund of the costs for each level. He got %d credits and now has %d.", client, iTarget, iCreditsReturned, GetClientCredits(iTarget));
-	ReplyToCommand(client, "SM:RPG sellall: %N has sold all enabled Upgrades, got %d credits and now has %d.", iTarget, iCreditsReturned, GetClientCredits(iTarget));
+	if(tn_is_ml)
+	{
+		LogAction(client, -1, "%L sold all enabled upgrades of %T (%d players) with full refund for each level.", client, sTargetName, LANG_SERVER, iTargetCount);
+		ReplyToCommand(client, "SM:RPG sellall: Forced %t (%d players) to sell all enabled upgrades with full refund for each level.", sTargetName, iTargetCount);
+	}
+	else
+	{
+		ReplyToCommand(client, "SM:RPG sellall: %N has sold all enabled upgrades with full refund for each level, got %d credits and now has %d credits.", iTargetList[0], iLastCreditsReturned, GetClientCredits(iTargetList[0]));
+	}
 	
 	return Plugin_Handled;
 }

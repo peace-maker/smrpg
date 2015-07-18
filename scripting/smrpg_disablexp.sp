@@ -60,23 +60,57 @@ public Action:Cmd_ToggleExp(client, args)
 		return Plugin_Handled;
 	}
 	
-	decl String:sTarget[MAX_NAME_LENGTH];
+	decl String:sTarget[256];
 	GetCmdArgString(sTarget, sizeof(sTarget));
 	StripQuotes(sTarget);
 	TrimString(sTarget);
 	
-	new iTarget = FindTarget(client, sTarget);
-	if(iTarget == -1)
+	decl String:sTargetName[MAX_TARGET_LENGTH];
+	new iTargetList[MAXPLAYERS], iTargetCount;
+	new bool:tn_is_ml;
+	if((iTargetCount = ProcessTargetString(sTarget,
+							client, 
+							iTargetList,
+							sizeof(iTargetList),
+							0,
+							sTargetName,
+							sizeof(sTargetName),
+							tn_is_ml)) <= 0)
+	{
+		ReplyToTargetError(client, iTargetCount);
 		return Plugin_Handled;
+	}
 	
-	g_bDisableExperience[iTarget] = !g_bDisableExperience[iTarget];
+	new iCountEnabled, iCountDisabled;
 	
-	if(g_bDisableExperience[iTarget])
-		ReplyToCommand(client, "{OG}SM:RPG{N} > {G}Disabled experience for %N. No more experience for that one.", iTarget);
+	for(new i=0;i<iTargetCount;i++)
+	{
+		g_bDisableExperience[iTargetList[i]] = !g_bDisableExperience[iTargetList[i]];
+		
+		if(g_bDisableExperience[iTargetList[i]])
+		{
+			iCountDisabled++;
+			LogAction(client, iTargetList[i], "%L disabled experience gaining for %L.", client, iTargetList[i]);
+		}
+		else
+		{
+			iCountEnabled++;
+			LogAction(client, iTargetList[i], "%L enabled experience gaining for %L.", client, iTargetList[i]);
+		}
+	}
+	
+	if(tn_is_ml)
+	{
+		LogAction(client, -1, "%L toggled experience gaining on %T (%d players).", client, sTargetName, LANG_SERVER, iTargetCount);
+		ReplyToCommand(client, "SM:RPG > Experience gaining has been toggled on %t (%d players).", sTargetName, iTargetCount);
+	}
 	else
-		ReplyToCommand(client, "{OG}SM:RPG{N} > {G}Enabled experience for %N again.", iTarget);
-	
-	LogAction(client, iTarget, "%L %s experience gaining for %L.", client, (g_bDisableExperience[iTarget]?"disabled":"enabled"), iTarget);
+	{
+		if(g_bDisableExperience[iTargetList[0]])
+			ReplyToCommand(client, "SM:RPG > Disabled experience for %N. No more experience for that one.", iTargetList[0]);
+		else
+			ReplyToCommand(client, "SM:RPG > Enabled experience for %N again.", iTargetList[0]);
+	}
 	
 	return Plugin_Handled;
 }
