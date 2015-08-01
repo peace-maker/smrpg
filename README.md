@@ -68,7 +68,7 @@ See the available upgrade plugins for examples. You can use the [example upgrade
 * Fire Pistol - Ignites players hit with a pistol.
 * Frost Pistol - Slow down players hit with a pistol.
 * Health+ - Increases your maximal health.
-* HP Regeneration - Regenerates HP every second.
+* HP Regeneration - Regenerates HP regularly.
 * Ice Grenade - Freezes players damaged by your grenade in place.
 * Ice Stab - Freeze a player in place when knifing him.
 * Impulse - Gain speed for a short time when being shot.

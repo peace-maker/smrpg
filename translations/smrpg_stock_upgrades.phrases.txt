@@ -7,7 +7,7 @@
 	
 	"regen description"
 	{
-		"en"			"Regenerates HP every second."
+		"en"			"Regenerates HP regularly."
 	}
 	
 	"health"

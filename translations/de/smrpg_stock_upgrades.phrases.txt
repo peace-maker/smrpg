@@ -7,7 +7,7 @@
 	
 	"regen description"
 	{
-		"de"			"Stellt jede Sekunde eine bestimmte Menge an HP wieder her."
+		"de"			"Stellt regelmäßig eine bestimmte Menge an HP wieder her."
 	}
 	
 	"health"
