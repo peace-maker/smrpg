@@ -147,7 +147,7 @@
 	
 	"armorregen description"
 	{
-		"en"			"Regenerates armor every second."
+		"en"			"Regenerates armor regularly."
 	}
 	
 	"clipsize"

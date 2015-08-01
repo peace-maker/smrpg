@@ -51,7 +51,7 @@ public OnLibraryAdded(const String:name[])
 		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
 		
 		g_hAmount = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_regen_amount", "1", "Specify the base amount of HP which is regenerated at the first level.", 0, true, 0.1);
-		g_hAmountIncrease = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_regen_amount_inc", "1", "Additional HP to regenerated each interval multiplied by level. (base + inc * (level-1))", 0, true, 0.0);
+		g_hAmountIncrease = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_regen_amount_inc", "1", "Additional HP to regenerate each interval multiplied by level. (base + inc * (level-1))", 0, true, 0.0);
 		g_hInterval = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_regen_interval", "1.0", "Specify the base interval rate at which HP is regenerated in seconds at the first level.", 0, true, 0.1);
 		g_hIntervalDecrease = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_regen_interval_dec", "0.0", "How much is the base interval reduced for each level?", 0, true, 0.0);
 	}

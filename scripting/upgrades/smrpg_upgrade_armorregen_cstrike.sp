@@ -1,6 +1,7 @@
 #pragma semicolon 1
 #include <sourcemod>
 #include <smrpg>
+#include <smlib>
 
 #undef REQUIRE_PLUGIN
 #include <smrpg_armorplus>
@@ -9,13 +10,19 @@
 
 #define PLUGIN_VERSION "1.0"
 
+new Handle:g_hAmount;
+new Handle:g_hAmountIncrease;
+new Handle:g_hInterval;
+new Handle:g_hIntervalDecrease;
 new Handle:g_hCVGiveHelmet;
+
+new Handle:g_hRegenerationTimer[MAXPLAYERS+1];
 
 public Plugin:myinfo = 
 {
 	name = "SM:RPG Upgrade > Armor regeneration",
 	author = "Jannik \"Peace-Maker\" Hartung",
-	description = "Armor regeneration upgrade for SM:RPG. Regenerates armor every second.",
+	description = "Armor regeneration upgrade for SM:RPG. Regenerates armor regularly.",
 	version = PLUGIN_VERSION,
 	url = "http://www.wcfan.de/"
 }
@@ -52,16 +59,20 @@ public OnLibraryAdded(const String:name[])
 	// Register this upgrade in SM:RPG
 	if(StrEqual(name, "smrpg"))
 	{
-		SMRPG_RegisterUpgradeType("Armor regeneration", UPGRADE_SHORTNAME, "Regenerates armor every second.", 15, true, 5, 5, 10, _, SMRPG_BuySell, SMRPG_ActiveQuery);
+		SMRPG_RegisterUpgradeType("Armor regeneration", UPGRADE_SHORTNAME, "Regenerates armor regularly.", 15, true, 5, 5, 10, _, SMRPG_BuySell, SMRPG_ActiveQuery);
 		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
 		
+		g_hAmount = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_armorregen_amount", "1", "Specify the base amount of armor which is regenerated at the first level.", 0, true, 0.1);
+		g_hAmountIncrease = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_armorregen_amount_inc", "1", "Additional armor to regenerate each interval multiplied by level. (base + inc * (level-1))", 0, true, 0.0);
+		g_hInterval = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_armorregen_interval", "1.0", "Specify the base interval rate at which armor is regenerated in seconds at the first level.", 0, true, 0.1);
+		g_hIntervalDecrease = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_armorregen_interval_dec", "0.0", "How much is the base interval reduced for each level?", 0, true, 0.0);
 		g_hCVGiveHelmet = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_armorregen_give_helmet", "1", "Give players helmet after they regenerated to 100% of their armor?", 0, true, 0.0, true, 1.0);
 	}
 }
 
-public OnMapStart()
+public OnClientDisconnect(client)
 {
-	CreateTimer(1.0, Timer_IncreaseArmor, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
+	ClearHandle(g_hRegenerationTimer[client]);
 }
 
 /**
@@ -69,7 +80,14 @@ public OnMapStart()
  */
 public SMRPG_BuySell(client, UpgradeQueryType:type)
 {
-	// Nothing to apply here immediately after someone buys this upgrade.
+	// Change timer interval to correct interval for new level.
+	ClearHandle(g_hRegenerationTimer[client]);
+	new iLevel = SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME);
+	if(iLevel <= 0)
+		return;
+	
+	new Float:fInterval = GetConVarFloat(g_hInterval) - GetConVarFloat(g_hIntervalDecrease) * (iLevel - 1);
+	g_hRegenerationTimer[client] = CreateTimer(fInterval, Timer_IncreaseArmor, GetClientUserId(client), TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 }
 
 public bool:SMRPG_ActiveQuery(client)
@@ -92,8 +110,12 @@ public SMRPG_TranslateUpgrade(client, const String:shortname[], TranslationType:
 	}
 }
 
-public Action:Timer_IncreaseArmor(Handle:timer)
+public Action:Timer_IncreaseArmor(Handle:timer, any:userid)
 {
+	new client = GetClientOfUserId(userid);
+	if(!client)
+		return Plugin_Stop;
+	
 	if(!SMRPG_IsEnabled())
 		return Plugin_Continue;
 	
@@ -102,43 +124,35 @@ public Action:Timer_IncreaseArmor(Handle:timer)
 	if(!upgrade[UI_enabled])
 		return Plugin_Continue;
 	
-	new bool:bIgnoreBots = SMRPG_IgnoreBots();
+	// Are bots allowed to use this upgrade?
+	if(SMRPG_IgnoreBots() && IsFakeClient(client))
+		return Plugin_Continue;
 	
-	new iLevel, iMaxArmor, iCurrentArmor, iNewArmor;
-	for(new i=1;i<=MaxClients;i++)
+	// Player didn't buy this upgrade yet.
+	new iLevel = SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME);
+	if(iLevel <= 0)
+		return Plugin_Continue;
+	
+	if(!SMRPG_RunUpgradeEffect(client, UPGRADE_SHORTNAME))
+		return Plugin_Continue; // Some other plugin doesn't want this effect to run
+	
+	new iMaxArmor = SMRPG_Armor_GetClientMaxArmor(client);
+	new iCurrentArmor = GetClientArmor(client);
+	
+	// He already is regenerated completely.
+	if(iCurrentArmor >= iMaxArmor)
 	{
-		if(!IsClientInGame(i))
-			continue;
-		
-		// Are bots allowed to use this upgrade?
-		if(bIgnoreBots && IsFakeClient(i))
-			continue;
-		
-		// Player didn't buy this upgrade yet.
-		iLevel = SMRPG_GetClientUpgradeLevel(i, UPGRADE_SHORTNAME);
-		if(iLevel <= 0)
-			continue;
-		
-		if(!SMRPG_RunUpgradeEffect(i, UPGRADE_SHORTNAME))
-			continue; // Some other plugin doesn't want this effect to run
-		
-		iMaxArmor = SMRPG_Armor_GetClientMaxArmor(i);
-		iCurrentArmor = GetClientArmor(i);
-		
-		// He already is regenerated completely.
-		if(iCurrentArmor >= iMaxArmor)
-		{
-			// Give him an helmet now.
-			if (GetConVarBool(g_hCVGiveHelmet) && !GetEntProp(i, Prop_Send, "m_bHasHelmet"))
-				SetEntProp(i, Prop_Send, "m_bHasHelmet", 1);
-			continue;
-		}
-		
-		iNewArmor = iCurrentArmor+iLevel;
-		if(iNewArmor > iMaxArmor)
-			iNewArmor = iMaxArmor;
-		SetEntProp(i, Prop_Send, "m_ArmorValue", iNewArmor);
+		// Give him an helmet now.
+		if (GetConVarBool(g_hCVGiveHelmet) && !GetEntProp(client, Prop_Send, "m_bHasHelmet"))
+			SetEntProp(client, Prop_Send, "m_bHasHelmet", 1);
+		return Plugin_Continue;
 	}
+	
+	new iIncrease = GetConVarInt(g_hAmount) + GetConVarInt(g_hAmountIncrease) * (iLevel - 1);
+	new iNewArmor = iCurrentArmor + iIncrease;
+	if(iNewArmor > iMaxArmor)
+		iNewArmor = iMaxArmor;
+	SetEntProp(client, Prop_Send, "m_ArmorValue", iNewArmor);
 	
 	return Plugin_Continue;
 }

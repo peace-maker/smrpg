@@ -147,7 +147,7 @@
 	
 	"armorregen description"
 	{
-		"de"			"Stellt jede Sekunde eine bestimmte Menge an Rüstung wieder her."
+		"de"			"Stellt regelmäßig eine bestimmte Menge an Rüstung wieder her."
 	}
 	
 	"clipsize"
