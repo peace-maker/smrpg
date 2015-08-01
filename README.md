@@ -60,6 +60,7 @@ See the available upgrade plugins for examples. You can use the [example upgrade
 * Antidote - Reduce duration of bad effects against you like burning, freezing or slow down.
 * Armor+ (Counter-Strike only) - Increases your maximal armor.
 * Armor Regeneration (Counter-Strike only) - Regenerates armor every second.
+* Bouncy Bullets - Push enemies away by shooting them.
 * Damage+ - Deal additional damage on enemies.
 * Denial - Keep your weapons the next time you spawn after you've died.
 * Fast Reload (Counter-Strike: Source only) - Increases the reload speed of guns.

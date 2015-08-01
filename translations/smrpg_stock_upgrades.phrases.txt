@@ -249,4 +249,14 @@
 	{
 		"en"			"Shorten the duration of bad effects like freezing, burning or slowdown on you."
 	}
+	
+	"bouncybullets"
+	{
+		"en"			"Bouncy Bullets"
+	}
+	
+	"bouncybullets description"
+	{
+		"en"			"Push enemies away by shooting them."
+	}
 }

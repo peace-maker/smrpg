@@ -249,4 +249,14 @@
 	{
 		"de"			"Verkürzt die Dauer von negativen Effekten gegen dich, wie Verbrennung oder Verlangsamung."
 	}
+	
+	"bouncybullets"
+	{
+		"de"			"Flummimunition"
+	}
+	
+	"bouncybullets description"
+	{
+		"de"			"Schiebt deinen Gegner weg, wenn du ihn abschießt."
+	}
 }
