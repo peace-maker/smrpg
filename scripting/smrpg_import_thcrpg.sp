@@ -92,6 +92,10 @@ public Action:Cmd_ImportDatabase(client, args)
 	
 	ReplyToCommand(client, "Going to import %d players...", SQL_GetRowCount(hResult));
 	
+	new iUserId = client;
+	if (client > 0)
+		iUserId = GetClientUserId(client);
+	
 	// Run through all players and add them to the smrpg database.
 	new String:sAuthId[64], String:sName[128], iXP, iLevel, iCredits;
 	new iAccountId, String:sEscapedName[257];
@@ -146,7 +150,7 @@ public Action:Cmd_ImportDatabase(client, args)
 			// Bot
 			Format(sQuery, sizeof(sQuery), "INSERT INTO players (name, steamid, level, experience, credits) VALUES (\"%s\", NULL, %d, %d, %d)", sEscapedName, iLevel, iXP, iCredits);
 		}
-		SQL_TQuery(hNewDb, SQL_PrintError, sQuery, GetClientUserId(client));
+		SQL_TQuery(hNewDb, SQL_PrintError, sQuery, iUserId);
 	}
 	
 	ReplyToCommand(client, "Imported %d players from thc_rpg database.", SQL_GetRowCount(hResult));
@@ -161,9 +165,13 @@ public Action:Cmd_ImportDatabase(client, args)
 
 public SQL_PrintError(Handle:owner, Handle:hndl, const String:error[], any:userid)
 {
-	new client = GetClientOfUserId(userid);
-	if(!client)
-		return;
+	new client = userid;
+	if(userid > 0)
+	{
+		client = GetClientOfUserId(userid);
+		if(!client)
+			return;
+	}
 	
 	if (!hndl)
 	{
