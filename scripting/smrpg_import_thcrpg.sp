@@ -4,6 +4,9 @@
 
 #define PLUGIN_VERSION "1.0"
 
+// How many players to fetch and import at once.
+#define IMPORT_STEP 100
+
 public Plugin:myinfo = 
 {
 	name = "SM:RPG > Import THC RPG database",
@@ -82,85 +85,108 @@ public Action:Cmd_ImportDatabase(client, args)
 	
 	SQL_SetCharset(hOldDb, "utf8");
 	
-	// Fetch all players.
-	// Don't care for credits. we reset them so players can choose from the new upgrades.
-	hResult = SQL_Query(hOldDb, "SELECT ID, name, xp, level FROM thc_rpg");
+	// Get player count.
+	hResult = SQL_Query(hOldDb, "SELECT COUNT(*) FROM thc_rpg");
 	if (!hResult)
 	{
 		SQL_GetError(hOldDb, sError, sizeof(sError));
-		ReplyToCommand(client, "Error fetching player list from thc_rpg database: %s", sError);
+		ReplyToCommand(client, "Error fetching player count from thc_rpg database: %s", sError);
 		CloseHandle(hNewDb);
 		CloseHandle(hOldDb);
 		return Plugin_Handled;
 	}
 	
-	ReplyToCommand(client, "Going to import %d players...", SQL_GetRowCount(hResult));
+	new iCount;
+	if (SQL_FetchRow(hResult))
+		iCount = SQL_FetchInt(hResult, 0);
+	CloseHandle(hResult);
+	
+	ReplyToCommand(client, "Going to import %d players...", iCount);
 	
 	new iUserId = client;
 	if (client > 0)
 		iUserId = GetClientUserId(client);
 	
-	// Run through all players and add them to the smrpg database.
 	new String:sAuthId[64], String:sName[128], iXP, iLevel, iCredits;
 	new iAccountId, String:sEscapedName[257];
 	new String:sQuery[1024];
-	while(SQL_MoreRows(hResult))
+	
+	// Load old players in chunks, so we don't try to load the whole database into memory.
+	for (new i=0; i<iCount; i+=IMPORT_STEP)
 	{
-		if (!SQL_FetchRow(hResult))
-			continue;
-		
-		SQL_FetchString(hResult, 0, sAuthId, sizeof(sAuthId));
-		SQL_FetchString(hResult, 1, sName, sizeof(sName));
-		iXP = SQL_FetchInt(hResult, 2);
-		iLevel = SQL_FetchInt(hResult, 3);
-		
-		// Some sanity checks.
-		if (iXP < 0)
+		// Fetch a chunk of players.
+		// Don't care for credits. we reset them so players can choose from the new upgrades.
+		Format(sQuery, sizeof(sQuery), "SELECT ID, name, xp, level FROM thc_rpg LIMIT %d, %d", i, IMPORT_STEP);
+		hResult = SQL_Query(hOldDb, sQuery);
+		if (!hResult)
 		{
-			ReplyToCommand(client, "%s has a negative experience of %d. Resetting to 0.", sName, iXP);
-			iXP = 0;
-		}
-		if (iLevel < 0)
-		{
-			ReplyToCommand(client, "%s has a negative level of %d. Resetting to 1.", sName, iLevel);
-			iLevel = 1;
+			SQL_GetError(hOldDb, sError, sizeof(sError));
+			ReplyToCommand(client, "Error fetching player list chunk %d from thc_rpg database: %s", i, sError);
+			CloseHandle(hNewDb);
+			CloseHandle(hOldDb);
+			return Plugin_Handled;
 		}
 		
-		iAccountId = -1;
-		// Bots were saved as if they'd have a steamid like "BOT_Name".
-		if (StrContains(sAuthId, "BOT_", false) == -1)
+		// Run through all players and add them to the smrpg database.
+		while(SQL_MoreRows(hResult))
 		{
-			// smrpg stores the steamid as accountid. Convert it.
-			iAccountId = GetAccountIdFromSteamId(sAuthId);
-			if (iAccountId == -1)
-			{
-				ReplyToCommand(client, "Can't import %s. \"%s\" is not a valid steamid.", sName, sAuthId);
+			if (!SQL_FetchRow(hResult))
 				continue;
+			
+			SQL_FetchString(hResult, 0, sAuthId, sizeof(sAuthId));
+			SQL_FetchString(hResult, 1, sName, sizeof(sName));
+			iXP = SQL_FetchInt(hResult, 2);
+			iLevel = SQL_FetchInt(hResult, 3);
+			
+			// Some sanity checks.
+			if (iXP < 0)
+			{
+				ReplyToCommand(client, "%s has a negative experience of %d. Resetting to 0.", sName, iXP);
+				iXP = 0;
 			}
+			if (iLevel < 0)
+			{
+				ReplyToCommand(client, "%s has a negative level of %d. Resetting to 1.", sName, iLevel);
+				iLevel = 1;
+			}
+			
+			iAccountId = -1;
+			// Bots were saved as if they'd have a steamid like "BOT_Name".
+			if (StrContains(sAuthId, "BOT_", false) == -1)
+			{
+				// smrpg stores the steamid as accountid. Convert it.
+				iAccountId = GetAccountIdFromSteamId(sAuthId);
+				if (iAccountId == -1)
+				{
+					ReplyToCommand(client, "Can't import %s. \"%s\" is not a valid steamid.", sName, sAuthId);
+					continue;
+				}
+			}
+			
+			SQL_EscapeString(hNewDb, sName, sEscapedName, sizeof(sEscapedName));
+			
+			// Give the player the amount of credits he'd have at this level.
+			iCredits = iCreditsStart + iCreditsInc * (iLevel - 1);
+			
+			if (iAccountId != -1)
+			{
+				// Player
+				Format(sQuery, sizeof(sQuery), "INSERT INTO players (name, steamid, level, experience, credits) VALUES (\"%s\", %d, %d, %d, %d)", sEscapedName, iAccountId, iLevel, iXP, iCredits);
+			}
+			else
+			{
+				// Bot
+				Format(sQuery, sizeof(sQuery), "INSERT INTO players (name, steamid, level, experience, credits) VALUES (\"%s\", NULL, %d, %d, %d)", sEscapedName, iLevel, iXP, iCredits);
+			}
+			SQL_TQuery(hNewDb, SQL_PrintError, sQuery, iUserId);
 		}
 		
-		SQL_EscapeString(hNewDb, sName, sEscapedName, sizeof(sEscapedName));
-		
-		// Give the player the amount of credits he'd have at this level.
-		iCredits = iCreditsStart + iCreditsInc * (iLevel - 1);
-		
-		if (iAccountId != -1)
-		{
-			// Player
-			Format(sQuery, sizeof(sQuery), "INSERT INTO players (name, steamid, level, experience, credits) VALUES (\"%s\", %d, %d, %d, %d)", sEscapedName, iAccountId, iLevel, iXP, iCredits);
-		}
-		else
-		{
-			// Bot
-			Format(sQuery, sizeof(sQuery), "INSERT INTO players (name, steamid, level, experience, credits) VALUES (\"%s\", NULL, %d, %d, %d)", sEscapedName, iLevel, iXP, iCredits);
-		}
-		SQL_TQuery(hNewDb, SQL_PrintError, sQuery, iUserId);
+		ReplyToCommand(client, "Imported %d/%d players from thc_rpg database.", i + SQL_GetRowCount(hResult), iCount);
+		CloseHandle(hResult);
 	}
 	
-	ReplyToCommand(client, "Imported %d players from thc_rpg database.", SQL_GetRowCount(hResult));
-	LogAction(client, -1, "%L imported %d players from thc_rpg database.", client, SQL_GetRowCount(hResult));
+	LogAction(client, -1, "%L imported %d players from thc_rpg database.", client, iCount);
 	
-	CloseHandle(hResult);
 	CloseHandle(hOldDb);
 	CloseHandle(hNewDb);
 	
