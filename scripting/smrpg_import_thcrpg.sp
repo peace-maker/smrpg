@@ -45,6 +45,8 @@ public Action:Cmd_ImportDatabase(client, args)
 		return Plugin_Handled;
 	}
 	
+	SQL_SetCharset(hNewDb, "utf8");
+	
 	// Make sure it's empty for now.
 	new Handle:hResult = SQL_Query(hNewDb, "SELECT COUNT(*) FROM players");
 	if (!hResult)
@@ -77,6 +79,8 @@ public Action:Cmd_ImportDatabase(client, args)
 		CloseHandle(hNewDb);
 		return Plugin_Handled;
 	}
+	
+	SQL_SetCharset(hOldDb, "utf8");
 	
 	// Fetch all players.
 	// Don't care for credits. we reset them so players can choose from the new upgrades.
