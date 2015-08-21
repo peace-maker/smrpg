@@ -403,6 +403,11 @@ public OnClientPutInServer(client)
 	if(!GetConVarBool(g_hCVEnable))
 		return;
 	
+	// Call the query callback in all plugins of the upgrades this client owns.
+	// His upgrades were loaded before he got fully ingame.
+	if (IsPlayerDataLoaded(client))
+		NotifyUpgradePluginsOfLevel(client);
+	
 	Client_PrintToChat(client, false, "%t", "Inform about plugin", PLUGIN_VERSION);
 	Client_PrintToChat(client, false, "%t", "Advertise rpgmenu command");
 }

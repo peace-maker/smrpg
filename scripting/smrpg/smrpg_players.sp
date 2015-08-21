@@ -205,7 +205,7 @@ SaveData(client, Transaction:hTransaction=Transaction:INVALID_HANDLE)
 		return;
 	
 	// We're still in the process of loading this client's info from the db. Wait for it..
-	if(!g_iPlayerInfo[client][PLR_dataLoadedFromDB])
+	if(!IsPlayerDataLoaded(client))
 		return;
 	
 	if(g_iPlayerInfo[client][PLR_dbId] < 0)
@@ -336,6 +336,32 @@ RemovePlayer(client, bool:bKeepBotName = false)
 	
 	if(!bKeepBotName)
 		g_sOriginalBotName[client][0] = '\0';
+}
+
+NotifyUpgradePluginsOfLevel(client)
+{
+	new iSize = GetUpgradeCount();
+	new upgrade[InternalUpgradeInfo];
+	for(new i=0;i<iSize;i++)
+	{
+		GetUpgradeByIndex(i, upgrade);
+		
+		if(!IsValidUpgrade(upgrade))
+			continue;
+		
+		if(GetClientSelectedUpgradeLevel(client, i) <= 0)
+			continue;
+		
+		Call_StartFunction(upgrade[UPGR_plugin], Function:upgrade[UPGR_queryCallback]);
+		Call_PushCell(client);
+		Call_PushCell(UpgradeQueryType_Buy);
+		Call_Finish();
+	}
+}
+
+IsPlayerDataLoaded(client)
+{
+	return g_iPlayerInfo[client][PLR_dataLoadedFromDB];
 }
 
 GetPlayerLastReset(client)
@@ -471,11 +497,14 @@ SetClientSelectedUpgradeLevel(client, iUpgradeIndex, iLevel)
 	if(!IsValidUpgrade(upgrade))
 		return;
 	
-	// Notify plugin about it.
-	Call_StartFunction(upgrade[UPGR_plugin], upgrade[UPGR_queryCallback]);
-	Call_PushCell(client);
-	Call_PushCell(iOldLevel < iLevel ? UpgradeQueryType_Buy : UpgradeQueryType_Sell);
-	Call_Finish();
+	if(IsClientInGame(client))
+	{
+		// Notify plugin about it.
+		Call_StartFunction(upgrade[UPGR_plugin], upgrade[UPGR_queryCallback]);
+		Call_PushCell(client);
+		Call_PushCell(iOldLevel < iLevel ? UpgradeQueryType_Buy : UpgradeQueryType_Sell);
+		Call_Finish();
+	}
 }
 
 SetClientPurchasedUpgradeLevel(client, iUpgradeIndex, iLevel)
