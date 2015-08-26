@@ -204,8 +204,8 @@ public Event_OnPlayerHurt(Handle:event, const String:error[], bool:dontBroadcast
 	if(SMRPG_IsClientSpawnProtected(victim))
 		return;
 	
-	// Ignore teamattack
-	if(GetClientTeam(attacker) == GetClientTeam(victim))
+	// Ignore teamattack if not FFA
+	if(!SMRPG_IsFFAEnabled() && GetClientTeam(attacker) == GetClientTeam(victim))
 		return;
 	
 	new iExp;
@@ -285,7 +285,7 @@ public Event_OnPlayerDeath(Handle:event, const String:error[], bool:dontBroadcas
 	
 	// Give the assisting player some exp.
 	if(assister > 0
-	&& GetClientTeam(victim) != GetClientTeam(assister))
+	&& (SMRPG_IsFFAEnabled() || GetClientTeam(victim) != GetClientTeam(assister)))
 	{
 		new iExp = RoundToCeil(SMRPG_GetClientLevel(victim) * GetConVarFloat(g_hCVExpKillAssist));
 		Debug_AddClientExperience(assister, iExp, false, "cs_playerkillassist", victim);
@@ -295,8 +295,8 @@ public Event_OnPlayerDeath(Handle:event, const String:error[], bool:dontBroadcas
 	if(attacker == victim)
 		return;
 	
-	// Ignore teamattack
-	if(GetClientTeam(attacker) == GetClientTeam(victim))
+	// Ignore teamattack if not FFA
+	if(!SMRPG_IsFFAEnabled() && GetClientTeam(attacker) == GetClientTeam(victim))
 		return;
 	
 	new String:sWeapon[64];

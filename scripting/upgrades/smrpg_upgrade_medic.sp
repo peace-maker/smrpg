@@ -122,6 +122,10 @@ public Action:Timer_ApplyMedic(Handle:timer, any:data)
 	if(!SMRPG_IsEnabled())
 		return Plugin_Continue;
 	
+	// There are no teammates in Free-For-All mode.
+	if(SMRPG_IsFFAEnabled())
+		return Plugin_Continue;
+	
 	new upgrade[UpgradeInfo];
 	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
 	if(!upgrade[UI_enabled])

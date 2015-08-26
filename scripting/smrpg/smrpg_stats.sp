@@ -329,8 +329,8 @@ Stats_PlayerDamage(attacker, victim, Float:fDamage, const String:sWeapon[])
 	if(IsClientSpawnProtected(victim))
 		return;
 	
-	// Ignore teamattack
-	if(GetClientTeam(attacker) == GetClientTeam(victim))
+	// Ignore teamattack if not FFA
+	if(!GetConVarBool(g_hCVFFA) && GetClientTeam(attacker) == GetClientTeam(victim))
 		return;
 	
 	new iExp = RoundToCeil(fDamage * GetWeaponExperience(sWeapon, WeaponExperience_Damage));
@@ -351,8 +351,8 @@ Stats_PlayerKill(attacker, victim, const String:sWeapon[])
 	if(IsClientSpawnProtected(victim))
 		return;
 	
-	// Ignore teamattack
-	if(GetClientTeam(attacker) == GetClientTeam(victim))
+	// Ignore teamattack if not FFA
+	if(!GetConVarBool(g_hCVFFA) && GetClientTeam(attacker) == GetClientTeam(victim))
 		return;
 	
 	new iExp = RoundToCeil(GetClientLevel(victim) * GetWeaponExperience(sWeapon, WeaponExperience_Kill) + GetWeaponExperience(sWeapon, WeaponExperience_Bonus));

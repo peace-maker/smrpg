@@ -152,8 +152,8 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 	if(IsFakeClient(attacker) && SMRPG_IgnoreBots())
 		return;
 	
-	// Ignore team attack.
-	if (GetClientTeam(victim) == GetClientTeam(attacker))
+	// Ignore team attack if not FFA.
+	if (!SMRPG_IsFFAEnabled() && GetClientTeam(victim) == GetClientTeam(attacker))
 		return;
 	
 	// Player didn't buy this upgrade yet.

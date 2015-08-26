@@ -170,8 +170,8 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 	if(IsFakeClient(attacker) && SMRPG_IgnoreBots())
 		return;
 	
-	// Ignore team attack
-	if(GetClientTeam(attacker) == GetClientTeam(victim))
+	// Ignore team attack if not FFA
+	if(!SMRPG_IsFFAEnabled() && GetClientTeam(attacker) == GetClientTeam(victim))
 		return;
 	
 	new iLevel = SMRPG_GetClientUpgradeLevel(attacker, UPGRADE_SHORTNAME);

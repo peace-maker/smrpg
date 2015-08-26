@@ -25,6 +25,7 @@ new Handle:g_hfwdOnEnableStatusChanged;
 
 // Convars
 new Handle:g_hCVEnable;
+new Handle:g_hCVFFA;
 new Handle:g_hCVBotEnable;
 new Handle:g_hCVBotSaveStats;
 new Handle:g_hCVBotNeedHuman;
@@ -119,6 +120,7 @@ public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
 	
 	CreateNative("SMRPG_IsEnabled", Native_IsEnabled);
 	CreateNative("SMRPG_IgnoreBots", Native_IgnoreBots);
+	CreateNative("SMRPG_IsFFAEnabled", Native_IsFFAEnabled);
 	RegisterUpgradeNatives();
 	RegisterPlayerNatives();
 	RegisterStatsNatives();
@@ -143,6 +145,7 @@ public OnPluginStart()
 	AutoExecConfig_SetPlugin(INVALID_HANDLE);
 	
 	g_hCVEnable = AutoExecConfig_CreateConVar("smrpg_enable", "1", "If set to 1, SM:RPG is enabled, if 0, SM:RPG is disabled", 0, true, 0.0, true, 1.0);
+	g_hCVFFA = AutoExecConfig_CreateConVar("smrpg_ffa", "0", "Free-For-All mode to ignore teams and handle teammates as if they're enemies?", 0, true, 0.0, true, 1.0);
 	g_hCVBotEnable = AutoExecConfig_CreateConVar("smrpg_bot_enable", "1", "If set to 1, bots will be able to use the SM:RPG plugin", 0, true, 0.0, true, 1.0);
 	g_hCVBotSaveStats = AutoExecConfig_CreateConVar("smrpg_bot_save_stats", "0", "If set to 1, the stats of bots are saved per bot name and are restored when the bot is added later again.", 0, true, 0.0, true, 1.0);
 	g_hCVBotNeedHuman = AutoExecConfig_CreateConVar("smrpg_bot_need_human", "1", "Don't allow bots to gain experience while no human player is on the server?", 0, true, 0.0, true, 1.0);
@@ -752,6 +755,11 @@ public Native_IsEnabled(Handle:plugin, numParams)
 public Native_IgnoreBots(Handle:plugin, numParams)
 {
 	return !GetConVarBool(g_hCVBotEnable);
+}
+
+public Native_IsFFAEnabled(Handle:plugin, numParams)
+{
+	return GetConVarBool(g_hCVFFA);
 }
 
 /**

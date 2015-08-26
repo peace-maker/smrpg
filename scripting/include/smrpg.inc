@@ -18,6 +18,14 @@ native bool:SMRPG_IsEnabled();
 native bool:SMRPG_IgnoreBots();
 
 /**
+ * Is the server in Free-For-All mode?
+ * Ignore teamchecks.
+ *
+ * @return True, if teammates are enemies, false otherwise.
+ */
+native bool:SMRPG_IsFFAEnabled();
+
+/**
  * Called when SM:RPG is enabled or disabled. (smrpg_enable)
  *
  * @param bEnabled True, if SM:RPG is now enabled, false if it's now disabled.
@@ -47,6 +55,7 @@ public __pl_smrpg_SetNTVOptional()
 {
 	MarkNativeAsOptional("SMRPG_IsEnabled");
 	MarkNativeAsOptional("SMRPG_IgnoreBots");
+	MarkNativeAsOptional("SMRPG_IsFFAEnabled");
 	MarkNativeAsOptional("SMRPG_GetClientLevel");
 	MarkNativeAsOptional("SMRPG_SetClientLevel");
 	MarkNativeAsOptional("SMRPG_GetClientCredits");

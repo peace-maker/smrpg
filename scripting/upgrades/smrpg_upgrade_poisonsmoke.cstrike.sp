@@ -360,7 +360,7 @@ public Action:Timer_CheckDamage(Handle:timer, any:entityref)
 	new bool:bIgnoreFriendlyFire = GetConVarBool(g_hCVIgnoreFriendlyFire);
 	for(new i=1;i<=MaxClients;i++)
 	{
-		if(IsClientInGame(i) && IsPlayerAlive(i) && (bFriendlyFire && !bIgnoreFriendlyFire || GetClientTeam(i) != iGrenade[GR_team]))
+		if(IsClientInGame(i) && IsPlayerAlive(i) && (SMRPG_IsFFAEnabled() || (bFriendlyFire && !bIgnoreFriendlyFire || GetClientTeam(i) != iGrenade[GR_team])))
 		{
 			GetClientAbsOrigin(i, fPlayerOrigin);
 			if(GetVectorDistance(fParticleOrigin, fPlayerOrigin) <= 220)
