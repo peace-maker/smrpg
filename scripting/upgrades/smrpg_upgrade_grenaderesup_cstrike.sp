@@ -15,6 +15,7 @@ enum GrenadeEntry {
 	GE_index,
 	Float:GE_baseDelay,
 	Float:GE_decrease,
+	Float:GE_minDelay,
 	GE_ammoType,
 	String:GE_classname[GRENADE_CLASSNAME_LENGTH]
 }
@@ -315,6 +316,10 @@ StartGrenadeResupplyTimer(client, grenadeEntry[GrenadeEntry])
 	if(fTime <= 0.0)
 		fTime = 0.1;
 	
+	// Don't go below this delay. That way other grenades might decrease further, but this grenade stops at some level.
+	if(fTime < grenadeEntry[GE_minDelay])
+		fTime = grenadeEntry[GE_minDelay];
+	
 	new playerGrenade[PlayerGrenade];
 	GetPlayerGrenadeByIndex(client, grenadeEntry[GE_index], playerGrenade);
 	
@@ -386,6 +391,7 @@ bool:LoadResupplyDelayConfig()
 		strcopy(grenadeEntry[GE_classname], GRENADE_CLASSNAME_LENGTH, sBuffer);
 		grenadeEntry[GE_ammoType] = -1;
 		grenadeEntry[GE_baseDelay] = KvGetFloat(hKV, "resupply_base_delay", -1.0);
+		grenadeEntry[GE_minDelay] = KvGetFloat(hKV, "resupply_minimum_delay", 0.0);
 		grenadeEntry[GE_decrease] = KvGetFloat(hKV, "resupply_delay_decrease", -1.0);
 		
 		grenadeEntry[GE_index] = GetArraySize(g_hGrenadeConfig);
