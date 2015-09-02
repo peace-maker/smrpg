@@ -240,6 +240,16 @@
 		"en"			"Freeze a player in place when damaging him with your grenade."
 	}
 	
+	"grenaderesup"
+	{
+		"en"			"Grenade Resupply"
+	}
+	
+	"grenaderesup description"
+	{
+		"en"			"Regenerates grenades x seconds after you threw them."
+	}
+	
 	"antidote"
 	{
 		"en"			"Antidote"

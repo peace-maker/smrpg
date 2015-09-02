@@ -67,6 +67,7 @@ See the available upgrade plugins for examples. You can use the [example upgrade
 * Fire Grenade - Ignites players damaged by your grenade.
 * Fire Pistol - Ignites players hit with a pistol.
 * Frost Pistol - Slow down players hit with a pistol.
+* Grenade Resupply (Counter-Strike only) - Regenerates grenades x seconds after you threw them.
 * Health+ - Increases your maximal health.
 * HP Regeneration - Regenerates HP regularly.
 * Ice Grenade - Freezes players damaged by your grenade in place.

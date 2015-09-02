@@ -1,4 +1,4 @@
-"Phrases"
+﻿"Phrases"
 {
 	"regen"
 	{
@@ -22,7 +22,7 @@
 	
 	"resup"
 	{
-		"de"			"Munitionserhöhung"
+		"de"			"Munitionsregenerierung"
 	}
 	
 	"resup description"
@@ -238,6 +238,16 @@
 	"icenade description"
 	{
 		"de"			"Friert deinen Gegner ein, wenn du ihn mit einer Granate triffst."
+	}
+	
+	"grenaderesup"
+	{
+		"de"			"Granatenregenerierung"
+	}
+	
+	"grenaderesup description"
+	{
+		"de"			"Gibt dir Granaten x Sekunden nach dem du sie geworfen hast zurück."
 	}
 	
 	"antidote"
