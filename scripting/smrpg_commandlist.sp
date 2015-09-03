@@ -255,7 +255,11 @@ public Native_RegisterCommand(Handle:plugin, numParams)
 {
 	new String:sCommand[MAX_COMMAND_NAME_LENGTH];
 	GetNativeString(1, sCommand, sizeof(sCommand));
+#if SOURCEMOD_V_MAJOR >= 1 && SOURCEMOD_V_MINOR >= 7
+	new Function:iCallback = GetNativeFunction(2);
+#else
 	new Function:iCallback = Function:GetNativeCell(2);
+#endif
 	
 	new iCommand[RPGCommand];
 	new iSize = GetArraySize(g_hCommandList);
