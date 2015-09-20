@@ -75,7 +75,7 @@ public SMRPG_OnClientLoaded(client)
 
 public Action:Cmd_ResetDatabase(client, args)
 {
-	if(args < 2)
+	if(args < 1)
 	{
 		ReplyToCommand(client, "SM:RPG > Usage: smrpg_db_resetdatabase <reason>");
 		return Plugin_Handled;
