@@ -25,6 +25,7 @@ Server admins can install a new upgrade simply by loading the upgrade plugin.
 
 # Installation
 * Compile the core smrpg plugin (see Compile requirements)
+  * Files in the scripting/smrpg and scripting/smrpg_effects folders are included in the respective plugins smrpg.sp and smrpg_effects.sp and mustn't be compiled on their own.
 * If there is a seperate experience module for your game (currently only cstrike), compile and upload that too.
 * Compile all optional features if you want them.
   * smrpg_resetstats - Automatically reset the stats on different conditions and display next reset date in chat.
