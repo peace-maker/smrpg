@@ -56,8 +56,9 @@ PrecacheFreezeSounds()
 
 ResetFreezeClient(client)
 {
-	if(g_hUnfreeze[client] != INVALID_HANDLE && IsClientInGame(client))
-		TriggerTimer(g_hUnfreeze[client]);
+	if(g_hFreezePlugin[client] != INVALID_HANDLE && IsClientInGame(client))
+		UnfreezeClient(client);
+	ResetClientFreezeState(client);
 	ClearHandle(g_hUnfreeze[client]);
 }
 
@@ -71,16 +72,7 @@ public Action:Timer_Unfreeze(Handle:timer, any:userid)
 		return Plugin_Stop;
 	
 	g_hUnfreeze[client] = INVALID_HANDLE;
-	if(GetEntityMoveType(client) == MOVETYPE_NONE)
-		SetEntityMoveType(client, MOVETYPE_WALK);
-	Help_ResetClientToDefaultColor(g_hFreezePlugin[client], client, true, true, true, false);
-	g_hFreezePlugin[client] = INVALID_HANDLE;
-	g_fLimitDamage[client] = 0.0;
-	g_sUpgradeName[client][0] = 0;
-	
-	Call_StartForward(g_hfwdOnClientUnfrozen);
-	Call_PushCell(client);
-	Call_Finish();
+	UnfreezeClient(client);
 	
 	return Plugin_Stop;
 }
@@ -244,4 +236,27 @@ public Native_IsClientFrozen(Handle:plugin, numParams)
 	}
 	
 	return g_hUnfreeze[client] != INVALID_HANDLE;
+}
+
+/**
+ * Helpers
+ */
+UnfreezeClient(client)
+{
+	if(GetEntityMoveType(client) == MOVETYPE_NONE)
+		SetEntityMoveType(client, MOVETYPE_WALK);
+	Help_ResetClientToDefaultColor(g_hFreezePlugin[client], client, true, true, true, false);
+	ResetClientFreezeState(client);
+	
+	Call_StartForward(g_hfwdOnClientUnfrozen);
+	Call_PushCell(client);
+	Call_Finish();
+}
+
+// Client doesn't have to be ingame for this one.
+ResetClientFreezeState(client)
+{
+	g_hFreezePlugin[client] = INVALID_HANDLE;
+	g_fLimitDamage[client] = 0.0;
+	g_sUpgradeName[client][0] = 0;
 }

@@ -40,11 +40,14 @@ RegisterLaggedMovementForwards()
 
 ResetLaggedMovementClient(client)
 {
-	if(g_hFastRestoreTimer[client] != INVALID_HANDLE && IsClientInGame(client))
-		TriggerTimer(g_hFastRestoreTimer[client]);
+	if(IsClientInGame(client))
+	{
+		if(g_ClientMovementState[client][MS_faster] > 0.0)
+			ResetSpeedUp(client);
+		if(g_ClientMovementState[client][MS_slower] > 0.0)
+			ResetSlowDown(client);
+	}
 	ClearHandle(g_hFastRestoreTimer[client]);
-	if(g_hSlowRestoreTimer[client] != INVALID_HANDLE && IsClientInGame(client))
-		TriggerTimer(g_hSlowRestoreTimer[client]);
 	ClearHandle(g_hSlowRestoreTimer[client]);
 	
 	g_ClientMovementState[client][MS_slower] = 0.0;
@@ -65,15 +68,7 @@ public Action:Timer_OnResetSlowdown(Handle:timer, any:userid)
 	g_hSlowRestoreTimer[client] = INVALID_HANDLE;
 	
 	// Reset the effect
-	g_ClientMovementState[client][MS_slower] = 0.0;
-	g_ClientMovementState[client][MS_lastSlowPlugin] = INVALID_HANDLE;
-	
-	ApplyLaggedMovementValue(client);
-	
-	Call_StartForward(g_hfwdOnClientLaggedMovementReset);
-	Call_PushCell(client);
-	Call_PushCell(LMT_Slower);
-	Call_Finish();
+	ResetSlowDown(client);
 	
 	return Plugin_Stop;
 }
@@ -87,15 +82,7 @@ public Action:Timer_OnResetSpeedup(Handle:timer, any:userid)
 	g_hFastRestoreTimer[client] = INVALID_HANDLE;
 	
 	// Reset the effect
-	g_ClientMovementState[client][MS_faster] = 0.0;
-	g_ClientMovementState[client][MS_lastFastPlugin] = INVALID_HANDLE;
-	
-	ApplyLaggedMovementValue(client);
-	
-	Call_StartForward(g_hfwdOnClientLaggedMovementReset);
-	Call_PushCell(client);
-	Call_PushCell(LMT_Faster);
-	Call_Finish();
+	ResetSpeedUp(client);
 	
 	return Plugin_Stop;
 }
@@ -338,4 +325,32 @@ stock ApplyLaggedMovementValue(client)
 	
 	new Float:fValue = (1.0 - fSlow) + fFast;
 	SetEntPropFloat(client, Prop_Send, "m_flLaggedMovementValue", fValue);
+}
+
+ResetSlowDown(client)
+{
+	// Reset the effect
+	g_ClientMovementState[client][MS_slower] = 0.0;
+	g_ClientMovementState[client][MS_lastSlowPlugin] = INVALID_HANDLE;
+	
+	ApplyLaggedMovementValue(client);
+	
+	Call_StartForward(g_hfwdOnClientLaggedMovementReset);
+	Call_PushCell(client);
+	Call_PushCell(LMT_Slower);
+	Call_Finish();
+}
+
+ResetSpeedUp(client)
+{
+	// Reset the effect
+	g_ClientMovementState[client][MS_faster] = 0.0;
+	g_ClientMovementState[client][MS_lastFastPlugin] = INVALID_HANDLE;
+	
+	ApplyLaggedMovementValue(client);
+	
+	Call_StartForward(g_hfwdOnClientLaggedMovementReset);
+	Call_PushCell(client);
+	Call_PushCell(LMT_Faster);
+	Call_Finish();
 }

@@ -32,8 +32,9 @@ RegisterIgniteForwards()
 
 ResetIgniteClient(client, bool:bDisconnect)
 {
-	if(g_hExtinguish[client] != INVALID_HANDLE && IsClientInGame(client))
-		TriggerTimer(g_hExtinguish[client]);
+	if(g_hIgnitePlugin[client] != INVALID_HANDLE && IsClientInGame(client))
+		ExtinguishClient(client);
+	ResetClientIgniteState(client);
 	ClearHandle(g_hExtinguish[client]);
 	
 	// Extinguish again a few frames later, so ragdolls don't burn.
@@ -52,21 +53,7 @@ public Action:Timer_Extinguish(Handle:timer, any:userid)
 	
 	g_hExtinguish[client] = INVALID_HANDLE;
 	
-	ExtinguishEntity(client);
-	// Extinguish the ragdoll too!
-	if(!IsPlayerAlive(client))
-	{
-		new iRagdoll = GetEntPropEnt(client, Prop_Send, "m_hRagdoll");
-		if(iRagdoll > 0)
-			ExtinguishEntity(iRagdoll);
-	}
-	
-	Help_ResetClientToDefaultColor(g_hIgnitePlugin[client], client, true, true, true, false);
-	g_hIgnitePlugin[client] = INVALID_HANDLE;
-	
-	Call_StartForward(g_hfwdOnClientExtinguished);
-	Call_PushCell(client);
-	Call_Finish();
+	ExtinguishClient(client);
 	
 	return Plugin_Stop;
 }
@@ -169,4 +156,32 @@ public Native_IsClientBurning(Handle:plugin, numParams)
 	}
 	
 	return g_hExtinguish[client] != INVALID_HANDLE;
+}
+
+/**
+ * Helpers
+ */
+ExtinguishClient(client)
+{
+	ExtinguishEntity(client);
+	// Extinguish the ragdoll too!
+	if(!IsPlayerAlive(client))
+	{
+		new iRagdoll = GetEntPropEnt(client, Prop_Send, "m_hRagdoll");
+		if(iRagdoll > 0)
+			ExtinguishEntity(iRagdoll);
+	}
+	
+	Help_ResetClientToDefaultColor(g_hIgnitePlugin[client], client, true, true, true, false);
+	ResetClientIgniteState(client);
+	
+	Call_StartForward(g_hfwdOnClientExtinguished);
+	Call_PushCell(client);
+	Call_Finish();
+}
+
+// Client doesn't have to ingame for this one.
+ResetClientIgniteState(client)
+{
+	g_hIgnitePlugin[client] = INVALID_HANDLE;
 }
