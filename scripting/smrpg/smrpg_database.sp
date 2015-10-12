@@ -75,9 +75,16 @@ public SQL_OnConnect(Handle:owner, Handle:hndl, const String:error[], any:data)
 		SetFailState("Unknown SQL driver: %s. Aborting..", sDriverIdent);
 	}
 	
+	// Make sure the tables are created using the correct charset, if the database was created with something else than utf8 as default.
+	new String:sDefaultCharset[32];
+	if(g_DriverType == Driver_MySQL)
+	{
+		strcopy(sDefaultCharset, sizeof(sDefaultCharset), " DEFAULT CHARSET=utf8");
+	}
+	
 	// Create the player table
 	decl String:sQuery[1024];
-	Format(sQuery, sizeof(sQuery), "CREATE TABLE IF NOT EXISTS %s (player_id INTEGER PRIMARY KEY %s, name VARCHAR(64) NOT NULL DEFAULT ' ', steamid INTEGER DEFAULT NULL UNIQUE, level INTEGER DEFAULT 1, experience INTEGER DEFAULT 0, credits INTEGER DEFAULT 0, showmenu INTEGER DEFAULT 1, fadescreen INTEGER DEFAULT 1, lastseen INTEGER DEFAULT 0, lastreset INTEGER DEFAULT 0)", TBL_PLAYERS, (g_DriverType == Driver_MySQL ? "AUTO_INCREMENT" : "AUTOINCREMENT"));
+	Format(sQuery, sizeof(sQuery), "CREATE TABLE IF NOT EXISTS %s (player_id INTEGER PRIMARY KEY %s, name VARCHAR(64) NOT NULL DEFAULT ' ', steamid INTEGER DEFAULT NULL UNIQUE, level INTEGER DEFAULT 1, experience INTEGER DEFAULT 0, credits INTEGER DEFAULT 0, showmenu INTEGER DEFAULT 1, fadescreen INTEGER DEFAULT 1, lastseen INTEGER DEFAULT 0, lastreset INTEGER DEFAULT 0)%s", TBL_PLAYERS, (g_DriverType == Driver_MySQL ? "AUTO_INCREMENT" : "AUTOINCREMENT"), sDefaultCharset);
 	if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
 	{
 		decl String:sError[256];
@@ -87,7 +94,7 @@ public SQL_OnConnect(Handle:owner, Handle:hndl, const String:error[], any:data)
 	}
 	
 	// Create the player -> upgrades table.
-	Format(sQuery, sizeof(sQuery), "CREATE TABLE IF NOT EXISTS %s (player_id INTEGER, upgrade_id INTEGER, purchasedlevel INTEGER NOT NULL, selectedlevel INTEGER NOT NULL, enabled INTEGER DEFAULT 1, visuals INTEGER DEFAULT 1, sounds INTEGER DEFAULT 1, PRIMARY KEY(player_id, upgrade_id))", TBL_PLAYERUPGRADES);
+	Format(sQuery, sizeof(sQuery), "CREATE TABLE IF NOT EXISTS %s (player_id INTEGER, upgrade_id INTEGER, purchasedlevel INTEGER NOT NULL, selectedlevel INTEGER NOT NULL, enabled INTEGER DEFAULT 1, visuals INTEGER DEFAULT 1, sounds INTEGER DEFAULT 1, PRIMARY KEY(player_id, upgrade_id))%s", TBL_PLAYERUPGRADES, sDefaultCharset);
 	if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
 	{
 		decl String:sError[256];
@@ -97,7 +104,7 @@ public SQL_OnConnect(Handle:owner, Handle:hndl, const String:error[], any:data)
 	}
 	
 	// Create the upgrades table.
-	Format(sQuery, sizeof(sQuery), "CREATE TABLE IF NOT EXISTS %s (upgrade_id INTEGER PRIMARY KEY %s, shortname VARCHAR(32) UNIQUE NOT NULL, date_added INTEGER)", TBL_UPGRADES, (g_DriverType == Driver_MySQL ? "AUTO_INCREMENT" : "AUTOINCREMENT"));
+	Format(sQuery, sizeof(sQuery), "CREATE TABLE IF NOT EXISTS %s (upgrade_id INTEGER PRIMARY KEY %s, shortname VARCHAR(32) UNIQUE NOT NULL, date_added INTEGER)%s", TBL_UPGRADES, (g_DriverType == Driver_MySQL ? "AUTO_INCREMENT" : "AUTOINCREMENT"), sDefaultCharset);
 	if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
 	{
 		decl String:sError[256];
@@ -107,7 +114,7 @@ public SQL_OnConnect(Handle:owner, Handle:hndl, const String:error[], any:data)
 	}
 	
 	// Create the settings table.
-	Format(sQuery, sizeof(sQuery), "CREATE TABLE IF NOT EXISTS %s (setting VARCHAR(64) PRIMARY KEY NOT NULL, value VARCHAR(256) NOT NULL)", TBL_SETTINGS);
+	Format(sQuery, sizeof(sQuery), "CREATE TABLE IF NOT EXISTS %s (setting VARCHAR(64) PRIMARY KEY NOT NULL, value VARCHAR(256) NOT NULL)%s", TBL_SETTINGS, sDefaultCharset);
 	if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
 	{
 		decl String:sError[256];
