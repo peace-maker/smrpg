@@ -181,6 +181,7 @@ public OnPluginStart()
 	g_hCVExpKillMax = AutoExecConfig_CreateConVar("smrpg_exp_kill_max", "0.0", "Maximum experience a player can ever earn for killing someone. (0 = unlimited)", 0, true, 0.0);
 	
 	g_hCVExpTeamwin = AutoExecConfig_CreateConVar("smrpg_exp_teamwin", "0.15", "Experience multipled by the experience required and the team ratio given to a team for completing the objective", 0, true, 0.0);
+	AutoExecConfig_CreateConVar("smrpg_exp_use_teamratio", "1", "Scale the experience for team events by the team ratio? This is e.g. used to lower the amount of experience earned, when a winning team has more players than the other.", 0, true, 0.0, true, 1.0);
 	
 	g_hCVLastExperienceCount = AutoExecConfig_CreateConVar("smrpg_lastexperience_count", "50", "How many times should we remember why each player got some experience in the recent past?", 0, true, 1.0);
 	

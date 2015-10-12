@@ -319,6 +319,14 @@ stock Float:SMRPG_TeamRatio(iTeam)
 	if(iTeam <= 1)
 		return 0.0;
 	
+	static Handle:hUseTeamRatio = INVALID_HANDLE;
+	if(hUseTeamRatio == INVALID_HANDLE)
+		hUseTeamRatio = FindConVar("smrpg_exp_use_teamratio");
+	
+	// Server is configured to ignore team ratio?
+	if(hUseTeamRatio != INVALID_HANDLE && !GetConVarBool(hUseTeamRatio))
+		return 1.0;
+	
 	new Float:fTeamRatio;
 	
 	if(iTeam == 2)
