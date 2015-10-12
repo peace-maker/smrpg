@@ -36,6 +36,19 @@ public Plugin:myinfo =
 	url = "http://www.wcfan.de/"
 }
 
+public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
+{
+	new EngineVersion:engine = GetEngineVersion();
+	// Prevent known crash in bad games.
+	if(engine == Engine_CSGO)
+	{
+		Format(error, err_max, "This plugin can't be used in CS:GO.");
+		return APLRes_SilentFailure;
+	}
+	
+	return APLRes_Success;
+}
+
 public OnPluginStart()
 {
 	LoadTranslations("common.phrases");
