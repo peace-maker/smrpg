@@ -1,0 +1,26 @@
+"Phrases"
+{
+	"Earned experience for kill"
+	{
+		// 1: Experience earned for killing a player.
+		// 2: Player name of victim.
+		"hu"			"Kaptál {RB}{1}{G} tapasztalatot mert megölted: {N}{2}{G}."
+	}
+
+	"Total earned experience during past life"
+	{
+		// 1: Experience earned during last life
+		"hu"			"Kaptál {RB}{1}{G} tapasztalatot összesen a legutóbbi életed során!"
+	}
+	
+	"Print xp for last kill in chat"
+	{
+		hu"			"Mutasd chaten a kapott tapasztalatot a legutóbbi ölésemért"
+					
+	}
+
+	"Print total xp last life in chat"
+	{
+		"hu"			"Mutasd chaten a legutóbbi életem során szerzett tapasztalatot"
+	}
+}

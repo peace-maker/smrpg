@@ -7,7 +7,7 @@
 	
 	"regen description"
 	{
-		"hu"			"Regenerates HP every second."
+		"hu"			"Visszatölti az életed minden másodpercben"
 	}
 	
 	"health"
@@ -17,7 +17,7 @@
 	
 	"health description"
 	{
-		"hu"			"Increases your maximal health."
+		"hu"			"Megnöveli a maximális életed"
 	}
 	
 	"resup"
@@ -27,7 +27,7 @@
 	
 	"resup description"
 	{
-		"hu"			"Regenerates ammo every third second."
+		"hu"			"Minden harmadik másodpercben ad töltényt"
 	}
 	
 	"vamp"
@@ -37,7 +37,7 @@
 	
 	"vamp description"
 	{
-		"hu"			"Steal HP from players when damaging them."
+		"hu"			"Ellopja az életét annak, akit megsebzel"
 	}
 	
 	"stealth"
@@ -47,7 +47,7 @@
 	
 	"stealth description"
 	{
-		"hu"			"Renders yourself more and more invisible."
+		"hu"			"Átlátszóbb leszel, így kevésbé leszel észrevehető"
 	}
 	
 	"ljump"
@@ -57,17 +57,17 @@
 	
 	"ljump description"
 	{
-		"hu"			"Boosts your jump speed."
+		"hu"			"Megnöveli az ugrási sebességedet"
 	}
 	
 	"fnade"
 	{
-		"hu"			"Égeto gránát"
+		"hu"			"Égető gránát"
 	}
 	
 	"fnade description"
 	{
-		"hu"			"Ignites players damaged by your grenade."
+		"hu"			"Meggyújtja az ellenséget ha megsebzed a gránátoddal"
 	}
 	
 	"icestab"
@@ -77,7 +77,7 @@
 	
 	"icestab description"
 	{
-		"hu"			"Freeze a player in place when knifing him."
+		"hu"			"Lefagyasztja az ellenfelet ha megszúrod"
 	}
 	
 	"fpistol"
@@ -87,7 +87,7 @@
 	
 	"fpistol description"
 	{
-		"hu"			"Slow down players hit with a pistol."
+		"hu"			"Lelassítja az ellenfeled ha meglövöd pisztollyal"
 	}
 	
 	"denial"
@@ -97,17 +97,17 @@
 	
 	"denial description"
 	{
-		"hu"			"Keep your weapons the next time you spawn after you've died."
+		"hu"			"Visszakapod a fegyvered ha meghalsz"
 	}
 	
 	"impulse"
 	{
-		"hu"			"Impulse"
+		"hu"			"Impulzus"
 	}
 	
 	"impulse description"
 	{
-		"hu"			"Gain speed for a short time when being shot."
+		"hu"			"Amikor meglőnek rövid ideig gyorsabban mozogsz"
 	}
 	
 	"medic"
@@ -117,26 +117,155 @@
 	
 	"medic description"
 	{
-		"hu"			"Heals team mates around you."
+		"hu"			"Tölti a csapattársaid életét körülötted"
 	}
 	
 	"speed"
 	{
-		"hu"			"Speed+"
+		"hu"			"Sebesség+"
 	}
 	
 	"speed description"
 	{
-		"hu"			"Increase your average movement speed."
+		"hu"			"Megnöveli a sebességedet"
 	}
   
 	"damage"
 	{
-		"hu"			"Damage+"
+		"hu"			"Sebzés+"
 	}
   
 	"damage description"
 	{
-		"hu"			"Deal additional damage on enemies."
+		"hu"			"Több sebzést tudsz okozni"
+	}
+	"armorregen"
+	{
+		"hu"			"Pajzs regeneráció"
+	}
+	
+	"armorregen description"
+	{
+		"hu"			"Visszatölti a pajzsodat"
+	}
+	
+	"clipsize"
+	{
+		"hu"			"Megnövelt tárméret"
+	}
+	
+	"clipsize description"
+	{
+		"hu"			"Több golyó fér a fegyveredbe"
+	}
+	
+	"shrinking"
+	{
+		"hu"			"Zsugorodás"
+	}
+	
+	"shrinking description"
+	{
+		"hu"			"Lekicsinyíti a karaktered, így nehezebb eltalálni"
+	}
+	
+	"armorplus"
+	{
+		"hu"			"Pajzs+"
+	}
+	
+	"armorplus description"
+	{
+		"hu"			"Megnöveli a maximális pajzsodat"
+	}
+	
+	"fastreload"
+	{
+		"hu"			"Gyors újratöltés"
+	}
+	
+	"fastreload description"
+	{
+		"hu"			"Megnöveli a fegyvereid újratöltési sebességét"
+	}
+	
+	"firepistol"
+	{
+		"hu"			"Tűzpisztoly"
+	}
+	
+	"firepistol description"
+	{
+		"hu"			"Meggyújtja az ellenfeled ha meglövöd pisztollyal"
+	}
+	
+	"gravity"
+	{
+		"en"			"Gravitáció csökkentés"
+	}
+	
+	"gravity description"
+	{
+		"hu"			"Lecsökkenti a gravitációt, így nagyobbakat tudsz ugrani"
+	}
+	
+	"poisonsmoke"
+	{
+		"hu"			"Mérgező füst"
+	}
+	
+	"poisonsmoke description"
+	{
+		"hu"			"Sebzi a füstben lévő ellenfeleket"
+	}
+	
+	"firerate"
+	{
+		"hu"			"Megnövelt tüzelés"
+	}
+	
+	"firerate description"
+	{
+		"hu"			"Gyorsabban tudsz tüzelni"
+	}
+	
+	"icenade"
+	{
+		"hu"			"Fagyasztó gránát"
+	}
+	
+	"icenade description"
+	{
+		"hu"			"Ha megsebzed az ellenfelet gránáttal, megfagy"
+	}
+	
+	"grenaderesup"
+	{
+		"hu"			"Gránát visszatöltés"
+	}
+	
+	"grenaderesup description"
+	{
+		"hu"			"Visszakapod a gránátot miután eldobtad"
+	}
+	
+	"antidote"
+	{
+		"hu"			"Ellenállás"
+	}
+	
+	"antidote description"
+	{
+		"hu"			"Lecsökkenti a fagyás,égés,lassítás idejét rajtad"
+	}
+	
+	"bouncybullets"
+	{
+		"hu"			"Taszító golyók"
+	}
+	
+	"bouncybullets description"
+	{
+		"hu"			"Ellöki az ellenfeleidet ha meglövöd"
 	}
 }
