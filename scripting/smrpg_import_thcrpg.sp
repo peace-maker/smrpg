@@ -111,6 +111,8 @@ public Action:Cmd_ImportDatabase(client, args)
 	new iAccountId, String:sEscapedName[257];
 	new String:sQuery[1024];
 	
+	new iCurrentTime = GetTime();
+	
 	// Load old players in chunks, so we don't try to load the whole database into memory.
 	for (new i=0; i<iCount; i+=IMPORT_STEP)
 	{
@@ -171,12 +173,12 @@ public Action:Cmd_ImportDatabase(client, args)
 			if (iAccountId != -1)
 			{
 				// Player
-				Format(sQuery, sizeof(sQuery), "INSERT INTO players (name, steamid, level, experience, credits) VALUES (\"%s\", %d, %d, %d, %d)", sEscapedName, iAccountId, iLevel, iXP, iCredits);
+				Format(sQuery, sizeof(sQuery), "INSERT INTO players (name, steamid, level, experience, credits, lastseen) VALUES (\"%s\", %d, %d, %d, %d, %d)", sEscapedName, iAccountId, iLevel, iXP, iCredits, iCurrentTime);
 			}
 			else
 			{
 				// Bot
-				Format(sQuery, sizeof(sQuery), "INSERT INTO players (name, steamid, level, experience, credits) VALUES (\"%s\", NULL, %d, %d, %d)", sEscapedName, iLevel, iXP, iCredits);
+				Format(sQuery, sizeof(sQuery), "INSERT INTO players (name, steamid, level, experience, credits, lastseen) VALUES (\"%s\", NULL, %d, %d, %d, %d)", sEscapedName, iLevel, iXP, iCredits, iCurrentTime);
 			}
 			SQL_TQuery(hNewDb, SQL_PrintError, sQuery, iUserId);
 		}
