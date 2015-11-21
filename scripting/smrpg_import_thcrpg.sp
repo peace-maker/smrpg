@@ -18,11 +18,27 @@ public Plugin:myinfo =
 
 public OnPluginStart()
 {
-	RegAdminCmd("sm_importrpgdb", Cmd_ImportDatabase, ADMFLAG_ROOT, "Import player level and experience from THC RPG.");
+	RegAdminCmd("sm_importrpgdb", Cmd_ImportDatabase, ADMFLAG_ROOT, "Import player level and experience from THC RPG. Usage: sm_importrpgdb [minlevel]");
 }
 
 public Action:Cmd_ImportDatabase(client, args)
 {
+	// Parse the optional argument for minimum level to import.
+	new iMinimumLevel = 1;
+	if (args >= 1)
+	{
+		new String:sArgs[32];
+		GetCmdArgString(sArgs, sizeof(sArgs));
+		StripQuotes(sArgs);
+		
+		iMinimumLevel = StringToInt(sArgs);
+	}
+	if (iMinimumLevel < 1)
+	{
+		ReplyToCommand(client, "Minimum level has to be greater than 0.");
+		return Plugin_Handled;
+	}
+	
 	new Handle:hCreditsStart = FindConVar("smrpg_credits_start");
 	if (!hCreditsStart)
 	{
@@ -86,7 +102,7 @@ public Action:Cmd_ImportDatabase(client, args)
 	SQL_SetCharset(hOldDb, "utf8");
 	
 	// Get player count.
-	hResult = SQL_Query(hOldDb, "SELECT COUNT(*) FROM thc_rpg");
+	hResult = SQL_Query(hOldDb, "SELECT COUNT(*) FROM thc_rpg WHERE level >= %d", iMinimumLevel);
 	if (!hResult)
 	{
 		SQL_GetError(hOldDb, sError, sizeof(sError));
@@ -101,7 +117,7 @@ public Action:Cmd_ImportDatabase(client, args)
 		iCount = SQL_FetchInt(hResult, 0);
 	CloseHandle(hResult);
 	
-	ReplyToCommand(client, "Going to import %d players...", iCount);
+	ReplyToCommand(client, "Going to import %d players with at least level %d ...", iCount, iMinimumLevel);
 	
 	new iUserId = client;
 	if (client > 0)
@@ -118,7 +134,7 @@ public Action:Cmd_ImportDatabase(client, args)
 	{
 		// Fetch a chunk of players.
 		// Don't care for credits. we reset them so players can choose from the new upgrades.
-		Format(sQuery, sizeof(sQuery), "SELECT ID, name, xp, level FROM thc_rpg LIMIT %d, %d", i, IMPORT_STEP);
+		Format(sQuery, sizeof(sQuery), "SELECT ID, name, xp, level FROM thc_rpg WHERE level >= %d LIMIT %d, %d", iMinimumLevel, i, IMPORT_STEP);
 		hResult = SQL_Query(hOldDb, sQuery);
 		if (!hResult)
 		{
@@ -145,11 +161,6 @@ public Action:Cmd_ImportDatabase(client, args)
 			{
 				ReplyToCommand(client, "%s has a negative experience of %d. Resetting to 0.", sName, iXP);
 				iXP = 0;
-			}
-			if (iLevel < 0)
-			{
-				ReplyToCommand(client, "%s has a negative level of %d. Resetting to 1.", sName, iLevel);
-				iLevel = 1;
 			}
 			
 			iAccountId = -1;
