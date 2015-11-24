@@ -4,10 +4,15 @@
 
 // Forwards
 new Handle:g_hfwdOnBuyUpgrade;
+new Handle:g_hfwdOnBuyUpgradePost;
 new Handle:g_hfwdOnSellUpgrade;
+new Handle:g_hfwdOnSellUpgradePost;
 new Handle:g_hfwdOnClientLevel;
+new Handle:g_hfwdOnClientLevelPost;
 new Handle:g_hfwdOnClientExperience;
+new Handle:g_hfwdOnClientExperiencePost;
 new Handle:g_hfwdOnClientCredits;
+new Handle:g_hfwdOnClientCreditsPost;
 
 new Handle:g_hfwdOnClientLoaded;
 
@@ -27,7 +32,7 @@ enum PlayerInfo
 	PLR_dbId,
 	bool:PLR_showMenuOnLevelup,
 	bool:PLR_fadeOnLevelup,
-	bool:PLR_triedToLoadData,
+	bool:PLR_dataLoadedFromDB,
 	Handle:PLR_upgrades,
 	PLR_lastReset,
 	PLR_lastSeen
@@ -35,6 +40,9 @@ enum PlayerInfo
 
 new g_iPlayerInfo[MAXPLAYERS+1][PlayerInfo];
 new bool:g_bFirstLoaded[MAXPLAYERS+1];
+// Bot stats are saved per name, because they don't have a steamid.
+// Remember the name the bot joined with, so we use the same name everytime - even if some other plugin changes the name later.
+new String:g_sOriginalBotName[MAXPLAYERS+1][MAX_NAME_LENGTH];
 
 RegisterPlayerNatives()
 {
@@ -62,15 +70,25 @@ RegisterPlayerForwards()
 {
 	// forward Action:SMRPG_OnBuyUpgrade(client, const String:shortname[], newlevel);
 	g_hfwdOnBuyUpgrade = CreateGlobalForward("SMRPG_OnBuyUpgrade", ET_Hook, Param_Cell, Param_String, Param_Cell);
+	// forward SMRPG_OnBuyUpgradePost(client, const String:shortname[], newlevel);
+	g_hfwdOnBuyUpgradePost = CreateGlobalForward("SMRPG_OnBuyUpgradePost", ET_Ignore, Param_Cell, Param_String, Param_Cell);
 	// forward Action:SMRPG_OnSellUpgrade(client, const String:shortname[], newlevel);
 	g_hfwdOnSellUpgrade = CreateGlobalForward("SMRPG_OnSellUpgrade", ET_Hook, Param_Cell, Param_String, Param_Cell);
+	// forward SMRPG_OnSellUpgradePost(client, const String:shortname[], newlevel);
+	g_hfwdOnSellUpgradePost = CreateGlobalForward("SMRPG_OnSellUpgradePost", ET_Ignore, Param_Cell, Param_String, Param_Cell);
 	
 	// forward Action:SMRPG_OnClientLevel(client, oldlevel, newlevel);
 	g_hfwdOnClientLevel = CreateGlobalForward("SMRPG_OnClientLevel", ET_Hook, Param_Cell, Param_Cell, Param_Cell);
+	// forward SMRPG_OnClientLevelPost(client, oldlevel, newlevel);
+	g_hfwdOnClientLevelPost = CreateGlobalForward("SMRPG_OnClientLevelPost", ET_Ignore, Param_Cell, Param_Cell, Param_Cell);
 	// forward Action:SMRPG_OnClientExperience(client, oldexp, newexp);
 	g_hfwdOnClientExperience = CreateGlobalForward("SMRPG_OnClientExperience", ET_Hook, Param_Cell, Param_Cell, Param_Cell);
+	// forward SMRPG_OnClientExperiencePost(client, oldexp, newexp);
+	g_hfwdOnClientExperiencePost = CreateGlobalForward("SMRPG_OnClientExperiencePost", ET_Ignore, Param_Cell, Param_Cell, Param_Cell);
 	// forward Action:SMRPG_OnClientCredits(client, oldcredits, newcredits);
 	g_hfwdOnClientCredits = CreateGlobalForward("SMRPG_OnClientCredits", ET_Hook, Param_Cell, Param_Cell, Param_Cell);
+	// forward SMRPG_OnClientCreditsPost(client, oldcredits, newcredits);
+	g_hfwdOnClientCreditsPost = CreateGlobalForward("SMRPG_OnClientCreditsPost", ET_Ignore, Param_Cell, Param_Cell, Param_Cell);
 	
 	// forward SMRPG_OnClientLoaded(client);
 	g_hfwdOnClientLoaded = CreateGlobalForward("SMRPG_OnClientLoaded", ET_Ignore, Param_Cell);
@@ -79,7 +97,7 @@ RegisterPlayerForwards()
 /**
  * Player stats management
  */
-InitPlayer(client)
+InitPlayer(client, bool:bGetBotName = true)
 {
 	g_bFirstLoaded[client] = true;
 	
@@ -87,7 +105,7 @@ InitPlayer(client)
 	g_iPlayerInfo[client][PLR_experience] = 0;
 	g_iPlayerInfo[client][PLR_credits] = GetConVarInt(g_hCVCreditsStart);
 	g_iPlayerInfo[client][PLR_dbId] = -1;
-	g_iPlayerInfo[client][PLR_triedToLoadData] = false;
+	g_iPlayerInfo[client][PLR_dataLoadedFromDB] = false;
 	g_iPlayerInfo[client][PLR_showMenuOnLevelup] = GetConVarBool(g_hCVShowMenuOnLevelDefault);
 	g_iPlayerInfo[client][PLR_fadeOnLevelup] = GetConVarBool(g_hCVFadeOnLevelDefault);
 	g_iPlayerInfo[client][PLR_lastReset] = GetTime();
@@ -101,9 +119,15 @@ InitPlayer(client)
 		// level 0 for all upgrades
 		InitPlayerNewUpgrade(client);
 	}
+	
+	// Save the name the bot joined with, so we fetch the right info, even if some plugin changes the name of the bot afterwards.
+	if(bGetBotName && IsFakeClient(client))
+	{
+		GetClientName(client, g_sOriginalBotName[client], sizeof(g_sOriginalBotName[]));
+	}
 }
 
-AddPlayer(client, const String:auth[])
+AddPlayer(client)
 {
 	if(!g_hDatabase)
 		return;
@@ -111,11 +135,26 @@ AddPlayer(client, const String:auth[])
 	if(!GetConVarBool(g_hCVEnable))
 		return;
 	
-	if(IsFakeClient(client))
-		return;
-	
+
 	decl String:sQuery[256];
-	Format(sQuery, sizeof(sQuery), "SELECT player_id, level, experience, credits, lastreset, lastseen, showmenu, fadescreen FROM %s WHERE steamid = '%s' ORDER BY level DESC LIMIT 1", TBL_PLAYERS, auth);
+	if(IsFakeClient(client))
+	{
+		if(!GetConVarBool(g_hCVBotSaveStats))
+			return;
+		
+		// Lookup bot levels depending on their names.
+		decl String:sNameEscaped[MAX_NAME_LENGTH*2+1];
+		SQL_EscapeString(g_hDatabase, g_sOriginalBotName[client], sNameEscaped, sizeof(sNameEscaped));
+		Format(sQuery, sizeof(sQuery), "SELECT player_id, level, experience, credits, lastreset, lastseen, showmenu, fadescreen FROM %s WHERE steamid IS NULL AND name = '%s' ORDER BY level DESC LIMIT 1", TBL_PLAYERS, sNameEscaped);
+	}
+	else
+	{
+		new iAccountId = GetSteamAccountID(client);
+		if(!iAccountId)
+			return;
+		
+		Format(sQuery, sizeof(sQuery), "SELECT player_id, level, experience, credits, lastreset, lastseen, showmenu, fadescreen FROM %s WHERE steamid = %d ORDER BY level DESC LIMIT 1", TBL_PLAYERS, iAccountId);
+	}
 	
 	SQL_TQuery(g_hDatabase, SQL_GetPlayerInfo, sQuery, GetClientUserId(client));
 }
@@ -125,34 +164,48 @@ InsertPlayer(client)
 	if(!GetConVarBool(g_hCVEnable) || !GetConVarBool(g_hCVSaveData))
 		return;
 	
-	if(IsFakeClient(client))
+	if(IsFakeClient(client) && !GetConVarBool(g_hCVBotSaveStats))
 		return;
 	
 	decl String:sQuery[512];
 	decl String:sName[MAX_NAME_LENGTH], String:sNameEscaped[MAX_NAME_LENGTH*2+1];
 	GetClientName(client, sName, sizeof(sName));
+	// Make sure to keep the original bot name.
+	if(IsFakeClient(client))
+	{
+		sName = g_sOriginalBotName[client];
+	}
 	SQL_EscapeString(g_hDatabase, sName, sNameEscaped, sizeof(sNameEscaped));
 	
-	decl String:sSteamID[32], String:sSteamIDEscaped[65];
-	GetClientAuthString(client, sSteamID, sizeof(sSteamID));
-	SQL_EscapeString(g_hDatabase, sSteamID, sSteamIDEscaped, sizeof(sSteamIDEscaped));
-	
-	Format(sQuery, sizeof(sQuery), "INSERT INTO %s (name, steamid, level, experience, credits, showmenu, lastseen, lastreset) VALUES ('%s', '%s', '%d', '%d', '%d', '%d', '%d', '%d')",
-		TBL_PLAYERS, sNameEscaped, sSteamIDEscaped, GetClientLevel(client), GetClientExperience(client), GetClientCredits(client), ShowMenuOnLevelUp(client), GetTime(), GetTime());
+	// Store the steamid of the player
+	if(!IsFakeClient(client))
+	{
+		Format(sQuery, sizeof(sQuery), "INSERT INTO %s (name, steamid, level, experience, credits, showmenu, fadescreen, lastseen, lastreset) VALUES ('%s', %d, %d, %d, %d, %d, %d, %d, %d)",
+			TBL_PLAYERS, sNameEscaped, GetSteamAccountID(client), GetClientLevel(client), GetClientExperience(client), GetClientCredits(client), ShowMenuOnLevelUp(client), FadeScreenOnLevelUp(client), GetTime(), GetTime());
+	}
+	// Bots are identified by their name!
+	else
+	{
+		Format(sQuery, sizeof(sQuery), "INSERT INTO %s (name, steamid, level, experience, credits, showmenu, fadescreen, lastseen, lastreset) VALUES ('%s', NULL, %d, %d, %d, %d, %d, %d, %d)",
+			TBL_PLAYERS, sNameEscaped, GetClientLevel(client), GetClientExperience(client), GetClientCredits(client), ShowMenuOnLevelUp(client), FadeScreenOnLevelUp(client), GetTime(), GetTime());
+	}
 	
 	SQL_TQuery(g_hDatabase, SQL_InsertPlayer, sQuery, GetClientUserId(client));
 }
 
-SaveData(client)
+SaveData(client, Transaction:hTransaction=Transaction:INVALID_HANDLE)
 {
+	if(g_hDatabase == INVALID_HANDLE)
+		return;
+	
 	if(!GetConVarBool(g_hCVEnable) || !GetConVarBool(g_hCVSaveData))
 		return;
 	
-	if(IsFakeClient(client))
+	if(IsFakeClient(client) && !GetConVarBool(g_hCVBotSaveStats))
 		return;
 	
 	// We're still in the process of loading this client's info from the db. Wait for it..
-	if(!g_iPlayerInfo[client][PLR_triedToLoadData])
+	if(!IsPlayerDataLoaded(client))
 		return;
 	
 	if(g_iPlayerInfo[client][PLR_dbId] < 0)
@@ -163,20 +216,29 @@ SaveData(client)
 	
 	decl String:sName[MAX_NAME_LENGTH], String:sNameEscaped[MAX_NAME_LENGTH*2+1];
 	GetClientName(client, sName, sizeof(sName));
+	// Make sure to keep the original bot name.
+	if(IsFakeClient(client))
+	{
+		sName = g_sOriginalBotName[client];
+	}
 	SQL_EscapeString(g_hDatabase, sName, sNameEscaped, sizeof(sNameEscaped));
 	
 	decl String:sQuery[8192];
-	Format(sQuery, sizeof(sQuery), "UPDATE %s SET name = '%s', level = '%d', experience = '%d', credits = '%d', showmenu = '%d', fadescreen = '%d', lastseen = '%d', lastreset = '%d' WHERE player_id = '%d'", TBL_PLAYERS, sNameEscaped, GetClientLevel(client), GetClientExperience(client), GetClientCredits(client), ShowMenuOnLevelUp(client), FadeScreenOnLevelUp(client), GetTime(), g_iPlayerInfo[client][PLR_lastReset], g_iPlayerInfo[client][PLR_dbId]);
-	SQL_TQuery(g_hDatabase, SQL_DoNothing, sQuery);
+	Format(sQuery, sizeof(sQuery), "UPDATE %s SET name = '%s', level = %d, experience = %d, credits = %d, showmenu = %d, fadescreen = %d, lastseen = %d, lastreset = %d WHERE player_id = %d", TBL_PLAYERS, sNameEscaped, GetClientLevel(client), GetClientExperience(client), GetClientCredits(client), ShowMenuOnLevelUp(client), FadeScreenOnLevelUp(client), GetTime(), g_iPlayerInfo[client][PLR_lastReset], g_iPlayerInfo[client][PLR_dbId]);
+	// Add the query to the transaction instead of running it right away.
+	if(hTransaction != INVALID_HANDLE)
+		SQL_AddQuery(hTransaction, sQuery);
+	else
+		SQL_TQuery(g_hDatabase, SQL_DoNothing, sQuery);
 	
 	// Remember when we last saved his stats
 	g_iPlayerInfo[client][PLR_lastSeen] = GetTime();
 	
 	// Save upgrade levels
-	SavePlayerUpgradeLevels(client);
+	SavePlayerUpgradeLevels(client, hTransaction);
 }
 
-SavePlayerUpgradeLevels(client)
+SavePlayerUpgradeLevels(client, Transaction:hTransaction=Transaction:INVALID_HANDLE)
 {
 	// Save upgrade levels
 	new iSize = GetUpgradeCount();
@@ -202,20 +264,33 @@ SavePlayerUpgradeLevels(client)
 	}
 	if(iAdded > 0)
 	{
-		SQL_TQuery(g_hDatabase, SQL_DoNothing, sQuery);
+		// Add the query to the transaction instead of running it right away.
+		if(hTransaction != INVALID_HANDLE)
+			SQL_AddQuery(hTransaction, sQuery);
+		else
+			SQL_TQuery(g_hDatabase, SQL_DoNothing, sQuery);
 	}
 }
 
 SaveAllPlayers()
 {
+	if(g_hDatabase == INVALID_HANDLE)
+		return;
+	
 	if(!GetConVarBool(g_hCVEnable) || !GetConVarBool(g_hCVSaveData))
 		return;
+	
+	// Save all players at once instead of firing seperate queries for every player.
+	// This is to optimize sqlite usage.
+	new Transaction:hTransaction = SQL_CreateTransaction();
 	
 	for(new i=1;i<=MaxClients;i++)
 	{
 		if(IsClientInGame(i) && IsClientAuthorized(i))
-			SaveData(i);
+			SaveData(i, hTransaction);
 	}
+	
+	SQL_ExecuteTransaction(g_hDatabase, hTransaction, _, SQLTxn_LogFailure);
 }
 
 ResetStats(client)
@@ -248,16 +323,45 @@ ResetStats(client)
 	g_iPlayerInfo[client][PLR_credits] = GetConVarInt(g_hCVCreditsStart);
 }
 
-RemovePlayer(client)
+RemovePlayer(client, bool:bKeepBotName = false)
 {
 	ResetStats(client);
 	ClearHandle(g_iPlayerInfo[client][PLR_upgrades]);
 	g_iPlayerInfo[client][PLR_dbId] = -1;
-	g_iPlayerInfo[client][PLR_triedToLoadData] = false;
+	g_iPlayerInfo[client][PLR_dataLoadedFromDB] = false;
 	g_iPlayerInfo[client][PLR_showMenuOnLevelup] = GetConVarBool(g_hCVShowMenuOnLevelDefault);
 	g_iPlayerInfo[client][PLR_fadeOnLevelup] = GetConVarBool(g_hCVFadeOnLevelDefault);
 	g_iPlayerInfo[client][PLR_lastReset] = 0;
 	g_iPlayerInfo[client][PLR_lastSeen] = 0;
+	
+	if(!bKeepBotName)
+		g_sOriginalBotName[client][0] = '\0';
+}
+
+NotifyUpgradePluginsOfLevel(client)
+{
+	new iSize = GetUpgradeCount();
+	new upgrade[InternalUpgradeInfo];
+	for(new i=0;i<iSize;i++)
+	{
+		GetUpgradeByIndex(i, upgrade);
+		
+		if(!IsValidUpgrade(upgrade))
+			continue;
+		
+		if(GetClientSelectedUpgradeLevel(client, i) <= 0)
+			continue;
+		
+		Call_StartFunction(upgrade[UPGR_plugin], Function:upgrade[UPGR_queryCallback]);
+		Call_PushCell(client);
+		Call_PushCell(UpgradeQueryType_Buy);
+		Call_Finish();
+	}
+}
+
+IsPlayerDataLoaded(client)
+{
+	return g_iPlayerInfo[client][PLR_dataLoadedFromDB];
 }
 
 GetPlayerLastReset(client)
@@ -393,11 +497,14 @@ SetClientSelectedUpgradeLevel(client, iUpgradeIndex, iLevel)
 	if(!IsValidUpgrade(upgrade))
 		return;
 	
-	// Notify plugin about it.
-	Call_StartFunction(upgrade[UPGR_plugin], upgrade[UPGR_queryCallback]);
-	Call_PushCell(client);
-	Call_PushCell(iOldLevel < iLevel ? UpgradeQueryType_Buy : UpgradeQueryType_Sell);
-	Call_Finish();
+	if(IsClientInGame(client))
+	{
+		// Notify plugin about it.
+		Call_StartFunction(upgrade[UPGR_plugin], upgrade[UPGR_queryCallback]);
+		Call_PushCell(client);
+		Call_PushCell(iOldLevel < iLevel ? UpgradeQueryType_Buy : UpgradeQueryType_Sell);
+		Call_Finish();
+	}
 }
 
 SetClientPurchasedUpgradeLevel(client, iUpgradeIndex, iLevel)
@@ -446,6 +553,12 @@ bool:GiveClientUpgrade(client, iUpgradeIndex)
 	SetClientPurchasedUpgradeLevel(client, iUpgradeIndex, iCurrentLevel);
 	// Also have it select the new higher upgrade level.
 	SetClientSelectedUpgradeLevel(client, iUpgradeIndex, iCurrentLevel);
+	
+	Call_StartForward(g_hfwdOnBuyUpgradePost);
+	Call_PushCell(client);
+	Call_PushString(upgrade[UPGR_shortName]);
+	Call_PushCell(iCurrentLevel);
+	Call_Finish();
 	
 	return true;
 }
@@ -509,6 +622,12 @@ bool:TakeClientUpgrade(client, iUpgradeIndex)
 	// Actually update the upgrade level.
 	SetClientPurchasedUpgradeLevel(client, iUpgradeIndex, iCurrentLevel);
 	
+	Call_StartForward(g_hfwdOnSellUpgradePost);
+	Call_PushCell(client);
+	Call_PushString(upgrade[UPGR_shortName]);
+	Call_PushCell(iCurrentLevel);
+	Call_Finish();
+	
 	return true;
 }
 
@@ -536,7 +655,7 @@ bool:SellClientUpgrade(client, iUpgradeIndex)
 // Have bots buy upgrades too :)
 BotPickUpgrade(client)
 {
-	new bool:bUpgradeBought, iCost, iCurrentIndex;
+	new bool:bUpgradeBought, iCurrentIndex;
 	
 	new iSize = GetUpgradeCount();
 	new upgrade[InternalUpgradeInfo];
@@ -545,7 +664,7 @@ BotPickUpgrade(client)
 	for(new i=0;i<iSize;i++)
 		PushArrayCell(hRandomBuying, i);
 	
-	while(GetClientCredits(client))
+	while(GetClientCredits(client) > 0)
 	{
 		// Shuffle the order of upgrades randomly. That way the bot won't upgrade one upgrade as much as he can before trying another one.
 		Array_Shuffle(hRandomBuying);
@@ -560,16 +679,22 @@ BotPickUpgrade(client)
 			if(!IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled])
 				continue;
 			
-			iCost = GetUpgradeCost(iCurrentIndex, GetClientPurchasedUpgradeLevel(client, iCurrentIndex)+1);
-			if(GetClientCredits(client) >= iCost)
-			{
-				BuyClientUpgrade(client, iCurrentIndex);
+			// Don't buy it, if bots aren't allowed to use it at all..
+			if(!upgrade[UPGR_allowBots])
+				continue;
+			
+			// Don't let him buy upgrades, which are restricted to the other team.
+			if(!IsClientInLockedTeam(client, upgrade))
+				continue;
+			
+			if(BuyClientUpgrade(client, iCurrentIndex))
 				bUpgradeBought = true;
-			}
 		}
 		if(!bUpgradeBought)
 			break; /* Couldn't afford anything */
 	}
+	
+	CloseHandle(hRandomBuying);
 }
 
 /**
@@ -616,7 +741,14 @@ bool:SetClientCredits(client, iCredits)
 	if(result > Plugin_Continue)
 		return false;
 	
+	new iOldCredits = g_iPlayerInfo[client][PLR_credits];
 	g_iPlayerInfo[client][PLR_credits] = iCredits;
+	
+	Call_StartForward(g_hfwdOnClientCreditsPost);
+	Call_PushCell(client);
+	Call_PushCell(iOldCredits);
+	Call_PushCell(iCredits);
+	Call_Finish();
 	
 	return true;
 }
@@ -643,7 +775,14 @@ bool:SetClientLevel(client, iLevel)
 	if(result > Plugin_Continue)
 		return false;
 	
+	new iOldLevel = g_iPlayerInfo[client][PLR_level];
 	g_iPlayerInfo[client][PLR_level] = iLevel;
+	
+	Call_StartForward(g_hfwdOnClientLevelPost);
+	Call_PushCell(client);
+	Call_PushCell(iOldLevel);
+	Call_PushCell(iLevel);
+	Call_Finish();
 	
 	return true;
 }
@@ -670,7 +809,14 @@ bool:SetClientExperience(client, iExperience)
 	if(result > Plugin_Continue)
 		return false;
 	
+	new iOldExperience = g_iPlayerInfo[client][PLR_experience];
 	g_iPlayerInfo[client][PLR_experience] = iExperience;
+	
+	Call_StartForward(g_hfwdOnClientExperiencePost);
+	Call_PushCell(client);
+	Call_PushCell(iOldExperience);
+	Call_PushCell(iExperience);
+	Call_Finish();
 	
 	return true;
 }
@@ -686,6 +832,7 @@ public SQL_GetPlayerInfo(Handle:owner, Handle:hndl, const String:error[], any:us
 	
 	if(hndl == INVALID_HANDLE || strlen(error) > 0)
 	{
+		// TODO: Retry later?
 		LogError("Unable to load player data (%s)", error);
 		CallOnClientLoaded(client);
 		return;
@@ -756,7 +903,7 @@ public SQL_GetPlayerUpgrades(Handle:owner, Handle:hndl, const String:error[], an
 		SavePlayerUpgradeInfo(client, upgrade[UPGR_index], playerupgrade);
 	}
 	
-	g_iPlayerInfo[client][PLR_triedToLoadData] = true;
+	g_iPlayerInfo[client][PLR_dataLoadedFromDB] = true;
 	
 	CheckItemMaxLevels(client);
 	
@@ -784,7 +931,7 @@ public SQL_InsertPlayer(Handle:owner, Handle:hndl, const String:error[], any:use
 	// Insert upgrade level info
 	SavePlayerUpgradeLevels(client);
 	
-	g_iPlayerInfo[client][PLR_triedToLoadData] = true;
+	g_iPlayerInfo[client][PLR_dataLoadedFromDB] = true;
 	CallOnClientLoaded(client);
 }
 
@@ -1143,8 +1290,6 @@ public Native_ClientWantsCosmetics(Handle:plugin, numParams)
  */
 CallOnClientLoaded(client)
 {
-	g_iPlayerInfo[client][PLR_triedToLoadData] = true;
-	
 	// Only call that forward once per player
 	if(!g_bFirstLoaded[client])
 		return;

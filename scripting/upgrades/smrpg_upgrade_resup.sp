@@ -8,25 +8,59 @@
 
 #define PLUGIN_VERSION "1.0"
 
+new Handle:g_hResupplyTimer;
+
+new Handle:g_hCVInterval;
+
+// CS:GO specific
+new EngineVersion:g_Engine;
+new Handle:g_hGiveReserveAmmo;
+
 public Plugin:myinfo = 
 {
 	name = "SM:RPG Upgrade > Resupply",
 	author = "Jannik \"Peace-Maker\" Hartung",
-	description = "Resupply upgrade for SM:RPG. Regenerates ammo every third second.",
+	description = "Resupply upgrade for SM:RPG. Regenerates ammo every x seconds.",
 	version = PLUGIN_VERSION,
 	url = "http://www.wcfan.de/"
-}
-
-public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
-{
-	// https://bugs.alliedmods.net/show_bug.cgi?id=6039
-	MarkNativeAsOptional("GivePlayerAmmo");
-	return APLRes_Success;
 }
 
 public OnPluginStart()
 {
 	LoadTranslations("smrpg_stock_upgrades.phrases");
+	g_Engine = GetEngineVersion();
+	
+	// CS:GO stores reserved ammo on weapons now instead of on the players.
+	if (g_Engine == Engine_CSGO)
+	{
+		new Handle:hGConf = LoadGameConfigFile("smrpg_resup.games");
+		if (hGConf == INVALID_HANDLE)
+		{
+			SetFailState("Can't find smrpg_resup.games.txt gamedata file.");
+		}
+		
+		StartPrepSDKCall(SDKCall_Entity);
+		if (!PrepSDKCall_SetFromConf(hGConf, SDKConf_Signature, "CBaseCombatWeapon::GiveReserveAmmo"))
+		{
+			CloseHandle(hGConf);
+			SetFailState("Can't find CBaseCombatWeapon::GiveReserveAmmo signature.");
+		}
+		// CBaseCombatWeapon::GiveReserveAmmo(AmmoPosition_t, int, bool, CBaseCombatCharacter *)
+		PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain); // ammo position 1 = primary, 2 = secondary
+		PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain); // amount of ammo to give
+		PrepSDKCall_AddParameter(SDKType_Bool, SDKPass_Plain); // suppress ammo pickup sound
+		PrepSDKCall_AddParameter(SDKType_CBasePlayer, SDKPass_Pointer, VDECODE_FLAG_ALLOWNULL); // optional owner. tries weapon owner if null.
+		// if owner has ammo of that weapon's ammotype in his m_iAmmo, add to this array like before.
+		// if the owner doesn't have ammo in m_iAmmo, use the new m_iPrimaryReserveAmmoCount props.
+		PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain); // return amount of bullets missing until the max is reached including what we're about to add with this call..
+		g_hGiveReserveAmmo = EndPrepSDKCall();
+		
+		CloseHandle(hGConf);
+		if (g_hGiveReserveAmmo == INVALID_HANDLE)
+		{
+			SetFailState("Failed to prepare CBaseCombatWeapon::GiveReserveAmmo SDK call.");
+		}
+	}
 }
 
 public OnPluginEnd()
@@ -45,14 +79,29 @@ public OnLibraryAdded(const String:name[])
 	// Register this upgrade in SM:RPG
 	if(StrEqual(name, "smrpg"))
 	{
-		SMRPG_RegisterUpgradeType("Resupply", UPGRADE_SHORTNAME, "Regenerates ammo every third second.", 20, true, 5, 5, 15, _, SMRPG_BuySell, SMRPG_ActiveQuery);
+		SMRPG_RegisterUpgradeType("Resupply", UPGRADE_SHORTNAME, "Regenerates ammo every x seconds.", 20, true, 5, 5, 15, _, SMRPG_BuySell, SMRPG_ActiveQuery);
 		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
+		
+		g_hCVInterval = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_resup_interval", "3", "Set the interval in which the ammo is given in seconds.", 0, true, 0.5);
+		HookConVarChange(g_hCVInterval, ConVar_OnIntervalChanged);
+		
+		// Start the timer with the correct interval.
+		StartResupplyTimer();
 	}
 }
 
 public OnMapStart()
 {
-	CreateTimer(3.0, Timer_Resupply, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
+	// OnMapStart might be called before the smrpg library was registered.
+	if(g_hCVInterval == INVALID_HANDLE)
+		return;
+	
+	StartResupplyTimer();
+}
+
+public OnMapEnd()
+{
+	g_hResupplyTimer = INVALID_HANDLE;
 }
 
 /**
@@ -83,6 +132,9 @@ public SMRPG_TranslateUpgrade(client, const String:shortname[], TranslationType:
 	}
 }
 
+/**
+ * Timer callbacks
+ */
 public Action:Timer_Resupply(Handle:timer)
 {
 	if(!SMRPG_IsEnabled())
@@ -94,9 +146,8 @@ public Action:Timer_Resupply(Handle:timer)
 		return Plugin_Continue;
 	
 	new bool:bIgnoreBots = SMRPG_IgnoreBots();
-	new bool:bGiveClientAmmoNativeAvailable = GetFeatureStatus(FeatureType_Native, "GivePlayerAmmo") == FeatureStatus_Available;
 	
-	new iLevel, iPrimaryAmmo;
+	new iLevel, iPrimaryAmmoType;
 	for(new i=1;i<=MaxClients;i++)
 	{
 		if(!IsClientInGame(i))
@@ -116,17 +167,22 @@ public Action:Timer_Resupply(Handle:timer)
 		
 		LOOP_CLIENTWEAPONS(i, iWeapon, iIndex)
 		{
-			// Use the new SDKTools native, if available!
-			if(bGiveClientAmmoNativeAvailable)
+			iPrimaryAmmoType = Weapon_GetPrimaryAmmoType(iWeapon);
+			// Grenades and knives have m_iClip1 = -1 or m_iPrimaryAmmoType = -1 respectively.
+			// Don't try to refill those.
+			if(iPrimaryAmmoType < 0 || Weapon_GetPrimaryClip(iWeapon) < 0)
+				continue;
+			
+			if (g_Engine == Engine_CSGO)
 			{
-				GivePlayerAmmo(i, iLevel, Weapon_GetPrimaryAmmoType(iWeapon), true);
+				if (g_hGiveReserveAmmo != INVALID_HANDLE)
+				{
+					SDKCall(g_hGiveReserveAmmo, iWeapon, 1, iLevel, true, -1);
+				}
 			}
-			// Try to use our own gamedata for older sourcemod versions.
-			else if(GiveAmmo(i, iLevel, Weapon_GetPrimaryAmmoType(iWeapon), true) == -1)
+			else
 			{
-				// Fall back to non-limit alternative, if sdkcall fails.
-				Client_GetWeaponPlayerAmmoEx(i, iWeapon, iPrimaryAmmo);
-				Client_SetWeaponPlayerAmmoEx(i, iWeapon, iPrimaryAmmo+iLevel);
+				GivePlayerAmmo(i, iLevel, iPrimaryAmmoType, true);
 			}
 		}
 	}
@@ -135,56 +191,21 @@ public Action:Timer_Resupply(Handle:timer)
 }
 
 /**
- * GiveAmmo gives ammo of a certain type to a player - duh.
- *
- * @param client        The client index.
- * @param ammo            Amount of bullets to give. Is capped at weapon's limit.
- * @param ammotype        Type of ammo to give to player.
- * @param suppressSound Don't play the ammo pickup sound.
- * 
- * @return Amount of bullets actually given. -1 on error.
+ * Convar hook callbacks
  */
-stock GiveAmmo(client, ammo, ammotype, bool:bSuppressSound)
+public ConVar_OnIntervalChanged(Handle:convar, const String:oldValue[], const String:newValue[])
 {
-	static Handle:hGiveAmmo = INVALID_HANDLE;
-	static bool:bErroaaarrd = false;
+	if(StrEqual(oldValue, newValue, false))
+		return;
 	
-	if(hGiveAmmo == INVALID_HANDLE)
-	{
-		new Handle:hGameConf = LoadGameConfigFile("smrpg_resup.games");
-		if(hGameConf == INVALID_HANDLE)
-		{
-			if(!bErroaaarrd)
-				LogError("Can't find smrpg_resup.games.txt gamedata. Ammo Resupply won't obey weapon ammo limits!");
-			bErroaaarrd = true;
-			return -1;
-		}
-		
-		StartPrepSDKCall(SDKCall_Player);
-		if(!PrepSDKCall_SetFromConf(hGameConf, SDKConf_Virtual, "GiveAmmo"))
-		{
-			CloseHandle(hGameConf);
-			if(!bErroaaarrd)
-				LogError("Can't find CBaseCombatCharacter::GiveAmmo(int, int, bool) offset. Ammo Resupply won't obey weapon ammo limits!");
-			bErroaaarrd = true;
-			return -1;
-		}
-		PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
-		PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
-		PrepSDKCall_AddParameter(SDKType_Bool, SDKPass_Plain);
-		PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain);
-		hGiveAmmo = EndPrepSDKCall();
+	StartResupplyTimer();
+}
 
-		CloseHandle(hGameConf);
-		
-		if(hGiveAmmo == INVALID_HANDLE)
-		{
-			if(!bErroaaarrd)
-				LogError("Failed to finish GiveAmmo SDKCall. Ammo Resupply won't obey weapon ammo limits!");
-			bErroaaarrd = true;
-			return -1;
-		}
-	}
-	
-	return SDKCall(hGiveAmmo, client, ammo, ammotype, bSuppressSound);
+/**
+ * Helpers
+ */
+StartResupplyTimer()
+{
+	ClearHandle(g_hResupplyTimer);
+	g_hResupplyTimer = CreateTimer(GetConVarFloat(g_hCVInterval), Timer_Resupply, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 }

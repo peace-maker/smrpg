@@ -87,7 +87,7 @@ public OnLibraryAdded(const String:name[])
 	// Register this upgrade in SM:RPG
 	if(StrEqual(name, "smrpg"))
 	{
-		SMRPG_RegisterUpgradeType("Increase Clipsize", UPGRADE_SHORTNAME, "Increases the size of a weapon's clip.", 2, true, 2, 30, 30, _, SMRPG_BuySell, SMRPG_ActiveQuery);
+		SMRPG_RegisterUpgradeType("Increase Clipsize", UPGRADE_SHORTNAME, "Increases the size of a weapon's clip.", 0, true, 2, 30, 30, _, SMRPG_BuySell, SMRPG_ActiveQuery);
 		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
 	}
 }
@@ -114,7 +114,7 @@ public OnEntityDestroyed(entity)
 public OnClientPutInServer(client)
 {
 	SDKHook(client, SDKHook_WeaponEquipPost, Hook_OnWeaponEquipPost);
-	SDKHook(client, SDKHook_WeaponDrop, Hook_OnWeaponDrop);
+	SDKHook(client, SDKHook_WeaponDropPost, Hook_OnWeaponDropPost);
 }
 
 public OnMapEnd()
@@ -206,36 +206,50 @@ public SMRPG_TranslateUpgrade(client, const String:shortname[], TranslationType:
 
 public Hook_OnSpawnPost(entity)
 {
-	CreateTimer(0.1, Timer_GetGameMaxClip1, EntIndexToEntRef(entity), TIMER_FLAG_NO_MAPCHANGE);
+	RequestFrame(Frame_GetGameMaxClip1, EntIndexToEntRef(entity));
 	SDKHook(entity, SDKHook_Reload, Hook_OnReload);
 	SDKHook(entity, SDKHook_ReloadPost, Hook_OnReloadPost);
 }
 
-public Action:Hook_OnWeaponDrop(client, weapon)
+public Hook_OnWeaponDropPost(client, weapon)
 {
 	if(client <= 0 || weapon < 0)
-		return Plugin_Continue;
+		return;
+	
+	if(g_iGameMaxClip1[weapon] <= 0)
+		return;
 	
 	if(!SMRPG_IsEnabled())
-		return Plugin_Continue;
+		return;
 	
 	new upgrade[UpgradeInfo];
 	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
 	if(!upgrade[UI_enabled])
-		return Plugin_Continue;
+		return;
 	
 	// Restore the original game's default maxclip1, if the weapon currently has more ammo loaded.
 	// So other players don't get the same upgrade as the previous owner of the weapon.
+	// TODO: DO WE WANT THAT? CONFIG OPTION?
 	new iClip1 = Weapon_GetPrimaryClip(weapon);
 	if(iClip1 > g_iGameMaxClip1[weapon])
+	{
 		Weapon_SetPrimaryClip(weapon, g_iGameMaxClip1[weapon]);
+		// Also give the player the extra ammo back, so he doesn't lose ammo when dropping the gun and picking it up again.
+		new iPrimaryAmmo;
+		Client_GetWeaponPlayerAmmoEx(client, weapon, iPrimaryAmmo);
+		Client_SetWeaponPlayerAmmoEx(client, weapon, iPrimaryAmmo + (iClip1 - g_iGameMaxClip1[weapon]));
+	}
 	
-	return Plugin_Continue;
+	return;
 }
 
 public Hook_OnWeaponEquipPost(client, weapon)
 {
 	if(!client || !IsClientInGame(client) || weapon < 0)
+		return;
+	
+	// Weapon wasn't spawned completely yet. Can happen when buying a weapon. It's already equipped before it's spawned.
+	if(g_iGameMaxClip1[weapon] <= 0)
 		return;
 	
 	if(!IsUpgradeActive(client))
@@ -355,20 +369,26 @@ public Event_OnPlayerSpawn(Handle:event, const String:name[], bool:dontBroadcast
 }
 
 /**
- * Timer callbacks
+ * RequestFrame callbacks
  */
-
-public Action:Timer_GetGameMaxClip1(Handle:timer, any:entity)
+public Frame_GetGameMaxClip1(any:entity)
 {
 	entity = EntRefToEntIndex(entity);
 	if(entity == INVALID_ENT_REFERENCE)
-		return Plugin_Handled;
+		return;
 	
 	g_iGameMaxClip1[entity] = Weapon_GetPrimaryClip(entity);
 	
-	return Plugin_Handled;
+	// If this weapon already has an owner right after it spawned it was probably bought.
+	// Weapons are equipped before spawning them when buying them.
+	new client = Weapon_GetOwner(entity);
+	if(client > 0)
+		Hook_OnWeaponEquipPost(client, entity);
 }
 
+/**
+ * Timer callbacks
+ */
 public Action:Timer_SetEquipAmmo(Handle:timer, any:weapon)
 {
 	weapon = EntRefToEntIndex(weapon);

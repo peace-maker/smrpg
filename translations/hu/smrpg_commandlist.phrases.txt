@@ -1,0 +1,12 @@
+"Phrases"
+{
+	"Commands"
+	{
+		"hu"			"Parancsok"
+	}
+	
+	"Hide chat adverts"
+	{
+		"hu"			"A chatben lévõ parancsok elrejtése"
+	}
+}

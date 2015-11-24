@@ -3,6 +3,7 @@
 #include <sdktools>
 #include <sdkhooks>
 #include <smrpg>
+#include <smrpg_effects>
 #include <smlib>
 
 #define UPGRADE_SHORTNAME "fnade"
@@ -11,8 +12,6 @@
 new Handle:g_hCVDurationIncrease;
 new Handle:g_hCVMinDamage;
 new Handle:g_hCVWeapon;
-
-new Handle:g_hExtinguishTimer[MAXPLAYERS+1];
 
 public Plugin:myinfo = 
 {
@@ -26,9 +25,6 @@ public Plugin:myinfo =
 public OnPluginStart()
 {
 	LoadTranslations("smrpg_stock_upgrades.phrases");
-	
-	HookEvent("player_spawn", Event_OnEffectReset);
-	HookEvent("player_death", Event_OnEffectReset);
 	
 	for(new i=1;i<=MaxClients;i++)
 	{
@@ -68,12 +64,6 @@ public OnClientPutInServer(client)
 	SDKHook(client, SDKHook_OnTakeDamagePost, Hook_OnTakeDamagePost);
 }
 
-public OnClientDisconnect(client)
-{
-	SMRPG_ResetEffect(client);
-	ClearHandle(g_hExtinguishTimer[client]);
-}
-
 /**
  * SM:RPG Upgrade callbacks
  */
@@ -84,19 +74,14 @@ public SMRPG_BuySell(client, UpgradeQueryType:type)
 
 public bool:SMRPG_ActiveQuery(client)
 {
-	// This is a passive effect, so it's always active, if the player got at least level 1
-	new upgrade[UpgradeInfo];
-	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
-	return SMRPG_IsEnabled() && upgrade[UI_enabled] && SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME) > 0;
+	return SMRPG_IsClientBurning(client);
 }
 
 // Some plugin wants this effect to end?
 public SMRPG_ResetEffect(client)
 {
-	if(g_hExtinguishTimer[client] != INVALID_HANDLE && IsClientInGame(client))
-		TriggerTimer(g_hExtinguishTimer[client]);
-	ClearHandle(g_hExtinguishTimer[client]);
-	g_hExtinguishTimer[client] = CreateTimer(0.2, Timer_Extinguish, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
+	if(SMRPG_IsClientBurning(client))
+		SMRPG_ExtinguishClient(client);
 }
 
 public SMRPG_TranslateUpgrade(client, const String:shortname[], TranslationType:type, String:translation[], maxlen)
@@ -109,18 +94,6 @@ public SMRPG_TranslateUpgrade(client, const String:shortname[], TranslationType:
 		StrCat(sDescriptionKey, sizeof(sDescriptionKey), " description");
 		Format(translation, maxlen, "%T", sDescriptionKey, client);
 	}
-}
-
-/**
- * Event callbacks
- */
-public Event_OnEffectReset(Handle:event, const String:name[], bool:dontBroadcast)
-{
-	new client = GetClientOfUserId(GetEventInt(event, "userid"));
-	if(!client)
-		return;
-	
-	SMRPG_ResetEffect(client);
 }
 
 /**
@@ -146,7 +119,7 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 		return;
 	
 	// This player is already burning.
-	if(g_hExtinguishTimer[victim] != INVALID_HANDLE)
+	if(SMRPG_IsClientBurning(victim))
 		return;
 	
 	if(!SMRPG_IsEnabled())
@@ -161,8 +134,8 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 	if(IsFakeClient(attacker) && SMRPG_IgnoreBots())
 		return;
 	
-	// Ignore team attack
-	if(GetClientTeam(attacker) == GetClientTeam(victim))
+	// Ignore team attack if not FFA
+	if(!SMRPG_IsFFAEnabled() && GetClientTeam(attacker) == GetClientTeam(victim))
 		return;
 	
 	new iLevel = SMRPG_GetClientUpgradeLevel(attacker, UPGRADE_SHORTNAME);
@@ -173,26 +146,5 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 		return; // Some other plugin doesn't want this effect to run
 	
 	new Float:fDuration = float(iLevel)*GetConVarFloat(g_hCVDurationIncrease);
-	IgniteEntity(victim, fDuration);
-	g_hExtinguishTimer[victim] = CreateTimer(fDuration, Timer_Extinguish, GetClientUserId(victim), TIMER_FLAG_NO_MAPCHANGE);
-}
-
-public Action:Timer_Extinguish(Handle:timer, any:userid)
-{
-	new client = GetClientOfUserId(userid);
-	if(!client)
-		return Plugin_Stop;
-	
-	g_hExtinguishTimer[client] = INVALID_HANDLE;
-	
-	ExtinguishEntity(client);
-	// Extinguish the ragdoll too!
-	if(!IsPlayerAlive(client))
-	{
-		new iRagdoll = GetEntPropEnt(client, Prop_Send, "m_hRagdoll");
-		if(iRagdoll > 0)
-			ExtinguishEntity(iRagdoll);
-	}
-	
-	return Plugin_Stop;
+	SMRPG_IgniteClient(victim, fDuration, UPGRADE_SHORTNAME);
 }

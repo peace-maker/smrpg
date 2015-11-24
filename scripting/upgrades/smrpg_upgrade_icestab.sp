@@ -1,8 +1,8 @@
 #pragma semicolon 1
 #include <sourcemod>
-#include <sdktools>
 #include <sdkhooks>
 #include <smrpg>
+#include <smrpg_effects>
 #include <smrpg_helper>
 #include <smrpg_sharedmaterials>
 #include <smlib>
@@ -10,20 +10,10 @@
 #define UPGRADE_SHORTNAME "icestab"
 #define PLUGIN_VERSION "1.0"
 
-#define KNIFE_SLOT 2
-
-#define ICESTAB_CLRFADE 1 /* Blue color fade amount for each frame */
-
 new Handle:g_hCVIceStabLimitDmg;
 new Handle:g_hCVTimeIncrease;
 new Handle:g_hCVWeapon;
 new Handle:g_hCVMinDamage;
-
-new Handle:g_hIceStabUnfreeze[MAXPLAYERS+1] = {INVALID_HANDLE,...};
-new g_iIceStabFade[MAXPLAYERS+1] = {255,...};
-
-new g_iFreezeSoundCount;
-new g_iLimitDmgSoundCount;
 
 public Plugin:myinfo = 
 {
@@ -36,9 +26,6 @@ public Plugin:myinfo =
 
 public OnPluginStart()
 {
-	HookEvent("player_spawn", Event_OnResetEffect);
-	HookEvent("player_death", Event_OnResetEffect);
-	
 	LoadTranslations("smrpg_stock_upgrades.phrases");
 	
 	SMRPG_GC_CheckSharedMaterialsAndSounds();
@@ -67,7 +54,7 @@ public OnLibraryAdded(const String:name[])
 	// Register this upgrade in SM:RPG
 	if(StrEqual(name, "smrpg"))
 	{
-		SMRPG_RegisterUpgradeType("Ice Stab", UPGRADE_SHORTNAME, "Freeze a player in place when knifing him.", 10, true, 20, 30, 10, _, SMRPG_BuySell, SMRPG_ActiveQuery);
+		SMRPG_RegisterUpgradeType("Ice Stab", UPGRADE_SHORTNAME, "Freeze a player in place when knifing him.", 10, true, 10, 30, 10, _, SMRPG_BuySell, SMRPG_ActiveQuery);
 		SMRPG_SetUpgradeResetCallback(UPGRADE_SHORTNAME, SMRPG_ResetEffect);
 		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
 		SMRPG_SetUpgradeDefaultCosmeticEffect(UPGRADE_SHORTNAME, SMRPG_FX_Sounds, true);
@@ -82,65 +69,13 @@ public OnLibraryAdded(const String:name[])
 
 public OnMapStart()
 {
-	g_iFreezeSoundCount = 0;
-	decl String:sKey[64];
-	for(;;g_iFreezeSoundCount++)
-	{
-		Format(sKey, sizeof(sKey), "SoundIceStabFreeze%d", g_iFreezeSoundCount+1);
-		if(!SMRPG_GC_PrecacheSound(sKey))
-			break;
-	}
-	
-	g_iLimitDmgSoundCount = 0;
-	for(;;g_iLimitDmgSoundCount++)
-	{
-		Format(sKey, sizeof(sKey), "SoundIceStabLimitDmg%d", g_iLimitDmgSoundCount+1);
-		if(!SMRPG_GC_PrecacheSound(sKey))
-			break;
-	}
+	SMRPG_GC_PrecacheModel("SpriteBeam");
+	SMRPG_GC_PrecacheModel("SpriteHalo");
 }
 
 public OnClientPutInServer(client)
 {
-	SDKHook(client, SDKHook_OnTakeDamage, Hook_OnTakeDamage);
 	SDKHook(client, SDKHook_OnTakeDamagePost, Hook_OnTakeDamagePost);
-}
-
-public OnClientDisconnect(client)
-{
-	SMRPG_ResetEffect(client);
-}
-
-// Fade players from blue linearly back to default color when they got hit by icestab.
-public OnGameFrame()
-{
-	for(new i=1;i<=MaxClients;i++)
-	{
-		if(!IsClientInGame(i))
-			continue;
-		
-		if(g_iIceStabFade[i] < 255)
-		{
-			g_iIceStabFade[i] += ICESTAB_CLRFADE;
-			if(g_iIceStabFade[i] > 255)
-				g_iIceStabFade[i] = 255;
-			
-			SetEntityRenderMode(i, RENDER_TRANSCOLOR);
-			Entity_SetRenderColor(i, g_iIceStabFade[i], g_iIceStabFade[i], 255, -1);
-		}
-	}
-}
-
-/**
- * Event callbacks
- */
-public Event_OnResetEffect(Handle:event, const String:error[], bool:dontBroadcast)
-{
-	new client = GetClientOfUserId(GetEventInt(event, "userid"));
-	if(!client)
-		return;
-
-	SMRPG_ResetEffect(client);
 }
 
 /**
@@ -153,18 +88,15 @@ public SMRPG_BuySell(client, UpgradeQueryType:type)
 
 public bool:SMRPG_ActiveQuery(client)
 {
-	new upgrade[UpgradeInfo];
-	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
-	return SMRPG_IsEnabled() && upgrade[UI_enabled] && SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME) > 0 && g_hIceStabUnfreeze[client] != INVALID_HANDLE;
+	// TODO: Differenciate if we froze the client ourself
+	return SMRPG_IsClientFrozen(client);
 }
 
 // Some plugin wants this effect to end?
 public SMRPG_ResetEffect(client)
 {
-	if(g_hIceStabUnfreeze[client] != INVALID_HANDLE && IsClientInGame(client))
-		TriggerTimer(g_hIceStabUnfreeze[client]);
-	ClearHandle(g_hIceStabUnfreeze[client]);
-	g_iIceStabFade[client] = 254;
+	if(SMRPG_IsClientFrozen(client))
+		SMRPG_UnfreezeClient(client);
 }
 
 public SMRPG_TranslateUpgrade(client, const String:shortname[], TranslationType:type, String:translation[], maxlen)
@@ -182,44 +114,6 @@ public SMRPG_TranslateUpgrade(client, const String:shortname[], TranslationType:
 /**
  * Hook callbacks
  */
-// Reduce the damage when a player is frozen.
-public Action:Hook_OnTakeDamage(victim, &attacker, &inflictor, &Float:damage, &damagetype, &weapon,	Float:damageForce[3], Float:damagePosition[3], damagecustom)
-{
-	// This player isn't frozen. Ignore.
-	if(g_hIceStabUnfreeze[victim] == INVALID_HANDLE)
-		return Plugin_Continue;
-	
-	// Limit disabled?
-	new Float:fLimitDmg = GetConVarFloat(g_hCVIceStabLimitDmg);
-	if(fLimitDmg <= 0.0)
-		return Plugin_Continue;
-	
-	new iWeapon = inflictor;
-	if(inflictor > 0 && inflictor <= MaxClients)
-		iWeapon = Client_GetActiveWeapon(inflictor);
-	
-	// All weapons except for the knife do less damage.
-	// TODO: Add support for more games
-	if(attacker <= 0 || attacker > MaxClients || GetPlayerWeaponSlot(attacker, KNIFE_SLOT) == iWeapon)
-		return Plugin_Continue;
-	
-	// This was less than the limit. It's ok.
-	if(damage <= fLimitDmg)
-		return Plugin_Continue;
-	
-	// Limit the damage!
-	damage = fLimitDmg;
-	
-	if(g_iLimitDmgSoundCount > 0)
-	{
-		new String:sKey[64];
-		Format(sKey, sizeof(sKey), "SoundIceStabLimitDmg%d", Math_GetRandomInt(1, g_iLimitDmgSoundCount));
-		SMRPG_EmitSoundToAllEnabled(UPGRADE_SHORTNAME, SMRPG_GC_GetKeyValue(sKey), victim, SNDCHAN_AUTO, SNDLEVEL_NORMAL, SND_NOFLAGS, SNDVOL_NORMAL, SNDPITCH_NORMAL, victim);
-	}
-	
-	return Plugin_Changed;
-}
-
 public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagetype, weapon, const Float:damageForce[3], const Float:damagePosition[3])
 {
 	if(attacker <= 0 || attacker > MaxClients || !IsClientInGame(attacker) || victim <= 0 || victim > MaxClients || !IsClientInGame(victim))
@@ -240,11 +134,11 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 	if(IsFakeClient(attacker) && SMRPG_IgnoreBots())
 		return;
 	
-	// Ignore team attack
-	if(GetClientTeam(attacker) == GetClientTeam(victim))
+	// Ignore team attack if not FFA
+	if(!SMRPG_IsFFAEnabled() && GetClientTeam(attacker) == GetClientTeam(victim))
 		return;
 	
-	if(g_hIceStabUnfreeze[attacker] != INVALID_HANDLE)
+	if(SMRPG_IsClientFrozen(attacker))
 		return; /* don't allow frozen attacker to icestab */
 	
 	new iLevel = SMRPG_GetClientUpgradeLevel(attacker, UPGRADE_SHORTNAME);
@@ -271,36 +165,54 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 		return; // Some other plugin doesn't want this effect to run
 	
 	// Freeze the player.
-	// Note: This won't reset his velocity. Useful for surf maps.
-	SetEntityMoveType(victim, MOVETYPE_NONE);
+	new Float:fFreezeTime = GetConVarFloat(g_hCVTimeIncrease)*float(iLevel);
+	if(!SMRPG_FreezeClient(victim, fFreezeTime, GetConVarFloat(g_hCVIceStabLimitDmg), UPGRADE_SHORTNAME, true, true, false))
+		return;
 	
-	if(g_iFreezeSoundCount > 0)
-	{
-		new String:sKey[64];
-		Format(sKey, sizeof(sKey), "SoundIceStabFreeze%d", Math_GetRandomInt(1, g_iFreezeSoundCount));
-		SMRPG_EmitSoundToAllEnabled(UPGRADE_SHORTNAME, SMRPG_GC_GetKeyValue(sKey), victim, SNDCHAN_AUTO, SNDLEVEL_NORMAL, SND_NOFLAGS, SNDVOL_NORMAL, SNDPITCH_NORMAL, victim);
-	}
-
-	if(SMRPG_ClientWantsCosmetics(victim, UPGRADE_SHORTNAME, SMRPG_FX_Visuals))
-	{
-		SetEntityRenderMode(victim, RENDER_TRANSCOLOR);
-		Entity_SetRenderColor(victim, 0, 0, 255, -1);
-		g_iIceStabFade[victim] = 0;
-	}
+	new Float:fOrigin[3];
+	GetClientAbsOrigin(victim, fOrigin);
+	fOrigin[2] -= 30.0;
 	
-	ClearHandle(g_hIceStabUnfreeze[victim]);
-	g_hIceStabUnfreeze[victim] = CreateTimer(GetConVarFloat(g_hCVTimeIncrease)*float(iLevel), Timer_Unfreeze, GetClientUserId(victim), TIMER_FLAG_NO_MAPCHANGE);
+	new iBeamSprite = SMRPG_GC_GetPrecachedIndex("SpriteBeam");
+	new iHaloSprite = SMRPG_GC_GetPrecachedIndex("SpriteHalo");
+	// Just use the beamsprite as halo, if no halo sprite available
+	if(iHaloSprite == -1)
+		iHaloSprite = iBeamSprite;
+	
+	if(iBeamSprite != -1)
+	{
+		// Create a "cage" around frozen player.
+		TE_SendFourBeamEffectToEnabled(fOrigin, 10.0, 10.0, 120.0, iBeamSprite, iHaloSprite, 0, 66, fFreezeTime/3.0, 10.0, 10.0, 0, 0.0, {0,0,255,255}, 0);
+	}
 }
 
-public Action:Timer_Unfreeze(Handle:timer, any:userid)
+// Thanks to SumGuy14 (Aka SoccerDude)
+// RPGx effects.inc FourBeamEffect
+stock TE_SendFourBeamEffectToEnabled(Float:origin[3], Float:Width, Float:EndWidth, Float:Height, ModelIndex, HaloIndex, StartFrame, FrameRate, Float:Life, 
+                Float:BeamWidth, Float:BeamEndWidth, FadeLength, Float:Amplitude, const Color[4], Speed, Float:delay=0.0)
 {
-	new client = GetClientOfUserId(userid);
-	if(!client)
-		return Plugin_Stop;
+	new Float:fPoints[8][3];
+	for(new point=0;point<8;point++)
+	{
+		fPoints[point] = origin;
+	}
 	
-	g_hIceStabUnfreeze[client] = INVALID_HANDLE;
-	if(GetEntityMoveType(client) == MOVETYPE_NONE)
-		SetEntityMoveType(client, MOVETYPE_WALK);
-	g_iIceStabFade[client] = 254;
-	return Plugin_Stop;
+	fPoints[0][0] += Width;
+	fPoints[1][0] -= Width;
+	fPoints[2][1] += Width;
+	fPoints[3][1] -= Width;
+	fPoints[4][0] += EndWidth;
+	fPoints[4][2] += Height;
+	fPoints[5][0] -= EndWidth;
+	fPoints[5][2] += Height;
+	fPoints[6][1] += EndWidth;
+	fPoints[6][2] += Height;
+	fPoints[7][1] -= EndWidth;
+	fPoints[7][2] += Height;
+	
+	for(new i=0;i<4;i++)
+	{
+		TE_SetupBeamPoints(fPoints[i], fPoints[i+4], ModelIndex, HaloIndex, StartFrame, FrameRate, Life, BeamWidth, BeamEndWidth, FadeLength, Amplitude, Color, Speed);
+		SMRPG_TE_SendToAllEnabled(UPGRADE_SHORTNAME, delay);
+	}
 }

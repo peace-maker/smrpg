@@ -3,7 +3,7 @@
 	"Inform about plugin"
 	{
 		// 1: Running SM:RPG plugin version (e.g. 1.0)
-		"hu"			"This server is running SM:RPG v{1}."
+		"hu"			"A szerveren SM:RPG v{1} - fut."
 	}
 	
 	"Advertise rpgmenu command"
@@ -32,7 +32,7 @@
 	
 	"Newbie instructions use rpgmenu"
 	{
-		"hu"			"{G}Írdd be \"{L}rpgmenu{G}\" a cset-be vagy a konzolba, hogy felhozd a menüt, ahonnan a fejlesztéseket megtudod venni."
+		"hu"			"{G}Írdd be \"{L}rpgmenu{G}\" a chat-be vagy a konzolba, hogy felhozd a menüt, ahonnan a fejlesztéseket megtudod venni."
 	}
 	
 	//Experience Hintbox
@@ -53,7 +53,7 @@
 		// 5: Amount of experience the player has on his level.
 		// 6: Amount of experience needed to reach the next level.
 		// 7: Amount of rpg credits of the player.
-		"hu"			"{1}: {2} szintű, rankja {3}/{4}, {5}/{6} Tapsztalat ponttal és {7} Kredittel"
+		"hu"			"{1}: {2} szintű, rankja {3}/{4}, {5}/{6} Tapasztalat ponttal és {7} Kredittel"
 	}
 	
 	"Top 10 Players"
@@ -113,6 +113,10 @@
 	{
 		"hu"			"Képesség eladása"
 	}
+	"Upgrade Settings"
+	{
+		"hu"			"Képességek beállítása"
+	}
 	
 	"Stats"
 	{
@@ -126,7 +130,7 @@
 	
 	"Help"
 	{
-		"hu"			"Segítség (Angol)"
+		"hu"			"Képességek leírása"
 	}
 	
 	"Reset Stats"
@@ -184,5 +188,157 @@
 	"Confirm stats reset"
 	{
 		"hu"			"FIGYELEM: Elveszíted a szinted, tapasztalatod és kreditjeidet.\nVéglegesen törlöd őket?"
+	}
+	//Menu upgrade settings
+	"Enabled"
+	{
+		"hu"			"Engedélyezve"
+	}
+	
+	"Selected level"
+	{
+		"hu"			"Választott szint"
+	}
+	
+	"Increase selected level"
+	{
+		"hu"			"Választott szint növelése"
+	}
+	
+	"Decrease selected level"
+	{
+		"hu"			"Választott szint csökkentése"
+	}
+	
+	"Visual effects"
+	{
+		"hu"			"Vizuális effektek"
+	}
+	
+	"Sound effects"
+	{
+		"hu"			"Hang effektek"
+	}
+	
+	// Command help
+	"rpgmenu short desc"
+	{
+		"hu"			"Felhozza az rpg-menüt"
+	}
+	
+	"rpgmenu desc"
+	{
+		"hu"			"Felhozza az rpg-menüt. Itt tudsz képességeket venni-eladni, megnézni a statisztikáidat, megnézni a parancsokat és beállítani a többi dolgokat."
+	}
+	
+	"rpgmenu advert"
+	{
+		"hu"			"Írd be: {N}rpgmenu{G} az rpgmenu előhozásához, {N}ahol tudsz képességeket fejleszteni,{G} vagy átállítani a beállításokat."
+	}
+	
+	"rpgrank short desc"
+	{
+		"hu"			"Megmutatja a rangodat, vagy a személyét akire kíváncsi vagy."
+	}
+	
+	"rpgrank desc"
+	{
+		"hu"			"Megmutatja a rangodat, vagy a személyét akire kíváncsi vagy. Írd be: {N}rpgrank [név|steamid|#userid]"
+	}
+	
+	"rpgrank advert"
+	{
+		"hu"			"Írd be: {N}rpgrank{G} hogy lásd a statisztikáidat, vagy {N}rpgrank <játékosnév>{G} hogy lásd mások rangját."
+	}
+	
+	"rpginfo short desc"
+	{
+		"hu"			"Megmutatja a megvásárolt képességeit az adott játékosnak."
+	}
+	
+	"rpginfo desc"
+	{
+		"hu"			"Megmutatja a megvásárolt képességeit az adott játékosnak. Használat: {N}rpginfo <név|steamid|#userid>"
+	}
+	
+	"rpginfo advert"
+	{
+		"hu"			"Írd be: {N}rpginfo <játékosnév>{G} hogy megnézd mit vásároltak a többi játékosok."
+	}
+	
+	"rpgtop10 short desc"
+	{
+		"hu"			"Megmutatja a 10 legjobb játékost"
+	}
+	
+	"rpgtop10 desc"
+	{
+		"hu"			"Megmutatja a 10 legjobb RPG játékost ezen a szerveren."
+	}
+	
+	"rpgtop10 advert"
+	{
+		"hu"			"Írd be: {N}rpgtop10{G} hogy megnézd a 10 legjobb játékost a szerveren."
+	}
+	
+	"rpgnext short desc"
+	{
+		"hu"			"Megmutatja a következő játékost előtted."
+	}
+	
+	"rpgnext desc"
+	{
+		"hu"			"Megmutatja a játékosokat akik előtted vannak a ranglistán."
+	}
+	
+	"rpgnext advert"
+	{
+		"hu"			"Írd be: {N}rpgnext{G} hogy megnézd az összes játékost aki előtted van a ranglistán."
+	}
+	
+	"rpgsession short desc"
+	{
+		"hu"			"Megmutatja az aktuális RPG statisztikád."
+	}
+	
+	"rpgsession desc"
+	{
+		"hu"			"Megmutatja az aktuális RPG statisztikád."
+	}
+	
+	"rpgsession advert"
+	{
+		"hu"			"Írd be: {N}rpgsession{G} hogy lásd hogyan változtak a statisztikáid"
+	}
+	
+	"rpghelp short desc"
+	{
+		"hu"			"Elmagyarázza, hogy mire jók a képességek"
+	}
+	
+	"rpghelp desc"
+	{
+		"hu"			"Elmagyarázza, hogy mire jók a képességek, részletes leírást ad róluk."
+	}
+	
+	"rpghelp advert"
+	{
+		"hu"			"Írd be: {N}rpghelp{G} hogy infót kapj arról, hogy melyik képesség mit csinál."
+	}
+	
+	"rpgexp short desc"
+	{
+		"hu"			"Megmutatja a legutolsó elért tapasztalatodat."
+	}
+	
+	"rpgexp desc"
+	{
+		"hu"			"Részletesen leírja az utolsó tapasztalati szintlépésedet."
+	}
+	
+	"rpgexp advert"
+	{
+		// 1: Value of smrpg_lastexperience_count. The amount of experience saved in the array.
+		"hu"			"Írd be: {N}rpgexp{G} hogy lásd a legutolsó {1} indokokat és mennyiséget amit szereztél szintlépéskor."
 	}
 }

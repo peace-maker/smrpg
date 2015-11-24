@@ -1,0 +1,22 @@
+"Phrases"
+{
+	"Player is AFK"
+	{
+		"hu"			"A játékos AFK"
+	}
+
+	"Hide stats info panel on the right"
+	{
+		"hu"			"Info panel elrejtése a jobb oldalon"
+	}
+
+	"Last Experience Short"
+	{
+		"hu"			"Last experience"
+	}
+
+	"Estimated time until levelup"
+	{
+		"hu"			"Levelup in"
+	}
+}

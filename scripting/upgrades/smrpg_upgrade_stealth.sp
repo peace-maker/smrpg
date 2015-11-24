@@ -1,5 +1,6 @@
 #pragma semicolon 1
 #include <sourcemod>
+#include <sdkhooks>
 #include <smrpg>
 #include <smlib>
 
@@ -7,6 +8,9 @@
 #define STEALTH_INC 27
 
 #define PLUGIN_VERSION "1.0"
+
+// CS:GO only convar to enable alpha changes on players.
+new Handle:g_hCVIgnoreImmunity;
 
 public Plugin:myinfo = 
 {
@@ -17,21 +21,30 @@ public Plugin:myinfo =
 	url = "http://www.wcfan.de/"
 }
 
-public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
-{
-	if(GetEngineVersion() == Engine_CSGO)
-	{
-		Format(error, err_max, "CS:GO doesn't support setting the alpha of a player :(");
-		return APLRes_SilentFailure;
-	}
-	return APLRes_Success;
-}
-
 public OnPluginStart()
 {
 	HookEvent("player_spawn", Event_OnPlayerSpawn);
 	
 	LoadTranslations("smrpg_stock_upgrades.phrases");
+	
+	// CS:GO ignored the alpha setting on players up until Operation: Bloodhound.
+	// We force the new convar to true, to make sure we're allowed to change the alpha.
+	if(GetEngineVersion() == Engine_CSGO)
+	{
+		g_hCVIgnoreImmunity = FindConVar("sv_disable_immunity_alpha");
+		if(g_hCVIgnoreImmunity != INVALID_HANDLE)
+		{
+			SetConVarBool(g_hCVIgnoreImmunity, true);
+			HookConVarChange(g_hCVIgnoreImmunity, ConVar_OnDisableImmunityAlphaChanged);
+		}
+	}
+
+	// Late loading
+	for(new i=1;i<=MaxClients;i++)
+	{
+		if(IsClientInGame(i))
+			OnClientPutInServer(i);
+	}
 }
 
 public OnPluginEnd()
@@ -61,6 +74,78 @@ public OnMapStart()
 	CreateTimer(5.0, Timer_SetVisibilities, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 }
 
+public OnClientPutInServer(client)
+{
+	SDKHook(client, SDKHook_WeaponDropPost, Hook_OnWeaponDropPost);
+}
+
+/**
+ * ConVar change hook callbacks (CS:GO only)
+ */
+public ConVar_OnDisableImmunityAlphaChanged(Handle:convar, const String:oldValue[], const String:newValue[])
+{
+	if(!GetConVarBool(convar))
+	{
+		// Ignore this convar, if this upgrade is disabled.
+		if(!SMRPG_IsEnabled())
+			return;
+	
+		new upgrade[UpgradeInfo];
+		SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
+		if(!upgrade[UI_enabled])
+			return;
+		
+		SetConVarBool(convar, true);
+		PrintToServer("SM:RPG Stealth Upgrade > Forcing sv_disable_immunity_alpha to 1.");
+	}
+}
+
+// CS:GO only: force sv_disable_immunity_alpha to 1 when enabling smrpg.
+public SMRPG_OnEnableStatusChanged(bool:bEnabled)
+{
+	if(!bEnabled)
+		return;
+	
+	// CS:GO only
+	if(g_hCVIgnoreImmunity == INVALID_HANDLE)
+		return;
+
+	// Upgrade enabled too?
+	new upgrade[UpgradeInfo];
+	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
+	if(!upgrade[UI_enabled])
+		return;
+	
+	// alpha change was ignored. OBEY!
+	if(!GetConVarBool(g_hCVIgnoreImmunity))
+	{
+		SetConVarBool(g_hCVIgnoreImmunity, true);
+		PrintToServer("SM:RPG Stealth Upgrade > Forcing sv_disable_immunity_alpha to 1.");
+	}
+}
+
+// CS:GO only: force sv_disable_immunity_alpha to 1 when enabling this upgrade.
+public SMRPG_OnUpgradeSettingsChanged(const String:shortname[])
+{
+	// CS:GO only
+	if(g_hCVIgnoreImmunity == INVALID_HANDLE)
+		return;
+
+	// Settings of some other upgrade changed? Boring..
+	if(!StrEqual(shortname, UPGRADE_SHORTNAME))
+		return;
+
+	new upgrade[UpgradeInfo];
+	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
+	if(!upgrade[UI_enabled])
+		return;
+
+	if(!GetConVarBool(g_hCVIgnoreImmunity))
+	{
+		SetConVarBool(g_hCVIgnoreImmunity, true);
+	}
+}
+
 /**
  * Event callbacks
  */
@@ -86,11 +171,36 @@ public Event_OnPlayerSpawn(Handle:event, const String:name[], bool:dontBroadcast
 }
 
 /**
+ * SDK Hooks callbacks
+ */
+public Hook_OnWeaponDropPost(client, weapon)
+{
+	if(weapon == INVALID_ENT_REFERENCE || !IsValidEntity(weapon))
+		return;
+	
+	if(!SMRPG_IsEnabled())
+		return;
+	
+	new upgrade[UpgradeInfo];
+	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
+	if(!upgrade[UI_enabled])
+		return;
+	
+	// Render dropped weapons visible again!
+	SetEntityRenderMode(weapon, RENDER_TRANSCOLOR);
+	Entity_SetRenderColor(weapon, -1, -1, -1, 255);
+}
+
+/**
  * SM:RPG Upgrade callbacks
  */
 public SMRPG_BuySell(client, UpgradeQueryType:type)
 {
 	if(!IsClientInGame(client))
+		return;
+	
+	// Are bots allowed to use this upgrade?
+	if(IsFakeClient(client) && SMRPG_IgnoreBots())
 		return;
 	
 	SetClientVisibility(client);

@@ -1,26 +1,14 @@
 "Games"
 {
-	"cstrike"
-	{
-		"Offsets"
-		{
-			"GiveAmmo"
-			{
-				"windows"		"251"
-				"linux"			"252"
-				"mac"			"252"
-			}
-		}
-	}
 	"csgo"
 	{
-		"Offsets"
-		{
-			"GiveAmmo"
+		"Signatures"
+		{ 
+			"CBaseCombatWeapon::GiveReserveAmmo"
 			{
-				"windows"		"273"
-				"linux"			"274"
-				"mac"			"274"
+				"library"	"server"
+				"windows"	"\x55\x8B\xEC\x51\x83\x7D\x0C\x00\x53\x8B\xD9\x7F\x2A\x8B"
+				"linux"		"@_ZN17CBaseCombatWeapon15GiveReserveAmmoE14AmmoPosition_tibP20CBaseCombatCharacter"
 			}
 		}
 	}

@@ -2,8 +2,13 @@
 #include <sourcemod>
 #include <smlib>
 
+// Allow to refetch the rank every 20 seconds.
+#define RANK_CACHE_UPDATE_INTERVAL 20
+
 new g_iCachedRank[MAXPLAYERS+1] = {-1,...};
+new g_iNextCacheUpdate[MAXPLAYERS+1];
 new g_iCachedRankCount = 0;
+new g_iNextCacheCountUpdate;
 
 enum SessionStats {
 	SS_JoinTime,
@@ -21,6 +26,7 @@ new g_iPlayerSessionStartStats[MAXPLAYERS+1][SessionStats];
 new bool:g_bBackToStatsMenu[MAXPLAYERS+1];
 
 new Handle:g_hfwdOnAddExperience;
+new Handle:g_hfwdOnAddExperiencePost;
 
 // AFK Handling
 enum AFKInfo {
@@ -30,6 +36,7 @@ enum AFKInfo {
 	AFK_deathTime
 }
 new g_PlayerAFKInfo[MAXPLAYERS+1][AFKInfo];
+new bool:g_bPlayerSpawnProtected[MAXPLAYERS+1];
 
 // Individual weapon experience settings
 new Handle:g_hWeaponExperience;
@@ -42,7 +49,7 @@ enum WeaponExperienceContainer {
 
 RegisterStatsNatives()
 {
-	// native bool:SMRPG_AddClientExperience(client, exp, const String:reason[], bool:bHideNotice, other=-1);
+	// native bool:SMRPG_AddClientExperience(client, exp, const String:reason[], bool:bHideNotice, other=-1, SMRPG_ExpTranslationCb:callback=SMRPG_ExpTranslationCb:INVALID_FUNCTION);
 	CreateNative("SMRPG_AddClientExperience", Native_AddClientExperience);
 	// native SMRPG_LevelToExperience(iLevel);
 	CreateNative("SMRPG_LevelToExperience", Native_LevelToExperience);
@@ -56,6 +63,8 @@ RegisterStatsNatives()
 	
 	// native bool:SMRPG_IsClientAFK(client);
 	CreateNative("SMRPG_IsClientAFK", Native_IsClientAFK);
+	// native bool:SMRPG_IsClientSpawnProtected(client);
+	CreateNative("SMRPG_IsClientSpawnProtected", Native_IsClientSpawnProtected);
 	
 	// native Float:SMRPG_GetWeaponExperience(const String:sWeapon[], WeaponExperienceType:type);
 	CreateNative("SMRPG_GetWeaponExperience", Native_GetWeaponExperience);
@@ -65,6 +74,8 @@ RegisterStatsForwards()
 {
 	// forward Action:SMRPG_OnAddExperience(client, const String:reason[], &iExperience, other);
 	g_hfwdOnAddExperience = CreateGlobalForward("SMRPG_OnAddExperience", ET_Hook, Param_Cell, Param_String, Param_CellByRef, Param_Cell);
+	// forward SMRPG_OnAddExperiencePost(client, const String:reason[], iExperience, other);
+	g_hfwdOnAddExperiencePost = CreateGlobalForward("SMRPG_OnAddExperiencePost", ET_Ignore, Param_Cell, Param_String, Param_Cell, Param_Cell);
 }
 
 /* Calculate the experience needed for this level */
@@ -129,7 +140,7 @@ Stats_PlayerNewLevel(client, iLevelIncrease)
 			else
 			{
 				// Only increase so much until we reach the maxlevel.
-				iLevelIncrease = iMaxLevel - iNewLevel;
+				iLevelIncrease = iMaxLevel - GetClientLevel(client);
 			}
 		}
 	}
@@ -199,7 +210,7 @@ Stats_PlayerNewLevel(client, iLevelIncrease)
 	}
 }
 
-bool:Stats_AddExperience(client, iExperience, const String:sReason[], bool:bHideNotice, other)
+bool:Stats_AddExperience(client, &iExperience, const String:sReason[], bool:bHideNotice, other)
 {
 	// Nothing to add?
 	if(iExperience <= 0)
@@ -297,6 +308,8 @@ bool:Stats_AddExperience(client, iExperience, const String:sReason[], bool:bHide
 	if(GetClientExperience(client) >= iExpRequired)
 		Stats_PlayerNewLevel(client, Stats_CalcLvlInc(GetClientLevel(client), GetClientExperience(client)));
 	
+	Stats_CallOnExperiencePostForward(client, sReason, iExperience, other);
+	
 	if(!bHideNotice && GetConVarBool(g_hCVExpNotice))
 		PrintHintText(client, "%t", "Experience Gained Hintbox", iExperience, GetClientExperience(client), Stats_LvlToExp(GetClientLevel(client)));
 	
@@ -312,13 +325,17 @@ Stats_PlayerDamage(attacker, victim, Float:fDamage, const String:sWeapon[])
 	if(IsClientAFK(victim))
 		return;
 	
-	// Ignore teamattack
-	if(GetClientTeam(attacker) == GetClientTeam(victim))
+	// Don't give the attacker any exp when his victim just spawned and didn't do anything at all yet.
+	if(IsClientSpawnProtected(victim))
+		return;
+	
+	// Ignore teamattack if not FFA
+	if(!GetConVarBool(g_hCVFFA) && GetClientTeam(attacker) == GetClientTeam(victim))
 		return;
 	
 	new iExp = RoundToCeil(fDamage * GetWeaponExperience(sWeapon, WeaponExperience_Damage));
 	
-	Stats_AddExperience(attacker, iExp, ExperienceReason_PlayerHurt, true, victim);
+	SMRPG_AddClientExperience(attacker, iExp, ExperienceReason_PlayerHurt, true, victim);
 }
 
 Stats_PlayerKill(attacker, victim, const String:sWeapon[])
@@ -330,8 +347,12 @@ Stats_PlayerKill(attacker, victim, const String:sWeapon[])
 	if(IsClientAFK(victim))
 		return;
 	
-	// Ignore teamattack
-	if(GetClientTeam(attacker) == GetClientTeam(victim))
+	// Don't give the attacker any exp when his victim just spawned and didn't do anything at all yet.
+	if(IsClientSpawnProtected(victim))
+		return;
+	
+	// Ignore teamattack if not FFA
+	if(!GetConVarBool(g_hCVFFA) && GetClientTeam(attacker) == GetClientTeam(victim))
 		return;
 	
 	new iExp = RoundToCeil(GetClientLevel(victim) * GetWeaponExperience(sWeapon, WeaponExperience_Kill) + GetWeaponExperience(sWeapon, WeaponExperience_Bonus));
@@ -340,7 +361,7 @@ Stats_PlayerKill(attacker, victim, const String:sWeapon[])
 	if(iExpMax > 0 && iExp > iExpMax)
 		iExp = iExpMax;
 	
-	Stats_AddExperience(attacker, iExp, ExperienceReason_PlayerKill, false, victim);
+	SMRPG_AddClientExperience(attacker, iExp, ExperienceReason_PlayerKill, false, victim);
 }
 
 Stats_WinningTeam(iTeam)
@@ -362,7 +383,7 @@ Stats_WinningTeam(iTeam)
 		if(IsClientInGame(i) && GetClientTeam(i) == iTeam)
 		{
 			iExperience = RoundToCeil(float(Stats_LvlToExp(GetClientLevel(i))) * GetConVarFloat(g_hCVExpTeamwin) * fTeamRatio);
-			Stats_AddExperience(i, iExperience, ExperienceReason_RoundEnd, false, -1);
+			SMRPG_AddClientExperience(i, iExperience, ExperienceReason_RoundEnd, false, -1);
 		}
 	}
 }
@@ -378,6 +399,17 @@ Action:Stats_CallOnExperienceForward(client, const String:sReason[], &iExperienc
 	Call_PushCell(other);
 	Call_Finish(result);
 	return result;
+}
+
+// forward SMRPG_OnAddExperiencePost(client, const String:reason[], iExperience, other);
+Stats_CallOnExperiencePostForward(client, const String:sReason[], iExperience, other)
+{
+	Call_StartForward(g_hfwdOnAddExperiencePost);
+	Call_PushCell(client);
+	Call_PushString(sReason);
+	Call_PushCell(iExperience);
+	Call_PushCell(other);
+	Call_Finish();
 }
 
 // AFK Handling
@@ -458,10 +490,23 @@ ResetAFKPlayer(client)
 	Array_Copy(g_PlayerAFKInfo[client][AFK_lastPosition], Float:{0.0,0.0,0.0}, 3);
 }
 
+// Spawn Protection handling
+bool:IsClientSpawnProtected(client)
+{
+	if(!GetConVarBool(g_hCVSpawnProtect))
+		return false;
+	return g_bPlayerSpawnProtected[client];
+}
+
+ResetSpawnProtection(client)
+{
+	g_bPlayerSpawnProtected[client] = false;
+}
+
 /**
  * Native Callbacks
  */
-// native bool:SMRPG_AddClientExperience(client, exp, const String:reason[], bool:bHideNotice, other=-1);
+// native bool:SMRPG_AddClientExperience(client, &exp, const String:reason[], bool:bHideNotice, other=-1, SMRPG_ExpTranslationCb:callback=SMRPG_ExpTranslationCb:INVALID_FUNCTION);
 public Native_AddClientExperience(Handle:plugin, numParams)
 {
 	new client = GetNativeCell(1);
@@ -471,7 +516,7 @@ public Native_AddClientExperience(Handle:plugin, numParams)
 		return false;
 	}
 	
-	new iExperience = GetNativeCell(2);
+	new iExperience = GetNativeCellRef(2);
 	new iLen;
 	GetNativeStringLength(3, iLen);
 	new String:sReason[iLen+1];
@@ -479,9 +524,16 @@ public Native_AddClientExperience(Handle:plugin, numParams)
 	
 	new bool:bHideNotice = bool:GetNativeCell(4);
 	new other = GetNativeCell(5);
+#if SOURCEMOD_V_MAJOR >= 1 && SOURCEMOD_V_MINOR >= 7
+	new Function:translationCallback = GetNativeFunction(6);
+#else
 	new Function:translationCallback = Function:GetNativeCell(6);
+#endif
 	
+	new iOriginalExperience = iExperience;
 	new bool:bAdded = Stats_AddExperience(client, iExperience, sReason, bHideNotice, other);
+	if(iOriginalExperience != iExperience)
+		SetNativeCellRef(2, iExperience);
 	
 	if(bAdded && !IsFakeClient(client))
 	{
@@ -550,14 +602,34 @@ public Native_IsClientAFK(Handle:plugin, numParams)
 	return IsClientAFK(client);
 }
 
+public Native_IsClientSpawnProtected(Handle:plugin, numParams)
+{
+	new client = GetNativeCell(1);
+	if(client < 0 || client > MaxClients)
+	{
+		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
+		return false;
+	}
+	
+	return IsClientSpawnProtected(client);
+}
+
 public Native_GetTop10Players(Handle:plugin, numParams)
 {
-	new Function:callback = GetNativeCell(1);
+#if SOURCEMOD_V_MAJOR >= 1 && SOURCEMOD_V_MINOR >= 7
+	new Function:callback = GetNativeFunction(1);
+#else
+	new Function:callback = Function:GetNativeCell(1);
+#endif
 	new data = GetNativeCell(2);
 	
 	new Handle:hData = CreateDataPack();
 	WritePackCell(hData, _:plugin);
+#if SOURCEMOD_V_MAJOR >= 1 && SOURCEMOD_V_MINOR >= 7
+	WritePackFunction(hData, callback);
+#else
 	WritePackCell(hData, _:callback);
+#endif
 	WritePackCell(hData, data);
 	
 	decl String:sQuery[128];
@@ -569,7 +641,11 @@ public SQL_GetTop10Native(Handle:owner, Handle:hndl, const String:error[], any:d
 {
 	ResetPack(data);
 	new Handle:hPlugin = Handle:ReadPackCell(data);
+#if SOURCEMOD_V_MAJOR >= 1 && SOURCEMOD_V_MINOR >= 7
+	new Function:callback = ReadPackFunction(data);
+#else
 	new Function:callback = Function:ReadPackCell(data);
+#endif
 	new extraData = ReadPackCell(data);
 	CloseHandle(data);
 	
@@ -826,9 +902,13 @@ public Menu_HandleLastExperience(Handle:menu, MenuAction:action, param1, param2)
 
 UpdateClientRank(client)
 {
+	if(!g_hDatabase)
+		return;
+	
 	decl String:sQuery[128];
-	Format(sQuery, sizeof(sQuery), "SELECT COUNT(*) FROM %s WHERE level > '%d' OR (level = '%d' AND experience > '%d')", TBL_PLAYERS, GetClientLevel(client), GetClientLevel(client), GetClientExperience(client));
+	Format(sQuery, sizeof(sQuery), "SELECT COUNT(*) FROM %s WHERE level > %d OR (level = %d AND experience > %d)", TBL_PLAYERS, GetClientLevel(client), GetClientLevel(client), GetClientExperience(client));
 	SQL_TQuery(g_hDatabase, SQL_GetClientRank, sQuery, GetClientUserId(client));
+	g_iNextCacheUpdate[client] = GetTime() + RANK_CACHE_UPDATE_INTERVAL;
 }
 
 GetClientRank(client)
@@ -836,13 +916,16 @@ GetClientRank(client)
 	if(IsFakeClient(client))
 		return -1;
 	
-	UpdateClientRank(client);
+	// Only update the cache, if we actually used it for a while.
+	if(g_iNextCacheUpdate[client] < GetTime())
+		UpdateClientRank(client);
 	return g_iCachedRank[client];
 }
 
 ClearClientRankCache(client)
 {
 	g_iCachedRank[client] = -1;
+	g_iNextCacheUpdate[client] = 0;
 }
 
 public SQL_GetClientRank(Handle:owner, Handle:hndl, const String:error[], any:userid)
@@ -869,14 +952,20 @@ public SQL_GetClientRank(Handle:owner, Handle:hndl, const String:error[], any:us
 
 UpdateRankCount()
 {
+	if(!g_hDatabase)
+		return;
+	
 	decl String:sQuery[128];
 	Format(sQuery, sizeof(sQuery), "SELECT COUNT(*) FROM %s", TBL_PLAYERS);
 	SQL_TQuery(g_hDatabase, SQL_GetRankCount, sQuery);
+	g_iNextCacheCountUpdate = GetTime() + RANK_CACHE_UPDATE_INTERVAL;
 }
 
 GetRankCount()
 {
-	UpdateRankCount();
+	// Only update the cache, if we actually used it for a while.
+	if(g_iNextCacheCountUpdate < GetTime())
+		UpdateRankCount();
 	
 	if(g_iCachedRankCount > 0)
 		return g_iCachedRankCount;
@@ -919,6 +1008,9 @@ PrintRankToChat(client, sendto)
 
 stock DisplayTop10Menu(client)
 {
+	if(!g_hDatabase)
+		return; // TODO: Print message about database problems.
+
 	decl String:sQuery[128];
 	Format(sQuery, sizeof(sQuery), "SELECT name, level, experience, credits FROM %s ORDER BY level DESC, experience DESC LIMIT 10", TBL_PLAYERS);
 	SQL_TQuery(g_hDatabase, SQL_GetTop10, sQuery, GetClientUserId(client));
@@ -966,8 +1058,11 @@ public Panel_DoNothing(Handle:menu, MenuAction:action, param1, param2)
 
 DisplayNextPlayersInRanking(client)
 {
+	if(!g_hDatabase)
+		return; // TODO: Print message about database problems.
+	
 	decl String:sQuery[512];
-	Format(sQuery, sizeof(sQuery), "SELECT player_id, name, level, experience, credits, (SELECT COUNT(*) FROM %s ps WHERE p.level < ps.level OR (p.level = ps.level AND p.experience < ps.experience))+1 AS rank FROM %s p WHERE level >= %d OR (level = %d AND experience >= %d) ORDER BY level ASC, experience ASC LIMIT 20", TBL_PLAYERS, TBL_PLAYERS, GetClientLevel(client), GetClientLevel(client), GetClientExperience(client));
+	Format(sQuery, sizeof(sQuery), "SELECT player_id, name, level, experience, credits, (SELECT COUNT(*) FROM %s ps WHERE p.level < ps.level OR (p.level = ps.level AND p.experience < ps.experience))+1 AS rank FROM %s p WHERE level > %d OR (level = %d AND experience >= %d) ORDER BY level ASC, experience ASC LIMIT 20", TBL_PLAYERS, TBL_PLAYERS, GetClientLevel(client), GetClientLevel(client), GetClientExperience(client));
 	SQL_TQuery(g_hDatabase, SQL_GetNext10, sQuery, GetClientUserId(client));
 }
 
@@ -1104,7 +1199,7 @@ bool:ReadWeaponExperienceConfig()
 	
 		iWeaponExperience[WXP_Damage] = KvGetFloat(hKV, "exp_damage", -1.0);
 		iWeaponExperience[WXP_Kill] = KvGetFloat(hKV, "exp_kill", -1.0);
-		iWeaponExperience[WXP_Bonus] = KvGetFloat(hKV, "exp_bonus", 0.0);
+		iWeaponExperience[WXP_Bonus] = KvGetFloat(hKV, "exp_bonus", -1.0);
 		
 		SetTrieArray(g_hWeaponExperience, sWeapon, iWeaponExperience[0], _:WeaponExperienceContainer);
 		
@@ -1119,6 +1214,7 @@ Float:GetWeaponExperience(const String:sWeapon[], WeaponExperienceType:type)
 	new iWeaponExperience[WeaponExperienceContainer];
 	iWeaponExperience[WXP_Damage] = -1.0;
 	iWeaponExperience[WXP_Kill] = -1.0;
+	iWeaponExperience[WXP_Bonus] = -1.0;
 	
 	new String:sBuffer[64];
 	RemovePrefixFromString("weapon_", sWeapon, sBuffer, sizeof(sBuffer));
@@ -1131,7 +1227,7 @@ Float:GetWeaponExperience(const String:sWeapon[], WeaponExperienceType:type)
 	if(iWeaponExperience[WXP_Kill] < 0.0)
 		iWeaponExperience[WXP_Kill] = GetConVarFloat(g_hCVExpKill);
 	if(iWeaponExperience[WXP_Bonus] < 0.0)
-		iWeaponExperience[WXP_Bonus] = 0.0;
+		iWeaponExperience[WXP_Bonus] = GetConVarFloat(g_hCVExpKillBonus);
 	
 	return Float:iWeaponExperience[type];
 }

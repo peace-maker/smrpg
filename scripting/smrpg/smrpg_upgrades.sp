@@ -17,6 +17,8 @@ enum InternalUpgradeInfo
 	UPGR_adminFlag, // Admin flag(s) this upgrade is restricted to
 	bool:UPGR_enableVisuals, // Enable the visual effects of this upgrade by default?
 	bool:UPGR_enableSounds, // Enable the audio effects of this upgrade by default?
+	bool:UPGR_allowBots, // Are bots allowed to use this upgrade?
+	UPGR_teamlock, // Can only players of a certain team use this upgrade?
 	Function:UPGR_queryCallback, // callback called, when a player bought/sold the upgrade
 	Function:UPGR_activeCallback, // callback called, to see, if a player is currently under the effect of that upgrade
 	Function:UPGR_translationCallback, // callback called, when the upgrade's name is about to get displayed.
@@ -30,6 +32,8 @@ enum InternalUpgradeInfo
 	Handle:UPGR_adminFlagConvar,
 	Handle:UPGR_visualsConvar,
 	Handle:UPGR_soundsConvar,
+	Handle:UPGR_botsConvar,
+	Handle:UPGR_teamlockConvar,
 	
 	// Topmenu object ids
 	TopMenuObject:UPGR_topmenuUpgrades,
@@ -44,6 +48,9 @@ enum InternalUpgradeInfo
 
 new Handle:g_hUpgrades;
 new Handle:g_hfwdOnUpgradeEffect;
+new Handle:g_hfwdOnUpgradeSettingsChanged;
+new Handle:g_hfwdOnUpgradeRegistered;
+new Handle:g_hfwdOnUpgradeUnregistered;
 
 RegisterUpgradeNatives()
 {
@@ -65,6 +72,9 @@ RegisterUpgradeNatives()
 RegisterUpgradeForwards()
 {
 	g_hfwdOnUpgradeEffect = CreateGlobalForward("SMRPG_OnUpgradeEffect", ET_Hook, Param_Cell, Param_String);
+	g_hfwdOnUpgradeSettingsChanged = CreateGlobalForward("SMRPG_OnUpgradeSettingsChanged", ET_Ignore, Param_String);
+	g_hfwdOnUpgradeRegistered = CreateGlobalForward("SMRPG_OnUpgradeRegistered", ET_Ignore, Param_String);
+	g_hfwdOnUpgradeUnregistered = CreateGlobalForward("SMRPG_OnUpgradeUnregistered", ET_Ignore, Param_String);
 }
 
 InitUpgrades()
@@ -99,6 +109,8 @@ public Native_RegisterUpgradeType(Handle:plugin, numParams)
 		bAlreadyLoaded = true;
 	}
 	
+	new bool:bWasUnavailable = upgrade[UPGR_unavailable];
+	
 	GetNativeStringLength(3, len);
 	new String:sDescription[len+1];
 	GetNativeString(3, sDescription, len+1);
@@ -109,8 +121,13 @@ public Native_RegisterUpgradeType(Handle:plugin, numParams)
 	new iDefaultStartCost = GetNativeCell(7);
 	new iDefaultCostInc = GetNativeCell(8);
 	new iDefaultAdminFlags = GetNativeCell(9);
+#if SOURCEMOD_V_MAJOR >= 1 && SOURCEMOD_V_MINOR >= 7
+	new Function:queryCallback = GetNativeFunction(10);
+	new Function:activeCallback = GetNativeFunction(11);
+#else
 	new Function:queryCallback = Function:GetNativeCell(10);
 	new Function:activeCallback = Function:GetNativeCell(11);
+#endif
 	
 	if(!bAlreadyLoaded)
 	{
@@ -166,7 +183,7 @@ public Native_RegisterUpgradeType(Handle:plugin, numParams)
 	
 	// Make sure the subfolder exists.
 	if(!DirExists("cfg/sourcemod/smrpg"))
-		CreateDirectory("cfg/sourcemod/smrpg", 0755);
+		CreateDirectory("cfg/sourcemod/smrpg", FPERM_U_READ|FPERM_U_WRITE|FPERM_U_EXEC|FPERM_G_READ|FPERM_G_WRITE|FPERM_G_EXEC|FPERM_O_READ|FPERM_O_EXEC);
 	
 	Format(sCvarName, sizeof(sCvarName), "smrpg_upgrade_%s", sShortName);
 	AutoExecConfig_SetFile(sCvarName, "sourcemod/smrpg");
@@ -216,6 +233,20 @@ public Native_RegisterUpgradeType(Handle:plugin, numParams)
 	GetConVarString(hCvar, sValue, sizeof(sValue));
 	upgrade[UPGR_adminFlag] = ReadFlagString(sValue);
 	
+	Format(sCvarName, sizeof(sCvarName), "smrpg_%s_allowbots", sShortName);
+	Format(sCvarDescription, sizeof(sCvarDescription), "Allow bots to use the %s upgrade?", sName);
+	hCvar = AutoExecConfig_CreateConVar(sCvarName, "1", sCvarDescription, 0, true, 0.0, true, 1.0);
+	HookConVarChange(hCvar, ConVar_UpgradeChanged);
+	upgrade[UPGR_botsConvar] = hCvar;
+	upgrade[UPGR_allowBots] = GetConVarBool(hCvar);
+	
+	Format(sCvarName, sizeof(sCvarName), "smrpg_%s_teamlock", sShortName);
+	Format(sCvarDescription, sizeof(sCvarDescription), "Restrict access to the %s upgrade to a team?\nOptions:\n\t0: Disable restriction and allow the upgrade to be used by players in any team.\n\t2: Only allow players of the RED/Terrorist team to use this upgrade.\n\t3: Only allow players of the BLU/Counter-Terrorist team to use this upgrade.", sName);
+	hCvar = AutoExecConfig_CreateConVar(sCvarName, "0", sCvarDescription, 0, true, 0.0, true, 3.0);
+	HookConVarChange(hCvar, ConVar_UpgradeChanged);
+	upgrade[UPGR_teamlockConvar] = hCvar;
+	upgrade[UPGR_teamlock] = GetConVarInt(hCvar);
+	
 	AutoExecConfig_ExecuteFile();
 	
 	//AutoExecConfig_CleanFile();
@@ -240,8 +271,26 @@ public Native_RegisterUpgradeType(Handle:plugin, numParams)
 		}
 	}
 	
-	if(upgrade[UPGR_databaseId] == -1 && !upgrade[UPGR_databaseLoading])
-		CheckUpgradeDatabaseEntry(upgrade);
+	// We're not in the process of fetching the upgrade info from the database.
+	if(!upgrade[UPGR_databaseLoading])
+	{
+		// This upgrade wasn't fetched or inserted into the database yet.
+		if(upgrade[UPGR_databaseId] == -1)
+		{
+			// Inform other plugins, that this upgrade is loaded.
+			CallUpgradeRegisteredForward(sShortName);
+			
+			CheckUpgradeDatabaseEntry(upgrade);
+		}
+		// This upgrade was registered already previously and we can use the cached values.
+		else if(bAlreadyLoaded && bWasUnavailable)
+		{
+			// Inform other plugins, that this upgrade is loaded.
+			CallUpgradeRegisteredForward(sShortName);
+			
+			RequestFrame(RequestFrame_OnFrame, upgrade[UPGR_index]);
+		}
+	}
 }
 
 // native SMRPG_UnregisterUpgradeType(const String:shortname[]);
@@ -266,6 +315,12 @@ public Native_UnregisterUpgradeType(Handle:plugin, numParams)
 			// Set this upgrade as unavailable! Don't process anything in the future.
 			upgrade[UPGR_unavailable] = true;
 			SaveUpgradeConfig(upgrade);
+			
+			// Inform other plugins, that this upgrade is unloaded.
+			Call_StartForward(g_hfwdOnUpgradeUnregistered);
+			Call_PushString(sShortName);
+			Call_Finish();
+			
 			return;
 		}
 	}
@@ -353,7 +408,7 @@ public Native_GetUpgradeInfo(Handle:plugin, numParams)
 		return;
 	}
 	
-	// Keep the future proof. If the calling plugin wants more information than we got, only return as much as we know.
+	// Keep this future proof. If the calling plugin wants more information than we got, only return as much as we know.
 	// If it wants less info, only write less.
 	new arraysize = GetNativeCell(3);
 	if(arraysize > _:UpgradeInfo)
@@ -366,8 +421,10 @@ public Native_GetUpgradeInfo(Handle:plugin, numParams)
 	publicUpgrade[UI_startCost] = upgrade[UPGR_startCost];
 	publicUpgrade[UI_incCost] = upgrade[UPGR_incCost];
 	publicUpgrade[UI_adminFlag] = upgrade[UPGR_adminFlag];
+	publicUpgrade[UI_teamlock] = upgrade[UPGR_teamlock];
 	strcopy(publicUpgrade[UI_name], MAX_UPGRADE_NAME_LENGTH, upgrade[UPGR_name]);
 	strcopy(publicUpgrade[UI_shortName], MAX_UPGRADE_SHORTNAME_LENGTH, upgrade[UPGR_shortName]);
+	strcopy(publicUpgrade[UI_description], MAX_UPGRADE_DESCRIPTION_LENGTH, upgrade[UPGR_description]);
 	
 	SetNativeArray(2, publicUpgrade[0], arraysize);
 }
@@ -393,7 +450,12 @@ public Native_SetUpgradeTranslationCallback(Handle:plugin, numParams)
 		return;
 	}
 	
+#if SOURCEMOD_V_MAJOR >= 1 && SOURCEMOD_V_MINOR >= 7
+	upgrade[UPGR_translationCallback] = GetNativeFunction(2);
+#else
 	upgrade[UPGR_translationCallback] = Function:GetNativeCell(2);
+#endif
+	
 	SaveUpgradeConfig(upgrade);
 }
 
@@ -418,7 +480,12 @@ public Native_SetUpgradeResetCallback(Handle:plugin, numParams)
 		return;
 	}
 	
+#if SOURCEMOD_V_MAJOR >= 1 && SOURCEMOD_V_MINOR >= 7
+	upgrade[UPGR_resetCallback] = GetNativeFunction(2);
+#else
 	upgrade[UPGR_resetCallback] = Function:GetNativeCell(2);
+#endif
+	
 	SaveUpgradeConfig(upgrade);
 }
 
@@ -535,6 +602,16 @@ public Native_RunUpgradeEffect(Handle:plugin, numParams)
 			return false;
 	}
 	
+	// Block the effect from running, if the client is in the wrong team and there is a teamlock on the upgrade.
+	if(!IsClientInLockedTeam(client, upgrade))
+		return false;
+	
+	// Don't allow bots to use this upgrade at all and don't inform other plugins that this effect would be about to start.
+	if(!upgrade[UPGR_allowBots] && IsFakeClient(client))
+	{
+		return false;
+	}
+	
 	new Action:result;
 	Call_StartForward(g_hfwdOnUpgradeEffect);
 	Call_PushCell(client);
@@ -567,6 +644,33 @@ public Native_CheckUpgradeAccess(Handle:plugin, numParams)
 	}
 	
 	return HasAccessToUpgrade(client, upgrade);
+}
+
+/**
+ * Frame hook callbacks
+ */
+// This is called one frame after some upgrade plugin reregistered itself after reload.
+// This way OnLibraryAdded was run completely in the upgrade plugin and all convars and other stuff is initialized correctly.
+public RequestFrame_OnFrame(any:upgradeindex)
+{
+	new upgrade[InternalUpgradeInfo];
+	GetUpgradeByIndex(upgradeindex, upgrade);
+	
+	// Inform the upgrade plugin, that these players need the effect applied again.
+	for(new i=1;i<=MaxClients;i++)
+	{
+		if(!IsClientInGame(i))
+			continue;
+		
+		if(GetClientSelectedUpgradeLevel(i, upgrade[UPGR_index]) <= 0)
+			continue;
+		
+		// Notify plugin about it.
+		Call_StartFunction(upgrade[UPGR_plugin], upgrade[UPGR_queryCallback]);
+		Call_PushCell(i);
+		Call_PushCell(UpgradeQueryType_Buy);
+		Call_Finish();
+	}
 }
 
 /**
@@ -690,6 +794,22 @@ stock bool:HasAccessToUpgrade(client, upgrade[InternalUpgradeInfo])
 	return CheckCommandAccess(client, sFlag, upgrade[UPGR_adminFlag], true);
 }
 
+// Checks whether a client is in the correct team, if the upgrade is locked to one.
+stock bool:IsClientInLockedTeam(client, upgrade[InternalUpgradeInfo])
+{
+	// This upgrade isn't locked at all. No restriction.
+	if(upgrade[UPGR_teamlock] <= 1)
+		return true;
+
+	new iTeam = GetClientTeam(client);
+	// Always grant access to all upgrades, if the player is in spectator mode.
+	if(iTeam <= 1)
+		return true;
+	
+	// See if the player is in the allowed team.
+	return iTeam == upgrade[UPGR_teamlock];
+}
+
 GetUpgradeTranslatedName(client, iUpgradeIndex, String:name[], maxlen)
 {
 	new upgrade[InternalUpgradeInfo];
@@ -730,6 +850,14 @@ GetUpgradeTranslatedDescription(client, iUpgradeIndex, String:description[], max
 	Call_Finish();
 }
 
+CallUpgradeRegisteredForward(const String:sShortName[])
+{
+	// Inform other plugins, that this upgrade is loaded.
+	Call_StartForward(g_hfwdOnUpgradeRegistered);
+	Call_PushString(sShortName);
+	Call_Finish();
+}
+
 /**
  * Convar change callbacks
  */
@@ -746,18 +874,21 @@ public ConVar_UpgradeChanged(Handle:convar, const String:oldValue[], const Strin
 		{
 			upgrade[UPGR_enabled] = GetConVarBool(convar);
 			SaveUpgradeConfig(upgrade);
+			Call_OnUpgradeSettingsChanged(upgrade[UPGR_shortName]);
 			break;
 		}
 		else if(upgrade[UPGR_startCostConvar] == convar)
 		{
 			upgrade[UPGR_startCost] = GetConVarInt(convar);
 			SaveUpgradeConfig(upgrade);
+			Call_OnUpgradeSettingsChanged(upgrade[UPGR_shortName]);
 			break;
 		}
 		else if(upgrade[UPGR_incCostConvar] == convar)
 		{
 			upgrade[UPGR_incCost] = GetConVarInt(convar);
 			SaveUpgradeConfig(upgrade);
+			Call_OnUpgradeSettingsChanged(upgrade[UPGR_shortName]);
 			break;
 		}
 		else if(upgrade[UPGR_adminFlagConvar] == convar)
@@ -766,18 +897,38 @@ public ConVar_UpgradeChanged(Handle:convar, const String:oldValue[], const Strin
 			GetConVarString(convar, sValue, sizeof(sValue));
 			upgrade[UPGR_adminFlag] = ReadFlagString(sValue);
 			SaveUpgradeConfig(upgrade);
+			Call_OnUpgradeSettingsChanged(upgrade[UPGR_shortName]);
 			break;
 		}
 		else if(upgrade[UPGR_visualsConvar] == convar)
 		{
 			upgrade[UPGR_enableVisuals] = GetConVarBool(convar);
 			SaveUpgradeConfig(upgrade);
+			Call_OnUpgradeSettingsChanged(upgrade[UPGR_shortName]);
 			break;
 		}
 		else if(upgrade[UPGR_soundsConvar] == convar)
 		{
 			upgrade[UPGR_enableSounds] = GetConVarBool(convar);
 			SaveUpgradeConfig(upgrade);
+			Call_OnUpgradeSettingsChanged(upgrade[UPGR_shortName]);
+			break;
+		}
+		else if(upgrade[UPGR_botsConvar] == convar)
+		{
+			upgrade[UPGR_allowBots] = GetConVarBool(convar);
+			SaveUpgradeConfig(upgrade);
+			Call_OnUpgradeSettingsChanged(upgrade[UPGR_shortName]);
+			break;
+		}
+		else if(upgrade[UPGR_teamlockConvar] == convar)
+		{
+			upgrade[UPGR_teamlock] = GetConVarInt(convar);
+			// Guarantee to have "0" when disabled.
+			if(upgrade[UPGR_teamlock] == 1)
+				upgrade[UPGR_teamlock] = 0;
+			SaveUpgradeConfig(upgrade);
+			Call_OnUpgradeSettingsChanged(upgrade[UPGR_shortName]);
 			break;
 		}
 	}
@@ -799,10 +950,19 @@ public ConVar_UpgradeMaxLevelChanged(Handle:convar, const String:oldValue[], con
 	new iMaxLevelBarrier = upgrade[UPGR_maxLevelBarrier];
 	
 	if(iMaxLevelBarrier > 0 && !GetConVarBool(g_hCVIgnoreLevelBarrier) && iNewMaxLevel > iMaxLevelBarrier)
+	{
 		iNewMaxLevel = iMaxLevelBarrier;
+		
+		// Reflect the cap in the convar value.
+		UnhookConVarChange(convar, ConVar_UpgradeMaxLevelChanged);
+		SetConVarInt(convar, iNewMaxLevel);
+		HookConVarChange(convar, ConVar_UpgradeMaxLevelChanged);
+	}
 	
 	upgrade[UPGR_maxLevel] = iNewMaxLevel;
 	SaveUpgradeConfig(upgrade);
+	
+	Call_OnUpgradeSettingsChanged(upgrade[UPGR_shortName]);
 	
 	for(new i=1;i<=MaxClients;i++)
 	{
@@ -815,4 +975,11 @@ public ConVar_UpgradeMaxLevelChanged(Handle:convar, const String:oldValue[], con
 			TakeClientUpgrade(i, upgrade[UPGR_index]);
 		}
 	}
+}
+
+stock Call_OnUpgradeSettingsChanged(const String:sShortname[])
+{
+	Call_StartForward(g_hfwdOnUpgradeSettingsChanged);
+	Call_PushString(sShortname);
+	Call_Finish();
 }

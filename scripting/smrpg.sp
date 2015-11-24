@@ -3,6 +3,7 @@
 #include <sdktools>
 #include <sdkhooks>
 #include <topmenus>
+#include <regex>
 #include <smlib>
 #include <smrpg>
 #include <autoexecconfig>
@@ -20,9 +21,13 @@
 new bool:g_bLateLoaded;
 new Handle:g_hPlayerAutoSave;
 
+new Handle:g_hfwdOnEnableStatusChanged;
+
 // Convars
 new Handle:g_hCVEnable;
+new Handle:g_hCVFFA;
 new Handle:g_hCVBotEnable;
+new Handle:g_hCVBotSaveStats;
 new Handle:g_hCVBotNeedHuman;
 new Handle:g_hCVNeedEnemies;
 new Handle:g_hCVEnemiesNotAFK;
@@ -30,6 +35,7 @@ new Handle:g_hCVDebug;
 new Handle:g_hCVSaveData;
 new Handle:g_hCVSaveInterval;
 new Handle:g_hCVPlayerExpire;
+new Handle:g_hCVAllowSelfReset;
 
 new Handle:g_hCVBotMaxlevel;
 new Handle:g_hCVBotMaxlevelReset;
@@ -42,6 +48,7 @@ new Handle:g_hCVBotKillBot;
 
 new Handle:g_hCVAnnounceNewLvl;
 new Handle:g_hCVAFKTime;
+new Handle:g_hCVSpawnProtect;
 
 new Handle:g_hCVExpNotice;
 new Handle:g_hCVExpMax;
@@ -50,6 +57,7 @@ new Handle:g_hCVExpInc;
 
 new Handle:g_hCVExpDamage;
 new Handle:g_hCVExpKill;
+new Handle:g_hCVExpKillBonus;
 new Handle:g_hCVExpKillMax;
 
 new Handle:g_hCVExpTeamwin;
@@ -63,6 +71,13 @@ new Handle:g_hCVIgnoreLevelBarrier;
 new Handle:g_hCVAllowPresentUpgradeUsage;
 new Handle:g_hCVDisableLevelSelection;
 
+#define SHOW_TEAMLOCK_NONE 0
+#define SHOW_TEAMLOCK_BOUGHT 1
+#define SHOW_TEAMLOCK_ALL 2
+new Handle:g_hCVShowUpgradesOfOtherTeam;
+new Handle:g_hCVBuyUpgradesOfOtherTeam;
+new Handle:g_hCVShowTeamlockNoticeOwnTeam;
+
 new Handle:g_hCVShowUpgradePurchase;
 new Handle:g_hCVShowMenuOnLevelDefault;
 new Handle:g_hCVFadeOnLevelDefault;
@@ -73,6 +88,12 @@ new Handle:g_hCVFadeOnLevelColor;
 new String:g_sDefaultRPGCommands[][] = {"rpgmenu", "rpgrank", "rpginfo", "rpgtop10", "rpgnext", "rpgsession", "rpghelp", "rpgexp"};
 
 #define IF_IGNORE_BOTS(%1) if(IsFakeClient(%1) && (!GetConVarBool(g_hCVBotEnable) || (GetConVarBool(g_hCVBotNeedHuman) && Client_GetCount(true, false) == 0)))
+
+// Compatibility hack to suppress compiler errors on sourcemod 1.6
+// SourceMod 1.7 added a Transaction methodmap.
+#if SOURCEMOD_V_MAJOR == 1 && SOURCEMOD_V_MINOR < 7
+#define Transaction Handle
+#endif
 
 #include "smrpg/smrpg_upgrades.sp"
 #include "smrpg/smrpg_database.sp"
@@ -97,14 +118,9 @@ public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
 	RegPluginLibrary("smrpg");
 	g_bLateLoaded = late;
 	
-	MarkNativeAsOptional("SQL_SetCharset");
-	// https://bugs.alliedmods.net/show_bug.cgi?id=6033
-	MarkNativeAsOptional("DisplayTopMenuCategory");
-	// https://bugs.alliedmods.net/show_bug.cgi?id=6034
-	MarkNativeAsOptional("SetTopMenuTitleCaching");
-	
 	CreateNative("SMRPG_IsEnabled", Native_IsEnabled);
 	CreateNative("SMRPG_IgnoreBots", Native_IgnoreBots);
+	CreateNative("SMRPG_IsFFAEnabled", Native_IsFFAEnabled);
 	RegisterUpgradeNatives();
 	RegisterPlayerNatives();
 	RegisterStatsNatives();
@@ -129,7 +145,9 @@ public OnPluginStart()
 	AutoExecConfig_SetPlugin(INVALID_HANDLE);
 	
 	g_hCVEnable = AutoExecConfig_CreateConVar("smrpg_enable", "1", "If set to 1, SM:RPG is enabled, if 0, SM:RPG is disabled", 0, true, 0.0, true, 1.0);
+	g_hCVFFA = AutoExecConfig_CreateConVar("smrpg_ffa", "0", "Free-For-All mode to ignore teams and handle teammates as if they're enemies?", 0, true, 0.0, true, 1.0);
 	g_hCVBotEnable = AutoExecConfig_CreateConVar("smrpg_bot_enable", "1", "If set to 1, bots will be able to use the SM:RPG plugin", 0, true, 0.0, true, 1.0);
+	g_hCVBotSaveStats = AutoExecConfig_CreateConVar("smrpg_bot_save_stats", "0", "If set to 1, the stats of bots are saved per bot name and are restored when the bot is added later again.", 0, true, 0.0, true, 1.0);
 	g_hCVBotNeedHuman = AutoExecConfig_CreateConVar("smrpg_bot_need_human", "1", "Don't allow bots to gain experience while no human player is on the server?", 0, true, 0.0, true, 1.0);
 	g_hCVNeedEnemies = AutoExecConfig_CreateConVar("smrpg_need_enemies", "1", "Don't give any experience if there is no enemy in the opposite team?", 0, true, 0.0, true, 1.0);
 	g_hCVEnemiesNotAFK = AutoExecConfig_CreateConVar("smrpg_enemies_not_afk", "1", "Don't give any experience if all enemies are currently AFK?", 0, true, 0.0, true, 1.0);
@@ -137,6 +155,7 @@ public OnPluginStart()
 	g_hCVSaveData = AutoExecConfig_CreateConVar("smrpg_save_data", "1", "If disabled, the database won't be updated (this means player data won't be saved!)", 0, true, 0.0, true, 1.0);
 	g_hCVSaveInterval = AutoExecConfig_CreateConVar("smrpg_save_interval", "150", "Interval (in seconds) that player data is auto saved (0 = off)", 0, true, 0.0);
 	g_hCVPlayerExpire = AutoExecConfig_CreateConVar("smrpg_player_expire", "30", "Sets how many days until an unused player account is deleted (0 = never)", 0, true, 0.0);
+	g_hCVAllowSelfReset = AutoExecConfig_CreateConVar("smrpg_allow_selfreset", "1", "Are players allowed to reset their own rpg stats in the settings menu?", 0, true, 0.0, true, 1.0);
 	
 	g_hCVBotMaxlevel = AutoExecConfig_CreateConVar("smrpg_bot_maxlevel", "250", "The maximum level a bot can reach until its stats are reset (0 = infinite)", 0, true, 0.0);
 	g_hCVBotMaxlevelReset = AutoExecConfig_CreateConVar("smrpg_bot_maxlevel_reset", "1", "Reset the bot to level 1, if the bot reaches the maxlevel for bots?", 0, true, 0.0, true, 1.0);
@@ -149,6 +168,7 @@ public OnPluginStart()
 	
 	g_hCVAnnounceNewLvl = AutoExecConfig_CreateConVar("smrpg_announce_newlvl", "1", "Global announcement when a player reaches a new level (1 = enable, 0 = disable)", 0, true, 0.0, true, 1.0);
 	g_hCVAFKTime = AutoExecConfig_CreateConVar("smrpg_afk_time", "30", "After how many seconds of idleing is the player flagged as AFK? (0 = off)", 0, true, 0.0);
+	g_hCVSpawnProtect = AutoExecConfig_CreateConVar("smrpg_spawn_protect_noxp", "1", "Don't give any experience for actions against players who just spawned and haven't pressed any buttons yet?", 0, true, 0.0, true, 1.0);
 	
 	g_hCVExpNotice = AutoExecConfig_CreateConVar("smrpg_exp_notice", "1", "Sends notifications to players when they gain Experience", 0, true, 0.0, true, 1.0);
 	g_hCVExpMax = AutoExecConfig_CreateConVar("smrpg_exp_max", "50000", "Maximum experience that will ever be required", 0, true, 0.0);
@@ -157,9 +177,11 @@ public OnPluginStart()
 	
 	g_hCVExpDamage = AutoExecConfig_CreateConVar("smrpg_exp_damage", "1.0", "Experience for hurting an enemy multiplied by the damage done", 0, true, 0.0);
 	g_hCVExpKill = AutoExecConfig_CreateConVar("smrpg_exp_kill", "15.0", "Experience for a kill multiplied by the victim's level", 0, true, 0.0);
+	g_hCVExpKillBonus = AutoExecConfig_CreateConVar("smrpg_exp_kill_bonus", "0.0", "Extra constant experience to give on top of the regular experience on a kill.", 0, true, 0.0);
 	g_hCVExpKillMax = AutoExecConfig_CreateConVar("smrpg_exp_kill_max", "0.0", "Maximum experience a player can ever earn for killing someone. (0 = unlimited)", 0, true, 0.0);
 	
 	g_hCVExpTeamwin = AutoExecConfig_CreateConVar("smrpg_exp_teamwin", "0.15", "Experience multipled by the experience required and the team ratio given to a team for completing the objective", 0, true, 0.0);
+	AutoExecConfig_CreateConVar("smrpg_exp_use_teamratio", "1", "Scale the experience for team events by the team ratio? This is e.g. used to lower the amount of experience earned, when a winning team has more players than the other.", 0, true, 0.0, true, 1.0);
 	
 	g_hCVLastExperienceCount = AutoExecConfig_CreateConVar("smrpg_lastexperience_count", "50", "How many times should we remember why each player got some experience in the recent past?", 0, true, 1.0);
 	
@@ -169,6 +191,9 @@ public OnPluginStart()
 	g_hCVIgnoreLevelBarrier = AutoExecConfig_CreateConVar("smrpg_ignore_level_barrier", "0", "Ignore the hardcoded maxlevels for the upgrades and allow to set the maxlevel as high as you want. THIS MIGHT BE BAD!", 0, true, 0.0, true, 1.0);
 	g_hCVAllowPresentUpgradeUsage = AutoExecConfig_CreateConVar("smrpg_allow_present_upgrade_usage", "0", "Allow players to use the upgrades they already have levels for, if they normally wouldn't have access to the upgrade due to the adminflags.\nThis allows admins to give upgrades to players they aren't able to buy themselves.", 0, true, 0.0, true, 1.0);
 	g_hCVDisableLevelSelection = AutoExecConfig_CreateConVar("smrpg_disable_level_selection", "0", "Don't allow players to change the selected levels of their upgrades to a lower level than they already purchased?", 0, true, 0.0, true, 1.0);
+	g_hCVShowUpgradesOfOtherTeam = AutoExecConfig_CreateConVar("smrpg_show_upgrades_teamlock", "1", "Show the upgrades if they are locked to the other team?\n\t0: Don't show teamlocked upgrades at all.\n\t1: Show upgrades if the player already bought a level while being in the other team.\n\t2: Always show all upgrades.", 0, true, 0.0, true, 2.0);
+	g_hCVBuyUpgradesOfOtherTeam = AutoExecConfig_CreateConVar("smrpg_buy_upgrades_teamlock", "0", "Allow players to buy upgrades of the other team, even if they can't use them in the current team?", 0, true, 0.0, true, 1.0);
+	g_hCVShowTeamlockNoticeOwnTeam = AutoExecConfig_CreateConVar("smrpg_show_teamlock_notice_own_team", "0", "Always show the team restriction of the upgrade in the menu, even if the player is in the correct team?", 0, true, 0.0, true, 1.0);
 	
 	g_hCVShowUpgradePurchase = AutoExecConfig_CreateConVar("smrpg_show_upgrade_purchase_in_chat", "0", "Show a message to all in chat when a player buys an upgrade.", 0, true, 0.0, true, 1.0);
 	g_hCVShowMenuOnLevelDefault = AutoExecConfig_CreateConVar("smrpg_show_menu_on_levelup", "0", "Show the rpg menu when a player levels up by default? Players can change it in their settings individually afterwards.", 0, true, 0.0, true, 1.0);
@@ -177,7 +202,10 @@ public OnPluginStart()
 	g_hCVFadeOnLevelColor = AutoExecConfig_CreateConVar("smrpg_fade_screen_on_levelup_color", "255 215 0 40", "RGBA color to fade the screen in for a short time after levelup. Default is a golden shine.", 0);
 	
 	AutoExecConfig_ExecuteFile();
-	AutoExecConfig_CleanFile();
+	//AutoExecConfig_CleanFile();
+	
+	// forward SMRPG_OnEnableStatusChanged(bool:bEnabled);
+	g_hfwdOnEnableStatusChanged = CreateGlobalForward("SMRPG_OnEnableStatusChanged", ET_Ignore, Param_Cell);
 	
 	HookConVarChange(g_hCVEnable, ConVar_EnableChanged);
 	HookConVarChange(g_hCVSaveInterval, ConVar_SaveIntervalChanged);
@@ -265,6 +293,15 @@ public ConVar_SaveIntervalChanged(Handle:convar, const String:oldValue[], const 
 
 public ConVar_EnableChanged(Handle:convar, const String:oldValue[], const String:newValue[])
 {
+	if(StrEqual(oldValue, newValue, false))
+		return;
+	
+	// Call the forward.
+	Call_StartForward(g_hfwdOnEnableStatusChanged);
+	Call_PushCell(GetConVarBool(convar));
+	Call_Finish();
+	
+	// Don't need to do anything, if we're enabled or we don't want to save the stats to the database.
 	if(GetConVarBool(convar) || !GetConVarBool(g_hCVSaveData))
 		return;
 	
@@ -370,16 +407,18 @@ public OnClientPutInServer(client)
 	if(!GetConVarBool(g_hCVEnable))
 		return;
 	
+	// Call the query callback in all plugins of the upgrades this client owns.
+	// His upgrades were loaded before he got fully ingame.
+	if (IsPlayerDataLoaded(client))
+		NotifyUpgradePluginsOfLevel(client);
+	
 	Client_PrintToChat(client, false, "%t", "Inform about plugin", PLUGIN_VERSION);
 	Client_PrintToChat(client, false, "%t", "Advertise rpgmenu command");
 }
 
 public OnClientAuthorized(client, const String:auth[])
 {
-	if(IsFakeClient(client))
-		return;
-	
-	AddPlayer(client, auth);
+	AddPlayer(client);
 }
 
 public OnClientDisconnect(client)
@@ -390,13 +429,21 @@ public OnClientDisconnect(client)
 	ClearClientRankCache(client);
 	RemovePlayer(client);
 	ResetAFKPlayer(client);
+	ResetSpawnProtection(client);
 }
 
 public Action:OnPlayerRunCmd(client, &buttons, &impulse, Float:vel[3], Float:angles[3], &weapon, &subtype, &cmdnum, &tickcount, &seed, mouse[2])
 {
-	// Reset his afk timer when he uses a weapon.
-	if(IsClientInGame(client) && IsPlayerAlive(client) && buttons & (IN_ATTACK|IN_ATTACK2))
-		g_PlayerAFKInfo[client][AFK_startTime] = 0;
+	if(IsClientInGame(client) && IsPlayerAlive(client))
+	{
+		// Reset his afk timer when he uses a weapon.
+		if(buttons & (IN_ATTACK|IN_ATTACK2))
+			g_PlayerAFKInfo[client][AFK_startTime] = 0;
+		
+		// Remove spawn protection if the player presses any buttons.
+		if(buttons > 0)
+			g_bPlayerSpawnProtected[client] = false;
+	}
 	return Plugin_Continue;
 }
 
@@ -429,6 +476,8 @@ public Event_OnPlayerSpawn(Handle:event, const String:error[], bool:dontBroadcas
 	
 	// Save the spawn time so we don't count the new spawn position as if the player moved himself
 	g_PlayerAFKInfo[client][AFK_spawnTime] = GetTime();
+	// Protect him and don't give any experience to actions against him until he presses some button.
+	g_bPlayerSpawnProtected[client] = true;
 }
  
 public Event_OnPlayerDeath(Handle:event, const String:error[], bool:dontBroadcast)
@@ -492,7 +541,7 @@ public Event_OnPlayerSay(Handle:event, const String:error[], bool:dontBroadcast)
 				if(iObsMode == OBS_MODE_IN_EYE || iObsMode == OBS_MODE_CHASE)
 				{
 					new iTarget = Client_GetObserverTarget(client);
-					if(iTarget > 0)
+					if(iTarget > 0 && iTarget <= MaxClients)
 					{
 						DisplayOtherUpgradesMenu(client, iTarget);
 						return;
@@ -707,6 +756,11 @@ public Native_IsEnabled(Handle:plugin, numParams)
 public Native_IgnoreBots(Handle:plugin, numParams)
 {
 	return !GetConVarBool(g_hCVBotEnable);
+}
+
+public Native_IsFFAEnabled(Handle:plugin, numParams)
+{
+	return GetConVarBool(g_hCVFFA);
 }
 
 /**

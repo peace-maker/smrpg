@@ -54,6 +54,7 @@ public OnPluginStart()
 	HookEvent("player_spawn", Event_OnPlayerSpawn);
 	
 	LoadTranslations("common.phrases");
+	LoadTranslations("smrpg_turbomode.phrases");
 	
 	// See if the menu plugin is already ready
 	new Handle:topmenu;
@@ -134,7 +135,7 @@ public ConVar_TurboModeChanged(Handle:convar, const String:oldValue[], const Str
 		// Restart the round.
 		//ServerCommand("mp_restartgame 2");
 		
-		Client_PrintToChatAll(false, "{OG}SM:RPG{N} > {RB}Turbo mode enabled!{G} Experience earned increase {N}%.2fx{G} and credits {N}%.2fx{G} faster! Stats are not permanent.", GetConVarFloat(g_hCVExperienceMultiplier), GetConVarFloat(g_hCVCreditsMultiplier));
+		Client_PrintToChatAll(false, "{OG}SM:RPG{N} > %t", "Turbo mode enabled", GetConVarFloat(g_hCVExperienceMultiplier), GetConVarFloat(g_hCVCreditsMultiplier));
 		
 		// Start showing a constant message on the screen.
 		if(Timer_DisplayTurboModeHud(INVALID_HANDLE) == Plugin_Continue)
@@ -161,7 +162,7 @@ public ConVar_TurboModeChanged(Handle:convar, const String:oldValue[], const Str
 			}
 		}
 		
-		Client_PrintToChatAll(false, "{OG}SM:RPG{N} > {RB}Turbo mode disabled!{G} Experience and credit rates are back to normal.");
+		Client_PrintToChatAll(false, "{OG}SM:RPG{N} > %t", "Turbo mode disabled");
 	}
 }
 
@@ -175,7 +176,7 @@ public Event_OnPlayerSpawn(Handle:event, const String:name[], bool:dontBroadcast
 		return;
 	
 	if(IsPlayerAlive(client) && GetConVarBool(g_hCVTurboMode) && GetConVarBool(g_hCVTurboModeAnnounce))
-		Client_PrintToChat(client, false, "{OG}SM:RPG{N} > {RB}Turbo mode enabled!{G} Experience increase {N}%.2fx{G} and credits {N}%.2fx{G} faster! Stats are not permanent.", GetConVarFloat(g_hCVExperienceMultiplier), GetConVarFloat(g_hCVCreditsMultiplier));
+		Client_PrintToChat(client, false, "{OG}SM:RPG{N} > %t", "Turbo mode enabled", GetConVarFloat(g_hCVExperienceMultiplier), GetConVarFloat(g_hCVCreditsMultiplier));
 }
 
 /**
@@ -186,13 +187,13 @@ public Action:Cmd_TurboMode(client, args)
 	if(!GetConVarBool(g_hCVTurboMode))
 	{
 		LogAction(client, -1, "%L enabled SM:RPG turbo mode.", client);
-		ReplyToCommand(client, "SM:RPG > Turbo mode is now enabled. All players have been reset and experience is speed up.");
+		ReplyToCommand(client, "SM:RPG > %t", "Command Turbo mode enabled");
 		SetConVarBool(g_hCVTurboMode, true);
 	}
 	else
 	{
 		LogAction(client, -1, "%L disabled SM:RPG turbo mode.", client);
-		ReplyToCommand(client, "SM:RPG > Turbo mode is now disabled. All players will be reconnected.");
+		ReplyToCommand(client, "SM:RPG > %t", "Command Turbo mode disabled");
 		SetConVarBool(g_hCVTurboMode, false);
 	}
 	
@@ -209,13 +210,16 @@ public Action:Timer_DisplayTurboModeHud(Handle:timer)
 	
 	SetHudTextParams(0.8, 0.2, 2.0, 255, 0, 0, 200);
 	
+	decl String:sBuffer[64];
+	
 	for(new i=1;i<=MaxClients;i++)
 	{
 		if(IsClientInGame(i) && !IsFakeClient(i))
 		{
-			if(ShowHudText(i, -1, "Turbo mode") == -1)
+			Format(sBuffer, sizeof(sBuffer), "%T", "Turbo mode", i);
+			if(ShowHudText(i, -1, sBuffer) == -1)
 			{
-				PrintToServer("HudMsg not supported?");
+				//PrintToServer("HudMsg not supported?");
 				return Plugin_Stop;
 			}
 		}
@@ -302,11 +306,26 @@ public TopMenu_AdminHandleTurboMode(Handle:topmenu, TopMenuAction:action, TopMen
 {
 	if (action == TopMenuAction_DisplayOption)
 	{
-		Format(buffer, maxlength, "Turbo Mode: %T", (GetConVarBool(g_hCVTurboMode)?"On":"Off"), param);
+		Format(buffer, maxlength, "%T: %T", "Turbo mode", param, (GetConVarBool(g_hCVTurboMode)?"On":"Off"), param);
 	}
 	else if (action == TopMenuAction_SelectOption)
 	{
-		Cmd_TurboMode(param, 0);
-		RedisplayAdminMenu(topmenu, param);
+		// Make sure to toggle turbo mode after the menu closed.
+		// SM doesn't like clients to disconnect during a menu callback.
+		RequestFrame(Frame_AfterMenuHandle, GetClientUserId(param));
+	}
+}
+
+public Frame_AfterMenuHandle(any:userid)
+{
+	new client = GetClientOfUserId(userid);
+	if(!client)
+		return;
+	
+	// Toggle turbo mode
+	Cmd_TurboMode(client, 0);
+	if(IsClientInGame(client))
+	{
+		RedisplayAdminMenu(g_hTopMenu, client);
 	}
 }

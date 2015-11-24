@@ -92,7 +92,7 @@ public OnPluginStart()
 	g_hCVEnableAntiKnifeleveling = AutoExecConfig_CreateConVar("smrpg_anti_knifelevel", "1", "Stop giving exp to players who knife each other too often in a time frame?", 0, true, 0.0, true, 1.0);
 	
 	AutoExecConfig_ExecuteFile();
-	AutoExecConfig_CleanFile();
+	//AutoExecConfig_CleanFile();
 	
 	LoadTranslations("smrpg_cstrike.phrases");
 	
@@ -200,8 +200,12 @@ public Event_OnPlayerHurt(Handle:event, const String:error[], bool:dontBroadcast
 	if(SMRPG_IsClientAFK(victim))
 		return;
 	
-	// Ignore teamattack
-	if(GetClientTeam(attacker) == GetClientTeam(victim))
+	// Don't give the attacker any exp when his victim just spawned and didn't do anything at all yet.
+	if(SMRPG_IsClientSpawnProtected(victim))
+		return;
+	
+	// Ignore teamattack if not FFA
+	if(!SMRPG_IsFFAEnabled() && GetClientTeam(attacker) == GetClientTeam(victim))
 		return;
 	
 	new iExp;
@@ -275,9 +279,13 @@ public Event_OnPlayerDeath(Handle:event, const String:error[], bool:dontBroadcas
 	if(SMRPG_IsClientAFK(victim))
 		return;
 	
+	// Don't give the attacker any exp when his victim just spawned and didn't do anything at all yet.
+	if(SMRPG_IsClientSpawnProtected(victim))
+		return;
+	
 	// Give the assisting player some exp.
 	if(assister > 0
-	&& GetClientTeam(victim) != GetClientTeam(assister))
+	&& (SMRPG_IsFFAEnabled() || GetClientTeam(victim) != GetClientTeam(assister)))
 	{
 		new iExp = RoundToCeil(SMRPG_GetClientLevel(victim) * GetConVarFloat(g_hCVExpKillAssist));
 		Debug_AddClientExperience(assister, iExp, false, "cs_playerkillassist", victim);
@@ -287,8 +295,8 @@ public Event_OnPlayerDeath(Handle:event, const String:error[], bool:dontBroadcas
 	if(attacker == victim)
 		return;
 	
-	// Ignore teamattack
-	if(GetClientTeam(attacker) == GetClientTeam(victim))
+	// Ignore teamattack if not FFA
+	if(!SMRPG_IsFFAEnabled() && GetClientTeam(attacker) == GetClientTeam(victim))
 		return;
 	
 	new String:sWeapon[64];
@@ -485,16 +493,24 @@ Debug_AddClientExperience(client, exp, bool:bHideNotice, const String:sReason[],
 	new iOldExperience = SMRPG_GetClientExperience(client);
 	new iOldNeeded = SMRPG_LevelToExperience(iOldLevel);
 	
-	SMRPG_AddClientExperience(client, exp, sReason, bHideNotice, victim, SMRPG_TranslateExperienceReason);
+	new iOriginalExperience = exp;
+	new bool:bAdded = SMRPG_AddClientExperience(client, exp, sReason, bHideNotice, victim, SMRPG_TranslateExperienceReason);
 	
 	new iNewLevel = SMRPG_GetClientLevel(client);
-	new String:sAttackerAuth[40], String:sVictimString[256], String:sLevelInc[32];
-	GetClientAuthString(client, sAttackerAuth, sizeof(sAttackerAuth));
+	new String:sAttackerAuth[40], String:sVictimString[256], String:sLevelInc[32], String:sChangedExperience[32];
+	GetClientAuthId(client, AuthId_Engine, sAttackerAuth, sizeof(sAttackerAuth));
 	if(victim > 0)
 		Format(sVictimString, sizeof(sVictimString), " %N (lvl %d)", victim, SMRPG_GetClientLevel(victim));
 	if(iNewLevel != iOldLevel)
 		Format(sLevelInc, sizeof(sLevelInc), " (now lvl %d [%d/%d])", iNewLevel, SMRPG_GetClientExperience(client), SMRPG_LevelToExperience(iNewLevel));
-	DebugLog("%N <%s> (lvl %d [%d/%d]) got %d exp%s for %s%s.", client, sAttackerAuth, iOldLevel, iOldExperience, iOldNeeded, exp, sLevelInc, sReason, sVictimString);
+	
+	if(iOriginalExperience != exp)
+		Format(sChangedExperience, sizeof(sChangedExperience), " (intended %d)", iOriginalExperience);
+	
+	if(bAdded)
+		DebugLog("%N <%s> (lvl %d [%d/%d]) got %d%s exp%s for %s%s.", client, sAttackerAuth, iOldLevel, iOldExperience, iOldNeeded, exp, sChangedExperience, sLevelInc, sReason, sVictimString);
+	else
+		DebugLog("%N <%s> (lvl %d [%d/%d]) was going to get %d%s exp%s for %s%s, but was blocked by a plugin.", client, sAttackerAuth, iOldLevel, iOldExperience, iOldNeeded, exp, sChangedExperience, sLevelInc, sReason, sVictimString);
 #endif
 }
 

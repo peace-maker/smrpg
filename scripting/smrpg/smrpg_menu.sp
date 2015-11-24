@@ -24,8 +24,7 @@ new g_iSelectedSettingsUpgrade[MAXPLAYERS+1] = {-1,...};
 RegisterTopMenu()
 {
 	g_hRPGTopMenu = CreateTopMenu(TopMenu_DefaultCategoryHandler);
-	if(GetFeatureStatus(FeatureType_Native, "SetTopMenuTitleCaching") == FeatureStatus_Available)
-		SetTopMenuTitleCaching(g_hRPGTopMenu, false);
+	SetTopMenuTitleCaching(g_hRPGTopMenu, false);
 	
 	g_TopMenuUpgrades = AddToTopMenu(g_hRPGTopMenu, RPGMENU_UPGRADES, TopMenuObject_Category, TopMenu_DefaultCategoryHandler, INVALID_TOPMENUOBJECT);
 	g_TopMenuSell = AddToTopMenu(g_hRPGTopMenu, RPGMENU_SELL, TopMenuObject_Category, TopMenu_DefaultCategoryHandler, INVALID_TOPMENUOBJECT);
@@ -129,10 +128,7 @@ DisplayMainMenu(client)
 
 DisplayUpgradesMenu(client)
 {
-	if(GetFeatureStatus(FeatureType_Native, "DisplayTopMenuCategory") == FeatureStatus_Available)
-		DisplayTopMenuCategory(g_hRPGTopMenu, g_TopMenuUpgrades, client);
-	else
-		DisplayTopMenu(g_hRPGTopMenu, client, TopMenuPosition_Start); // Fallback to just displaying the rpgmenu if running "old" sourcemod version.
+	DisplayTopMenuCategory(g_hRPGTopMenu, g_TopMenuUpgrades, client);
 }
 
 /**
@@ -146,24 +142,7 @@ public TopMenu_DefaultCategoryHandler(Handle:topmenu, TopMenuAction:action, TopM
 		case TopMenuAction_DisplayTitle:
 		{
 			// Always display the current credits in the title
-			if(GetFeatureStatus(FeatureType_Native, "SetTopMenuTitleCaching") == FeatureStatus_Available)
-				Format(buffer, maxlength, "%T\n-----\n", "Credits", param, GetClientCredits(param));
-			// If this version of sourcemod doesn't support changing the topmenu title dynamically, don't print the credits..
-			else
-			{
-				if(object_id == g_TopMenuUpgrades)
-					Format(buffer, maxlength, "%T\n-----\n", "Upgrades", param);
-				else if(object_id == g_TopMenuSell)
-					Format(buffer, maxlength, "%T\n-----\n", "Sell", param);
-				else if(object_id == g_TopMenuUpgradeSettings)
-					Format(buffer, maxlength, "%T\n-----\n", "Upgrade Settings", param);
-				else if(object_id == g_TopMenuStats)
-					Format(buffer, maxlength, "%T\n-----\n", "Stats", param);
-				else if(object_id == g_TopMenuSettings)
-					Format(buffer, maxlength, "%T\n-----\n", "Settings", param);
-				else if(object_id == g_TopMenuHelp)
-					Format(buffer, maxlength, "%T\n-----\n", "Help", param);
-			}
+			Format(buffer, maxlength, "%T\n-----\n", "Credits", param, GetClientCredits(param));
 		}
 		case TopMenuAction_DisplayOption:
 		{
@@ -199,6 +178,14 @@ public TopMenu_HandleUpgrades(Handle:topmenu, TopMenuAction:action, TopMenuObjec
 			if(!IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled])
 				return;
 			
+			// Show the team this upgrade is locked to, if it is.
+			new String:sTeamlock[128];
+			if((!IsClientInLockedTeam(param, upgrade) || upgrade[UPGR_teamlock] > 1 && GetConVarBool(g_hCVShowTeamlockNoticeOwnTeam)) && upgrade[UPGR_teamlock] < GetTeamCount())
+			{
+				GetTeamName(upgrade[UPGR_teamlock], sTeamlock, sizeof(sTeamlock));
+				Format(sTeamlock, sizeof(sTeamlock), " (%T)", "Is teamlocked", param, sTeamlock);
+			}
+			
 			decl String:sTranslatedName[MAX_UPGRADE_NAME_LENGTH];
 			GetUpgradeTranslatedName(param, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
 			
@@ -206,11 +193,11 @@ public TopMenu_HandleUpgrades(Handle:topmenu, TopMenuAction:action, TopMenuObjec
 			
 			if(iCurrentLevel >= upgrade[UPGR_maxLevel])
 			{
-				Format(buffer, maxlength, "%s Lvl %d MAX [%T: MAX]", sTranslatedName, iCurrentLevel, "Cost", param);
+				Format(buffer, maxlength, "%s Lvl %d MAX [%T: MAX]%s", sTranslatedName, iCurrentLevel, "Cost", param, sTeamlock);
 			}
 			else
 			{
-				Format(buffer, maxlength, "%s Lvl %d [%T: %d]", sTranslatedName, iCurrentLevel+1, "Cost", param, GetUpgradeCost(upgrade[UPGR_index], iCurrentLevel+1));
+				Format(buffer, maxlength, "%s Lvl %d [%T: %d]%s", sTranslatedName, iCurrentLevel+1, "Cost", param, GetUpgradeCost(upgrade[UPGR_index], iCurrentLevel+1), sTeamlock);
 			}
 		}
 		case TopMenuAction_DrawOption:
@@ -226,9 +213,16 @@ public TopMenu_HandleUpgrades(Handle:topmenu, TopMenuAction:action, TopMenuObjec
 				return;
 			}
 			
+			new iLevel = GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index]);
+			// The upgrade is teamlocked and the client is in the wrong team.
+			if(!IsClientInLockedTeam(param, upgrade))
+			{
+				buffer[0] |= GetItemDrawFlagsForTeamlock(iLevel, true);
+			}
+			
 			// Don't let players buy upgrades they already maxed out.
-			if(GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index]) >= upgrade[UPGR_maxLevel])
-				buffer[0] = ITEMDRAW_DISABLED;
+			if(iLevel >= upgrade[UPGR_maxLevel])
+				buffer[0] |= ITEMDRAW_DISABLED;
 		}
 		case TopMenuAction_SelectOption:
 		{
@@ -265,7 +259,10 @@ public TopMenu_HandleUpgrades(Handle:topmenu, TopMenuAction:action, TopMenuObjec
 						for(new i=1;i<=MaxClients;i++)
 						{
 							if(i != param && IsClientInGame(i) && !IsFakeClient(i))
+							{
+								GetUpgradeTranslatedName(i, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
 								Client_PrintToChat(i, false, "Upgrade purchase notification", param, sTranslatedName, iItemLevel+1);
+							}
 						}
 					}
 				}
@@ -292,10 +289,18 @@ public TopMenu_HandleSell(Handle:topmenu, TopMenuAction:action, TopMenuObject:ob
 			if(!IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled])
 				return;
 			
+			// Show the team this upgrade is locked to, if it is.
+			new String:sTeamlock[128];
+			if((!IsClientInLockedTeam(param, upgrade) || upgrade[UPGR_teamlock] > 1 && GetConVarBool(g_hCVShowTeamlockNoticeOwnTeam)) && upgrade[UPGR_teamlock] < GetTeamCount())
+			{
+				GetTeamName(upgrade[UPGR_teamlock], sTeamlock, sizeof(sTeamlock));
+				Format(sTeamlock, sizeof(sTeamlock), " (%T)", "Is teamlocked", param, sTeamlock);
+			}
+			
 			decl String:sTranslatedName[MAX_UPGRADE_NAME_LENGTH];
 			GetUpgradeTranslatedName(param, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
 			
-			Format(buffer, maxlength, "%s Lvl %d [%T: %d]", sTranslatedName, GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index]), "Sale", param, GetUpgradeSale(upgrade[UPGR_index], GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index])));
+			Format(buffer, maxlength, "%s Lvl %d [%T: %d]%s", sTranslatedName, GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index]), "Sale", param, GetUpgradeSale(upgrade[UPGR_index], GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index])), sTeamlock);
 		}
 		case TopMenuAction_DrawOption:
 		{
@@ -319,9 +324,15 @@ public TopMenu_HandleSell(Handle:topmenu, TopMenuAction:action, TopMenuObject:ob
 				return;
 			}
 			
+			// The upgrade is teamlocked and the client is in the wrong team.
+			if(!IsClientInLockedTeam(param, upgrade))
+			{
+				buffer[0] |= GetItemDrawFlagsForTeamlock(iCurrentLevel, false);
+			}
+			
 			// There is nothing to sell..
 			if(iCurrentLevel <= 0)
-				buffer[0] = ITEMDRAW_DISABLED;
+				buffer[0] |= ITEMDRAW_DISABLED;
 		}
 		case TopMenuAction_SelectOption:
 		{
@@ -425,6 +436,14 @@ public TopMenu_HandleUpgradeSettings(Handle:topmenu, TopMenuAction:action, TopMe
 			if(!IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled])
 				return;
 			
+			// Show the team this upgrade is locked to, if it is.
+			new String:sTeamlock[128];
+			if((!IsClientInLockedTeam(param, upgrade) || upgrade[UPGR_teamlock] > 1 && GetConVarBool(g_hCVShowTeamlockNoticeOwnTeam)) && upgrade[UPGR_teamlock] < GetTeamCount())
+			{
+				GetTeamName(upgrade[UPGR_teamlock], sTeamlock, sizeof(sTeamlock));
+				Format(sTeamlock, sizeof(sTeamlock), " (%T)", "Is teamlocked", param, sTeamlock);
+			}
+			
 			new iPurchasedLevel = GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index]);
 			new iSelectedLevel = GetClientSelectedUpgradeLevel(param, upgrade[UPGR_index]);
 			decl String:sBuffer[128];
@@ -432,7 +451,7 @@ public TopMenu_HandleUpgradeSettings(Handle:topmenu, TopMenuAction:action, TopMe
 			if(!GetConVarBool(g_hCVDisableLevelSelection))
 				Format(sBuffer, sizeof(sBuffer), "%s Lvl %d/%d", sBuffer, iSelectedLevel, iPurchasedLevel);
 			
-			Format(sBuffer, sizeof(sBuffer), "%s [%T]", sBuffer, IsClientUpgradeEnabled(param, upgrade[UPGR_index])?"On":"Off", param);
+			Format(sBuffer, sizeof(sBuffer), "%s [%T]%s", sBuffer, IsClientUpgradeEnabled(param, upgrade[UPGR_index])?"On":"Off", param, sTeamlock);
 			strcopy(buffer, maxlength, sBuffer);
 		}
 		case TopMenuAction_DrawOption:
@@ -454,6 +473,14 @@ public TopMenu_HandleUpgradeSettings(Handle:topmenu, TopMenuAction:action, TopMe
 			if(!HasAccessToUpgrade(param, upgrade) && iCurrentLevel <= 0)
 			{
 				buffer[0] = ITEMDRAW_IGNORE;
+				return;
+			}
+			
+			// Don't show the upgrade, if it's teamlocked, the client is in the wrong team and didn't buy it before.
+			// Make sure to show it, if we're set to show all.
+			if(!IsClientInLockedTeam(param, upgrade))
+			{
+				buffer[0] |= GetItemDrawFlagsForTeamlock(iCurrentLevel, false);
 				return;
 			}
 		}
@@ -577,10 +604,7 @@ public Menu_HandleUpgradeSettings(Handle:menu, MenuAction:action, param1, param2
 
 DisplayStatsMenu(client)
 {
-	if(GetFeatureStatus(FeatureType_Native, "DisplayTopMenuCategory") == FeatureStatus_Available)
-		DisplayTopMenuCategory(g_hRPGTopMenu, g_TopMenuStats, client);
-	else
-		DisplayTopMenu(g_hRPGTopMenu, client, TopMenuPosition_Start); // Fallback to just displaying the rpgmenu if running "old" sourcemod version.
+	DisplayTopMenuCategory(g_hRPGTopMenu, g_TopMenuStats, client);
 }
 
 public TopMenu_HandleStats(Handle:topmenu, TopMenuAction:action, TopMenuObject:object_id, param, String:buffer[], maxlength)
@@ -640,10 +664,7 @@ public TopMenu_HandleStats(Handle:topmenu, TopMenuAction:action, TopMenuObject:o
 
 DisplaySettingsMenu(client)
 {
-	if(GetFeatureStatus(FeatureType_Native, "DisplayTopMenuCategory") == FeatureStatus_Available)
-		DisplayTopMenuCategory(g_hRPGTopMenu, g_TopMenuSettings, client);
-	else
-		DisplayTopMenu(g_hRPGTopMenu, client, TopMenuPosition_Start); // Fallback to just displaying the rpgmenu if running "old" sourcemod version.
+	DisplayTopMenuCategory(g_hRPGTopMenu, g_TopMenuSettings, client);
 }
 
 public TopMenu_HandleSettings(Handle:topmenu, TopMenuAction:action, TopMenuObject:object_id, param, String:buffer[], maxlength)
@@ -666,6 +687,15 @@ public TopMenu_HandleSettings(Handle:topmenu, TopMenuAction:action, TopMenuObjec
 			else if(StrEqual(sName, "togglefade"))
 			{
 				Format(buffer, maxlength, "%T: %T", "Fade screen on levelup", param, FadeScreenOnLevelUp(param)?"Yes":"No", param);
+			}
+		}
+		case TopMenuAction_DrawOption:
+		{
+			if(StrEqual(sName, "resetstats"))
+			{
+				// Don't show the reset stats option, if disabled.
+				if(!GetConVarBool(g_hCVAllowSelfReset))
+					buffer[0] = ITEMDRAW_IGNORE;
 			}
 		}
 		case TopMenuAction_SelectOption:
@@ -701,11 +731,16 @@ public Menu_ConfirmResetStats(Handle:menu, MenuAction:action, param1, param2)
 			return 0;
 		}
 		
-		ResetStats(param1);
-		SetPlayerLastReset(param1, GetTime());
-		
-		Client_PrintToChat(param1, false, "%t", "Stats have been reset");
-		LogMessage("%L reset his own rpg stats on purpose.", param1);
+		// Are players allowed to reset themselves?
+		// Player might still had the menu open while this setting changed.
+		if(GetConVarBool(g_hCVAllowSelfReset))
+		{
+			ResetStats(param1);
+			SetPlayerLastReset(param1, GetTime());
+			
+			Client_PrintToChat(param1, false, "%t", "Stats have been reset");
+			LogMessage("%L reset his own rpg stats on purpose.", param1);
+		}
 		
 		DisplaySettingsMenu(param1);
 	}
@@ -743,10 +778,7 @@ public Menu_ConfirmResetStats(Handle:menu, MenuAction:action, param1, param2)
 
 DisplayHelpMenu(client)
 {
-	if(GetFeatureStatus(FeatureType_Native, "DisplayTopMenuCategory") == FeatureStatus_Available)
-		DisplayTopMenuCategory(g_hRPGTopMenu, g_TopMenuHelp, client);
-	else
-		DisplayTopMenu(g_hRPGTopMenu, client, TopMenuPosition_Start); // Fallback to just displaying the rpgmenu if running "old" sourcemod version.
+	DisplayTopMenuCategory(g_hRPGTopMenu, g_TopMenuHelp, client);
 }
 
 public TopMenu_HandleHelp(Handle:topmenu, TopMenuAction:action, TopMenuObject:object_id, param, String:buffer[], maxlength)
@@ -765,7 +797,18 @@ public TopMenu_HandleHelp(Handle:topmenu, TopMenuAction:action, TopMenuObject:ob
 			if(!IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled])
 				return;
 			
-			GetUpgradeTranslatedName(param, upgrade[UPGR_index], buffer, maxlength);
+			// Show the team this upgrade is locked to, if it is.
+			new String:sTeamlock[128];
+			if((!IsClientInLockedTeam(param, upgrade) || upgrade[UPGR_teamlock] > 1 && GetConVarBool(g_hCVShowTeamlockNoticeOwnTeam)) && upgrade[UPGR_teamlock] < GetTeamCount())
+			{
+				GetTeamName(upgrade[UPGR_teamlock], sTeamlock, sizeof(sTeamlock));
+				Format(sTeamlock, sizeof(sTeamlock), " (%T)", "Is teamlocked", param, sTeamlock);
+			}
+			
+			new String:sDescription[MAX_UPGRADE_DESCRIPTION_LENGTH];
+			GetUpgradeTranslatedName(param, upgrade[UPGR_index], sDescription, sizeof(sDescription));
+			
+			Format(buffer, maxlength, "%s%s", sDescription, sTeamlock);
 		}
 		case TopMenuAction_DrawOption:
 		{
@@ -786,6 +829,14 @@ public TopMenu_HandleHelp(Handle:topmenu, TopMenuAction:action, TopMenuObject:ob
 			if(!HasAccessToUpgrade(param, upgrade) && iCurrentLevel <= 0)
 			{
 				buffer[0] = ITEMDRAW_IGNORE;
+				return;
+			}
+			
+			// Don't show the upgrade, if it's teamlocked, the client is in the wrong team and didn't buy the upgrade before.
+			// Make sure to show it, if we're set to show all.
+			if(!IsClientInLockedTeam(param, upgrade))
+			{
+				buffer[0] |= GetItemDrawFlagsForTeamlock(iCurrentLevel, false);
 				return;
 			}
 		}
@@ -830,7 +881,7 @@ DisplayOtherUpgradesMenu(client, targetClient)
 		GetUpgradeByIndex(i, upgrade);
 		
 		// Don't show disabled items in the menu.
-		if(!IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled] || !HasAccessToUpgrade(targetClient, upgrade))
+		if(!IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled] || !HasAccessToUpgrade(targetClient, upgrade) || !IsClientInLockedTeam(targetClient, upgrade))
 			continue;
 		
 		GetUpgradeTranslatedName(client, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
@@ -878,4 +929,45 @@ TopMenuObject:GetUpgradeSettingsCategory()
 TopMenuObject:GetHelpCategory()
 {
 	return g_TopMenuHelp;
+}
+
+// Handle the logic of the smrpg_show_upgrades_teamlock convar.
+GetItemDrawFlagsForTeamlock(iLevel, bool:bBuyMenu)
+{
+	new iShowTeamlock = GetConVarInt(g_hCVShowUpgradesOfOtherTeam);
+	switch(iShowTeamlock)
+	{
+		case SHOW_TEAMLOCK_NONE:
+		{
+			return ITEMDRAW_IGNORE;
+		}
+		case SHOW_TEAMLOCK_BOUGHT:
+		{
+			// The client bought it while being in the other team.
+			if(iLevel > 0)
+			{
+				// Show it, but don't let him buy it.
+				if(bBuyMenu && !GetConVarBool(g_hCVBuyUpgradesOfOtherTeam))
+				{
+					return ITEMDRAW_DISABLED;
+				}
+				// else let him use it.
+			}
+			// The client doesn't have the upgrade. Don't show it.
+			else
+			{
+				return ITEMDRAW_IGNORE;
+			}
+		}
+		case SHOW_TEAMLOCK_ALL:
+		{
+			// Show it, but don't let him buy it.
+			if(bBuyMenu && !GetConVarBool(g_hCVBuyUpgradesOfOtherTeam))
+			{
+				return ITEMDRAW_DISABLED;
+			}
+			// else let him use it.
+		}
+	}
+	return 0;
 }

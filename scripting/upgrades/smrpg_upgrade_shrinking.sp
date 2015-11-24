@@ -66,7 +66,7 @@ public OnLibraryAdded(const String:name[])
 public SMRPG_BuySell(client, UpgradeQueryType:type)
 {
 	if(IsClientInGame(client))
-		Resize_ApplyUpgrade(client);
+		Resize_ApplyUpgrade(client, true);
 }
 
 public bool:SMRPG_ActiveQuery(client)
@@ -98,13 +98,13 @@ public Event_OnPlayerSpawn(Handle:event, const String:name[], bool:dontBroadcast
 	if(!client)
 		return;
 	
-	Resize_ApplyUpgrade(client);
+	Resize_ApplyUpgrade(client, false);
 }
 
 /**
  * Helpers
  */
-Resize_ApplyUpgrade(client)
+Resize_ApplyUpgrade(client, bool:bIgnoreNullLevel = false)
 {
 	if(!SMRPG_IsEnabled())
 		return;
@@ -120,7 +120,7 @@ Resize_ApplyUpgrade(client)
 	
 	// Player didn't buy this upgrade yet.
 	new iLevel = SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME);
-	if(iLevel <= 0)
+	if(iLevel <= 0 && !bIgnoreNullLevel)
 		return;
 	
 	if(!SMRPG_RunUpgradeEffect(client, UPGRADE_SHORTNAME))
@@ -138,6 +138,8 @@ stock ResizePlayer(client, Float:fScale)
 	SetEntPropFloat(client, Prop_Send, "m_flStepSize", 18.0 * fScale);
 	
 	// Have children resized too! (like the hats ;) )
+	// TODO: Somehow keep the attachement offset ratio intact?
+	//       Hats stay (sometimes?) further away if they are smaller.
 	decl String:sBuffer[64];
 	LOOP_CHILDREN(client, child)
 	{

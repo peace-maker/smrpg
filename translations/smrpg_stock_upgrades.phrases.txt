@@ -7,7 +7,7 @@
 	
 	"regen description"
 	{
-		"en"			"Regenerates HP every second."
+		"en"			"Regenerates HP regularly."
 	}
 	
 	"health"
@@ -147,7 +147,7 @@
 	
 	"armorregen description"
 	{
-		"en"			"Regenerates armor every second."
+		"en"			"Regenerates armor regularly."
 	}
 	
 	"clipsize"
@@ -188,5 +188,85 @@
 	"fastreload description"
 	{
 		"en"			"Increases the reload speed of your guns."
+	}
+	
+	"firepistol"
+	{
+		"en"			"Fire Pistol"
+	}
+	
+	"firepistol description"
+	{
+		"en"			"Ignites players hit with a pistol."
+	}
+	
+	"gravity"
+	{
+		"en"			"Reduced Gravity"
+	}
+	
+	"gravity description"
+	{
+		"en"			"Reduces your gravity and lets you jump higher."
+	}
+	
+	"poisonsmoke"
+	{
+		"en"			"Poison Smoke"
+	}
+	
+	"poisonsmoke description"
+	{
+		"en"			"Damages players inside the smoke of a smoke grenade"
+	}
+	
+	"firerate"
+	{
+		"en"			"Increase firerate"
+	}
+	
+	"firerate description"
+	{
+		"en"			"Increases the firerate of weapons."
+	}
+	
+	"icenade"
+	{
+		"en"			"Ice Grenade"
+	}
+	
+	"icenade description"
+	{
+		"en"			"Freeze a player in place when damaging him with your grenade."
+	}
+	
+	"grenaderesup"
+	{
+		"en"			"Grenade Resupply"
+	}
+	
+	"grenaderesup description"
+	{
+		"en"			"Regenerates grenades x seconds after you threw them."
+	}
+	
+	"antidote"
+	{
+		"en"			"Antidote"
+	}
+	
+	"antidote description"
+	{
+		"en"			"Shorten the duration of bad effects like freezing, burning or slowdown on you."
+	}
+	
+	"bouncybullets"
+	{
+		"en"			"Bouncy Bullets"
+	}
+	
+	"bouncybullets description"
+	{
+		"en"			"Push enemies away by shooting them."
 	}
 }

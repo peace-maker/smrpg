@@ -3,6 +3,7 @@
 #include <sdktools>
 #include <sdkhooks>
 #include <smrpg>
+#include <smrpg_effects>
 #include <smrpg_helper>
 #include <smrpg_sharedmaterials>
 #include <smlib>
@@ -13,7 +14,6 @@
 new Handle:g_hCVSpeedIncrease;
 new Handle:g_hCVDuration;
 
-new Handle:g_hImpulseResetSpeed[MAXPLAYERS+1] = {INVALID_HANDLE,...};
 new g_iImpulseTrailSprites[MAXPLAYERS+1] = {-1,...};
 
 public Plugin:myinfo = 
@@ -28,8 +28,6 @@ public Plugin:myinfo =
 public OnPluginStart()
 {
 	HookEvent("round_start", Event_OnRoundStart);
-	HookEvent("player_spawn", Event_OnEffectReset);
-	HookEvent("player_death", Event_OnEffectReset);
 	
 	LoadTranslations("smrpg_stock_upgrades.phrases");
 	
@@ -97,15 +95,6 @@ public Event_OnRoundStart(Handle:event, const String:name[], bool:dontBroadcast)
 		g_iImpulseTrailSprites[i] = -1;
 }
 
-public Event_OnEffectReset(Handle:event, const String:name[], bool:dontBroadcast)
-{
-	new client = GetClientOfUserId(GetEventInt(event, "userid"));
-	if(!client)
-		return;
-	
-	SMRPG_ResetEffect(client);
-}
-
 /**
  * SM:RPG Upgrade callbacks
  */
@@ -116,18 +105,13 @@ public SMRPG_BuySell(client, UpgradeQueryType:type)
 
 public bool:SMRPG_ActiveQuery(client)
 {
-	// This is a passive effect, so it's always active, if the player got at least level 1
-	new upgrade[UpgradeInfo];
-	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
-	return SMRPG_IsEnabled() && upgrade[UI_enabled] && SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME) > 0 && g_hImpulseResetSpeed[client] != INVALID_HANDLE;
+	return SMRPG_IsClientLaggedMovementChanged(client, LMT_Faster, true);
 }
 
 // Some plugin wants this effect to end?
 public SMRPG_ResetEffect(client)
 {
-	if(g_hImpulseResetSpeed[client] != INVALID_HANDLE && IsClientInGame(client))
-		TriggerTimer(g_hImpulseResetSpeed[client]);
-	ClearHandle(g_hImpulseResetSpeed[client]);
+	SMRPG_ResetClientLaggedMovement(client, LMT_Faster);
 }
 
 public SMRPG_TranslateUpgrade(client, const String:shortname[], TranslationType:type, String:translation[], maxlen)
@@ -139,6 +123,21 @@ public SMRPG_TranslateUpgrade(client, const String:shortname[], TranslationType:
 		new String:sDescriptionKey[MAX_UPGRADE_SHORTNAME_LENGTH+12] = UPGRADE_SHORTNAME;
 		StrCat(sDescriptionKey, sizeof(sDescriptionKey), " description");
 		Format(translation, maxlen, "%T", sDescriptionKey, client);
+	}
+}
+
+/**
+ * SM:RPG Effect Hub callbacks
+ */
+public SMRPG_OnClientLaggedMovementReset(client, LaggedMovementType:type)
+{
+	if(type == LMT_Faster)
+	{
+		if(g_iImpulseTrailSprites[client] != -1 && IsValidEntity(g_iImpulseTrailSprites[client]))
+		{
+			SetVariantString("");
+			AcceptEntityInput(g_iImpulseTrailSprites[client], "SetParent"); //unset parent
+		}
 	}
 }
 
@@ -162,8 +161,8 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 	if(IsFakeClient(victim) && SMRPG_IgnoreBots())
 		return;
 	
-	// Ignore team attack
-	if(GetClientTeam(attacker) == GetClientTeam(victim))
+	// Ignore team attack if not FFA
+	if(!SMRPG_IsFFAEnabled() && GetClientTeam(attacker) == GetClientTeam(victim))
 		return;
 	
 	new iLevel = SMRPG_GetClientUpgradeLevel(victim, UPGRADE_SHORTNAME);
@@ -173,22 +172,15 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 	if(!(GetEntityFlags(victim) & FL_ONGROUND))
 		return; //Player is in midair
 	
-	if(g_hImpulseResetSpeed[victim] != INVALID_HANDLE)
+	if(SMRPG_IsClientLaggedMovementChanged(victim, LMT_Faster, true))
 		return; //Player is already faster
 	
 	if(!SMRPG_RunUpgradeEffect(victim, UPGRADE_SHORTNAME))
 		return; // Some other plugin doesn't want this effect to run
 	
-	new Float:fOldLaggedMovementValue = GetEntPropFloat(victim, Prop_Send, "m_flLaggedMovementValue");
-	
 	/* Set player speed */
-	SetEntPropFloat(victim, Prop_Send, "m_flLaggedMovementValue", fOldLaggedMovementValue + float(iLevel) * GetConVarFloat(g_hCVSpeedIncrease));
-	
-	new Handle:hData;
-	g_hImpulseResetSpeed[victim] = CreateDataTimer(GetConVarFloat(g_hCVDuration), Timer_ResetSpeed, hData, TIMER_FLAG_NO_MAPCHANGE);
-	WritePackCell(hData, GetClientUserId(victim));
-	WritePackFloat(hData, fOldLaggedMovementValue);
-	ResetPack(hData);
+	new Float:fSpeed = 1.0 + float(iLevel) * GetConVarFloat(g_hCVSpeedIncrease);
+	SMRPG_ChangeClientLaggedMovement(victim, fSpeed, GetConVarFloat(g_hCVDuration));
 	
 	// No effect for this game:(
 	new iRedTrailSprite = SMRPG_GC_GetPrecachedIndex("SpriteRedTrail");
@@ -219,26 +211,4 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 	
 	TE_SetupBeamFollow(iSprite, iRedTrailSprite, iRedTrailSprite, GetConVarFloat(g_hCVDuration), 10.0, 4.0, 2, {255,0,0,255});
 	SMRPG_TE_SendToAllEnabled(UPGRADE_SHORTNAME);
-}
-
-public Action:Timer_ResetSpeed(Handle:timer, any:data)
-{
-	new userid = ReadPackCell(data);
-	new Float:fOldLaggedMovementValue = ReadPackFloat(data);
-	
-	new client = GetClientOfUserId(userid);
-	if(!client)
-		return Plugin_Stop;
-	
-	g_hImpulseResetSpeed[client] = INVALID_HANDLE;
-	
-	SetEntPropFloat(client, Prop_Send, "m_flLaggedMovementValue", fOldLaggedMovementValue);
-	
-	if(g_iImpulseTrailSprites[client] != -1 && IsValidEntity(g_iImpulseTrailSprites[client]))
-	{
-		SetVariantString("");
-		AcceptEntityInput(g_iImpulseTrailSprites[client], "SetParent"); //unset parent
-	}
-	
-	return Plugin_Stop;
 }

@@ -7,7 +7,11 @@
 #define TBL_UPGRADES "upgrades"
 #define TBL_SETTINGS "settings"
 
-#define DATABASE_VERSION 100
+#define DBVER_INIT 100       // Initial database version
+#define DBVER_UPDATE_1 101   // Update 01.09.2014. Store steamids in accountid form instead of STEAM_X:Y:Z (steamid column varchar -> int)
+
+// Newest database version
+#define DATABASE_VERSION DBVER_UPDATE_1
 
 new Handle:g_hDatabase;
 new g_iSequence = -1;
@@ -60,17 +64,27 @@ public SQL_OnConnect(Handle:owner, Handle:hndl, const String:error[], any:data)
 	if(StrEqual(sDriverIdent, "mysql", false))
 	{
 		g_DriverType = Driver_MySQL;
-		if(GetFeatureStatus(FeatureType_Native, "SQL_SetCharset") == FeatureStatus_Available)
-			SQL_SetCharset(g_hDatabase, "utf8");
-		else
-			SQL_LockedFastQuery(g_hDatabase, "SET NAMES 'UTF8'");
+		SQL_SetCharset(g_hDatabase, "utf8");
+	}
+	else if(StrEqual(sDriverIdent, "sqlite", false))
+	{
+		g_DriverType = Driver_SQLite;
 	}
 	else
-		g_DriverType = Driver_SQLite;
+	{
+		SetFailState("Unknown SQL driver: %s. Aborting..", sDriverIdent);
+	}
+	
+	// Make sure the tables are created using the correct charset, if the database was created with something else than utf8 as default.
+	new String:sDefaultCharset[32];
+	if(g_DriverType == Driver_MySQL)
+	{
+		strcopy(sDefaultCharset, sizeof(sDefaultCharset), " DEFAULT CHARSET=utf8");
+	}
 	
 	// Create the player table
 	decl String:sQuery[1024];
-	Format(sQuery, sizeof(sQuery), "CREATE TABLE IF NOT EXISTS %s (player_id INTEGER PRIMARY KEY %s, name VARCHAR(64) NOT NULL DEFAULT ' ', steamid VARCHAR(64) NOT NULL DEFAULT '0' UNIQUE, level INTEGER DEFAULT '1', experience INTEGER DEFAULT '0', credits INTEGER DEFAULT '0', showmenu INTEGER DEFAULT '1', fadescreen INTEGER DEFAULT '1', lastseen INTEGER DEFAULT '0', lastreset INTEGER DEFAULT '0')", TBL_PLAYERS, (g_DriverType == Driver_MySQL ? "AUTO_INCREMENT" : "AUTOINCREMENT"));
+	Format(sQuery, sizeof(sQuery), "CREATE TABLE IF NOT EXISTS %s (player_id INTEGER PRIMARY KEY %s, name VARCHAR(64) NOT NULL DEFAULT ' ', steamid INTEGER DEFAULT NULL UNIQUE, level INTEGER DEFAULT 1, experience INTEGER DEFAULT 0, credits INTEGER DEFAULT 0, showmenu INTEGER DEFAULT 1, fadescreen INTEGER DEFAULT 1, lastseen INTEGER DEFAULT 0, lastreset INTEGER DEFAULT 0)%s", TBL_PLAYERS, (g_DriverType == Driver_MySQL ? "AUTO_INCREMENT" : "AUTOINCREMENT"), sDefaultCharset);
 	if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
 	{
 		decl String:sError[256];
@@ -80,7 +94,7 @@ public SQL_OnConnect(Handle:owner, Handle:hndl, const String:error[], any:data)
 	}
 	
 	// Create the player -> upgrades table.
-	Format(sQuery, sizeof(sQuery), "CREATE TABLE IF NOT EXISTS %s (player_id INTEGER, upgrade_id INTEGER, purchasedlevel INTEGER NOT NULL, selectedlevel INTEGER NOT NULL, enabled INTEGER DEFAULT '1', visuals INTEGER DEFAULT '1', sounds INTEGER DEFAULT '1', PRIMARY KEY(player_id, upgrade_id))", TBL_PLAYERUPGRADES);
+	Format(sQuery, sizeof(sQuery), "CREATE TABLE IF NOT EXISTS %s (player_id INTEGER, upgrade_id INTEGER, purchasedlevel INTEGER NOT NULL, selectedlevel INTEGER NOT NULL, enabled INTEGER DEFAULT 1, visuals INTEGER DEFAULT 1, sounds INTEGER DEFAULT 1, PRIMARY KEY(player_id, upgrade_id))%s", TBL_PLAYERUPGRADES, sDefaultCharset);
 	if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
 	{
 		decl String:sError[256];
@@ -90,7 +104,7 @@ public SQL_OnConnect(Handle:owner, Handle:hndl, const String:error[], any:data)
 	}
 	
 	// Create the upgrades table.
-	Format(sQuery, sizeof(sQuery), "CREATE TABLE IF NOT EXISTS %s (upgrade_id INTEGER PRIMARY KEY %s, shortname VARCHAR(32) UNIQUE NOT NULL, date_added INTEGER)", TBL_UPGRADES, (g_DriverType == Driver_MySQL ? "AUTO_INCREMENT" : "AUTOINCREMENT"));
+	Format(sQuery, sizeof(sQuery), "CREATE TABLE IF NOT EXISTS %s (upgrade_id INTEGER PRIMARY KEY %s, shortname VARCHAR(32) UNIQUE NOT NULL, date_added INTEGER)%s", TBL_UPGRADES, (g_DriverType == Driver_MySQL ? "AUTO_INCREMENT" : "AUTOINCREMENT"), sDefaultCharset);
 	if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
 	{
 		decl String:sError[256];
@@ -100,7 +114,7 @@ public SQL_OnConnect(Handle:owner, Handle:hndl, const String:error[], any:data)
 	}
 	
 	// Create the settings table.
-	Format(sQuery, sizeof(sQuery), "CREATE TABLE IF NOT EXISTS %s (setting VARCHAR(64) PRIMARY KEY NOT NULL, value VARCHAR(256) NOT NULL)", TBL_SETTINGS);
+	Format(sQuery, sizeof(sQuery), "CREATE TABLE IF NOT EXISTS %s (setting VARCHAR(64) PRIMARY KEY NOT NULL, value VARCHAR(256) NOT NULL)%s", TBL_SETTINGS, sDefaultCharset);
 	if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
 	{
 		decl String:sError[256];
@@ -127,12 +141,11 @@ public SQL_OnConnect(Handle:owner, Handle:hndl, const String:error[], any:data)
 	DatabaseMaid();
 	
 	// Add all already connected players now
-	decl String:sAuthId[32];
 	for(new i=1;i<=MaxClients;i++)
 	{
-		if(IsClientInGame(i) && !IsFakeClient(i) && IsClientAuthorized(i) && GetClientAuthString(i, sAuthId, sizeof(sAuthId)))
+		if(IsClientInGame(i) && !IsFakeClient(i) && IsClientAuthorized(i))
 		{
-			AddPlayer(i, sAuthId);
+			AddPlayer(i);
 		}
 	}
 }
@@ -168,6 +181,92 @@ CheckDatabaseVersion()
 	if(iVersion < DATABASE_VERSION)
 	{
 		// Perform database updates here..
+		if(iVersion < DBVER_UPDATE_1)
+		{
+			if(g_DriverType == Driver_MySQL)
+			{
+				// Save steamids as accountid integers instead of STEAM_X:Y:Z
+				decl String:sQuery[512];
+				// Allow NULL as steamid value
+				Format(sQuery, sizeof(sQuery), "ALTER TABLE %s CHANGE steamid steamid VARCHAR(64) CHARACTER SET utf8 COLLATE utf8_general_ci NULL", TBL_PLAYERS);
+				if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
+				{
+					FailDatabaseUpdateError(DBVER_UPDATE_1, sQuery);
+					return;
+				}
+				
+				// Set bot's steamid to NULL
+				Format(sQuery, sizeof(sQuery), "UPDATE %s SET steamid = NULL WHERE steamid NOT LIKE 'STEAM_%%'", TBL_PLAYERS);
+				if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
+				{
+					FailDatabaseUpdateError(DBVER_UPDATE_1, sQuery);
+					return;
+				}
+				
+				// Convert STEAM_X:Y:Z steamids to account ids
+				Format(sQuery, sizeof(sQuery), "UPDATE %s SET steamid = CAST(SUBSTRING(steamid, 9, 1) AS UNSIGNED) + CAST(SUBSTRING(steamid, 11) * 2 AS UNSIGNED) WHERE steamid LIKE 'STEAM_%%'", TBL_PLAYERS);
+				if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
+				{
+					FailDatabaseUpdateError(DBVER_UPDATE_1, sQuery);
+					return;
+				}
+				
+				// Save the steamids as integers now.
+				Format(sQuery, sizeof(sQuery), "ALTER TABLE %s CHANGE steamid steamid INTEGER NULL", TBL_PLAYERS);
+				if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
+				{
+					FailDatabaseUpdateError(DBVER_UPDATE_1, sQuery);
+					return;
+				}
+			}
+			else if(g_DriverType == Driver_SQLite)
+			{
+				// Save steamids as accountid integers instead of STEAM_X:Y:Z
+				decl String:sQuery[512];
+				// Create a new table with the changed steamid field.
+				// SQLite doesn't support altering column types of existing tables.
+				Format(sQuery, sizeof(sQuery), "CREATE TABLE %s_X (player_id INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR(64) NOT NULL DEFAULT ' ', steamid INTEGER DEFAULT NULL UNIQUE, level INTEGER DEFAULT 1, experience INTEGER DEFAULT 0, credits INTEGER DEFAULT 0, showmenu INTEGER DEFAULT 1, fadescreen INTEGER DEFAULT 1, lastseen INTEGER DEFAULT 0, lastreset INTEGER DEFAULT 0);", TBL_PLAYERS);
+				if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
+				{
+					FailDatabaseUpdateError(DBVER_UPDATE_1, sQuery);
+					return;
+				}
+				
+				// Insert all bots with NULL steamid.
+				Format(sQuery, sizeof(sQuery), "INSERT INTO %s_X SELECT player_id, name, NULL, level, experience, credits, showmenu, fadescreen, lastseen, lastreset FROM %s WHERE steamid NOT LIKE 'STEAM_%%';", TBL_PLAYERS, TBL_PLAYERS);
+				if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
+				{
+					FailDatabaseUpdateError(DBVER_UPDATE_1, sQuery);
+					return;
+				}
+				
+				// Insert all players and convert the steamid to accountid.
+				Format(sQuery, sizeof(sQuery), "INSERT INTO %s_X SELECT player_id, name, CAST(SUBSTR(steamid, 9, 1) AS INTEGER) + CAST(SUBSTR(steamid, 11) * 2 AS INTEGER), level, experience, credits, showmenu, fadescreen, lastseen, lastreset FROM %s WHERE steamid LIKE 'STEAM_%%';", TBL_PLAYERS, TBL_PLAYERS);
+				if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
+				{
+					FailDatabaseUpdateError(DBVER_UPDATE_1, sQuery);
+					return;
+				}
+				
+				// Drop the old player table.
+				Format(sQuery, sizeof(sQuery), "DROP TABLE %s;", TBL_PLAYERS);
+				if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
+				{
+					FailDatabaseUpdateError(DBVER_UPDATE_1, sQuery);
+					return;
+				}
+				
+				// Rename the copied new one to match the correct table name of the old table.
+				Format(sQuery, sizeof(sQuery), "ALTER TABLE %s_X RENAME TO %s;", TBL_PLAYERS, TBL_PLAYERS);
+				if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
+				{
+					FailDatabaseUpdateError(DBVER_UPDATE_1, sQuery);
+					return;
+				}
+			}
+		}
+		
+		// We're on a higher version now.
 		IntToString(DATABASE_VERSION, sValue, sizeof(sValue));
 		SetSetting("version", sValue);
 	}
@@ -175,6 +274,13 @@ CheckDatabaseVersion()
 	{
 		LogError("Database version %d is newer than supported by this plugin (%d). There might be problems with incompatible database structures!", iVersion, DATABASE_VERSION);
 	}
+}
+
+FailDatabaseUpdateError(iVersion, const String:sQuery[])
+{
+	decl String:sError[256];
+	SQL_GetError(g_hDatabase, sError, sizeof(sError));
+	SetFailState("Failed to update the database to version %d. The plugin might not run correctly. Query: %s    Error: %s", iVersion, sQuery, sError);
 }
 
 DatabaseMaid()
@@ -190,36 +296,12 @@ DatabaseMaid()
 	// Have players expire after x days and delete them from the database?
 	if(GetConVarInt(g_hCVPlayerExpire) > 0)
 	{
-		Format(sQuery, sizeof(sQuery), "OR lastseen <= '%d'", GetTime()-(86400*GetConVarInt(g_hCVPlayerExpire)));
+		Format(sQuery, sizeof(sQuery), "OR lastseen <= %d", GetTime()-(86400*GetConVarInt(g_hCVPlayerExpire)));
 	}
 	
 	// Delete players who are Level 1 and haven't played for 3 days
-	Format(sQuery, sizeof(sQuery), "SELECT player_id FROM %s WHERE (level <= '1' AND lastseen <= '%d') %s", TBL_PLAYERS, GetTime()-259200, sQuery);
-	SQL_LockDatabase(g_hDatabase);
-	new Handle:hResult = SQL_Query(g_hDatabase, sQuery);
-	SQL_UnlockDatabase(g_hDatabase);
-	if(hResult != INVALID_HANDLE)
-	{
-		new iPlayerId;
-		while(SQL_MoreRows(hResult))
-		{
-			if(!SQL_FetchRow(hResult))
-				continue;
-			
-			iPlayerId = SQL_FetchInt(hResult, 0);
-			
-			Format(sQuery, sizeof(sQuery), "DELETE FROM %s WHERE player_id = '%d'", TBL_PLAYERUPGRADES, iPlayerId);
-			SQL_LockedFastQuery(g_hDatabase, sQuery);
-			
-			Format(sQuery, sizeof(sQuery), "DELETE FROM %s WHERE player_id = '%d'", TBL_PLAYERS, iPlayerId);
-			SQL_LockedFastQuery(g_hDatabase, sQuery);
-		}
-		CloseHandle(hResult);
-	}
-	else
-	{
-		LogError("DatabaseMaid: player expire query failed");
-	}
+	Format(sQuery, sizeof(sQuery), "SELECT player_id FROM %s WHERE (level <= 1 AND lastseen <= %d) %s", TBL_PLAYERS, GetTime()-259200, sQuery);
+	SQL_TQuery(g_hDatabase, SQL_DeleteExpiredPlayers, sQuery);
 	
 	// Reduce sqlite database file size.
 	if(g_DriverType == Driver_SQLite)
@@ -248,18 +330,21 @@ public Native_ResetAllPlayers(Handle:plugin, numParams)
 	// Delete all player information?
 	if(bHardReset)
 	{
+		new Transaction:hTransaction = SQL_CreateTransaction();
 		Format(sQuery, sizeof(sQuery), "DELETE FROM %s", TBL_PLAYERUPGRADES);
-		SQL_TQuery(g_hDatabase, SQL_DoNothing, sQuery);
+		SQL_AddQuery(hTransaction, sQuery);
 		Format(sQuery, sizeof(sQuery), "DELETE FROM %s", TBL_PLAYERS);
-		SQL_TQuery(g_hDatabase, SQL_DoNothing, sQuery);
+		SQL_AddQuery(hTransaction, sQuery);
+		SQL_ExecuteTransaction(g_hDatabase, hTransaction, _, SQLTxn_LogFailure);
 		
 		// Reset all ingame players and readd them into the database.
 		for(new i=1;i<=MaxClients;i++)
 		{
 			if(IsClientInGame(i))
 			{
-				RemovePlayer(i);
-				InitPlayer(i);
+				// Keep the original bot names intact, to avoid saving renamed bots.
+				RemovePlayer(i, true);
+				InitPlayer(i, false);
 				InsertPlayer(i);
 			}
 		}
@@ -267,10 +352,12 @@ public Native_ResetAllPlayers(Handle:plugin, numParams)
 	// Keep the player settings
 	else
 	{
+		new Transaction:hTransaction = SQL_CreateTransaction();
 		Format(sQuery, sizeof(sQuery), "UPDATE %s SET level = 1, experience = 0, credits = %d, lastreset = %d", TBL_PLAYERS, GetConVarInt(g_hCVCreditsStart), GetTime());
-		SQL_TQuery(g_hDatabase, SQL_DoNothing, sQuery);
+		SQL_AddQuery(hTransaction, sQuery);
 		Format(sQuery, sizeof(sQuery), "UPDATE %s SET purchasedlevel = 0, selectedlevel = 0, enabled = 1", TBL_PLAYERUPGRADES);
-		SQL_TQuery(g_hDatabase, SQL_DoNothing, sQuery);
+		SQL_AddQuery(hTransaction, sQuery);
+		SQL_ExecuteTransaction(g_hDatabase, hTransaction, _, SQLTxn_LogFailure);
 		
 		// Just reset all ingame players too
 		for(new i=1;i<=MaxClients;i++)
@@ -307,6 +394,11 @@ public SQL_DoNothing(Handle:owner, Handle:hndl, const String:error[], any:data)
 	}
 }
 
+public SQLTxn_LogFailure(Handle:db, any:data, numQueries, const String:error[], failIndex, any:queryData[])
+{
+	LogError("Error executing query %d of %d queries: %s", failIndex, numQueries, error);
+}
+
 public SQL_GetUpgradeInfo(Handle:owner, Handle:hndl, const String:error[], any:index)
 {
 	if(hndl == INVALID_HANDLE || strlen(error) > 0)
@@ -336,7 +428,7 @@ public SQL_GetUpgradeInfo(Handle:owner, Handle:hndl, const String:error[], any:i
 	{
 		if(IsClientInGame(i) && IsClientAuthorized(i) && GetClientDatabaseId(i) != -1)
 		{
-			Format(sQuery, sizeof(sQuery), "SELECT * FROM %s WHERE player_id = %d AND upgrade_id = %d", TBL_PLAYERUPGRADES, GetClientDatabaseId(i), upgrade[UPGR_databaseId]);
+			Format(sQuery, sizeof(sQuery), "SELECT upgrade_id, purchasedlevel, selectedlevel, enabled, visuals, sounds FROM %s WHERE player_id = %d AND upgrade_id = %d", TBL_PLAYERUPGRADES, GetClientDatabaseId(i), upgrade[UPGR_databaseId]);
 			SQL_TQuery(g_hDatabase, SQL_GetPlayerUpgrades, sQuery, GetClientUserId(i));
 		}
 	}
@@ -356,6 +448,35 @@ public SQL_InsertNewUpgrade(Handle:owner, Handle:hndl, const String:error[], any
 	upgrade[UPGR_databaseLoading] = false;
 	upgrade[UPGR_databaseId] = SQL_GetInsertId(owner);
 	SaveUpgradeConfig(upgrade);
+}
+
+// Delete all players which weren't seen on the server for too a long time.
+public SQL_DeleteExpiredPlayers(Handle:owner, Handle:hndl, const String:error[], any:data)
+{
+	if(hndl == INVALID_HANDLE || strlen(error) > 0)
+	{
+		LogError("DatabaseMaid: player expire query failed: %s", error);
+	}
+	
+	// Delete them at once.
+	new Transaction:hTransaction = SQL_CreateTransaction();
+	
+	new iPlayerId, String:sQuery[128];
+	while(SQL_MoreRows(hndl))
+	{
+		if(!SQL_FetchRow(hndl))
+			continue;
+		
+		iPlayerId = SQL_FetchInt(hndl, 0);
+		
+		Format(sQuery, sizeof(sQuery), "DELETE FROM %s WHERE player_id = %d", TBL_PLAYERUPGRADES, iPlayerId);
+		SQL_AddQuery(hTransaction, sQuery);
+		
+		Format(sQuery, sizeof(sQuery), "DELETE FROM %s WHERE player_id = %d", TBL_PLAYERS, iPlayerId);
+		SQL_AddQuery(hTransaction, sQuery);
+	}
+	
+	SQL_ExecuteTransaction(g_hDatabase, hTransaction, _, SQLTxn_LogFailure);
 }
 
 /**

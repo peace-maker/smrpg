@@ -142,6 +142,12 @@
 		"de"			"Verkaufen"
 	}
 	
+	"Is teamlocked"
+	{
+		// 1: The team name of the team the upgrade is restricted to.
+		"de"			"NUR TEAM {1}!"
+	}
+	
 	"Session"
 	{
 		"de"			"Session"

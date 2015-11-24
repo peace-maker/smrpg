@@ -93,7 +93,7 @@ public Action:OnPlayerRunCmd(client, &buttons, &impulse, Float:vel[3], Float:ang
 	// Make sure to reset the time when the player stops. Maybe he didn't took a step so player_footstep wasn't fired yet.
 	decl Float:vVelocity[3];
 	GetEntPropVector(client, Prop_Data, "m_vecVelocity", vVelocity);
-	if(vVelocity[0] == 0.0 && vVelocity[1] == 0.0 && vVelocity[2])
+	if(vVelocity[0] == 0.0 && vVelocity[1] == 0.0 && vVelocity[2] == 0.0)
 		g_fLJumpPlayerJumped[client] = -1.0;
 	
 	new bool:bFirstJump = g_fLJumpPlayerJumped[client] < 0.0;

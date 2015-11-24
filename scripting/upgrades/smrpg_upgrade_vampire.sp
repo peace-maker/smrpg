@@ -8,12 +8,14 @@
 
 #undef REQUIRE_PLUGIN
 #include <smrpg_health>
+#include <smrpg_effects>
 
 #define UPGRADE_SHORTNAME "vamp"
 #define PLUGIN_VERSION "1.0"
 
 new Handle:g_hCVPercent;
 new Handle:g_hCVMax;
+new Handle:g_hCVFreezePenalty;
 
 new g_iBeamColor[] = {0,255,0,255}; // green
 
@@ -62,6 +64,7 @@ public OnLibraryAdded(const String:name[])
 		
 		g_hCVPercent = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_vamp_percent", "0.075", "Percent of damage to convert to attacker's health for each level.", 0, true, 0.001);
 		g_hCVMax = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_vamp_maxhp", "70", "Maximum HP the attacker can get at a time. (0 = unlimited)", 0, true, 0.0);
+		g_hCVFreezePenalty = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_vamp_freeze_penalty", "0.5", "Only give x% of the HP the attacker would receive, if the victim is frozen by e.g. icestab.", 0, true, 0.0);
 	}
 }
 
@@ -124,12 +127,19 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 	if(IsFakeClient(attacker) && SMRPG_IgnoreBots())
 		return;
 	
-	// Ignore team attack
-	if(GetClientTeam(attacker) == GetClientTeam(victim))
+	// Ignore team attack if not FFA
+	if(!SMRPG_IsFFAEnabled() && GetClientTeam(attacker) == GetClientTeam(victim))
 		return;
 	
 	new iLevel = SMRPG_GetClientUpgradeLevel(attacker, UPGRADE_SHORTNAME);
 	if(iLevel <= 0)
+		return;
+	
+	new iOldHealth = GetClientHealth(attacker);
+	new iMaxHealth = SMRPG_Health_GetClientMaxHealth(attacker);
+		
+	// Don't reset the health, if the player gained more by other means.
+	if(iOldHealth >= iMaxHealth)
 		return;
 	
 	if(!SMRPG_RunUpgradeEffect(attacker, UPGRADE_SHORTNAME))
@@ -139,15 +149,19 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 	fIncrease *= damage;
 	fIncrease += 0.5;
 	
+	// Reduce stolen HP if the victim is frozen with icestab
+	if(GetFeatureStatus(FeatureType_Native, "SMRPG_IsClientFrozen") == FeatureStatus_Available && SMRPG_IsClientFrozen(victim))
+	{
+		fIncrease *= GetConVarFloat(g_hCVFreezePenalty);
+	}
+	
 	// Don't let the attacker steal more hp than the set max 
 	new iMaxIncrease = GetConVarInt(g_hCVMax);
 	new iIncrease = RoundToFloor(fIncrease);
 	if(iMaxIncrease > 0 && iIncrease > iMaxIncrease)
 		iIncrease = iMaxIncrease;
 	
-	new iOldHealth = GetClientHealth(attacker);
 	new iNewHealth = iOldHealth + iIncrease;
-	new iMaxHealth = SMRPG_Health_GetClientMaxHealth(attacker);
 	// Limit health gain to maxhealth
 	if(iNewHealth > iMaxHealth)
 		iNewHealth = iMaxHealth;

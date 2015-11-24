@@ -43,12 +43,14 @@ functag public bool:SMRPG_ActiveQueryCB(client);
  * The shortname is like an unique identifier for this upgrade.
  * Other plugins might use the shortname to check for information of the upgrade.
  *
- * This native registers 5 default convars for the plugin and saves them in a seperate config file for the upgrade in cfg/sourcemod/smrpg/smrpg_upgrade_<shortname>.cfg
+ * This native registers 7 default convars for the upgrade and saves them in a seperate config file in cfg/sourcemod/smrpg/smrpg_upgrade_<shortname>.cfg
  *  - smrpg_<shortname>_enable     ~ Enable or disable the upgrade. The upgrade needs to check this value and should obey it..
  *  - smrpg_<shortname>_maxlevel   ~ The maximal level a player can buy the upgrade.
  *  - smrpg_<shortname>_cost       ~ The start cost of this item when purchasing level 1.
  *  - smrpg_<shortname>_icost      ~ The amount to increase the cost for each level: cost for level x = startcost + icost * (level-1)
- *  - smrpg_<shortname>_adminflag  ~ The required admin flag to use this plugin.
+ *  - smrpg_<shortname>_adminflag  ~ The required admin flag to use this upgrade.
+ *  - smrpg_<shortname>_allowbots  ~ Are bots allowed to use this upgrade? Defaults to 1.
+ *  - smrpg_<shortname>_teamlock   ~ Restrict access to this upgrade to a team? 0 = Disable, 2: RED/Terrorist team, 3: BLU/Counter-Terrorist team. Defaults to 0.
  *
  * You can add more convars to that file using the SMRPG_CreateUpgradeConVar native.
  *
@@ -57,7 +59,7 @@ functag public bool:SMRPG_ActiveQueryCB(client);
  * @param description       A verbose description of the upgrade. Shown in the rpghelp menu.
  * @param maxlevelbarrier   Hardcoded limit you don't want the maxlevel to exceed. You can't set the maxlevel higher than this. This value can't be changed during runtime. (0 doesn't limit the maxlevel)
  * @param bDefaultEnable    Do you want this upgrade to be enabled by default? Default value of the _enable convar.
- * @param iDefaultMaxLevel  The default maxlevel of this plugin. Players won't be able to buy more levels of this upgrade than this. Default value of the _maxlevel convar.
+ * @param iDefaultMaxLevel  The default maxlevel of this upgrade. Players won't be able to buy more levels of this upgrade than this. Default value of the _maxlevel convar.
  * @param iDefaultStartCost The default start costs to buy level 1 of this upgrade. Default of the _cost convar.
  * @param iDefaultCostInc   The default incremential cost to buy higher levels of this upgrade. See _icost comment above. Default of the _icost convar.
  * @param iAdminFlags       Restrict this upgrade to players with certain flags. See ADMFLAG_* defines. Set to 0 to have it usable by everyone by default.
@@ -239,6 +241,7 @@ enum UpgradeInfo
 	UI_startCost, // The amount of credits the first level costs
 	UI_incCost, // The amount of credits each level costs more
 	UI_adminFlag, // The admin flag(s) (ADMFLAG_*) this upgrade is restricted to. (See SMRPG_CheckUpgradeAccess and SMRPG_RunUpgradeEffect)
+	UI_teamlock, // The team this upgrade is restricted to. 0 = Disabled, 2 = RED/Terrorist team, 3 = BLU/Counter-Terrorist team
 	String:UI_name[MAX_UPGRADE_NAME_LENGTH],
 	String:UI_shortName[MAX_UPGRADE_SHORTNAME_LENGTH], // shortname used as unique identifier in all commands and database
 	String:UI_description[MAX_UPGRADE_DESCRIPTION_LENGTH]
@@ -370,47 +373,6 @@ native bool:SMRPG_ClientBuyUpgrade(client, const String:shortname[]);
 native bool:SMRPG_ClientSellUpgrade(client, const String:shortname[]);
 
 /**
- * Called when a client's upgrade levels were loaded from the database.
- * 
- * @param client         The client who's levels were just loaded.
- * @noreturn
- */
-forward SMRPG_OnClientLoaded(client);
-
-/**
- * Called when the level of a client changes.
- * You can stop that from happening by returning Plugin_Handled.
- *
- * @param client         The client, who's level is going to be changed.
- * @param oldlevel       The old, current level of the client.
- * @param newlevel       The new level the client is going to be set to.
- * @return >= Plugin_Handled to block, Plugin_Continue to let it pass.
- */
-forward Action:SMRPG_OnClientLevel(client, oldlevel, newlevel);
-
-/**
- * Called when the experience of a client changes.
- * You can stop that from happening by returning Plugin_Handled.
- *
- * @param client         The client, who's experience is going to be changed.
- * @param oldexp         The old, current experience of the client.
- * @param newexp         The new experience the client is going to be set to.
- * @return >= Plugin_Handled to block, Plugin_Continue to let it pass.
- */
-forward Action:SMRPG_OnClientExperience(client, oldexp, newexp);
-
-/**
- * Called when the credits of a client changes.
- * You can stop that from happening by returning Plugin_Handled.
- *
- * @param client         The client, who's credits is going to be changed.
- * @param oldcredits     The old, current credits of the client.
- * @param newcredits     The new credits the client is going to be set to.
- * @return >= Plugin_Handled to block, Plugin_Continue to let it pass.
- */
-forward Action:SMRPG_OnClientCredits(client, oldcredits, newcredits);
-
-/**
  * Called when a client buys an upgrade or in general, when a client's upgrade level increases.
  * You can stop that from happening by returning Plugin_Handled.
  *
@@ -420,6 +382,16 @@ forward Action:SMRPG_OnClientCredits(client, oldcredits, newcredits);
  * @return >= Plugin_Handled to block the client from buying that upgrade, Plugin_Continue to let it pass.
  */
 forward Action:SMRPG_OnBuyUpgrade(client, const String:shortname[], newlevel);
+
+/**
+ * Called after a client bought an upgrade or in general, when a client's upgrade level increased.
+ *
+ * @param client         The client who bought an upgrade.
+ * @param shortname      The upgrade shortname of the upgrade bought.
+ * @param newlevel       The new level, the client's upgrade is set to.
+ * @noreturn
+ */
+forward SMRPG_OnBuyUpgradePost(client, const String:shortname[], newlevel);
 
 /**
  * Called when a client sells an upgrade or in general, when a client's upgrade level decreases.
@@ -433,6 +405,16 @@ forward Action:SMRPG_OnBuyUpgrade(client, const String:shortname[], newlevel);
 forward Action:SMRPG_OnSellUpgrade(client, const String:shortname[], newlevel);
 
 /**
+ * Called after a client sold an upgrade or in general, when a client's upgrade level decreased.
+ *
+ * @param client         The client who sold an upgrade.
+ * @param shortname      The upgrade shortname of the upgrade sold.
+ * @param newlevel       The new level, the client's upgrade is set to.
+ * @noreturn
+ */
+forward SMRPG_OnSellUpgradePost(client, const String:shortname[], newlevel);
+
+/**
  * Called when an upgrade is about to start his effect on a client.
  * The upgrades have to call SMRPG_RunUpgradeEffect for this to work.
  *
@@ -441,3 +423,30 @@ forward Action:SMRPG_OnSellUpgrade(client, const String:shortname[], newlevel);
  * @return >= Plugin_Handled to tell the upgrade to NOT run the effect, Plugin_Continue to let it pass.
  */
 forward Action:SMRPG_OnUpgradeEffect(client, const String:shortname[]);
+
+/**
+ * Called after the default convars of an upgrade have changed.
+ * @see SMRPG_RegisterUpgradeType
+ *
+ * @param shortname      The shortname of the upgrade which settings have changed.
+ * @noreturn
+ */
+forward SMRPG_OnUpgradeSettingsChanged(const String:shortname[]);
+
+/**
+ * Called when an upgrade is registered.
+ * It's not guaranteed that upgrade levels are loaded for players yet.
+ * @see SMRPG_OnClientLoaded.
+ *
+ * @param shortname      The shortname of the loaded upgrade.
+ * @noreturn
+ */
+forward SMRPG_OnUpgradeRegistered(const String:shortname[]);
+
+/**
+ * Called when an upgrade is unregistered from the core and is no longer available.
+ *
+ * @param shortname      The shortname of the loaded upgrade.
+ * @noreturn
+ */
+forward SMRPG_OnUpgradeUnregistered(const String:shortname[]);

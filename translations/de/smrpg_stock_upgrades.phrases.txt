@@ -1,4 +1,4 @@
-"Phrases"
+﻿"Phrases"
 {
 	"regen"
 	{
@@ -7,7 +7,7 @@
 	
 	"regen description"
 	{
-		"de"			"Stellt jede Sekunde eine bestimmte Menge an HP wieder her."
+		"de"			"Stellt regelmäßig eine bestimmte Menge an HP wieder her."
 	}
 	
 	"health"
@@ -22,7 +22,7 @@
 	
 	"resup"
 	{
-		"de"			"Munitionserhöhung"
+		"de"			"Munitionsregenerierung"
 	}
 	
 	"resup description"
@@ -147,7 +147,7 @@
 	
 	"armorregen description"
 	{
-		"de"			"Stellt jede Sekunde eine bestimmte Menge an Rüstung wieder her."
+		"de"			"Stellt regelmäßig eine bestimmte Menge an Rüstung wieder her."
 	}
 	
 	"clipsize"
@@ -188,5 +188,85 @@
 	"fastreload description"
 	{
 		"de"			"Erhöht die Nachladegeschwindigkeit deiner Waffen."
+	}
+	
+	"firepistol"
+	{
+		"de"			"Feuerpistole"
+	}
+	
+	"firepistol description"
+	{
+		"de"			"Verbrenne deine Gegner, wenn du sie mit einer Pistole triffst."
+	}
+	
+	"gravity"
+	{
+		"de"			"Reduzierte Schwerkraft"
+	}
+	
+	"gravity description"
+	{
+		"de"			"Reduziert die Auswirkung der Schwerkraft auf dich, sodass du höher springen kannst."
+	}
+	
+	"poisonsmoke"
+	{
+		"de"			"Giftiger Rauch"
+	}
+	
+	"poisonsmoke description"
+	{
+		"de"			"Vergiftet Spieler, die im Rauch einer Rauchgranate stehen."
+	}
+	
+	"firerate"
+	{
+		"de"			"Feuerrate erhöhen"
+	}
+	
+	"firerate description"
+	{
+		"de"			"Erhöht die Feuerrate deiner Schusswaffen."
+	}
+	
+	"icenade"
+	{
+		"de"			"Eisgranate"
+	}
+	
+	"icenade description"
+	{
+		"de"			"Friert deinen Gegner ein, wenn du ihn mit einer Granate triffst."
+	}
+	
+	"grenaderesup"
+	{
+		"de"			"Granatenregenerierung"
+	}
+	
+	"grenaderesup description"
+	{
+		"de"			"Gibt dir Granaten x Sekunden nach dem du sie geworfen hast zurück."
+	}
+	
+	"antidote"
+	{
+		"de"			"Gegengift"
+	}
+	
+	"antidote description"
+	{
+		"de"			"Verkürzt die Dauer von negativen Effekten gegen dich, wie Verbrennung oder Verlangsamung."
+	}
+	
+	"bouncybullets"
+	{
+		"de"			"Flummimunition"
+	}
+	
+	"bouncybullets description"
+	{
+		"de"			"Schiebt deinen Gegner weg, wenn du ihn abschießt."
 	}
 }

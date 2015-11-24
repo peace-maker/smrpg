@@ -2,6 +2,9 @@
  * SM:RPG Example Upgrade
  * Adds a random effect
  */
+// Remove this line ;)
+#error Don't compile me! I'm no upgrade, just a skeleton.
+
 #pragma semicolon 1
 #include <sourcemod>
 #include <smrpg>

@@ -1,6 +1,7 @@
 #pragma semicolon 1
 #include <sourcemod>
 #include <smrpg>
+#include <smlib>
 
 #undef REQUIRE_PLUGIN
 #include <smrpg_health>
@@ -8,6 +9,13 @@
 #define UPGRADE_SHORTNAME "regen"
 
 #define PLUGIN_VERSION "1.0"
+
+new Handle:g_hAmount;
+new Handle:g_hAmountIncrease;
+new Handle:g_hInterval;
+new Handle:g_hIntervalDecrease;
+
+new Handle:g_hRegenerationTimer[MAXPLAYERS+1];
 
 public Plugin:myinfo = 
 {
@@ -39,14 +47,19 @@ public OnLibraryAdded(const String:name[])
 	// Register this upgrade in SM:RPG
 	if(StrEqual(name, "smrpg"))
 	{
-		SMRPG_RegisterUpgradeType("HP Regeneration", UPGRADE_SHORTNAME, "Regenerates HP every second.", 15, true, 5, 5, 10, _, SMRPG_BuySell, SMRPG_ActiveQuery);
+		SMRPG_RegisterUpgradeType("HP Regeneration", UPGRADE_SHORTNAME, "Regenerates HP regularly.", 15, true, 5, 5, 10, _, SMRPG_BuySell, SMRPG_ActiveQuery);
 		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
+		
+		g_hAmount = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_regen_amount", "1", "Specify the base amount of HP which is regenerated at the first level.", 0, true, 0.1);
+		g_hAmountIncrease = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_regen_amount_inc", "1", "Additional HP to regenerate each interval multiplied by level. (base + inc * (level-1))", 0, true, 0.0);
+		g_hInterval = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_regen_interval", "1.0", "Specify the base interval rate at which HP is regenerated in seconds at the first level.", 0, true, 0.1);
+		g_hIntervalDecrease = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_regen_interval_dec", "0.0", "How much is the base interval reduced for each level?", 0, true, 0.0);
 	}
 }
 
-public OnMapStart()
+public OnClientDisconnect(client)
 {
-	CreateTimer(1.0, Timer_IncreaseHealth, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
+	ClearHandle(g_hRegenerationTimer[client]);
 }
 
 /**
@@ -54,7 +67,14 @@ public OnMapStart()
  */
 public SMRPG_BuySell(client, UpgradeQueryType:type)
 {
-	// Nothing to apply here immediately after someone buys this upgrade.
+	// Change timer interval to correct interval for new level.
+	ClearHandle(g_hRegenerationTimer[client]);
+	new iLevel = SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME);
+	if(iLevel <= 0)
+		return;
+	
+	new Float:fInterval = GetConVarFloat(g_hInterval) - GetConVarFloat(g_hIntervalDecrease) * (iLevel - 1);
+	g_hRegenerationTimer[client] = CreateTimer(fInterval, Timer_IncreaseHealth, GetClientUserId(client), TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 }
 
 public bool:SMRPG_ActiveQuery(client)
@@ -77,8 +97,12 @@ public SMRPG_TranslateUpgrade(client, const String:shortname[], TranslationType:
 	}
 }
 
-public Action:Timer_IncreaseHealth(Handle:timer)
+public Action:Timer_IncreaseHealth(Handle:timer, any:userid)
 {
+	new client = GetClientOfUserId(userid);
+	if(!client)
+		return Plugin_Stop;
+
 	if(!SMRPG_IsEnabled())
 		return Plugin_Continue;
 	
@@ -87,34 +111,31 @@ public Action:Timer_IncreaseHealth(Handle:timer)
 	if(!upgrade[UI_enabled])
 		return Plugin_Continue;
 	
-	new bool:bIgnoreBots = SMRPG_IgnoreBots();
+	// Are bots allowed to use this upgrade?
+	if(SMRPG_IgnoreBots() && IsFakeClient(client))
+		return Plugin_Continue;
+		
+	// Player didn't buy this upgrade yet.
+	new iLevel = SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME);
+	if(iLevel <= 0)
+		return Plugin_Continue;
+		
+	new iOldHealth = GetClientHealth(client);
+	new iMaxHealth = SMRPG_Health_GetClientMaxHealth(client);
+	// Don't reset the health, if the player gained more by other means.
+	if(iOldHealth >= iMaxHealth)
+		return Plugin_Continue;
+		
+	if(!SMRPG_RunUpgradeEffect(client, UPGRADE_SHORTNAME))
+		return Plugin_Continue; // Some other plugin doesn't want this effect to run
 	
-	new iLevel;
-	for(new i=1;i<=MaxClients;i++)
-	{
-		if(!IsClientInGame(i))
-			continue;
+	new iIncrease = GetConVarInt(g_hAmount) + GetConVarInt(g_hAmountIncrease) * (iLevel - 1);
+	new iNewHealth = iOldHealth + iIncrease;
+	// Limit the regeneration to the maxhealth.
+	if(iNewHealth > iMaxHealth)
+		iNewHealth = iMaxHealth;
 		
-		// Are bots allowed to use this upgrade?
-		if(bIgnoreBots && IsFakeClient(i))
-			continue;
-		
-		// Player didn't buy this upgrade yet.
-		iLevel = SMRPG_GetClientUpgradeLevel(i, UPGRADE_SHORTNAME);
-		if(iLevel <= 0)
-			continue;
-		
-		if(!SMRPG_RunUpgradeEffect(i, UPGRADE_SHORTNAME))
-			continue; // Some other plugin doesn't want this effect to run
-		
-		new iNewHealth = GetClientHealth(i)+iLevel;
-		new iMaxHealth = SMRPG_Health_GetClientMaxHealth(i);
-		// Limit the regeneration to the maxhealth.
-		if(iNewHealth > iMaxHealth)
-			SetEntityHealth(i, iMaxHealth);
-		else
-			SetEntityHealth(i, iNewHealth);
-	}
+	SetEntityHealth(client, iNewHealth);
 	
 	return Plugin_Continue;
 }

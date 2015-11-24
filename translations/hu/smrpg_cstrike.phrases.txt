@@ -1,0 +1,87 @@
+"Phrases"
+{
+	"Player is knifeleveling"
+	{
+		// 1: Name of player who is earning levels
+		// 2: Name of the player who gets knifed, so the other player gets experience
+		"hu"			"{N}{1}{G} is suspected for knife-leveling with {N}{2}{G}."
+	}
+	
+	"cs_playerknife"
+	{
+		// 1: The amount of experience earned.
+		// 2: The other player involved. e.g. the victim when hurting someone.
+		"hu"			"{1} exp. amiért megsebezted {2} -t késsel"
+	}
+	
+	"cs_playerhurt"
+	{
+		// 1: The amount of experience earned.
+		// 2: The other player involved. e.g. the victim when hurting someone.
+		"hu"			"{1} exp. mert megsebezted: {2}"
+	}
+	
+	"cs_playerkill"
+	{
+		// 1: The amount of experience earned.
+		// 2: The other player involved. e.g. the victim when hurting someone.
+		"hu"			"{1} exp. mert megölted: {2}"
+	}
+	
+	"cs_playerkillassist"
+	{
+		// 1: The amount of experience earned.
+		// 2: The other player involved. e.g. the victim when hurting someone.
+		"hu"			"{1} exp. mert aszisztáltál {2} megölésénél"
+	}
+	
+	"cs_dominating"
+	{
+		// 1: The amount of experience earned.
+		// 2: The other player involved. e.g. the victim when hurting someone.
+		"hu"			"{1} exp. uralkodásért {2}"
+	}
+	
+	"cs_revenge"
+	{
+		// 1: The amount of experience earned.
+		// 2: The other player involved. e.g. the victim when hurting someone.
+		"hu"			"{1} exp. mert bosszút áltál rajta: {2}"
+	}
+	
+	"cs_winround"
+	{
+		// 1: The amount of experience earned.
+		"hu"			"{1} exp. a gyõztes körért"
+	}
+	
+	"cs_bombplanted"
+	{
+		// 1: The amount of experience earned.
+		"hu"			"{1} exp. a lerakott bombáért"
+	}
+	
+	"cs_bombdefused"
+	{
+		// 1: The amount of experience earned.
+		"hu"			"{1} exp. a felszedett bombáért"
+	}
+	
+	"cs_bombexploded"
+	{
+		// 1: The amount of experience earned.
+		"hu"			"{1} exp. amiért a bomba felrobbant"
+	}
+	
+	"cs_hostagerescued"
+	{
+		// 1: The amount of experience earned.
+		"hu"			"{1} exp. túsz kiszabadításáért"
+	}
+	
+	"cs_vipescaped"
+	{
+		// 1: The amount of experience earned.
+		"hu"			"{1} exp. VIP kíséréséért"
+	}
+}

@@ -29,11 +29,24 @@ new Float:g_fExperienceAverage[MAXPLAYERS+1];
 
 public Plugin:myinfo = 
 {
-	name = "SMRPG > Key Hint Infopanel",
+	name = "SM:RPG > Key Hint Infopanel",
 	author = "Jannik \"Peace-Maker\" Hartung",
 	description = "Shows some RPG stats in a panel on the screen",
 	version = PLUGIN_VERSION,
 	url = "http://www.wcfan.de/"
+}
+
+public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
+{
+	new EngineVersion:engine = GetEngineVersion();
+	// Prevent known crash in bad games.
+	if(engine == Engine_CSGO)
+	{
+		Format(error, err_max, "This plugin can't be used in CS:GO.");
+		return APLRes_SilentFailure;
+	}
+	
+	return APLRes_Success;
 }
 
 public OnPluginStart()
@@ -203,11 +216,10 @@ public Action:Timer_CalculateEstimatedLevelupTime(Handle:timer)
 	}
 }
 
-public Action:SMRPG_OnAddExperience(client, const String:reason[], &iExperience, other)
+public SMRPG_OnAddExperiencePost(client, const String:reason[], iExperience, other)
 {
 	g_iLastExperience[client] = iExperience;
 	g_iExperienceThisMinute[client] += iExperience;
-	return Plugin_Continue;
 }
 
 /**

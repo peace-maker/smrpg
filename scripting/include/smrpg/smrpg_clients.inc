@@ -134,6 +134,15 @@ native SMRPG_GetClientLastSeenTime(client);
 native bool:SMRPG_IsClientAFK(client);
 
 /**
+ * Check if a client just spawned and hasn't pressed any buttons yet.
+ *
+ * @param client				The client index
+ * @return	True if player just spawned, false otherwise.
+ * @error Invalid client index
+ */
+native bool:SMRPG_IsClientSpawnProtected(client);
+
+/**
  * Called when the core wants a reason string to be translated so it's displayed in the recent added experience panel.
  * Should look like
  *   15 exp. for killing (name of [other])
@@ -153,8 +162,8 @@ functag public SMRPG_ExpTranslationCb(client, const String:reason[], iExperience
  * Adds experience to a client.
  * If he gets enough experience to level up, he levels up.
  *
- * @param client         The client
- * @param level          The experience to add
+ * @param client         The client index.
+ * @param level          The experience to add. Changed to the actual amount given, if some other plugin altered it in the SMRPG_OnAddExperience forward.
  * @param reason         The reason this experience was added.
  * @param bHideNotice    Set to true, if you want a notification displayed in the HintText area on the client's screen, telling him the amount of experience he just earned, or to false if not.
  * @param other          Optional index of other client involved in the reason for this experience. e.g. the victim which was hurt. Set to -1 if no other particular entity was involved.
@@ -162,7 +171,7 @@ functag public SMRPG_ExpTranslationCb(client, const String:reason[], iExperience
  * @return               True if the experience was added, false otherwise.
  * @error Invalid client index
  */
-native bool:SMRPG_AddClientExperience(client, exp, const String:reason[], bool:bHideNotice, other=-1, SMRPG_ExpTranslationCb:callback=SMRPG_ExpTranslationCb:INVALID_FUNCTION);
+native bool:SMRPG_AddClientExperience(client, &exp, const String:reason[], bool:bHideNotice, other=-1, SMRPG_ExpTranslationCb:callback=SMRPG_ExpTranslationCb:INVALID_FUNCTION);
 
 /**
  * Calculate the amount of experience needed to reach the next level.
@@ -171,6 +180,77 @@ native bool:SMRPG_AddClientExperience(client, exp, const String:reason[], bool:b
  * @return The amount of experience needed to reach iLevel+1.
  */
 native SMRPG_LevelToExperience(iLevel);
+
+/**
+ * Called when a client's upgrade levels were loaded from the database.
+ * 
+ * @param client         The client who's levels were just loaded.
+ * @noreturn
+ */
+forward SMRPG_OnClientLoaded(client);
+
+/**
+ * Called when the level of a client changes.
+ * You can stop that from happening by returning Plugin_Handled.
+ *
+ * @param client         The client, who's level is going to be changed.
+ * @param oldlevel       The old, current level of the client.
+ * @param newlevel       The new level the client is going to be set to.
+ * @return >= Plugin_Handled to block, Plugin_Continue to let it pass.
+ */
+forward Action:SMRPG_OnClientLevel(client, oldlevel, newlevel);
+
+/**
+ * Called after the level of a client changed.
+ *
+ * @param client         The client, who's level has changed.
+ * @param oldlevel       The old level of the client.
+ * @param newlevel       The new, current level of the client.
+ * @noreturn
+ */
+forward SMRPG_OnClientLevelPost(client, oldlevel, newlevel);
+
+/**
+ * Called when the experience of a client changes.
+ * You can stop that from happening by returning Plugin_Handled.
+ *
+ * @param client         The client, who's experience is going to be changed.
+ * @param oldexp         The old, current experience of the client.
+ * @param newexp         The new experience the client is going to be set to.
+ * @return >= Plugin_Handled to block, Plugin_Continue to let it pass.
+ */
+forward Action:SMRPG_OnClientExperience(client, oldexp, newexp);
+
+/**
+ * Called after the experience of a client changed.
+ *
+ * @param client         The client, who's experience has changed.
+ * @param oldexp         The old experience of the client.
+ * @param newexp         The new, current experience of the client.
+ * @noreturn
+ */
+forward SMRPG_OnClientExperiencePost(client, oldexp, newexp);
+
+/**
+ * Called when the credits of a client changes.
+ * You can stop that from happening by returning Plugin_Handled.
+ *
+ * @param client         The client, who's credits is going to be changed.
+ * @param oldcredits     The old, current credits of the client.
+ * @param newcredits     The new credits the client is going to be set to.
+ * @return >= Plugin_Handled to block, Plugin_Continue to let it pass.
+ */
+forward Action:SMRPG_OnClientCredits(client, oldcredits, newcredits);
+
+/**
+ * Called after the credits of a client changed.
+ *
+ * @param client         The client, who's credits have changed.
+ * @param oldcredits     The old credits of the client.
+ * @param newcredits     The new, current credits of the client.
+ * @noreturn
+ */
+forward SMRPG_OnClientCreditsPost(client, oldcredits, newcredits);
 
 /**
  * List of default reasons the core plugin adds experience to clients for.
@@ -192,6 +272,18 @@ native SMRPG_LevelToExperience(iLevel);
  * @return >= Plugin_Handled to block it, Plugin_Continue to pass, Plugin_Changed if you modified iExperience.
  */
 forward Action:SMRPG_OnAddExperience(client, const String:reason[], &iExperience, other);
+
+/**
+ * Called after a client received some experience.
+ * The core calls this with the above defined reasons.
+ *
+ * @param client         The client, which got some experience.
+ * @param reason         The reason why this client got experience.
+ * @param iExperience    The experience to given to the player.
+ * @param other          The other entity which was involved in adding this experience. e.g. the victim which was hurt. -1 if no other particular entity was involved.
+ * @noreturn
+ */
+forward SMRPG_OnAddExperiencePost(client, const String:reason[], iExperience, other);
 
 /**
  * Types of experience multipliers that can be set individually per weapon.
@@ -226,6 +318,14 @@ stock Float:SMRPG_TeamRatio(iTeam)
 {
 	if(iTeam <= 1)
 		return 0.0;
+	
+	static Handle:hUseTeamRatio = INVALID_HANDLE;
+	if(hUseTeamRatio == INVALID_HANDLE)
+		hUseTeamRatio = FindConVar("smrpg_exp_use_teamratio");
+	
+	// Server is configured to ignore team ratio?
+	if(hUseTeamRatio != INVALID_HANDLE && !GetConVarBool(hUseTeamRatio))
+		return 1.0;
 	
 	new Float:fTeamRatio;
 	

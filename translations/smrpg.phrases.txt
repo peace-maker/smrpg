@@ -154,6 +154,13 @@
 		"en"			"Sale"
 	}
 	
+	"Is teamlocked"
+	{
+		// 1: The team name of the team the upgrade is restricted to.
+		"#format"		"{1:s}"
+		"en"			"TEAM {1} ONLY!"
+	}
+	
 	"Session"
 	{
 		"en"			"Session"
