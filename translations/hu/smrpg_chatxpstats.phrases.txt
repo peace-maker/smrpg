@@ -15,8 +15,7 @@
 	
 	"Print xp for last kill in chat"
 	{
-		hu"			"Mutasd chaten a kapott tapasztalatot a legutóbbi ölésemért"
-					
+		"hu"			"Mutasd chaten a kapott tapasztalatot a legutóbbi ölésemért"
 	}
 
 	"Print total xp last life in chat"
