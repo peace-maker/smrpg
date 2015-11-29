@@ -199,19 +199,6 @@ PrintDaysUntilReset(client)
 		DoReset(sReason);
 	}
 	
-	
-	new String:sYearsPhrase[16] = "_dnull"; // special pass-through translation
-	if(iYears > 0)
-		Format(sYearsPhrase, sizeof(sYearsPhrase), "%s", (iYears > 1?"Years":"Year"));
-	
-	new String:sMonthsPhrase[16] = "_dnull";
-	if(iMonths > 0)
-		Format(sMonthsPhrase, sizeof(sMonthsPhrase), "%s", (iMonths > 1?"Months":"Month"));
-	
-	new String:sDaysPhrase[16] = "_dnull";
-	if(iDays > 0)
-		Format(sDaysPhrase, sizeof(sDaysPhrase), "%s", (iDays > 1?"Days":"Day"));
-	
 	// Today is a special case and has it's own phrase.
 	if(iDays == 0)
 	{
@@ -222,13 +209,24 @@ PrintDaysUntilReset(client)
 	}
 	else
 	{
+		new String:sYears[32], String:sMonths[32], String:sDays[32];
+		
 		if(!client)
 		{
-			PrintToServer("daysphrase: %s, %d, monthsphrase: %s, %d, yearsphrase: %s, %d", sDaysPhrase, iDays, sMonthsPhrase, iMonths, sYearsPhrase, iYears);
-			PrintToServer("SM:RPG > %T", "Timed reset in future", LANG_SERVER, sDaysPhrase, iDays, sMonthsPhrase, iMonths, sYearsPhrase, iYears, iNextReset[2], iNextReset[1], iNextReset[0]);
+			TranslateTimespan(LANG_SERVER, sYears, sizeof(sYears), iYears, sMonths, sizeof(sMonths), iMonths, sDays, sizeof(sDays), iDays);
+			PrintToServer("SM:RPG > %T", "Timed reset in future", LANG_SERVER, sDays, sMonths, sYears, iNextReset[2], iNextReset[1], iNextReset[0]);
 		}
 		else
-			Client_PrintToChatAll(false, "{OG}SM:RPG{N} > {G}%t", "Timed reset in future", sDaysPhrase, iDays, sMonthsPhrase, iMonths, sYearsPhrase, iYears, iNextReset[2], iNextReset[1], iNextReset[0]);
+		{
+			for (new i=1;i<=MaxClients;i++)
+			{
+				if (!IsClientInGame(i) || IsFakeClient(i))
+					continue;
+				
+				TranslateTimespan(i, sYears, sizeof(sYears), iYears, sMonths, sizeof(sMonths), iMonths, sDays, sizeof(sDays), iDays);
+				Client_PrintToChat(i, false, "{OG}SM:RPG{N} > {G}%t", "Timed reset in future", sDays, sMonths, sYears, iNextReset[2], iNextReset[1], iNextReset[0]);
+			}
+		}
 	}
 }
 
@@ -317,6 +315,33 @@ DoReset(const String:sReason[])
 	{
 		if(IsClientInGame(i) && !IsFakeClient(i))
 			CreateTimer(1.0, Timer_InformPlayerReset, GetClientSerial(i), TIMER_FLAG_NO_MAPCHANGE);
+	}
+}
+
+TranslateTimespan(client, String:sYears[], iLenYears, iYears, String:sMonths[], iLenMonths, iMonths, String:sDays[], iLenDays, iDays)
+{
+	if(iYears > 0)
+	{
+		if (iYears > 1)
+			Format(sYears, iLenYears, "%T", "Years", client, iYears);
+		else
+			Format(sYears, iLenYears, "%T", "One Year", client);
+	}
+	
+	if(iMonths > 0)
+	{
+		if (iMonths > 1)
+			Format(sMonths, iLenMonths, "%T", "Months", client, iMonths);
+		else
+			Format(sMonths, iLenMonths, "%T", "One Month", client);
+	}
+	
+	if(iDays > 0)
+	{
+		if (iDays > 1)
+			Format(sDays, iLenDays, "%T", "Days", client, iDays);
+		else
+			Format(sDays, iLenDays, "%T", "One Day", client);
 	}
 }
 
