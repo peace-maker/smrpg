@@ -949,6 +949,10 @@ public Native_GetClientUpgradeLevel(Handle:plugin, numParams)
 		return 0;
 	}
 	
+	// Don't try to lookup anything, if we haven't loaded the client completely yet.
+	if (!IsPlayerDataLoaded(client))
+		return 0;
+	
 	new len;
 	GetNativeStringLength(2, len);
 	new String:sShortName[len+1];
@@ -978,6 +982,10 @@ public Native_GetClientPurchasedUpgradeLevel(Handle:plugin, numParams)
 		return 0;
 	}
 	
+	// Don't try to lookup anything, if we haven't loaded the client completely yet.
+	if (!IsPlayerDataLoaded(client))
+		return 0;
+	
 	new len;
 	GetNativeStringLength(2, len);
 	new String:sShortName[len+1];
@@ -1002,6 +1010,10 @@ public Native_SetClientSelectedUpgradeLevel(Handle:plugin, numParams)
 		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
 		return false;
 	}
+	
+	// Don't try to lookup anything, if we haven't loaded the client completely yet.
+	if (!IsPlayerDataLoaded(client))
+		return false;
 	
 	new len;
 	GetNativeStringLength(2, len);
@@ -1046,6 +1058,10 @@ public Native_ClientBuyUpgrade(Handle:plugin, numParams)
 		return false;
 	}
 	
+	// Don't try to lookup anything, if we haven't loaded the client completely yet.
+	if (!IsPlayerDataLoaded(client))
+		return false;
+	
 	new len;
 	GetNativeStringLength(2, len);
 	new String:sShortName[len+1];
@@ -1072,6 +1088,10 @@ public Native_ClientSellUpgrade(Handle:plugin, numParams)
 		return false;
 	}
 	
+	// Don't try to lookup anything, if we haven't loaded the client completely yet.
+	if (!IsPlayerDataLoaded(client))
+		return false;
+	
 	new len;
 	GetNativeStringLength(2, len);
 	new String:sShortName[len+1];
@@ -1096,6 +1116,10 @@ public Native_IsUpgradeActiveOnClient(Handle:plugin, numParams)
 		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
 		return false;
 	}
+	
+	// Don't try to lookup anything, if we haven't loaded the client completely yet.
+	if (!IsPlayerDataLoaded(client))
+		return false;
 	
 	new len;
 	GetNativeStringLength(2, len);
@@ -1125,7 +1149,7 @@ public Native_GetClientLevel(Handle:plugin, numParams)
 	if(client < 0 || client > MaxClients)
 	{
 		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
-		return false;
+		return -1;
 	}
 	
 	return GetClientLevel(client);
@@ -1140,6 +1164,10 @@ public Native_SetClientLevel(Handle:plugin, numParams)
 		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
 		return false;
 	}
+	
+	// Don't try to lookup anything, if we haven't loaded the client completely yet.
+	if (!IsPlayerDataLoaded(client))
+		return false;
 	
 	new iLevel = GetNativeCell(2);
 	
@@ -1169,6 +1197,10 @@ public Native_SetClientCredits(Handle:plugin, numParams)
 		return false;
 	}
 	
+	// Don't try to lookup anything, if we haven't loaded the client completely yet.
+	if (!IsPlayerDataLoaded(client))
+		return false;
+	
 	new iCredits = GetNativeCell(2);
 	
 	return SetClientCredits(client, iCredits);
@@ -1197,6 +1229,10 @@ public Native_SetClientExperience(Handle:plugin, numParams)
 		return false;
 	}
 	
+	// Don't try to lookup anything, if we haven't loaded the client completely yet.
+	if (!IsPlayerDataLoaded(client))
+		return false;
+	
 	new iExperience = GetNativeCell(2);
 	
 	return SetClientExperience(client, iExperience);
@@ -1211,6 +1247,10 @@ public Native_ResetClientStats(Handle:plugin, numParams)
 		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
 		return;
 	}
+	
+	// Don't try to lookup anything, if we haven't loaded the client completely yet.
+	if (!IsPlayerDataLoaded(client))
+		return;
 	
 	ResetStats(client);
 	SetPlayerLastReset(client, GetTime());
@@ -1251,6 +1291,10 @@ public Native_ClientWantsCosmetics(Handle:plugin, numParams)
 		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
 		return false;
 	}
+	
+	// Don't try to lookup anything, if we haven't loaded the client completely yet.
+	if (!IsPlayerDataLoaded(client))
+		return false;
 	
 	new len;
 	GetNativeStringLength(2, len);
