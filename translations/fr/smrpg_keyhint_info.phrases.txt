@@ -1,0 +1,22 @@
+"Phrases"
+{
+	"Player is AFK"
+	{
+		"fr"	"Vous êtes AFK"
+	}
+
+	"Hide stats info panel on the right"
+	{
+		"fr"	"Cacher les statistiques dans le panel à droite"
+	}
+
+	"Last Experience Short"
+	{
+		"fr"	"Dernière exp gagné"
+	}
+
+	"Estimated time until levelup"
+	{
+		"fr"	"Prochain niveau dans"
+	}
+}

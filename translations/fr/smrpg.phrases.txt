@@ -3,47 +3,47 @@
 	"Inform about plugin"
 	{
 		// 1: Running SM:RPG plugin version (e.g. 1.0)
-		"fr"			"This server is running SM:RPG v{1}."
+		"fr"	"Ce serveur utilise SM:RPG v{1}."
 	}
-	
+
 	"Advertise rpgmenu command"
 	{
-		"fr"			"{G}Tapez \"{N}rpgmenu{G}\" pour afficher votre menu."
+		"fr"	"{G}Tape \"{N}rpgmenu{G}\" pour afficher le menu."
 	}
-	
+
 	"Client level changed"
 	{
 		// 1: Name of the client which level has changed.
 		// 2: New rpg level of the client
-		"fr"			"{1} est maintenant level {2}."
+		"fr"	"{1} est maintenant au niveau {2}."
 	}
-	
+
 	"You have new credits"
 	{
 		// 1: Total amount of credits the player currently has.
-		"fr"			"Tu as maintenant ({1} total) credits. Tape \"rpgmenu\" pour acheter tes pouvoirs."
+		"fr"	"Tu as maintenant {1} crédits. Tape \"rpgmenu\" pour acheter des améliorations."
 	}
-	
+
 	//Newbie Text
 	"Newbie instructions new level"
 	{
-		"fr"			"{G}Tu as un gagner un {N}nouveau Level{G}! Tu peux maintenant {N}acheter des pouvoirs{G} qui te donneront un avantage tactique."
+		"fr"	"{G}Tu as gagné un {N}nouveau niveau{G}! Tu peux maintenant {N}acheter des améliorations{G}."
 	}
-	
+
 	"Newbie instructions use rpgmenu"
 	{
-		"fr"			"{G}Tape \"{L}rpgmenu{G}\" dans la zone de chat, ou dans la console."
+		"fr"	"{G}Tape \"{L}rpgmenu{G}\" dans le tchat, ou dans la console."
 	}
-	
+
 	//Experience Hintbox
 	"Experience Gained Hintbox"
 	{
 		// 1: Amount of experience the client just gained.
 		// 2: Total amount of experience the client currently has on his level.
 		// 3: Amount of experience needed to reach the next level.
-		"fr"			"Experience Gagner: (EXP): {1}+\nExperience Quota: {2}/{3}"
+		"fr"	"Expérience Gagné: (EXP): {1}+\nExpérience requis: {2}/{3}"
 	}
-	
+
 	"rpgrank"
 	{
 		// 1: Name of the player whos rpgrank is being displayed.
@@ -53,136 +53,391 @@
 		// 5: Amount of experience the player has on his level.
 		// 6: Amount of experience needed to reach the next level.
 		// 7: Amount of rpg credits of the player.
-		"fr"			"{1} is Level {2}, ranked {3}/{4} with {5}/{6} Experience and {7} Credits"
+		"fr"	"{1} est au niveau {2}, rang {3}/{4} avec {5}/{6} d'expérience et {7} credits"
 	}
-	
+
 	"Top 10 Players"
 	{
-		"fr"			"Top 10 SM:RPG Players"
+		"fr"	"Top 10 Joueurs SM:RPG"
 	}
-	
+
+	"Next ranked players"
+	{
+		"fr"	"Joueur suivant"
+	}
+
+	"Player reached maxlevel"
+	{
+		"fr"	"{1} a atteint le niveau maximum ({2}) et a été remis à zero."
+	}
+
 	// Menu text
 	"Level"
 	{
 		// 1: Current rpg level of the player.
-		"fr"			"Level: {1}"
+		"fr"	"Niveau: {1}"
 	}
-	
+
 	"Experience short"
 	{
 		// 1: Current rpg rank of the player.
 		// 2: Total amount of ranked players.
-		"fr"			"Exp: {1}/{2}"
+		"fr"	"Exp: {1}/{2}"
 	}
-	
+
 	"Experience"
 	{
-		"fr"			"Experience"
+		"fr"	"Expérience"
 	}
-	
+
 	"Credits"
 	{
 		// 1: Amount of credits the player has.
-		"fr"			"Credits: {1}"
+		"fr"	"Crédits: {1}"
 	}
-	
+
 	"Rank"
 	{
 		// 1: Current rpg rank of the player.
 		// 2: Total amount of ranked players.
-		"fr"			"Rank: {1}/{2}"
+		"fr"	"Rang: {1}/{2}"
 	}
-	
+
+	"Last reset"
+	{
+		// 1: date and time representation of the last time the stats were reset to 0 for this player
+		"fr"	"Dernière remise à zero: {1}"
+	}
+
+	"Experience Reason Other Client"
+	{
+		// 1: The amount of experience added to a client.
+		// 2: The reason this experience was added for
+		// 3: The name of the other client involved in the reason for this experience. (e.g. name of victim hurt)
+		"fr"	"{1} exp. pour \"{2}\" contre {3}"
+	}
+
+	"Experience Reason General"
+	{
+		// 1: The amount of experience added to a client.
+		// 2: The reason this experience was added for
+		"fr"	"{1} exp. pour \"{2}\""
+	}
+
+	"Nothing to display"
+	{
+		"fr"	"Il n'y a rien à afficher."
+	}
+
 	"Cost"
 	{
-		"fr"			"Cout"
+		"fr"	"Coût"
 	}
-	
+
 	"Sale"
 	{
-		"fr"			"vendre"
+		"fr"	"Vendre"
 	}
-	
+
+	"Is teamlocked"
+	{
+		"fr"	"EQUIPE {1} UNIQUEMENT!"
+	}
+
+	"Session"
+	{
+		"fr"	"Session"
+	}
+
+	"Playtime"
+	{
+		"fr"	"Temps de jeu de la session: {1}"
+	}
+
+	"Changed level"
+	{
+		"fr"	"Niveau changé"
+	}
+
+	"Changed experience"
+	{
+		"fr"	"Exp changé"
+	}
+
+	"Changed credits"
+	{
+		"fr"	"Crédits changés"
+	}
+
+	"Changed rank"
+	{
+		"fr"	"Rang changé"
+
+	}
+
 	// Menu Options
 	"Upgrades"
 	{
-		"fr"			"pouvoirs"
+		"fr"	"Améliorations"
 	}
-	
+
 	"Sell"
 	{
-		"fr"			"vente"
+		"fr"	"Vente"
 	}
-	
+
+	"Sell"
+	{
+		"fr"	"Vendre"
+	}
+
+	"Upgrade Settings"
+	{
+		"fr"	"Options des améliorations"
+	}
+
+	"Last Experience"
+	{
+		"fr"	"Détail des derniers exp gagné"
+	}
+
 	"Stats"
 	{
-		"fr"			"Stats"
+		"fr"	"Stats"
 	}
-	
+
 	"Settings"
 	{
-		"fr"			"reglages"
+		"fr"	"Réglages"
 	}
-	
+
 	"Help"
 	{
-		"fr"			"aide"
+		"fr"	"Aide"
 	}
-	
+
 	"Reset Stats"
 	{
-		"fr"			"Reset Stats"
+		"fr"	"Remise à zero des stats"
 	}
-	
+
+	"Show menu on levelup"
+	{
+		"fr"	"Afficher le menu lors d'un nouveau niveau"
+	}
+
+	"Fade screen on levelup"
+	{
+		"fr"	"clignotement de l'écran à un nouveau niveau"
+	}
+
+	"Auto refresh panel"
+	{
+		"fr"	"Rafraichissement automatique"
+	}
+
 	// Menu selection result
 	"Stats have been reset"
 	{
-		"fr"			"Tu as bien remis tes stats a zero."
+		"fr"	"Tu as bien remis tes stats à zero."
 	}
-	
+
 	"Maximum level reached"
 	{
-		"fr"			"Tu as atteind le level maximum pour ce pouvoirs."
+		"fr"	"Tu as atteint le niveau maximum pour cette amélioration."
 	}
-	
+
 	"Not enough credits"
 	{
 		// 1: The name of the upgrade the player wanted to buy.
 		// 2: The level of the upgrade the player wanted to buy.
 		// 3: The amount of credits this level of the upgrade costs.
-		"fr"			"Tu n'as pas assez de credits pour acheter {1} Lvl {2}. (Requires {3} Credits)"
+		"fr"	"Tu n'as pas assez de crédits pour acheter {1} niveau {2}. (Requis {3} crédits)"
 	}
-	
+
 	"Upgrade bought"
 	{
 		// 1: The name of the upgrade the player just bought.
 		// 2: The new level of this upgrade.
-		"fr"			"{1} Lvl {2} acheter."
+		"fr"	"{1} niveau {2} acheté."
 	}
-	
+
 	"Upgrade purchase notification"
 	{
 		// 1: The name of the player who bought an upgrade.
 		// 2: The name of the upgrade the player just bought.
 		// 3: The new level of this upgrade.
-		"fr"			"{1} a acheté {2} Lvl {3}."
+		"fr"	"{1} a acheté {2} niveau {3}."
 	}
-	
+
 	"Upgrade sold"
 	{
 		// 1: The name of the upgrade the player just sold.
 		// 2: The new level of this upgrade.
-		"fr"			"{1} Lvl {2} a été vendu."
+		"fr"	"{1} niveau {2} a été vendu."
 	}
-	
+
 	//Menu Confirm
 	"Are you sure?"
 	{
-		"fr"			"es tu sur?"
+		"fr"	"En es-tu sûr?"
 	}
-	
+
 	"Confirm stats reset"
 	{
-		"fr"			"ATTENTION: Tu va perdre ton lvl et tout tes pouvoirs.\nReset stats permanently?"
+		"fr"	"ATTENTION: Tu va perdre ton niveau et tout tes améliorations.\nRéinitialiser tes stats?"
+	}
+
+	//Menu upgrade settings
+	"Enabled"
+	{
+		"fr"	"Activé"
+	}
+
+	"Selected level"
+	{
+		"fr"	"Niveau selectionné"
+	}
+
+	"Increase selected level"
+	{
+		"fr"	"Augmenter le niveau"
+	}
+
+	"Decrease selected level"
+	{
+		"fr"	"Diminuer le niveau"
+	}
+
+	"Visual effects"
+	{
+		"fr"	"Effets visuels"
+	}
+
+	"Sound effects"
+	{
+		"fr"	"Effets sonores"
+	}
+
+	// Command help
+	"rpgmenu short desc"
+	{
+		"fr"	"Ouvrir le RPG Menu"
+	}
+
+	"rpgmenu desc"
+	{
+		"fr"	"Ouvrir le RPG Menu. Vous pouvez acheter ou vendre vos améliorations, voir vos stats, voir la liste des commandes et changer des options."
+	}
+
+	"rpgmenu advert"
+	{
+		"fr"	"Tape {N}rpgmenu{G} pour ouvrir le menu rpg et {N}gérer vos améliorations{G} et d'autres options."
+	}
+
+	"rpgrank short desc"
+	{
+		"fr"	"Affiche ton rang ou le rang d'autres personnes."
+	}
+
+	"rpgrank desc"
+	{
+		"fr"	"Affiche ton rang ou le rang d'autres personnes. Utilisation: {N}rpgrank [nom|steamid|#userid]"
+	}
+
+	"rpgrank advert"
+	{
+		"fr"	"Tape {N}rpgrank{G} pour afficher tes propres stats ou {N}rpgrank <nom_du_joueur>{G} pour afficher le rank d'un autre joueur."
+	}
+
+	"rpginfo short desc"
+	{
+		"fr"	"Affiche les améliorations d'une autre personne"
+	}
+
+	"rpginfo desc"
+	{
+		"fr"	"Affiche les améliorations d'une autre personne. Utilisation: {N}rpginfo <nom|steamid|#userid>"
+	}
+
+	"rpginfo advert"
+	{
+		"fr"	"Tape {N}rpginfo <nom_du_joueur>{G} pour voir quels améliorations le joueur a acheté."
+	}
+
+	"rpgtop10 short desc"
+	{
+		"fr"	"Affiche le top 10 SM:RPG"
+	}
+
+	"rpgtop10 desc"
+	{
+		"fr"	"Affiche le top 10 rpg du serveur."
+	}
+
+	"rpgtop10 advert"
+	{
+		"fr"	"Tape {N}rpgtop10{G} pour voir le top 10 rpg du serveur."
+	}
+
+	"rpgnext short desc"
+	{
+		"fr"	"Affiche les joueurs avant toi dans le top"
+	}
+
+	"rpgnext desc"
+	{
+		"fr"	"Affiche la liste des joueurs qui sont avant toi dans le top."
+	}
+
+	"rpgnext advert"
+	{
+		"fr"	"Tape {N}rpgnext{G} pour voir la liste des joueurs, qui sont avant toi dans le top."
+	}
+
+	"rpgsession short desc"
+	{
+		"fr"	"Affiche tes stats de la session actuelle"
+	}
+
+	"rpgsession desc"
+	{
+		"fr"	"Affiche les statistiques de ta session."
+	}
+
+	"rpgsession advert"
+	{
+		"fr"	"Tape {N}rpgsession{G} pour voir comment tes stats ont changé durant la session."
+	}
+
+	"rpghelp short desc"
+	{
+		"fr"	"Affiche l'aide à propos des améliorations"
+	}
+
+	"rpghelp desc"
+	{
+		"fr"	"Affiche le menu d'aide SM:RPG pour avoir la description des différentes améliorations."
+	}
+
+	"rpghelp advert"
+	{
+		"de"	"Tape {N}rpghelp{G} pour savoir ce que font les améliorations."
+	}
+
+	"rpgexp short desc"
+	{
+		"fr"	"Affiche la dernière exp gagné"
+	}
+
+	"rpgexp desc"
+	{
+		"fr"	"Affiche le nombre d'exp gagné dernièrement."
+	}
+
+	"rpgexp advert"
+	{
+		// 1: Value of smrpg_lastexperience_count. The amount of experience saved in the array.
+		"fr"	"Tape {N}rpgexp{G} pour voir la liste des {1} raisons et montants d'exp que tu as gagné."
 	}
 }

@@ -2,141 +2,291 @@
 {
 	"regen"
 	{
-		"fr"			"Regeneration"
+		"fr"	"Régeneration de vie"
 	}
-	
+
 	"regen description"
 	{
-		"fr"			"Regenerates HP every second."
+		"fr"	"Régénère la vie chaque seconde."
 	}
-	
+
 	"health"
 	{
-		"fr"			"bonus de vie"
+		"fr"	"Vie+"
 	}
-	
+
 	"health description"
 	{
-		"fr"			"Increases your maximal health."
+		"fr"	"Augmente la vie maximum."
 	}
-	
+
 	"resup"
 	{
-		"fr"			"munitions"
+		"fr"	"Régéneration de munitions"
 	}
-	
+
 	"resup description"
 	{
-		"fr"			"Regenerates ammo every third second."
+		"fr"	"Régénère les munitions chaque seconde."
 	}
-	
+
 	"vamp"
 	{
-		"fr"			"Vampire"
+		"fr"	"Vampire"
 	}
-	
+
 	"vamp description"
 	{
-		"fr"			"Steal HP from players when damaging them."
+		"fr"	"Vole de la vie à la personne touchée."
 	}
-	
+
 	"stealth"
 	{
-		"fr"			"invisibilité"
+		"fr"	"Invisibilité"
 	}
-	
+
 	"stealth description"
 	{
-		"fr"			"Renders yourself more and more invisible."
+		"fr"	"Vous rend de plus en plus invisible."
 	}
-	
+
 	"ljump"
 	{
-		"fr"			"saut long"
+		"fr"	"Saut+"
 	}
-	
+
 	"ljump description"
 	{
-		"fr"			"Boosts your jump speed."
+		"fr"	"Améliore ta vitesse de saut."
 	}
-	
+
 	"fnade"
 	{
-		"fr"			"Grenade incendiaire"
+		"fr"	"Coctail Molotov"
 	}
-	
+
 	"fnade description"
 	{
-		"fr"			"Ignites players damaged by your grenade."
+		"fr"	"Les grenades enflammes les ennemis."
 	}
-	
+
 	"icestab"
 	{
-		"fr"			"freeze cut"
+		"fr"	"Couteau paralysant"
 	}
-	
+
 	"icestab description"
 	{
-		"fr"			"Freeze a player in place when knifing him."
+		"fr"	"Gèle un joueur lorsque vous le touchez au couteau."
 	}
-	
+
 	"fpistol"
 	{
-		"fr"			"gun freeze"
+		"fr"	"Balles paralysantes"
 	}
-	
+
 	"fpistol description"
 	{
-		"fr"			"Slow down players hit with a pistol."
+		"fr"	"Ralentis le joueur touché avec votre pistolet."
 	}
-	
+
 	"denial"
 	{
-		"fr"			"Denial"
+		"fr"	"Récupération"
 	}
-	
+
 	"denial description"
 	{
-		"fr"			"Keep your weapons the next time you spawn after you've died."
+		"fr"	"Vous récupérez votre arme à la prochaine réapparition."
 	}
-	
+
 	"impulse"
 	{
-		"fr"			"Impulse"
+		"fr"	"Impulsion"
 	}
-	
+
 	"impulse description"
 	{
-		"fr"			"Gain speed for a short time when being shot."
+		"fr"	"Vous gagnez de la vitesse à chaque fois que vous tirez."
 	}
-	
+
+	"adrenaline"
+	{
+		"fr"	"Adrénaline"
+	}
+
+	"adrenaline description"
+	{
+		"fr"	"Vous gagnez de la vitesse à chaque fois que l'on vous tire dessus."
+	}
+
 	"medic"
 	{
-		"fr"			"Medic"
+		"fr"	"Médecin"
 	}
-	
+
 	"medic description"
 	{
-		"fr"			"Heals team mates around you."
+		"fr"	"Vous régénérez la vie de vos alliés."
 	}
-  
+
 	"speed"
 	{
-		"fr"			"vitesse+"
+		"fr"	"Vitesse+"
 	}
-	
+
 	"speed description"
 	{
-		"fr"			"Increase your average movement speed."
+		"fr"	"Augmente votre vitesse."
 	}
-  
+
 	"damage"
 	{
-		"fr"			"dommage+"
+		"fr"	"Dommage+"
 	}
-  
+
 	"damage description"
 	{
-		"fr"			"Deal additional damage on enemies."
+		"fr"	"Vous faites plus de dommages."
+	}
+
+	"armorregen"
+	{
+		"fr"	"Régénération d'armure"
+	}
+
+	"armorregen description"
+	{
+		"fr"	"Régénère l'armure régulièrement."
+	}
+
+	"clipsize"
+	{
+		"fr"	"Chargeur Amélioré"
+	}
+
+	"clipsize description"
+	{
+		"fr"	"Augmente la capacité des chargeurs."
+	}
+
+	"shrinking"
+	{
+		"fr"	"Miniaturisation"
+	}
+
+	"shrinking description"
+	{
+		"fr"	"Vous devenez plus petit, et plus difficile à toucher."
+	}
+
+	"armorplus"
+	{
+		"fr"	"Armure+"
+	}
+
+	"armorplus description"
+	{
+		"fr"	"Augmente votre armure maximale."
+	}
+
+	"fastreload"
+	{
+		"fr"	"Pro du rechargement"
+	}
+
+	"fastreload description"
+	{
+		"fr"	"Vous rechargez vos armes plus vite."
+	}
+
+	"firepistol"
+	{
+		"fr"	"Balles incendiaires"
+	}
+
+	"firepistol description"
+	{
+		"fr"	"Vos balles de pistolet incendi les ennemis."
+	}
+
+	"gravity"
+	{
+		"fr"	"Gravité-"
+	}
+
+	"gravity description"
+	{
+		"fr"	"Réduit votre gravité pour sauter plus haut."
+	}
+
+	"poisonsmoke"
+	{
+		"fr"	"Gaz Lacrymo"
+	}
+
+	"poisonsmoke description"
+	{
+		"fr"	"Vos fumigènes causes des dommages aux ennemis"
+	}
+
+	"firerate"
+	{
+		"fr"	"Gachette rapide"
+	}
+
+	"firerate description"
+	{
+		"fr"	"Augmente la rapidité des tirs."
+	}
+
+	"icenade"
+	{
+		"fr"	"Grenade paralysante"
+	}
+
+	"icenade description"
+	{
+		"fr"	"Paralyse vos ennemis avec vos grenades."
+	}
+
+	"grenaderesup"
+	{
+		"fr"	"Régéneration de grenade"
+	}
+
+	"grenaderesup description"
+	{
+		"fr"	"Régénère vos grenades."
+	}
+
+	"antidote"
+	{
+		"fr"	"Antidote"
+	}
+
+	"antidote description"
+	{
+		"fr"	"Diminue les effets nuisibles sur vous."
+	}
+
+	"bouncybullets"
+	{
+		"fr"	"Balles puissantes"
+	}
+
+	"bouncybullets description"
+	{
+		"fr"	"Vous repoussez vos ennemis avec vos balles."
+	}
+
+	"mirrordamage"
+	{
+		"fr"	"Renvoi de dommages"
+	}
+
+	"mirrordamage description"
+	{
+		"fr"	"Lorsqu'un ennemie vous touchez, il perd une partie des dommages infligés."
 	}
 }

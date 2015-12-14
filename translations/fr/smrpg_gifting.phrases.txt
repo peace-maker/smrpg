@@ -1,0 +1,60 @@
+"Phrases"
+{
+	"Don't give yourself a gift"
+	{
+		"fr"	"Cela ne sert a rien de se donner des points à soit même.."
+	}
+
+	"Need at least 1 credit"
+	{
+		"fr"	"Vous devez donner au moins 1 crédits!"
+	}
+
+	"You don't have enough credits"
+	{
+		"fr"	"Vous n'avez pas assez de crédits."
+	}
+
+	"You have to be min level"
+	{
+		// 1: Minimum level from which you are allowed to gift credits to someone.
+		"fr"	"Vous devez être au moins au {N}niveau {1}{G} pour donner des crédits à quelqu'un."
+	}
+
+	"Failed to give credits"
+	{
+		// 1: The amount of credits the player tried to give as a gift.
+		// 2: The name of the receiver.
+		"fr"	"Impossible de donner {1} crédits à {2}."
+	}
+
+	"Fatal Error giving credits. Credits lost."
+	{
+		// 1: The amount of credits the player tried to give as a gift.
+		// 2: The name of the receiver.
+		"fr"	"Impossible de donner {1} crédits ç {2} et je ne peux pas vous rendre vos crédits. Veuillez contacter un admin!"
+	}
+
+	"Gave credits as a gift"
+	{
+		// 1: The name of the generous player giving some credits.
+		// 2: The amount of credits the player gave as a gift.
+		// 3: The name of the receiver.
+		"fr"	"{1} a donné {2} crédits à {3}!"
+	}
+
+	"rpggift short desc"
+	{
+		"fr"	"Donnez vos crédits à d'autres joueurs."
+	}
+
+	"rpggift desc"
+	{
+		"fr"	"Donnez vos crédits à d'autre joueurs. Utilisation: {N}rpggift <#userid|authid|nom> <crédits>"
+	}
+
+	"rpggift advert"
+	{
+		"fr"	"Tapes {N}rpggift{G} pour donner des crédits à d'autres joueurs en {N}cadeau{G}!"
+	}
+}

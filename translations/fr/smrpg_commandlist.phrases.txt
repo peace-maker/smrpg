@@ -1,0 +1,12 @@
+"Phrases"
+{
+	"Commands"
+	{
+		"fr"	"Commandes"
+	}
+
+	"Hide chat adverts"
+	{
+		"fr"	"Cacher les messages des commandes disponibles dans le chat"
+	}
+}
