@@ -201,7 +201,7 @@
 	
 	"gravity"
 	{
-		"en"			"Gravitáció csökkentés"
+		"hu"			"Gravitáció csökkentés"
 	}
 	
 	"gravity description"
