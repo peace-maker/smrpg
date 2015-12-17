@@ -1,0 +1,29 @@
+"Phrases"
+{
+	"Turbo mode enabled"
+	{
+		// 1: How many times faster are players earning experience (e.g. 1.5)
+		// 2: How many times faster are players earning credits (e.g. 1.8)
+		"fr"	"{RB}Mode Turbo activé!{G} L'expérience gagnée est {N}{1}x{G} plus rapide et les crédits sont {N}{2}x{G} plus rapides! Les stats sont désactivées."
+	}
+
+	"Turbo mode disabled"
+	{
+		"fr"	"{RB}Mode Turbo désactivé!{G} L'exprérience et les crédits sont revenus à la normale."
+	}
+
+	"Command Turbo mode enabled"
+	{
+		"fr"	"Mode Turbo activé. Tous les joueurs sont remis à zero et le rpg est accéléré."
+	}
+
+	"Command Turbo mode disabled"
+	{
+		"fr"	"Mode Turbo désactivé. Tous les joueurs vont se reconnectés."
+	}
+
+	"Turbo mode"
+	{
+		"fr"	"Mode Turbo"
+	}
+}

@@ -1,0 +1,25 @@
+"Phrases"
+{
+	"Earned experience for kill"
+	{
+		// 1: Experience earned for killing a player.
+		// 2: Player name of victim.
+		"fr"	"Vous avez gagné {RB}{1}{G} expériences pour avoir tué {N}{2}{G}."
+	}
+
+	"Total earned experience during past life"
+	{
+		// 1: Experience earned during last life
+		"fr"	"Vous avez gagné {RB}{1}{G} expériences au total durant votre dernière manche!"
+	}
+
+	"Print xp for last kill in chat"
+	{
+		"fr"	"Afficher le nombre d'exp gagné dans le chat"
+	}
+
+	"Print total xp last life in chat"
+	{
+		"fr"	"Afficher le nombre d'exp gagné durant la dernière manche dans le chat"
+	}
+}

@@ -1,0 +1,87 @@
+"Phrases"
+{
+	"Player is knifeleveling"
+	{
+		// 1: Name of player who is earning levels
+		// 2: Name of the player who gets knifed, so the other player gets experience
+		"fr"	"{N}{1}{G} est supecté de boost avec {N}{2}{G}."
+	}
+
+	"cs_playerknife"
+	{
+		// 1: The amount of experience earned.
+		// 2: The other player involved. e.g. the victim when hurting someone.
+		"fr"	"{1} exp. pour avoir touché {2} avec le couteau"
+	}
+
+	"cs_playerhurt"
+	{
+		// 1: The amount of experience earned.
+		// 2: The other player involved. e.g. the victim when hurting someone.
+		"fr"	"{1} exp. pour avoir touché {2}"
+	}
+
+	"cs_playerkill"
+	{
+		// 1: The amount of experience earned.
+		// 2: The other player involved. e.g. the victim when hurting someone.
+		"fr"	"{1} exp. pour avoir tué {2}"
+	}
+
+	"cs_playerkillassist"
+	{
+		// 1: The amount of experience earned.
+		// 2: The other player involved. e.g. the victim when hurting someone.
+		"fr"	"{1} exp. pour avoir aidé à tuer {2}"
+	}
+
+	"cs_dominating"
+	{
+		// 1: The amount of experience earned.
+		// 2: The other player involved. e.g. the victim when hurting someone.
+		"fr"	"{1} exp. pour avoir dominer {2}"
+	}
+
+	"cs_revenge"
+	{
+		// 1: The amount of experience earned.
+		// 2: The other player involved. e.g. the victim when hurting someone.
+		"fr"	"{1} exp. pour s'être vengé de {2}"
+	}
+
+	"cs_winround"
+	{
+		// 1: The amount of experience earned.
+		"fr"	"{1} exp. pour avoir gagner le round"
+	}
+
+	"cs_bombplanted"
+	{
+		// 1: The amount of experience earned.
+		"fr"	"{1} exp. pour avoir planté la bombe"
+	}
+
+	"cs_bombdefused"
+	{
+		// 1: The amount of experience earned.
+		"fr"	"{1} exp. pour avoir désamorcé la bombe"
+	}
+
+	"cs_bombexploded"
+	{
+		// 1: The amount of experience earned.
+		"fr"	"{1} exp. pour avoir fait explosé la bombe"
+	}
+
+	"cs_hostagerescued"
+	{
+		// 1: The amount of experience earned.
+		"fr"	"{1} exp. pour avoir sauvé un otage"
+	}
+
+	"cs_vipescaped"
+	{
+		// 1: The amount of experience earned.
+		"fr"	"{1} exp. pour avoir sauvé un VIP"
+	}
+}
