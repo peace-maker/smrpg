@@ -287,6 +287,37 @@
 		"de"			"WARNUNG: Du verliertst alle Kredite, Level und Erfahrung!\nWillst du das wirklich?"
 	}
 	
+	//Menu upgrade settings
+	"Enabled"
+	{
+		"de"			"Aktiviert"
+	}
+	
+	"Selected level"
+	{
+		"de"			"Ausgewähltes Level"
+	}
+	
+	"Increase selected level"
+	{
+		"de"			"Ausgewähltes Level erhöhen"
+	}
+	
+	"Decrease selected level"
+	{
+		"de"			"Ausgewähltes Level verringern"
+	}
+	
+	"Visual effects"
+	{
+		"de"			"Visuelle Effekte"
+	}
+	
+	"Sound effects"
+	{
+		"de"			"Audio Effekte"
+	}
+	
 	// Command help
 	"rpgmenu short desc"
 	{

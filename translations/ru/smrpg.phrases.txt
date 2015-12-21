@@ -1,11 +1,5 @@
 "Phrases"
 {
-	"Inform about plugin"
-	{
-		// 1: Running SM:RPG plugin version (e.g. 1.0)
-		"ru"			"This server is running SM:RPG v{1}."
-	}
-	
 	"Advertise rpgmenu command"
 	{
 		"ru"			"{G}Напишите \"{N}rpgmenu{G}\" для выбора опций."
@@ -158,14 +152,6 @@
 		// 1: The name of the upgrade the player just bought.
 		// 2: The new level of this upgrade.
 		"ru"			"{1} Уровень {2} успешно приобретён."
-	}
-	
-	"Upgrade purchase notification"
-	{
-		// 1: The name of the player who bought an upgrade.
-		// 2: The name of the upgrade the player just bought.
-		// 3: The new level of this upgrade.
-		"ru"			"{1} purchased {2} level {3}."
 	}
 	
 	"Upgrade sold"

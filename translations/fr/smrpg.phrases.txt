@@ -422,7 +422,7 @@
 
 	"rpghelp advert"
 	{
-		"de"	"Tape {N}rpghelp{G} pour savoir ce que font les améliorations."
+		"fr"	"Tape {N}rpghelp{G} pour savoir ce que font les améliorations."
 	}
 
 	"rpgexp short desc"

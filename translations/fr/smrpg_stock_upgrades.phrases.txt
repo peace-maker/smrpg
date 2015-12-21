@@ -107,16 +107,6 @@
 
 	"impulse description"
 	{
-		"fr"	"Vous gagnez de la vitesse à chaque fois que vous tirez."
-	}
-
-	"adrenaline"
-	{
-		"fr"	"Adrénaline"
-	}
-
-	"adrenaline description"
-	{
 		"fr"	"Vous gagnez de la vitesse à chaque fois que l'on vous tire dessus."
 	}
 
@@ -278,15 +268,5 @@
 	"bouncybullets description"
 	{
 		"fr"	"Vous repoussez vos ennemis avec vos balles."
-	}
-
-	"mirrordamage"
-	{
-		"fr"	"Renvoi de dommages"
-	}
-
-	"mirrordamage description"
-	{
-		"fr"	"Lorsqu'un ennemie vous touchez, il perd une partie des dommages infligés."
 	}
 }

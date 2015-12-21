@@ -5,19 +5,9 @@
 		"it"			"Rigenerazione salute"
 	}
 	
-	"regen description"
-	{
-		"it"			"Regenerates HP every second."
-	}
-	
 	"health"
 	{
 		"it"			"Potenziamento vita"
-	}
-	
-	"health description"
-	{
-		"it"			"Increases your maximal health."
 	}
 	
 	"resup"
@@ -25,19 +15,9 @@
 		"it"			"Rigenerazione proiettili"
 	}
 	
-	"resup description"
-	{
-		"it"			"Regenerates ammo every third second."
-	}
-	
 	"vamp"
 	{
 		"it"			"Vampiro"
-	}
-	
-	"vamp description"
-	{
-		"it"			"Steal HP from players when damaging them."
 	}
 	
 	"stealth"
@@ -45,19 +25,9 @@
 		"it"			"Invisibilità"
 	}
 	
-	"stealth description"
-	{
-		"it"			"Renders yourself more and more invisible."
-	}
-	
 	"ljump"
 	{
 		"it"			"Salto Lungo"
-	}
-	
-	"ljump description"
-	{
-		"it"			"Boosts your jump speed."
 	}
 	
 	"fnade"
@@ -65,19 +35,9 @@
 		"it"			"Granata incendiaria"
 	}
 	
-	"fnade description"
-	{
-		"it"			"Ignites players damaged by your grenade."
-	}
-	
 	"icestab"
 	{
 		"it"			"Pugnalata di gelo"
-	}
-	
-	"icestab description"
-	{
-		"it"			"Freeze a player in place when knifing him."
 	}
 	
 	"fpistol"
@@ -85,58 +45,8 @@
 		"it"			"Pistola di gelo"
 	}
 	
-	"fpistol description"
-	{
-		"it"			"Slow down players hit with a pistol."
-	}
-	
 	"denial"
 	{
 		"it"			"Annulla"
-	}
-	
-	"denial description"
-	{
-		"it"			"Keep your weapons the next time you spawn after you've died."
-	}
-	
-	"impulse"
-	{
-		"it"			"Impulse"
-	}
-	
-	"impulse description"
-	{
-		"it"			"Gain speed for a short time when being shot."
-	}
-	
-	"medic"
-	{
-		"it"			"Medic"
-	}
-	
-	"medic description"
-	{
-		"it"			"Heals team mates around you."
-	}
-	
-	"speed"
-	{
-		"it"			"Speed+"
-	}
-	
-	"speed description"
-	{
-		"it"			"Increase your average movement speed."
-	}
-  
-	"damage"
-	{
-		"it"			"Damage+"
-	}
-  
-	"damage description"
-	{
-		"it"			"Deal additional damage on enemies."
 	}
 }

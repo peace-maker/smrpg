@@ -164,14 +164,6 @@
 		"hu"			"Sikeresen megvetted a {1}-t {2} szinten."
 	}
 	
-	"Upgrade purchase notification"
-	{
-		// 1: The name of the player who bought an upgrade.
-		// 2: The name of the upgrade the player just bought.
-		// 3: The new level of this upgrade.
-		"hu"			"{1} purchased {2} level {3}."
-	}
-	
 	"Upgrade sold"
 	{
 		// 1: The name of the upgrade the player just sold.

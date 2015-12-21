@@ -160,14 +160,6 @@
 		"cze"			"{1} Úroveň {2} úspěšně zakoupena."
 	}
 	
-	"Upgrade purchase notification"
-	{
-		// 1: The name of the player who bought an upgrade.
-		// 2: The name of the upgrade the player just bought.
-		// 3: The new level of this upgrade.
-		"cze"			"{1} purchased {2} level {3}."
-	}
-	
 	"Upgrade sold"
 	{
 		// 1: The name of the upgrade the player just sold.

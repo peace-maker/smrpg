@@ -1,12 +1,5 @@
 "Phrases"
 {
-	"Player is knifeleveling"
-	{
-		// 1: Name of player who is earning levels
-		// 2: Name of the player who gets knifed, so the other player gets experience
-		"hu"			"{N}{1}{G} is suspected for knife-leveling with {N}{2}{G}."
-	}
-	
 	"cs_playerknife"
 	{
 		// 1: The amount of experience earned.
