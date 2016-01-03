@@ -438,6 +438,10 @@ public Action:Timer_CheckReloadFinish(Handle:timer, any:data)
 	if(client <= 0)
 		return Plugin_Stop;
 	
+	// Player changed weapons after starting to reload? :(
+	if(Client_GetActiveWeapon(client) != weapon)
+		return Plugin_Stop;
+	
 	new iClip1 = Weapon_GetPrimaryClip(weapon);
 	// Support for learning new maxclip value for late-loading.
 	if(g_iGameMaxClip1[weapon] == 0)
