@@ -69,6 +69,15 @@ public TopMenu_AdminHandlePlayers(Handle:topmenu, TopMenuAction:action, TopMenuO
 	}
 }
 
+bool:ShowRPGAdminMenu(client)
+{
+	if (g_hTopMenu == INVALID_HANDLE || g_TopMenuCategory == INVALID_TOPMENUOBJECT)
+		return false;
+	
+	DisplayTopMenuCategory(g_hTopMenu, g_TopMenuCategory, client);
+	return true;
+}
+
 ShowPlayerListMenu(client)
 {
 	new Handle:hMenu = CreateMenu(Menu_HandlePlayerList);
@@ -89,7 +98,7 @@ public Menu_HandlePlayerList(Handle:menu, MenuAction:action, param1, param2)
 	}
 	else if(action == MenuAction_Cancel && param2 == MenuCancel_ExitBack)
 	{
-		RedisplayAdminMenu(g_hTopMenu, param1);
+		ShowRPGAdminMenu(param1);
 	}
 	else if(action == MenuAction_Select)
 	{
@@ -799,7 +808,7 @@ public Menu_HandleSelectUpgrade(Handle:menu, MenuAction:action, param1, param2)
 	else if(action == MenuAction_Cancel)
 	{
 		if(param2 == MenuCancel_ExitBack)
-			RedisplayAdminMenu(g_hTopMenu, param1);
+			ShowRPGAdminMenu(param1);
 		else
 			g_iCurrentPage[param1] = 0;
 	}

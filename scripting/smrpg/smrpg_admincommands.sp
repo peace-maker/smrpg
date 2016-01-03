@@ -3,6 +3,7 @@
 
 RegisterAdminCommands()
 {
+	RegAdminCmd("sm_rpgadmin", Cmd_OpenRPGAdminMenu, ADMFLAG_CONFIG, "Opens the SM:RPG admin menu.", "smrpg");
 	RegAdminCmd("smrpg_player", Cmd_PlayerInfo, ADMFLAG_ROOT, "Get info about a certain player. Usage smrpg_player <player name | userid | steamid>", "smrpg");
 	RegAdminCmd("smrpg_resetstats", Cmd_ResetStats, ADMFLAG_ROOT, "Reset a player's Level, Credits, Experience, and Upgrades (this cannot be undone!). Usage smrpg_resetstats <player name | userid | steamid>", "smrpg");
 	RegAdminCmd("smrpg_resetexp", Cmd_ResetExp, ADMFLAG_ROOT, "Reset a player's Experience. Usage smrpg_resetexp <player name | userid | steamid>", "smrpg");
@@ -29,6 +30,20 @@ RegisterAdminCommands()
 	RegAdminCmd("smrpg_db_stats", Cmd_DBStats, ADMFLAG_ROOT, "Show general stats about player base and upgrade usage.", "smrpg");
 	
 	RegAdminCmd("smrpg_debug_playerlist", Cmd_DebugPlayerlist, ADMFLAG_ROOT, "List all RPG players", "smrpg");
+}
+
+public Action:Cmd_OpenRPGAdminMenu(client, args)
+{
+	if (!client)
+	{
+		ReplyToCommand(client, "SM:RPG > This command is ingame only.");
+		return Plugin_Handled;
+	}
+	
+	if (!ShowRPGAdminMenu(client))
+		ReplyToCommand(client, "SM:RPG > Failed to open menu. SourceMod Admin Menu not loaded.");
+	
+	return Plugin_Handled;
 }
 
 public Action:Cmd_PlayerInfo(client, args)
