@@ -13,8 +13,12 @@
 // Newest database version
 #define DATABASE_VERSION DBVER_UPDATE_1
 
+// How long to wait for a reconnect after a failed connection attempt to the database?
+#define RECONNECT_INTERVAL 360.0
+
 new Handle:g_hDatabase;
 new g_iSequence = -1;
+new Handle:g_hReconnectTimer;
 
 enum DatabaseDriver {
 	Driver_None,
@@ -34,6 +38,8 @@ RegisterDatabaseNatives()
 
 InitDatabase()
 {
+	ClearHandle(g_hReconnectTimer);
+	
 	if(SQL_CheckConfig(SMRPG_DB))
 		SQL_TConnect(SQL_OnConnect, SMRPG_DB, ++g_iSequence);
 	else
@@ -42,11 +48,16 @@ InitDatabase()
 
 public SQL_OnConnect(Handle:owner, Handle:hndl, const String:error[], any:data)
 {
-	if(hndl == INVALID_HANDLE || strlen(error) > 0)
+	if(hndl == INVALID_HANDLE)
 	{
-		SetFailState("Error initializing database: %s", error);
+		LogError("Error connecting to database (reconnecting in %.0f seconds): %s", RECONNECT_INTERVAL, error);
+		ClearHandle(g_hReconnectTimer);
+		g_hReconnectTimer = CreateTimer(RECONNECT_INTERVAL, Timer_ReconnectDatabase);
 		return;
 	}
+	
+	// We're good now. Don't reconnect again. Just to be sure.
+	ClearHandle(g_hReconnectTimer);
 	
 	// Ignore old connection attempts.
 	if(g_iSequence != data)
@@ -148,6 +159,14 @@ public SQL_OnConnect(Handle:owner, Handle:hndl, const String:error[], any:data)
 			AddPlayer(i);
 		}
 	}
+}
+
+public Action:Timer_ReconnectDatabase(Handle:timer)
+{
+	// Try to connect again after it first failed on plugin load.
+	g_hReconnectTimer = INVALID_HANDLE;
+	InitDatabase();
+	return Plugin_Stop;
 }
 
 CheckUpgradeDatabaseEntry(upgrade[InternalUpgradeInfo])
