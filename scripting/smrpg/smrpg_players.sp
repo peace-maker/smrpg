@@ -469,6 +469,34 @@ SetFadeScreenOnLevelUp(client, bool:fade)
 	g_iPlayerInfo[client][PLR_fadeOnLevelup] = fade;
 }
 
+SetClientUpgradeEnabledStatus(client, iUpgradeIndex, bool:bEnabled)
+{
+	new playerupgrade[PlayerUpgradeInfo];
+	GetPlayerUpgradeInfoByIndex(client, iUpgradeIndex, playerupgrade);
+	
+	// Change the enabled state.
+	playerupgrade[PUI_enabled] = bEnabled;
+	SavePlayerUpgradeInfo(client, iUpgradeIndex, playerupgrade);
+	
+	// Notify plugin about it.
+	new upgrade[InternalUpgradeInfo];
+	GetUpgradeByIndex(iUpgradeIndex, upgrade);
+	
+	if(!IsValidUpgrade(upgrade))
+		return;
+	
+	if(IsClientInGame(client))
+	{
+		new iLevel = GetClientSelectedUpgradeLevel(client, iUpgradeIndex);
+		
+		// Let the upgrade apply the state.
+		Call_StartFunction(upgrade[UPGR_plugin], upgrade[UPGR_queryCallback]);
+		Call_PushCell(client);
+		Call_PushCell(bEnabled && iLevel > 0 ? UpgradeQueryType_Buy : UpgradeQueryType_Sell);
+		Call_Finish();
+	}
+}
+
 /**
  * Player upgrade buying/selling
  */

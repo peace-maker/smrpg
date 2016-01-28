@@ -566,28 +566,29 @@ public Menu_HandleUpgradeSettings(Handle:menu, MenuAction:action, param1, param2
 		
 		if(StrEqual(sInfo, "enable"))
 		{
-			playerupgrade[PUI_enabled] = playerupgrade[PUI_enabled]?false:true;
+			SetClientUpgradeEnabledStatus(param1, g_iSelectedSettingsUpgrade[param1], playerupgrade[PUI_enabled]?false:true);
 		}
 		else if(StrEqual(sInfo, "incselect"))
 		{
-			if(playerupgrade[PUI_selectedlevel] < playerupgrade[PUI_purchasedlevel] && !GetConVarBool(g_hCVDisableLevelSelection))
-				playerupgrade[PUI_selectedlevel]++;
+			if(!GetConVarBool(g_hCVDisableLevelSelection))
+				SetClientSelectedUpgradeLevel(param1, g_iSelectedSettingsUpgrade[param1], playerupgrade[PUI_selectedlevel]+1);
 		}
 		else if(StrEqual(sInfo, "decselect"))
 		{
 			if(playerupgrade[PUI_selectedlevel] > 0 && !GetConVarBool(g_hCVDisableLevelSelection))
-				playerupgrade[PUI_selectedlevel]--;
+				SetClientSelectedUpgradeLevel(param1, g_iSelectedSettingsUpgrade[param1], playerupgrade[PUI_selectedlevel]-1);
 		}
 		else if(StrEqual(sInfo, "visuals"))
 		{
 			playerupgrade[PUI_visuals] = playerupgrade[PUI_visuals]?false:true;
+			SavePlayerUpgradeInfo(param1, g_iSelectedSettingsUpgrade[param1], playerupgrade);
 		}
 		else if(StrEqual(sInfo, "sounds"))
 		{
 			playerupgrade[PUI_sounds] = playerupgrade[PUI_sounds]?false:true;
+			SavePlayerUpgradeInfo(param1, g_iSelectedSettingsUpgrade[param1], playerupgrade);
 		}
 		
-		SavePlayerUpgradeInfo(param1, g_iSelectedSettingsUpgrade[param1], playerupgrade);
 		DisplayUpgradeSettingsMenu(param1, g_iSelectedSettingsUpgrade[param1]);
 	}
 	else if(action == MenuAction_Cancel)
