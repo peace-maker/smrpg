@@ -1186,11 +1186,16 @@ bool:ReadWeaponExperienceConfig()
 	
 	new Handle:hKV = CreateKeyValues("SMRPGWeaponExperience");
 	if(!FileToKeyValues(hKV, sPath))
+	{
+		CloseHandle(hKV);
 		return false;
+	}
 	
 	if(!KvGotoFirstSubKey(hKV))
+	{
+		CloseHandle(hKV);
 		return false;
-	
+	}
 	
 	new String:sWeapon[64], iWeaponExperience[WeaponExperienceContainer];
 	do {
