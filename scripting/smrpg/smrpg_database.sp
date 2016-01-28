@@ -17,7 +17,6 @@
 #define RECONNECT_INTERVAL 360.0
 
 new Handle:g_hDatabase;
-new g_iSequence = -1;
 new Handle:g_hReconnectTimer;
 
 enum DatabaseDriver {
@@ -41,9 +40,9 @@ InitDatabase()
 	ClearHandle(g_hReconnectTimer);
 	
 	if(SQL_CheckConfig(SMRPG_DB))
-		SQL_TConnect(SQL_OnConnect, SMRPG_DB, ++g_iSequence);
+		SQL_TConnect(SQL_OnConnect, SMRPG_DB);
 	else
-		SQL_TConnect(SQL_OnConnect, "default", ++g_iSequence); // Default to 'default' section in the databases.cfg.
+		SQL_TConnect(SQL_OnConnect, "default"); // Default to 'default' section in the databases.cfg.
 }
 
 public SQL_OnConnect(Handle:owner, Handle:hndl, const String:error[], any:data)
@@ -58,13 +57,6 @@ public SQL_OnConnect(Handle:owner, Handle:hndl, const String:error[], any:data)
 	
 	// We're good now. Don't reconnect again. Just to be sure.
 	ClearHandle(g_hReconnectTimer);
-	
-	// Ignore old connection attempts.
-	if(g_iSequence != data)
-	{
-		CloseHandle(hndl);
-		return;
-	}
 	
 	g_hDatabase = hndl;
 	
