@@ -24,7 +24,7 @@ public Plugin:myinfo =
 
 public OnPluginStart()
 {
-	new Handle:hVersion = CreateConVar("smrpg_resetstats_version", PLUGIN_VERSION, "", FCVAR_PLUGIN|FCVAR_NOTIFY|FCVAR_DONTRECORD);
+	new Handle:hVersion = CreateConVar("smrpg_resetstats_version", PLUGIN_VERSION, "", FCVAR_NOTIFY|FCVAR_DONTRECORD);
 	if(hVersion != INVALID_HANDLE)
 	{
 		SetConVarString(hVersion, PLUGIN_VERSION);

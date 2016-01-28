@@ -57,7 +57,7 @@ public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
 
 public OnPluginStart()
 {
-	new Handle:hVersion = CreateConVar("smrpg_commandlist_version", PLUGIN_VERSION, "", FCVAR_PLUGIN|FCVAR_NOTIFY|FCVAR_DONTRECORD);
+	new Handle:hVersion = CreateConVar("smrpg_commandlist_version", PLUGIN_VERSION, "", FCVAR_NOTIFY|FCVAR_DONTRECORD);
 	if(hVersion != INVALID_HANDLE)
 	{
 		SetConVarString(hVersion, PLUGIN_VERSION);

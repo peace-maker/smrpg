@@ -21,7 +21,7 @@ public Plugin:myinfo =
 
 public OnPluginStart()
 {
-	new Handle:hVersion = CreateConVar("smrpg_gifting_version", PLUGIN_VERSION, "SM:RPG Credit Gifting version", FCVAR_PLUGIN|FCVAR_NOTIFY|FCVAR_DONTRECORD);
+	new Handle:hVersion = CreateConVar("smrpg_gifting_version", PLUGIN_VERSION, "SM:RPG Credit Gifting version", FCVAR_NOTIFY|FCVAR_DONTRECORD);
 	if(hVersion != INVALID_HANDLE)
 	{
 		SetConVarString(hVersion, PLUGIN_VERSION);
