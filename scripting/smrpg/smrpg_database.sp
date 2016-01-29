@@ -480,6 +480,10 @@ public SQL_DeleteExpiredPlayers(Handle:owner, Handle:hndl, const String:error[],
 		
 		iPlayerId = SQL_FetchInt(hndl, 0);
 		
+		// Don't delete players who are connected right now.
+		if (GetClientByPlayerID(iPlayerId) != -1)
+			continue;
+		
 		Format(sQuery, sizeof(sQuery), "DELETE FROM %s WHERE player_id = %d", TBL_PLAYERUPGRADES, iPlayerId);
 		SQL_AddQuery(hTransaction, sQuery);
 		
