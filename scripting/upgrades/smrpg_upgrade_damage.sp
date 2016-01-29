@@ -179,23 +179,20 @@ bool:LoadWeaponConfig()
 	}
 	
 	decl String:sWeapon[64];
-	if(!KvGotoFirstSubKey(hKV, false))
+	if(KvGotoFirstSubKey(hKV, false))
 	{
-		CloseHandle(hKV);
-		return false;
+		new eInfo[WeaponConfig];
+		do
+		{
+			KvGetSectionName(hKV, sWeapon, sizeof(sWeapon));
+			
+			eInfo[Weapon_DamageInc] = KvGetFloat(hKV, "dmg_increase", -1.0);
+			eInfo[Weapon_MaxIncrease] = KvGetFloat(hKV, "max_additional_dmg", -1.0);
+			
+			SetTrieArray(g_hWeaponDamage, sWeapon, eInfo[0], _:WeaponConfig);
+			
+		} while (KvGotoNextKey(hKV));
 	}
-	
-	new eInfo[WeaponConfig];
-	do
-	{
-		KvGetSectionName(hKV, sWeapon, sizeof(sWeapon));
-		
-		eInfo[Weapon_DamageInc] = KvGetFloat(hKV, "dmg_increase", -1.0);
-		eInfo[Weapon_MaxIncrease] = KvGetFloat(hKV, "max_additional_dmg", -1.0);
-		
-		SetTrieArray(g_hWeaponDamage, sWeapon, eInfo[0], _:WeaponConfig);
-		
-	} while (KvGotoNextKey(hKV));
 	
 	CloseHandle(hKV);
 	return true;
