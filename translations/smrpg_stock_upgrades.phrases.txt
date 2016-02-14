@@ -269,4 +269,14 @@
 	{
 		"en"			"Push enemies away by shooting them."
 	}
+	
+	"falldamage"
+	{
+		"en"			"Reduced Fall Damage"
+	}
+	
+	"falldamage description"
+	{
+		"en"			"Reduces the damage you take from falling from great heights."
+	}
 }

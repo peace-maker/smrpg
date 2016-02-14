@@ -269,4 +269,14 @@
 	{
 		"de"			"Schiebt deinen Gegner weg, wenn du ihn abschießt."
 	}
+	
+	"falldamage"
+	{
+		"de"			"Reduzierter Fallschaden"
+	}
+	
+	"falldamage description"
+	{
+		"de"			"Verringert den Schaden, den du durch den Fall aus großen Höhen erleidest."
+	}
 }
