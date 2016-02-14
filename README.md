@@ -53,6 +53,7 @@ Server admins can install a new upgrade simply by loading the upgrade plugin.
 
 # API
 Developers can easily add new upgrades using the extensive API provided by the core.
+There are forwards and natives to control the earned experience, level and credits. You can add your own items to the rpgmenu as well.
 Have a look at the [include files](https://github.com/peace-maker/smrpg/blob/master/scripting/include)!
 
 See the available upgrade plugins for examples. You can use the [example upgrade](https://github.com/peace-maker/smrpg/blob/master/scripting/upgrades/smrpg_upgrade_example.sp) as a skeleton.
@@ -79,6 +80,7 @@ See the available upgrade plugins for examples. You can use the [example upgrade
 * Long Jump - Boosts your jump speed.
 * Medic - Heals team mates around you.
 * Poison Smoke (Counter-Strike: Source only) - Damages players inside the smoke of a smoke grenade.
+* Reduced Fall Damage - Reduces the damage you take from falling from great heights.
 * Reduced Gravity - Reduces your gravity and lets you jump higher.
 * Resupply - Regenerates ammo every third second.
 * Shrinking - Make player models smaller.
