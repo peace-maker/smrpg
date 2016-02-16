@@ -915,6 +915,16 @@ public SQL_GetPlayerUpgrades(Handle:owner, Handle:hndl, const String:error[], an
 		if(!GetUpgradeByDatabaseId(SQL_FetchInt(hndl, 0), upgrade))
 			continue;
 		
+		// Load |enabled| bool first, then set the upgrade level.
+		// Otherwise the upgrade is still disabled for the client, 
+		// when calling the buy function in the upgrade plugin,
+		// because the playerupgrade array is nulled by default..
+		GetPlayerUpgradeInfoByIndex(client, upgrade[UPGR_index], playerupgrade);
+		playerupgrade[PUI_enabled] = SQL_FetchInt(hndl, 3)==1;
+		playerupgrade[PUI_visuals] = SQL_FetchInt(hndl, 4)==1;
+		playerupgrade[PUI_sounds] = SQL_FetchInt(hndl, 5)==1;
+		SavePlayerUpgradeInfo(client, upgrade[UPGR_index], playerupgrade);
+		
 		SetClientPurchasedUpgradeLevel(client, upgrade[UPGR_index], SQL_FetchInt(hndl, 1));
 		
 		// Make sure the database is sane.. People WILL temper with it manually.
@@ -922,13 +932,6 @@ public SQL_GetPlayerUpgrades(Handle:owner, Handle:hndl, const String:error[], an
 		if(iSelectedLevel > GetClientPurchasedUpgradeLevel(client, upgrade[UPGR_index]))
 			iSelectedLevel = GetClientPurchasedUpgradeLevel(client, upgrade[UPGR_index]);
 		SetClientSelectedUpgradeLevel(client, upgrade[UPGR_index], iSelectedLevel);
-		
-		GetPlayerUpgradeInfoByIndex(client, upgrade[UPGR_index], playerupgrade);
-		playerupgrade[PUI_enabled] = SQL_FetchInt(hndl, 3)==1;
-		playerupgrade[PUI_visuals] = SQL_FetchInt(hndl, 4)==1;
-		playerupgrade[PUI_sounds] = SQL_FetchInt(hndl, 5)==1;
-		
-		SavePlayerUpgradeInfo(client, upgrade[UPGR_index], playerupgrade);
 	}
 	
 	g_iPlayerInfo[client][PLR_dataLoadedFromDB] = true;
