@@ -299,13 +299,22 @@ ResetStats(client)
 	
 	new iSize = GetUpgradeCount();
 	new upgrade[InternalUpgradeInfo], playerupgrade[PlayerUpgradeInfo];
+	new bool:bWasEnabled;
 	for(new i=0;i<iSize;i++)
 	{
 		GetPlayerUpgradeInfoByIndex(client, i, playerupgrade);
+		// See if this upgrade has been enabled and should be notified to stop the effect.
+		bWasEnabled = playerupgrade[PUI_enabled] && playerupgrade[PUI_selectedlevel] > 0;
+		
 		// Reset upgrade to level 0
 		playerupgrade[PUI_purchasedlevel] = 0;
 		playerupgrade[PUI_selectedlevel] = 0;
 		SavePlayerUpgradeInfo(client, i, playerupgrade);
+		
+		// No need to inform the upgrade plugin, that this player was reset,
+		// if it wasn't active before at all.
+		if (!bWasEnabled)
+			continue;
 		
 		GetUpgradeByIndex(i, upgrade);
 		
