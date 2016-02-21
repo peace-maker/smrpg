@@ -528,6 +528,10 @@ SetClientSelectedUpgradeLevel(client, iUpgradeIndex, iLevel)
 	playerupgrade[PUI_selectedlevel] = iLevel;
 	SavePlayerUpgradeInfo(client, iUpgradeIndex, playerupgrade);
 	
+	// Don't call the callback, if the player disabled the upgrade.
+	if (!playerupgrade[PUI_enabled])
+		return;
+	
 	new upgrade[InternalUpgradeInfo];
 	GetUpgradeByIndex(iUpgradeIndex, upgrade);
 	
