@@ -497,11 +497,13 @@ SetClientUpgradeEnabledStatus(client, iUpgradeIndex, bool:bEnabled)
 	if(IsClientInGame(client))
 	{
 		new iLevel = GetClientSelectedUpgradeLevel(client, iUpgradeIndex);
+		if (iLevel <= 0)
+			return;
 		
 		// Let the upgrade apply the state.
 		Call_StartFunction(upgrade[UPGR_plugin], upgrade[UPGR_queryCallback]);
 		Call_PushCell(client);
-		Call_PushCell(bEnabled && iLevel > 0 ? UpgradeQueryType_Buy : UpgradeQueryType_Sell);
+		Call_PushCell(bEnabled ? UpgradeQueryType_Buy : UpgradeQueryType_Sell);
 		Call_Finish();
 	}
 }
