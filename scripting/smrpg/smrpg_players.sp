@@ -918,6 +918,16 @@ public SQL_GetPlayerUpgrades(Handle:owner, Handle:hndl, const String:error[], an
 		return;
 	}
 	
+	// We're as good as loaded..
+	// Set this now, so calls to e.g. SMRPG_GetClientUpgradeLevel in one of the upgrade's BuySell callbacks
+	// get the upgrade's level correctly instead of returning 0.
+	// This could be inconsistent when the just-loaded upgrade tries to get the level of another upgrade
+	// which isn't loaded yet for this player. We can't just do NotifyUpgradePluginsOfLevel, because this
+	// callback is reused, when an upgrade is reloaded/lateloaded to fetch the levels of already connected players (see SQL_GetUpgradeInfo)
+	// and we don't want to trigger the BuySell callback twice if the level didn't change for all the other upgrades.
+	// TODO: Collect upgrade ids of loaded upgrades and inform them after all levels are loaded in a second loop.
+	g_iPlayerInfo[client][PLR_dataLoadedFromDB] = true;
+	
 	new upgrade[InternalUpgradeInfo], playerupgrade[PlayerUpgradeInfo], iSelectedLevel;
 	while(SQL_MoreRows(hndl))
 	{
@@ -929,9 +939,8 @@ public SQL_GetPlayerUpgrades(Handle:owner, Handle:hndl, const String:error[], an
 			continue;
 		
 		// Load |enabled| bool first, then set the upgrade level.
-		// Otherwise the upgrade is still disabled for the client, 
-		// when calling the buy function in the upgrade plugin,
-		// because the playerupgrade array is nulled by default..
+		// Otherwise the upgrade plugin might be informed,
+		// even if the player has the upgrade disabled.
 		GetPlayerUpgradeInfoByIndex(client, upgrade[UPGR_index], playerupgrade);
 		playerupgrade[PUI_enabled] = SQL_FetchInt(hndl, 3)==1;
 		playerupgrade[PUI_visuals] = SQL_FetchInt(hndl, 4)==1;
@@ -946,8 +955,6 @@ public SQL_GetPlayerUpgrades(Handle:owner, Handle:hndl, const String:error[], an
 			iSelectedLevel = GetClientPurchasedUpgradeLevel(client, upgrade[UPGR_index]);
 		SetClientSelectedUpgradeLevel(client, upgrade[UPGR_index], iSelectedLevel);
 	}
-	
-	g_iPlayerInfo[client][PLR_dataLoadedFromDB] = true;
 	
 	CheckItemMaxLevels(client);
 	
