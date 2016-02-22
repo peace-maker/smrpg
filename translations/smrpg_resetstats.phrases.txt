@@ -33,6 +33,22 @@
     "#format" "{1:s}"
     "en"  "Reason: {N}{1}"
   }
+  "Last server reset"
+  {
+    // 1: Day of last reset of the server.
+    // 2: Month of the last reset of the server.
+    // 3: Year of the last reset of the server.
+    "#format"  "{1:02d},{2:02d},{3:d}"
+    "en"  "The server stats were reset on {N}{3}-{2}-{1}{G}."
+  }
+  "Last player reset"
+  {
+    // 1: Day of last reset of the player.
+    // 2: Month of the last reset of the player.
+    // 3: Year of the last reset of the player.
+    "#format"  "{1:02d},{2:02d},{3:d}"
+    "en"  "Your stats were {RB}reset on {N}{3}-{2}-{1}{G}."
+  }
   "Timed reset today"
   {
     "en"  "The stats are going to be reset today."

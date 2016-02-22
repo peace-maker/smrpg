@@ -121,19 +121,19 @@ public Action:Cmd_LastReset(client, args)
 	if(SMRPG_GetSetting("last_reset", sLastReset, sizeof(sLastReset)))
 	{
 		new iLastGlobalResetStamp = StringToInt(sLastReset);
-		GetCurrentDate(iLastReset[2], iLastReset[1], iLastReset[0], iLastGlobalResetStamp);
-		Client_Reply(client, "{OG}SM:RPG{N} > {G}The server stats were reset on {N}%d-%d-%d{G}.", iLastReset[2], iLastReset[1], iLastReset[0]);
+		GetCurrentDate(iLastReset[0], iLastReset[1], iLastReset[2], iLastGlobalResetStamp);
+		Client_Reply(client, "{OG}SM:RPG{N} > {G}%t", "Last server reset", iLastReset[2], iLastReset[1], iLastReset[0]);
 		
 		new String:sReason[256];
 		if(SMRPG_GetSetting("reset_reason", sReason, sizeof(sReason)))
-			Client_Reply(client, "{OG}SM:RPG{N} > {G}Reason: {N}%s", sReason);
+			Client_Reply(client, "{OG}SM:RPG{N} > {G}%t", "Display global reset reason", sReason);
 	}
 	
 	if(client > 0)
 	{
 		new iLastResetStamp = SMRPG_GetClientLastResetTime(client);
 		GetCurrentDate(iLastReset[2], iLastReset[1], iLastReset[0], iLastResetStamp);
-		Client_Reply(client, "{OG}SM:RPG{N} > {G}Your stats were {RB}reset on {N}%d-%d-%d{G}.", iLastReset[2], iLastReset[1], iLastReset[0]);
+		Client_Reply(client, "{OG}SM:RPG{N} > {G}%t", "Last player reset", iLastReset[2], iLastReset[1], iLastReset[0]);
 	}
 	return Plugin_Continue;
 }

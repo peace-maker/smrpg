@@ -30,6 +30,20 @@
     // 1: The reason for the last global reset
     "de"  "Grund: {N}{1}"
   }
+  "Last server reset"
+  {
+    // 1: Day of last reset of the server.
+    // 2: Month of the last reset of the server.
+    // 3: Year of the last reset of the server.
+    "de"  "Der Server wurde am {N}{1}.{2}.{3}{G} zurückgesetzt."
+  }
+  "Last player reset"
+  {
+    // 1: Day of last reset of the player.
+    // 2: Month of the last reset of the player.
+    // 3: Year of the last reset of the player.
+    "de"  "Deine Stats wurden am {N}{1}.{2}.{3} {RB}zurückgesetzt."
+  }
   "Timed reset today"
   {
     "de"  "Die Stats werden heute zurückgesetzt."
