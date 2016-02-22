@@ -50,9 +50,6 @@ public OnPluginStart()
 	RegConsoleCmd("sm_lastreset", Cmd_LastReset, "Displays when the rpg stats were last reset.");
 	
 	RegAdminCmd("smrpg_db_resetdatabase", Cmd_ResetDatabase, ADMFLAG_ROOT, "Resets all players in the database back to level 1. CANNOT BE UNDONE!", "smrpg");
-	
-	AddCommandListener(CmdLstnr_Say, "say");
-	AddCommandListener(CmdLstnr_Say, "say_team");
 }
 
 public ConVar_VersionChanged(Handle:convar, const String:oldValue[], const String:newValue[])
@@ -132,7 +129,7 @@ public Action:Cmd_LastReset(client, args)
 	if(client > 0)
 	{
 		new iLastResetStamp = SMRPG_GetClientLastResetTime(client);
-		GetCurrentDate(iLastReset[2], iLastReset[1], iLastReset[0], iLastResetStamp);
+		GetCurrentDate(iLastReset[0], iLastReset[1], iLastReset[2], iLastResetStamp);
 		Client_Reply(client, "{OG}SM:RPG{N} > {G}%t", "Last player reset", iLastReset[2], iLastReset[1], iLastReset[0]);
 	}
 	return Plugin_Continue;
@@ -254,15 +251,14 @@ PrintDaysUntilReset(client)
 	}
 }
 
-public Action:CmdLstnr_Say(client, const String:command[], argc)
+public OnClientSayCommand_Post(client, const String:command[], const String:sArgs[])
 {
-	decl String:sText[16];
-	GetCmdArgString(sText, sizeof(sText));
-	StripQuotes(sText);
-	TrimString(sText);
-	if(StrEqual(sText, "nextreset", false))
+	new ReplySource:oldSource = SetCmdReplySource(SM_REPLY_TO_CHAT);
+	if (StrEqual(sArgs, "nextreset", false))
 		Cmd_NextReset(client, 0);
-	return Plugin_Continue;
+	else if(StrEqual(sArgs, "lastreset", false))
+		Cmd_LastReset(client, 0);
+	SetCmdReplySource(oldSource);
 }
 
 public Action:Timer_InformAboutReset(Handle:timer)
