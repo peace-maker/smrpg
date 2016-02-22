@@ -1,0 +1,74 @@
+"Phrases"
+{
+  "Admin command resetdatabase"
+  {
+    "de"  "Die Datenbank wurde zurückgesetzt. Alle Spieler sind wieder auf Level 1."
+  }
+  "Stats reset when levels sum up to"
+  {
+    // 1: Maximum sum of levels of top 10 players. 
+    // 2: Levels remaining until the maximum is reached.
+    "de"  "Die Stats werden zurückgesetzt, wenn die Summe der Level der Top 10 Spieler {1} ergibt. Es fehlen noch {2} Level."
+  }
+  "Warning, your stats were reset on"
+  {
+    // 1: Day of last reset of the player.
+    // 2: Month of the last reset of the player.
+    // 3: Year of the last reset of the player.
+    "de"  "{RB}WARNUNG!{G} Deine Stats wurden am {N}{1}.{2}.{3} {RB}zurückgesetzt."
+  }
+  "The whole server got reset, so you're not the only one."
+  {
+    "de"  "Der gesamte Server wurde zurückgesetzt - du bist also nicht der Einzige."
+  }
+  "This is done automatically regularly."
+  {
+    "de"  "Das passiert regelmäßig automatisch. Schreibe {N}nextreset{G}, um zu sehen, wann es das nächste Mal passiert."
+  }
+  "Display global reset reason"
+  {
+    // 1: The reason for the last global reset
+    "de"  "Grund: {N}{1}"
+  }
+  "Timed reset today"
+  {
+    "de"  "Die Stats werden heute zurückgesetzt."
+  }
+  "Timed reset in future"
+  {
+    // 1: "Days" or "Day" phrase from below. Days until reset in readable form.
+    // 2: "Months" or "Month" phrase from below. Months until reset in readable form.
+    // 3: "Years" or "Year" phrase from below. Years until reset in readable form.
+    // 4: Day of the next reset in the future.
+    // 5: Month of the next reset in the future.
+    // 6: Year of the next reset in the future.
+    "de"  "Die Stats werden in{3}{2}{1} am {4}.{5}.{6} {RB}zurückgesetzt{G}."
+  }
+  "One Day"
+  {
+    "de"  " 1 Tag"
+  }
+  "Days"
+  {
+    // 1: Days until stats are reset.
+    "de"  " {1} Tagen"
+  }
+  "One Month"
+  {
+    "de"  " 1 Monat"
+  }
+  "Months"
+  {
+    // 1: Months until stats are reset.
+    "de"  " {1} Monaten"
+  }
+  "One Year"
+  {
+    "de"  " 1 Jahr"
+  }
+  "Years"
+  {
+    // 1: Years until stats are reset.
+    "de"  " {1} Jahren"
+  }
+}

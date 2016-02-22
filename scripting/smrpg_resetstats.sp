@@ -31,6 +31,8 @@ public OnPluginStart()
 		HookConVarChange(hVersion, ConVar_VersionChanged);
 	}
 	
+	LoadTranslations("smrpg_resetstats.phrases");
+	
 	AutoExecConfig_SetFile("plugin.smrpg_resetstats");
 	AutoExecConfig_SetCreateFile(true);
 	AutoExecConfig_SetPlugin(INVALID_HANDLE);
@@ -47,7 +49,7 @@ public OnPluginStart()
 	RegConsoleCmd("sm_nextreset", Cmd_NextReset, "Displays when the next rpg reset will be.");
 	RegConsoleCmd("sm_lastreset", Cmd_LastReset, "Displays when the rpg stats were last reset.");
 	
-	RegAdminCmd("smrpg_db_resetdatabase", Cmd_ResetDatabase, ADMFLAG_ROOT, "Resets all players in the database back to level 1. CANNOT BE UNDON!", "smrpg");
+	RegAdminCmd("smrpg_db_resetdatabase", Cmd_ResetDatabase, ADMFLAG_ROOT, "Resets all players in the database back to level 1. CANNOT BE UNDONE!", "smrpg");
 	
 	AddCommandListener(CmdLstnr_Say, "say");
 	AddCommandListener(CmdLstnr_Say, "say_team");
@@ -96,7 +98,7 @@ public Action:Cmd_ResetDatabase(client, args)
 			CreateTimer(1.0, Timer_InformPlayerReset, GetClientSerial(i), TIMER_FLAG_NO_MAPCHANGE);
 	}
 	
-	ReplyToCommand(client, "SM:RPG > The database was wiped. All players are on level 1 again.");
+	ReplyToCommand(client, "SM:RPG > %t", "Admin command resetdatabase");
 	LogAction(client, -1, "%L reset the SM:RPG database. The reason given was \"%s\".", client, sReason);
 	
 	return Plugin_Handled;
@@ -175,9 +177,9 @@ public SQL_GetTop10(Handle:owner, Handle:hndl, const String:error[], any:userid)
 	}
 	
 	if(!client)
-		PrintToServer("SM:RPG > The stats are reset when the levels of the top 10 players sum up to %d. Still %d levels left.", iResetMaxLevel, iLevelsLeft);
+		PrintToServer("SM:RPG > %T", "Stats reset when levels sum up to", LANG_SERVER, iResetMaxLevel, iLevelsLeft);
 	else
-		Client_PrintToChatAll(false, "{OG}SM:RPG{N} > {G}The stats are reset when the levels of the top 10 players sum up to %d. Still %d levels left.", iResetMaxLevel, iLevelsLeft);
+		Client_PrintToChatAll(false, "{OG}SM:RPG{N} > {G}%t", "Stats reset when levels sum up to", iResetMaxLevel, iLevelsLeft);
 }
 
 /*
@@ -209,10 +211,9 @@ PrintDaysUntilReset(client)
 		}
 	}
 	
-	new String:sTimeString[64];
+	// Try to reset automatically now
 	if(iDays == 0)
 	{
-		strcopy(sTimeString, sizeof(sTimeString), "today");
 		new String:sReason[256] = "Regular reset every ";
 		new iMonthInterval = GetConVarInt(g_hCVMonths);
 		if(iMonthInterval > 1)
@@ -221,23 +222,36 @@ PrintDaysUntilReset(client)
 			Format(sReason, sizeof(sReason), "%s month.", sReason);
 		DoReset(sReason);
 	}
+	
+	// Today is a special case and has it's own phrase.
+	if(iDays == 0)
+	{
+		if(!client)
+			PrintToServer("SM:RPG > %T", "Timed reset today", LANG_SERVER);
+		else
+			Client_PrintToChatAll(false, "{OG}SM:RPG{N} > {G}%t", "Timed reset today");
+	}
 	else
-		strcopy(sTimeString, sizeof(sTimeString), "in");
-	
-	if(iYears > 0)
-		Format(sTimeString, sizeof(sTimeString), "%s %d year%s", sTimeString, iYears, (iYears > 1?"s":""));
-	if(iMonths > 0)
-		Format(sTimeString, sizeof(sTimeString), "%s %d month%s", sTimeString, iMonths, (iMonths > 1?"s":""));
-	if(iDays > 0)
-		Format(sTimeString, sizeof(sTimeString), "%s %d day%s", sTimeString, iDays, (iDays > 1?"s":""));
-	
-	if(iDays > 0)
-		Format(sTimeString, sizeof(sTimeString), "%s on %02d.%02d.%04d", sTimeString, iNextReset[2], iNextReset[1], iNextReset[0]);
-	
-	if(!client)
-		PrintToServer("SM:RPG > The stats are going to be reset %s.", sTimeString);
-	else
-		Client_PrintToChatAll(false, "{OG}SM:RPG{N} > {G}The stats are going to be reset %s.", sTimeString);
+	{
+		new String:sYears[32], String:sMonths[32], String:sDays[32];
+		
+		if(!client)
+		{
+			TranslateTimespan(LANG_SERVER, sYears, sizeof(sYears), iYears, sMonths, sizeof(sMonths), iMonths, sDays, sizeof(sDays), iDays);
+			PrintToServer("SM:RPG > %T", "Timed reset in future", LANG_SERVER, sDays, sMonths, sYears, iNextReset[2], iNextReset[1], iNextReset[0]);
+		}
+		else
+		{
+			for (new i=1;i<=MaxClients;i++)
+			{
+				if (!IsClientInGame(i) || IsFakeClient(i))
+					continue;
+				
+				TranslateTimespan(i, sYears, sizeof(sYears), iYears, sMonths, sizeof(sMonths), iMonths, sDays, sizeof(sDays), iDays);
+				Client_PrintToChat(i, false, "{OG}SM:RPG{N} > {G}%t", "Timed reset in future", sDays, sMonths, sYears, iNextReset[2], iNextReset[1], iNextReset[0]);
+			}
+		}
+	}
 }
 
 public Action:CmdLstnr_Say(client, const String:command[], argc)
@@ -270,7 +284,7 @@ public Action:Timer_InformPlayerReset(Handle:timer, any:serial)
 	
 	// Print some chat message multiple times so he really reads it.
 	for(new i=0;i<3;i++)
-		Client_PrintToChat(client, false, "{OG}SM:RPG{N} > {RB}WARNING!{G} Your stats were {RB}reset on {N}%d-%d-%d{G}.", iLastReset[2], iLastReset[1], iLastReset[0]);
+		Client_PrintToChat(client, false, "{OG}SM:RPG{N} > %t", "Warning, your stats were reset on", iLastReset[0], iLastReset[1], iLastReset[2]);
 	
 	// Might be interesting to know that all other players were reset too.
 	new String:sLastReset[32];
@@ -279,12 +293,12 @@ public Action:Timer_InformPlayerReset(Handle:timer, any:serial)
 		new iLastGlobalResetStamp = StringToInt(sLastReset);
 		if(iLastGlobalResetStamp == iLastResetStamp)
 		{
-			Client_PrintToChat(client, false, "{OG}SM:RPG{N} > {G}The whole server got reset, so you're not the only one.");
-			Client_PrintToChat(client, false, "{OG}SM:RPG{N} > {G}This is done automatically regularly. Type {N}nextreset{G} to see when it's time again.");
+			Client_PrintToChat(client, false, "{OG}SM:RPG{N} > {G}%t", "The whole server got reset, so you're not the only one.");
+			Client_PrintToChat(client, false, "{OG}SM:RPG{N} > {G}%t", "This is done automatically regularly.");
 			
 			new String:sReason[256];
 			if(SMRPG_GetSetting("reset_reason", sReason, sizeof(sReason)))
-				Client_PrintToChat(client, false, "{OG}SM:RPG{N} > {G}Reason: {N}%s", sReason);
+				Client_PrintToChat(client, false, "{OG}SM:RPG{N} > {G}%t", "Display global reset reason", sReason);
 		}
 	}
 	
@@ -325,6 +339,33 @@ DoReset(const String:sReason[])
 	{
 		if(IsClientInGame(i) && !IsFakeClient(i))
 			CreateTimer(1.0, Timer_InformPlayerReset, GetClientSerial(i), TIMER_FLAG_NO_MAPCHANGE);
+	}
+}
+
+TranslateTimespan(client, String:sYears[], iLenYears, iYears, String:sMonths[], iLenMonths, iMonths, String:sDays[], iLenDays, iDays)
+{
+	if(iYears > 0)
+	{
+		if (iYears > 1)
+			Format(sYears, iLenYears, "%T", "Years", client, iYears);
+		else
+			Format(sYears, iLenYears, "%T", "One Year", client);
+	}
+	
+	if(iMonths > 0)
+	{
+		if (iMonths > 1)
+			Format(sMonths, iLenMonths, "%T", "Months", client, iMonths);
+		else
+			Format(sMonths, iLenMonths, "%T", "One Month", client);
+	}
+	
+	if(iDays > 0)
+	{
+		if (iDays > 1)
+			Format(sDays, iLenDays, "%T", "Days", client, iDays);
+		else
+			Format(sDays, iLenDays, "%T", "One Day", client);
 	}
 }
 
