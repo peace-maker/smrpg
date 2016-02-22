@@ -279,4 +279,14 @@
 	{
 		"en"			"Reduces the damage you take from falling from great heights."
 	}
+	
+	"armorhelmet"
+	{
+		"en"			"Armor Helmet"
+	}
+	
+	"armorhelmet description"
+	{
+		"en"			"Gives you a chance to get a helmet on spawn."
+	}
 }

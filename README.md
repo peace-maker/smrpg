@@ -61,6 +61,7 @@ See the available upgrade plugins for examples. You can use the [example upgrade
 # Available upgrades
 * Antidote - Reduce duration of bad effects against you like burning, freezing or slow down.
 * Armor+ (Counter-Strike only) - Increases your maximal armor.
+* Armor Helmet (Counter-Strike only) - Gives players a chance to receive a helmet on spawn.
 * Armor Regeneration (Counter-Strike only) - Regenerates armor regularly.
 * Bouncy Bullets - Push enemies away by shooting them.
 * Damage+ - Deal additional damage on enemies.

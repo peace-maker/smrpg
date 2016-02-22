@@ -279,4 +279,14 @@
 	{
 		"de"			"Verringert den Schaden, den du durch den Fall aus großen Höhen erleidest."
 	}
+	
+	"armorhelmet"
+	{
+		"de"			"Rüstungshelm"
+	}
+	
+	"armorhelmet description"
+	{
+		"de"			"Du hast die Chance beim Spawn einen Helm zu bekommen."
+	}
 }
