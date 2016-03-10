@@ -145,11 +145,8 @@ public Action:SMRPG_OnAddExperience(client, const String:reason[], &iExperience,
 
 public Action:SMRPG_OnClientLevel(client, oldlevel, newlevel)
 {
-	if(!GetConVarBool(g_hCVShowMVPLevel))
-		return Plugin_Continue;
-	
 	if(IsClientInGame(client))
-		CS_SetMVPCount(client, newlevel);
+		UpdateMVPLevel(client);
 	
 	return Plugin_Continue;
 }
@@ -165,20 +162,14 @@ public SMRPG_TranslateExperienceReason(client, const String:reason[], iExperienc
 
 public Event_OnPlayerSpawn(Handle:event, const String:error[], bool:dontBroadcast)
 {
-	if(!GetConVarBool(g_hCVShowMVPLevel))
-		return;
-	
 	new client = GetClientOfUserId(GetEventInt(event, "userid"));
-	CS_SetMVPCount(client, SMRPG_GetClientLevel(client));
+	UpdateMVPLevel(client);
 }
 
 public Event_OnRoundMVP(Handle:event, const String:error[], bool:dontBroadcast)
 {
-	if(!GetConVarBool(g_hCVShowMVPLevel))
-		return;
-	
 	new client = GetClientOfUserId(GetEventInt(event, "userid"));
-	CS_SetMVPCount(client, SMRPG_GetClientLevel(client));
+	UpdateMVPLevel(client);
 }
 
 public Event_OnPlayerHurt(Handle:event, const String:error[], bool:dontBroadcast)
@@ -479,6 +470,17 @@ public Action:Timer_ResetKnifeLeveling(Handle:timer, any:userid)
 	g_hKnifeLevelCooldown[client] = INVALID_HANDLE;
 	g_bKnifeLeveled[client] = false;
 	return Plugin_Stop;
+}
+
+UpdateMVPLevel(client)
+{
+	if(!GetConVarBool(g_hCVShowMVPLevel))
+		return;
+	
+	if (IsFakeClient(client) && SMRPG_IgnoreBots())
+		return;
+	
+	CS_SetMVPCount(client, SMRPG_GetClientLevel(client));
 }
 
 // This stuff is leftover from balancing the experience on a deathmatch server.
