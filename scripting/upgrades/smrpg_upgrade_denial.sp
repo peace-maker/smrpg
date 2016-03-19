@@ -199,9 +199,9 @@ public Action:Hook_WeaponEquipPost(client, weapon)
 		return Plugin_Continue;
 	
 	if(weapon == GetPlayerWeaponSlot(client, 0))
-		GetEntityClassname(weapon, g_sDenialPrimary[client], sizeof(g_sDenialPrimary[]));
+		GetRealWeaponClassname(weapon, g_sDenialPrimary[client], sizeof(g_sDenialPrimary[]));
 	else if(weapon == GetPlayerWeaponSlot(client, 1))
-		GetEntityClassname(weapon, g_sDenialSecondary[client], sizeof(g_sDenialSecondary[]));
+		GetRealWeaponClassname(weapon, g_sDenialSecondary[client], sizeof(g_sDenialSecondary[]));
 	
 	return Plugin_Continue;
 }
@@ -294,4 +294,32 @@ bool:Denial_IsWeaponRestricted(String:sWeapon[])
 	if(StrContains(sRestrictedWeapons, sWeapon[iPos], false) != -1)
 		return true;
 	return false;
+}
+
+bool:GetRealWeaponClassname(entity, String:sClassname[], maxlen)
+{
+	// Replace the weapon classname with the correct one for special weapons in CS:GO.
+	if (GetEngineVersion() == Engine_CSGO)
+	{
+		new iItemDefinitionIndex = GetEntProp(entity, Prop_Send, "m_iItemDefinitionIndex");
+		new String:sWeapon[32];
+		switch(iItemDefinitionIndex)
+		{
+			case 60:
+				sWeapon = "weapon_m4a1_silencer";
+			case 61:
+				sWeapon = "weapon_usp_silencer";
+			case 63:
+				sWeapon = "weapon_cz75a";
+			case 64:
+				sWeapon = "weapon_revolver";
+		}
+		if (sWeapon[0])
+		{
+			strcopy(sClassname, maxlen, sWeapon);
+			return true;
+		}
+	}
+	
+	return GetEntityClassname(entity, sClassname, maxlen);
 }
