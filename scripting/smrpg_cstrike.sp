@@ -333,6 +333,10 @@ public Event_OnRoundEnd(Handle:event, const String:error[], bool:dontBroadcast)
 	new iTeam = GetEventInt(event, "winner");
 	new CSRoundEndReason:iReason = CSRoundEndReason:GetEventInt(event, "reason");
 	
+	// The reasons in CS:GO are shifted in the CSRoundEndReason enum..
+	if (g_bIsCSGO)
+		iReason--;
+	
 	if(!SMRPG_IsEnabled())
 		return;
 	
