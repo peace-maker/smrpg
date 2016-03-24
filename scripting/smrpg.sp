@@ -239,7 +239,6 @@ public OnPluginStart()
 	HookEventEx("player_spawn", Event_OnPlayerSpawn);
 	HookEventEx("player_death", Event_OnPlayerDeath);
 	HookEventEx("round_end", Event_OnRoundEnd);
-	HookEvent("player_say", Event_OnPlayerSay);
 	HookEvent("player_disconnect", Event_OnPlayerDisconnect);
 	
 	if(g_bLateLoaded)
@@ -506,17 +505,12 @@ public Event_OnRoundEnd(Handle:event, const String:error[], bool:dontBroadcast)
 	Stats_WinningTeam(GetEventInt(event, "winner"));
 }
 
-public Event_OnPlayerSay(Handle:event, const String:error[], bool:dontBroadcast)
+public OnClientSayCommand_Post(client, const String:command[], const String:sText[])
 {
-	new client = GetClientOfUserId(GetEventInt(event, "userid"));
-	decl String:sText[256];
-	GetEventString(event, "text", sText, sizeof(sText));
-	
 	if(StrEqual(sText, "rpgmenu", false) || StrEqual(sText, "rpg", false))
 		DisplayMainMenu(client);
 	else if(StrContains(sText, "rpgrank", false) == 0)
 	{
-		TrimString(sText);
 		if(!sText[7])
 		{
 			PrintRankToChat(client, -1);
@@ -531,7 +525,6 @@ public Event_OnPlayerSay(Handle:event, const String:error[], bool:dontBroadcast)
 	}
 	else if(StrContains(sText, "rpginfo", false) == 0)
 	{
-		TrimString(sText);
 		if(!sText[7])
 		{
 			// See if he's spectating someone and show the upgrades of the target.
