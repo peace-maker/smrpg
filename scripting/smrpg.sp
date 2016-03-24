@@ -605,14 +605,14 @@ public Action:Cmd_RPGRank(client, args)
 	
 	if(!sText[0])
 	{
-		PrintRankToChat(client, -1);
+		PrintRankToChat(client, client);
 	}
 	else
 	{
 		new iTarget = FindTarget(client, sText, !GetConVarBool(g_hCVBotEnable), false);
 		if(iTarget == -1)
 			return Plugin_Handled;
-		PrintRankToChat(iTarget, -1);
+		PrintRankToChat(iTarget, client);
 	}
 	
 	return Plugin_Handled;
