@@ -101,6 +101,16 @@ public Event_OnPlayerDeath(Handle:event, const String:error[], bool:dontBroadcas
 }
 
 /**
+ * Hook callbacks
+ */
+public Action:Hook_OnTakeDamage(victim, &attacker, &inflictor, &Float:damage, &damagetype, &weapon, Float:damageForce[3], Float:damagePosition[3], damagecustom)
+{
+	new Action:iRetFreeze = Freeze_OnTakeDamage(victim, attacker, inflictor, damage);
+	new Action:iRetIgnite = Ignite_OnTakeDamage(victim, attacker, inflictor, damage, damagetype);
+	return iRetFreeze > iRetIgnite ? iRetFreeze : iRetIgnite;
+}
+
+/**
  * Helpers
  */
 // IsValidHandle() is deprecated, let's do a real check then...

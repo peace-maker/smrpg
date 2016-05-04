@@ -146,5 +146,5 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 		return; // Some other plugin doesn't want this effect to run
 	
 	new Float:fDuration = float(iLevel)*GetConVarFloat(g_hCVDurationIncrease);
-	SMRPG_IgniteClient(victim, fDuration, UPGRADE_SHORTNAME);
+	SMRPG_IgniteClient(victim, fDuration, UPGRADE_SHORTNAME, true, attacker);
 }

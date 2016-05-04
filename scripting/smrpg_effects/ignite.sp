@@ -9,6 +9,7 @@ new Handle:g_hfwdOnClientExtinguished;
 
 new Handle:g_hExtinguish[MAXPLAYERS+1];
 new Handle:g_hIgnitePlugin[MAXPLAYERS+1];
+new g_iAttacker[MAXPLAYERS+1] = {-1, ...};
 
 /**
  * Setup helpers
@@ -59,9 +60,45 @@ public Action:Timer_Extinguish(Handle:timer, any:userid)
 }
 
 /**
+ * Hook callbacks
+ */
+// Change the attacker to the right player when a victim gets damage from fire.
+Action:Ignite_OnTakeDamage(victim, &attacker, &inflictor, &Float:damage, &damagetype)
+{
+	// Not ignited by this plugin.
+	if (g_hExtinguish[victim] == INVALID_HANDLE)
+		return Plugin_Continue;
+	
+	// No attacker passed to SMRPG_IgniteClient.
+	if (g_iAttacker[victim] == -1)
+		return Plugin_Continue;
+	
+	// Only care for direct burn damage to the player burning himself.
+	if (damagetype & (DMG_BURN | DMG_DIRECT) != (DMG_BURN | DMG_DIRECT))
+		return Plugin_Continue;
+	
+	// Already an attacker client specified?
+	if (attacker > 0 && attacker <= MaxClients)
+		return Plugin_Continue;
+	
+	new iAttacker = GetClientFromSerial(g_iAttacker[victim]);
+	// Attacker left the server?
+	if (!iAttacker)
+	{
+		// Don't do all the above again next time.
+		g_iAttacker[victim] = -1;
+		return Plugin_Continue;
+	}
+	
+	// Change the attacker to the player who ignited the victim.
+	attacker = iAttacker;
+	return Plugin_Changed;
+}
+
+/**
  * Native handlers
  */
-// native bool:SMRPG_IgniteClient(client, Float:fTime, const String:sUpgradeName[], bool:bFadeColor=true);
+// native bool:SMRPG_IgniteClient(client, Float:fTime, const String:sUpgradeName[], bool:bFadeColor=true, attacker=-1);
 public Native_IgniteClient(Handle:plugin, numParams)
 {
 	new client = GetNativeCell(1);
@@ -78,6 +115,17 @@ public Native_IgniteClient(Handle:plugin, numParams)
 	new String:sUpgradeName[iLen+1];
 	GetNativeString(3, sUpgradeName, iLen+1);
 	new bool:bFadeColor = GetNativeCell(4);
+	
+	new attacker = -1;
+	// Attacker parameter was added later.
+	if (numParams > 4)
+		attacker = GetNativeCell(5);
+	
+	if (attacker != -1 && (attacker <= 0 || attacker > MaxClients))
+	{
+		ThrowNativeError(SP_ERROR_NATIVE, "Invalid attacker client index %d", attacker);
+		return false;
+	}
 	
 	new Action:ret;
 	Call_StartForward(g_hfwdOnClientIgnite);
@@ -96,8 +144,12 @@ public Native_IgniteClient(Handle:plugin, numParams)
 	}
 	
 	// Ignite the player.
-	IgniteEntity(client, fIgniteTime);
+	g_iAttacker[client] = GetClientSerial(attacker);
 	g_hIgnitePlugin[client] = plugin;
+	// TODO: Remember the "creator" of the entityflame effects entity which does the damage 
+	// to catch the "splash" fire damage as well on other players than the victim. (just DMG_BURN without the DMG_DIRECT)
+	IgniteEntity(client, fIgniteTime);
+	PrintToServer("%d ignited %N for %f seconds", attacker, client, fIgniteTime);
 	
 	ClearHandle(g_hExtinguish[client]);
 	g_hExtinguish[client] = CreateTimer(fIgniteTime, Timer_Extinguish, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
@@ -184,4 +236,5 @@ ExtinguishClient(client)
 ResetClientIgniteState(client)
 {
 	g_hIgnitePlugin[client] = INVALID_HANDLE;
+	g_iAttacker[client] = -1;
 }

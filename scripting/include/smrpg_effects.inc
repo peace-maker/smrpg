@@ -43,10 +43,11 @@ native bool:SMRPG_IsClientFrozen(client);
  * @param fTime              The time to let the player burn.
  * @param sUpgradeName       Upgrade shortname which issues the ignition. Used to see if clients want to see the visual/sound effects.
  * @param bFadeColor         Fade the player's model from red to normal?
+ * @param attacker           The client index of the player responsible for the ignition. (-1 if not applicable)
  * @return                   True if client was ignited, false otherwise.
  * @error                    Invalid client index.
  */
-native bool:SMRPG_IgniteClient(client, Float:fTime, const String:sUpgradeName[], bool:bFadeColor=true);
+native bool:SMRPG_IgniteClient(client, Float:fTime, const String:sUpgradeName[], bool:bFadeColor=true, attacker=-1);
 
 /**
  * Extinguish a client, if he was ignited by SMRPG_IgniteClient previously.

@@ -81,7 +81,7 @@ public Action:Timer_Unfreeze(Handle:timer, any:userid)
  * Hook callbacks
  */
 // Reduce the damage when a player is frozen.
-public Action:Hook_OnTakeDamage(victim, &attacker, &inflictor, &Float:damage, &damagetype, &weapon,	Float:damageForce[3], Float:damagePosition[3], damagecustom)
+Action:Freeze_OnTakeDamage(victim, &attacker, &inflictor, &Float:damage)
 {
 	// This player isn't frozen. Ignore.
 	if(g_hUnfreeze[victim] == INVALID_HANDLE)
