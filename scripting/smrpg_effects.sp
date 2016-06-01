@@ -11,6 +11,8 @@
 
 #define PLUGIN_VERSION "1.0"
 
+new Handle:g_hCVCreditFireAttacker;
+
 #include "smrpg_effects/rendercolor.sp"
 #include "smrpg_effects/freeze.sp"
 #include "smrpg_effects/ignite.sp"
@@ -46,7 +48,10 @@ public OnPluginStart()
 	
 	HookEvent("player_spawn", Event_OnPlayerSpawn);
 	HookEvent("player_death", Event_OnPlayerDeath);
-	
+
+	g_hCVCreditFireAttacker = CreateConVar("smrpg_credit_ignite_attacker", "1", "Credit fire damage to the attacker which ignited the victim?", _, true, 0.0, true, 1.0);
+	AutoExecConfig(true, "plugin.smrpg_effects");
+
 	// Account for late loading
 	for(new i=1;i<=MaxClients;i++)
 	{

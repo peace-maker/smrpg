@@ -120,6 +120,10 @@ public Native_IgniteClient(Handle:plugin, numParams)
 	// Attacker parameter was added later.
 	if (numParams > 4)
 		attacker = GetNativeCell(5);
+
+	// Server admin doesn't want the attacker to get credit for the fire damage.
+	if (!GetConVarBool(g_hCVCreditFireAttacker))
+		attacker = -1;
 	
 	if (attacker != -1 && (attacker <= 0 || attacker > MaxClients))
 	{
@@ -149,7 +153,6 @@ public Native_IgniteClient(Handle:plugin, numParams)
 	// TODO: Remember the "creator" of the entityflame effects entity which does the damage 
 	// to catch the "splash" fire damage as well on other players than the victim. (just DMG_BURN without the DMG_DIRECT)
 	IgniteEntity(client, fIgniteTime);
-	PrintToServer("%d ignited %N for %f seconds", attacker, client, fIgniteTime);
 	
 	ClearHandle(g_hExtinguish[client]);
 	g_hExtinguish[client] = CreateTimer(fIgniteTime, Timer_Extinguish, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
