@@ -424,7 +424,14 @@ public OnClientDisconnect(client)
 {
 	ResetPlayerMenu(client);
 	ResetAdminMenu(client);
-	SaveData(client);
+	
+	// Save stats and upgrade levels both at once or nothing at all.
+	new Transaction:hTransaction = SQL_CreateTransaction();
+	if (SaveData(client, hTransaction))
+		SQL_ExecuteTransaction(g_hDatabase, hTransaction, _, SQLTxn_LogFailure);
+	else
+		CloseHandle(hTransaction);
+	
 	ClearClientRankCache(client);
 	RemovePlayer(client);
 	ResetAFKPlayer(client);

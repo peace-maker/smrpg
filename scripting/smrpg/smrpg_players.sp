@@ -193,25 +193,25 @@ InsertPlayer(client)
 	SQL_TQuery(g_hDatabase, SQL_InsertPlayer, sQuery, GetClientUserId(client));
 }
 
-SaveData(client, Transaction:hTransaction=Transaction:INVALID_HANDLE)
+bool:SaveData(client, Transaction:hTransaction=Transaction:INVALID_HANDLE)
 {
 	if(g_hDatabase == INVALID_HANDLE)
-		return;
+		return false;
 	
 	if(!GetConVarBool(g_hCVEnable) || !GetConVarBool(g_hCVSaveData))
-		return;
+		return false;
 	
 	if(IsFakeClient(client) && !GetConVarBool(g_hCVBotSaveStats))
-		return;
+		return false;
 	
 	// We're still in the process of loading this client's info from the db. Wait for it..
 	if(!IsPlayerDataLoaded(client))
-		return;
+		return false;
 	
 	if(g_iPlayerInfo[client][PLR_dbId] < 0)
 	{
 		InsertPlayer(client);
-		return;
+		return false;
 	}
 	
 	decl String:sName[MAX_NAME_LENGTH], String:sNameEscaped[MAX_NAME_LENGTH*2+1];
@@ -236,6 +236,8 @@ SaveData(client, Transaction:hTransaction=Transaction:INVALID_HANDLE)
 	
 	// Save upgrade levels
 	SavePlayerUpgradeLevels(client, hTransaction);
+	
+	return true;
 }
 
 SavePlayerUpgradeLevels(client, Transaction:hTransaction=Transaction:INVALID_HANDLE)
