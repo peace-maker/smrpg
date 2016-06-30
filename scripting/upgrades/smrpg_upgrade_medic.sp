@@ -18,6 +18,7 @@
 new Handle:g_hCVIncrease;
 new Handle:g_hCVInterval;
 new Handle:g_hCVRadius;
+new Handle:g_hCVRadiusIncrease;
 
 new bool:g_bIsCstrike;
 
@@ -62,7 +63,8 @@ public OnLibraryAdded(const String:name[])
 		
 		g_hCVIncrease = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_medic_increase", "5", "Heal increment for each level.", _, true, 1.0);
 		g_hCVInterval = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_medic_interval", "2.0", "Delay between each heal wave in seconds.", _, true, 1.0);
-		g_hCVRadius = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_medic_radius", "250.0", "Radius around player in which other players are healed.", _, true, 1.0);
+		g_hCVRadius = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_medic_radius", "250.0", "Base radius around player in which other players are healed.", _, true, 1.0);
+		g_hCVRadiusIncrease = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_medic_radius_increase", "0.0", "Radius increase for each level.", _, true, 0.0);
 		
 		HookConVarChange(g_hCVInterval, ConVar_IntervalChanged);
 	}
@@ -160,7 +162,8 @@ public Action:Timer_ApplyMedic(Handle:timer, any:data)
 		GetClientEyePosition(i, vCacheOrigin[i]);
 	}
 	
-	new Float:fMedicRadius = GetConVarFloat(g_hCVRadius);
+	new Float:fMedicRadiusBase = GetConVarFloat(g_hCVRadius);
+	new Float:fMedicRadiusIncrease = GetConVarFloat(g_hCVRadiusIncrease);
 	new iMedicIncrease = GetConVarInt(g_hCVIncrease);
 	
 	new bool:bMedicDidHisJob, iBeamRingColor[4];
@@ -171,7 +174,7 @@ public Action:Timer_ApplyMedic(Handle:timer, any:data)
 	if(iHaloSprite == -1)
 		iHaloSprite = iBeamSprite;
 	
-	decl iLevel, iNewHP, iMaxHealth, iNewArmor, iMaxArmor, Float:vRingOrigin[3];
+	new iLevel, Float:fMedicRadius, iNewHP, iMaxHealth, iNewArmor, iMaxArmor, Float:vRingOrigin[3];
 	for(new i=1;i<=MaxClients;i++)
 	{
 		/* If player is a medic and player is not dead */
@@ -187,6 +190,8 @@ public Action:Timer_ApplyMedic(Handle:timer, any:data)
 		
 		if(!SMRPG_RunUpgradeEffect(i, UPGRADE_SHORTNAME))
 			continue; // Some other plugin doesn't want this effect to run
+		
+		fMedicRadius = fMedicRadiusBase + fMedicRadiusIncrease * float(iLevel-1);
 		
 		/* Medic found, now search for teammates */
 		for(new m=1;m<=MaxClients;m++)
