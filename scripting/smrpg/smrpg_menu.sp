@@ -186,6 +186,11 @@ public TopMenu_HandleUpgrades(Handle:topmenu, TopMenuAction:action, TopMenuObjec
 				Format(sTeamlock, sizeof(sTeamlock), " (%T)", "Is teamlocked", param, sTeamlock);
 			}
 			
+			// Optionally show the maxlevel of the upgrade
+			new String:sMaxlevel[8];
+			if (GetConVarBool(g_hCVShowMaxLevelInMenu))
+				Format(sMaxlevel, sizeof(sMaxlevel), "/%d", upgrade[UPGR_maxLevel]);
+			
 			decl String:sTranslatedName[MAX_UPGRADE_NAME_LENGTH];
 			GetUpgradeTranslatedName(param, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
 			
@@ -197,7 +202,7 @@ public TopMenu_HandleUpgrades(Handle:topmenu, TopMenuAction:action, TopMenuObjec
 			}
 			else
 			{
-				Format(buffer, maxlength, "%s Lvl %d [%T: %d]%s", sTranslatedName, iCurrentLevel+1, "Cost", param, GetUpgradeCost(upgrade[UPGR_index], iCurrentLevel+1), sTeamlock);
+				Format(buffer, maxlength, "%s Lvl %d%s [%T: %d]%s", sTranslatedName, iCurrentLevel+1, sMaxlevel, "Cost", param, GetUpgradeCost(upgrade[UPGR_index], iCurrentLevel+1), sTeamlock);
 			}
 		}
 		case TopMenuAction_DrawOption:
@@ -297,10 +302,15 @@ public TopMenu_HandleSell(Handle:topmenu, TopMenuAction:action, TopMenuObject:ob
 				Format(sTeamlock, sizeof(sTeamlock), " (%T)", "Is teamlocked", param, sTeamlock);
 			}
 			
+			// Optionally show the maxlevel of the upgrade
+			new String:sMaxlevel[8];
+			if (GetConVarBool(g_hCVShowMaxLevelInMenu))
+				Format(sMaxlevel, sizeof(sMaxlevel), "/%d", upgrade[UPGR_maxLevel]);
+			
 			decl String:sTranslatedName[MAX_UPGRADE_NAME_LENGTH];
 			GetUpgradeTranslatedName(param, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
 			
-			Format(buffer, maxlength, "%s Lvl %d [%T: %d]%s", sTranslatedName, GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index]), "Sale", param, GetUpgradeSale(upgrade[UPGR_index], GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index])), sTeamlock);
+			Format(buffer, maxlength, "%s Lvl %d%s [%T: %d]%s", sTranslatedName, GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index]), sMaxlevel, "Sale", param, GetUpgradeSale(upgrade[UPGR_index], GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index])), sTeamlock);
 		}
 		case TopMenuAction_DrawOption:
 		{
@@ -875,7 +885,7 @@ DisplayOtherUpgradesMenu(client, targetClient)
 	
 	new iSize = GetUpgradeCount();
 	new upgrade[InternalUpgradeInfo], iCurrentLevel;
-	new String:sTranslatedName[MAX_UPGRADE_NAME_LENGTH], String:sLine[128], String:sIndex[8];
+	new String:sTranslatedName[MAX_UPGRADE_NAME_LENGTH], String:sLine[128], String:sIndex[8], String:sMaxlevel[8];
 	for(new i=0;i<iSize;i++)
 	{
 		iCurrentLevel = GetClientPurchasedUpgradeLevel(targetClient, i);
@@ -885,13 +895,19 @@ DisplayOtherUpgradesMenu(client, targetClient)
 		if(!IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled] || !HasAccessToUpgrade(targetClient, upgrade) || !IsClientInLockedTeam(targetClient, upgrade))
 			continue;
 		
+		// Optionally show the maxlevel of the upgrade
+		if (GetConVarBool(g_hCVShowMaxLevelInMenu))
+			Format(sMaxlevel, sizeof(sMaxlevel), "/%d", upgrade[UPGR_maxLevel]);
+		else
+			sMaxlevel[0] = '\0';
+		
 		GetUpgradeTranslatedName(client, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
 		
 		IntToString(i, sIndex, sizeof(sIndex));
 		if(iCurrentLevel >= upgrade[UPGR_maxLevel])
 			Format(sLine, sizeof(sLine), "%s Lvl %d MAX", sTranslatedName, iCurrentLevel);
 		else
-			Format(sLine, sizeof(sLine), "%s Lvl %d", sTranslatedName, iCurrentLevel);
+			Format(sLine, sizeof(sLine), "%s Lvl %d%s", sTranslatedName, iCurrentLevel, sMaxlevel);
 		AddMenuItem(hMenu, sIndex, sLine, ITEMDRAW_DISABLED);
 	}
 	
