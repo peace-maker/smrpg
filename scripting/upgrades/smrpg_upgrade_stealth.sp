@@ -5,9 +5,10 @@
 #include <smlib>
 
 #define UPGRADE_SHORTNAME "stealth"
-#define STEALTH_INC 27
 
 #define PLUGIN_VERSION "1.0"
+
+new Handle:g_hCVMinimumAlpha;
 
 // CS:GO only convar to enable alpha changes on players.
 new Handle:g_hCVIgnoreImmunity;
@@ -65,6 +66,7 @@ public OnLibraryAdded(const String:name[])
 	{
 		SMRPG_RegisterUpgradeType("Stealth", UPGRADE_SHORTNAME, "Renders yourself more and more invisible.", 5, true, 5, 15, 10, _, SMRPG_BuySell, SMRPG_ActiveQuery);
 		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
+		g_hCVMinimumAlpha = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_stealth_min_alpha", "120", "Player visibility at the maximum upgrade level. 0 = completely invisible", 0, true, 0.0, true, 255.0);
 	}
 }
 
@@ -277,11 +279,24 @@ SetClientVisibility(client)
 	
 	new iLevel = SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME);
 	
+	new upgrade[UpgradeInfo];
+	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
+	
+	// Keep the minimum alpha in byte range
+	new iMinimumAlpha = GetConVarInt(g_hCVMinimumAlpha);
+	if (iMinimumAlpha < 0 || iMinimumAlpha > 255)
+		iMinimumAlpha = 120;
+	
+	// Each step brings the player's visibility more towards the minimum alpha.
+	new iStepSize = (255 - iMinimumAlpha) / upgrade[UI_maxLevel];
+	
+	// Render the player more invisible each level
+	new iAlpha = 255 - iLevel * iStepSize;
+	// Avoid rounding problems with the stepsize.
+	if (iAlpha < 0)
+		iAlpha = 0; // TODO: RENDER_NONE?
+	
 	SetEntityRenderMode(client, RENDER_TRANSCOLOR);
-	new iAlpha = 255 - iLevel * STEALTH_INC;
-	// Keep the player visible enough, even if we break the maxlevel barrier.
-	if(iAlpha < 120)
-		iAlpha = 120;
 	Entity_SetRenderColor(client, -1, -1, -1, iAlpha);
 	
 	// Render his weapons opaque too.
