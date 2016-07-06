@@ -97,6 +97,7 @@ new String:g_sDefaultRPGCommands[][] = {"rpgmenu", "rpgrank", "rpginfo", "rpgtop
 #endif
 
 #include "smrpg/smrpg_upgrades.sp"
+#include "smrpg/smrpg_upgraderestrictions.sp"
 #include "smrpg/smrpg_database.sp"
 #include "smrpg/smrpg_settings.sp"
 #include "smrpg/smrpg_players.sp"
@@ -232,6 +233,7 @@ public OnPluginStart()
 	
 	InitSettings();
 	InitUpgrades();
+	InitUpgradeRestrictions();
 	InitDatabase();
 	InitWeaponExperienceConfig();
 	
@@ -321,6 +323,9 @@ public OnAllPluginsLoaded()
 {
 	RegisterTopMenu();
 	InitMenu();
+	
+	// Read upgrade_restrictions.cfg
+	ReadRestrictionConfig();
 }
 
 public OnPluginEnd()

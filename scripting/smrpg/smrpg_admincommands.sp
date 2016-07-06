@@ -23,6 +23,7 @@ RegisterAdminCommands()
 	RegAdminCmd("smrpg_sellall", Cmd_SellAll, ADMFLAG_ROOT, "Force a player to sell all their Upgrades (full refund). Usage smrpg_sellall <player name | userid | steamid>", "smrpg");
 	
 	RegAdminCmd("smrpg_reload_weaponexperience", Cmd_ReloadWeaponExperience, ADMFLAG_CONFIG, "Reload the weapon_experience.cfg config for individual experience rates per weapon.", "smrpg");
+	RegAdminCmd("smrpg_reload_upgraderestrictions", Cmd_ReloadUpgradeRestrictions, ADMFLAG_CONFIG, "Reload the upgrade_restrictions.cfg config for upgrade restriction settings.", "smrpg");
 	
 	RegAdminCmd("smrpg_db_delplayer", Cmd_DBDelPlayer, ADMFLAG_ROOT, "Delete a player entry from the database (this cannot be undone!). Usage: smrpg_db_delplayer <full name | player db id | steamid>", "smrpg");
 	RegAdminCmd("smrpg_db_mass_sell", Cmd_DBMassSell, ADMFLAG_ROOT, "Force everyone in the database (and playing) to sell a specific upgrade. Usage: smrpg_db_mass_sell <upgrade>", "smrpg");
@@ -1399,6 +1400,16 @@ public Action:Cmd_ReloadWeaponExperience(client, args)
 		ReplyToCommand(client, "SM:RPG > The weapon experience config has been reloaded.");
 	else
 		ReplyToCommand(client, "SM:RPG > Failure reading weapon experience config file in sourcemod/configs/smrpg/weapon_experience.cfg.");
+	
+	return Plugin_Handled;
+}
+
+public Action:Cmd_ReloadUpgradeRestrictions(client, args)
+{
+	if(ReadRestrictionConfig())
+		ReplyToCommand(client, "SM:RPG > The upgrade restrictions config has been reloaded.");
+	else
+		ReplyToCommand(client, "SM:RPG > Failure reading upgrade restrictions config file in sourcemod/configs/smrpg/upgrade_restrictions.cfg.");
 	
 	return Plugin_Handled;
 }

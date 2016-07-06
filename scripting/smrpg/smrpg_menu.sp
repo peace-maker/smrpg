@@ -202,7 +202,12 @@ public TopMenu_HandleUpgrades(Handle:topmenu, TopMenuAction:action, TopMenuObjec
 			}
 			else
 			{
-				Format(buffer, maxlength, "%s Lvl %d%s [%T: %d]%s", sTranslatedName, iCurrentLevel+1, sMaxlevel, "Cost", param, GetUpgradeCost(upgrade[UPGR_index], iCurrentLevel+1), sTeamlock);
+				// Only need to check if it's restricted, if we still are able to buy more levels.
+				new String:sRestricted[] = "[R] ";
+				if (!IsUpgradeRestricted(param, upgrade))
+					sRestricted = "";
+				
+				Format(buffer, maxlength, "%s%s Lvl %d%s [%T: %d]%s", sRestricted, sTranslatedName, iCurrentLevel+1, sMaxlevel, "Cost", param, GetUpgradeCost(upgrade[UPGR_index], iCurrentLevel+1), sTeamlock);
 			}
 		}
 		case TopMenuAction_DrawOption:
@@ -243,6 +248,13 @@ public TopMenu_HandleUpgrades(Handle:topmenu, TopMenuAction:action, TopMenuObjec
 				return;
 			}
 			
+			// List the unmet restrictions and the progress if this upgrade can't be bought yet.
+			if (IsUpgradeRestricted(param, upgrade))
+			{
+				DisplayUpgradeRestrictions(param, upgrade);
+				return;
+			}
+			
 			new iItemIndex = upgrade[UPGR_index];
 			new iItemLevel = GetClientPurchasedUpgradeLevel(param, iItemIndex);
 			new iCost = GetUpgradeCost(iItemIndex, iItemLevel+1);
@@ -276,6 +288,70 @@ public TopMenu_HandleUpgrades(Handle:topmenu, TopMenuAction:action, TopMenuObjec
 			DisplayTopMenu(g_hRPGTopMenu, param, TopMenuPosition_LastCategory);
 		}
 	}
+}
+
+// List unmet requirements for the upgrade
+DisplayUpgradeRestrictions(client, upgrade[InternalUpgradeInfo])
+{
+	new Handle:hMenu = CreateMenu(Menu_HandleRestrictions, MENU_ACTIONS_DEFAULT);
+	SetMenuExitBackButton(hMenu, true);
+
+	new String:sTranslatedName[MAX_UPGRADE_NAME_LENGTH];
+	GetUpgradeTranslatedName(client, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
+	SetMenuTitle(hMenu, "%T\n-----\nOpen requirements for %s\n\n", "Credits", client, GetClientCredits(client), sTranslatedName);
+	
+	new String:sBuffer[128];
+	new iLevel = GetClientLevel(client);
+	
+	// See if this upgrade requires some minimum rpg level and see if the player is high enough yet.
+	new iMinLevel = GetMinimumRPGLevelForUpgrade(upgrade);
+	if (iMinLevel > 0 && iLevel < iMinLevel)
+	{
+		Format(sBuffer, sizeof(sBuffer), "Minimum RPG level: %d (currently %d)", iMinLevel, iLevel);
+		AddMenuItem(hMenu, "", sBuffer, ITEMDRAW_DISABLED);
+	}
+	
+	// List all required upgrades
+	new Handle:hRequiredUpgrades = GetRequiredUpgradesForClient(client, upgrade, GetClientPurchasedUpgradeLevel(client, upgrade[UPGR_index])+1);
+	if (hRequiredUpgrades != INVALID_HANDLE)
+	{
+		new Handle:hSnapshot = CreateTrieSnapshot(hRequiredUpgrades);
+		new iSize = TrieSnapshotLength(hSnapshot);
+		new String:sShortname[MAX_UPGRADE_SHORTNAME_LENGTH], iOtherMinLevel;
+		new otherUpgrade[InternalUpgradeInfo];
+		for (new i=0; i<iSize; i++)
+		{
+			GetTrieSnapshotKey(hSnapshot, i, sShortname, sizeof(sShortname));
+			GetTrieValue(hRequiredUpgrades, sShortname, iOtherMinLevel);
+			GetUpgradeByShortname(sShortname, otherUpgrade);
+			GetUpgradeTranslatedName(client, otherUpgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
+			
+			Format(sBuffer, sizeof(sBuffer), "%s level: %d (currently %d)", sTranslatedName, iOtherMinLevel, GetClientPurchasedUpgradeLevel(client, otherUpgrade[UPGR_index]));
+			AddMenuItem(hMenu, "", sBuffer, ITEMDRAW_DISABLED);
+		}
+		CloseHandle(hSnapshot);
+		CloseHandle(hRequiredUpgrades);
+	}
+	
+	DisplayMenu(hMenu, client, MENU_TIME_FOREVER);
+}
+
+public Menu_HandleRestrictions(Handle:menu, MenuAction:action, param1, param2)
+{
+	if(action == MenuAction_Select)
+	{
+		DisplayTopMenu(g_hRPGTopMenu, param1, TopMenuPosition_LastCategory);
+	}
+	else if(action == MenuAction_Cancel)
+	{
+		if(param2 == MenuCancel_ExitBack)
+			DisplayTopMenu(g_hRPGTopMenu, param1, TopMenuPosition_LastCategory);
+	}
+	else if(action == MenuAction_End)
+	{
+		CloseHandle(menu);
+	}
+	return 0;
 }
 
 public TopMenu_HandleSell(Handle:topmenu, TopMenuAction:action, TopMenuObject:object_id, param, String:buffer[], maxlength)
