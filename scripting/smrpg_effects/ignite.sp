@@ -148,7 +148,8 @@ public Native_IgniteClient(Handle:plugin, numParams)
 	}
 	
 	// Ignite the player.
-	g_iAttacker[client] = GetClientSerial(attacker);
+	if (attacker != -1)
+		g_iAttacker[client] = GetClientSerial(attacker);
 	g_hIgnitePlugin[client] = plugin;
 	// TODO: Remember the "creator" of the entityflame effects entity which does the damage 
 	// to catch the "splash" fire damage as well on other players than the victim. (just DMG_BURN without the DMG_DIRECT)
