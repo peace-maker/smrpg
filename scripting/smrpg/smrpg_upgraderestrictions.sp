@@ -1,8 +1,13 @@
 // Top level structure for an upgrade section.
 enum UpgradeRestriction {
-	UR_minimumRPGLevel, // holds the "min_rpg_level" info
+	Handle:UR_minimumRPGLevels, // Array of MinimumRPGLevel in "rpg_level" section. requirements on the minimum rpg level for different upgrade levels.
 	Handle:UR_upgrades // Array of UpgradeRequirementLevel's in "upgrades" section. requirements on the minimum levels of other upgrades
-};
+}
+
+enum MinimumRPGLevel {
+	MRL_upgradeLevel, // upgrade level the rpg level is required for
+	MRL_minRPGLevel   // rpg level the player needs to have to buy the upgrade level.
+}
 
 enum UpgradeRequirementLevel {
 	URL_level, // upgrade level which requires the below list of minimum levels of other upgrades
@@ -22,6 +27,8 @@ enum RestrictionConfigSection {
 	RSection_None = 0,
 	RSection_Root,
 	RSection_Upgrade,
+	RSection_RPGLevels,
+	RSection_RPGLevelRule,
 	RSection_UpgradeAccess,
 	RSection_UpgradeDependencies,
 	RSection_UpgradeRequirementLevel
@@ -30,6 +37,7 @@ enum RestrictionConfigSection {
 new RestrictionConfigSection:g_iConfigSection;
 new g_iIgnoreLevel;
 new String:g_sCurrentUpgrade[MAX_UPGRADE_SHORTNAME_LENGTH];
+new g_TempMinRPGLevel[MinimumRPGLevel];
 new g_iRequirementLevel = -1; // For error messages
 new Handle:g_hRequirementUpgradeList;
 
@@ -44,12 +52,14 @@ InitUpgradeRestrictions()
  
 bool:IsUpgradeRestricted(client, upgrade[InternalUpgradeInfo])
 {
+	new iNewLevel = GetClientPurchasedUpgradeLevel(client, upgrade[UPGR_index])+1;
+	
 	// Player isn't on the right level yet.
-	if (GetClientLevel(client) < GetMinimumRPGLevelForUpgrade(upgrade))
+	if (GetClientLevel(client) < GetMinimumRPGLevelForUpgrade(upgrade, iNewLevel))
 		return true;
 	
 	// Check for other required upgrades for this upgrade
-	new Handle:hRequiredUpgrades = GetRequiredUpgradesForClient(client, upgrade, GetClientPurchasedUpgradeLevel(client, upgrade[UPGR_index])+1);
+	new Handle:hRequiredUpgrades = GetRequiredUpgradesForClient(client, upgrade, iNewLevel);
 	// No other upgrades required or all requirements met.
 	if (!hRequiredUpgrades)
 		return false;
@@ -59,13 +69,30 @@ bool:IsUpgradeRestricted(client, upgrade[InternalUpgradeInfo])
 }
  
 // returns 0 if there is no minimum configured
-GetMinimumRPGLevelForUpgrade(upgrade[InternalUpgradeInfo])
+GetMinimumRPGLevelForUpgrade(upgrade[InternalUpgradeInfo], iUpgradeLevel)
 {
 	new iRestriction[UpgradeRestriction];
 	if (!GetTrieArray(g_hUpgradeRestrictions, upgrade[UPGR_shortName], iRestriction[0], _:UpgradeRestriction))
 		return 0;
 	
-	return iRestriction[UR_minimumRPGLevel];
+	if (!iRestriction[UR_minimumRPGLevels])
+		return 0;
+	
+	// Find highest setting below or equal to iUpgradeLevel.
+	new iSize = GetArraySize(iRestriction[UR_minimumRPGLevels]);
+	new iMinRPGLevel[MinimumRPGLevel], iRequiredRPGLevel;
+	for (new i=0; i<iSize; i++)
+	{
+		GetArrayArray(iRestriction[UR_minimumRPGLevels], i, iMinRPGLevel[0], _:MinimumRPGLevel);
+		
+		// The array is sorted ascending by upgrade level. We went too far.
+		if (iMinRPGLevel[MRL_upgradeLevel] > iUpgradeLevel)
+			break;
+		
+		iRequiredRPGLevel = iMinRPGLevel[MRL_minRPGLevel];
+	}
+	
+	return iRequiredRPGLevel;
 }
 
 Handle:GetRequiredUpgradesForClient(client, upgrade[InternalUpgradeInfo], iUpgradeLevel)
@@ -165,7 +192,12 @@ bool:ResetRestrictionConfig()
 				CloseHandle(iRequirementLevel[URL_requirements]);
 			}
 			CloseHandle(iRestriction[UR_upgrades]);
-		}		
+		}
+		
+		if (iRestriction[UR_minimumRPGLevels] != INVALID_HANDLE)
+		{
+			CloseHandle(iRestriction[UR_minimumRPGLevels]);
+		}
 	}
 	CloseHandle(hSnapshot);
 	ClearTrie(g_hUpgradeRestrictions);
@@ -174,6 +206,8 @@ bool:ResetRestrictionConfig()
 	g_iConfigSection = RSection_None;
 	g_iIgnoreLevel = 0;
 	g_sCurrentUpgrade[0] = '\0';
+	g_TempMinRPGLevel[MRL_minRPGLevel] = -1;
+	g_TempMinRPGLevel[MRL_upgradeLevel] = -1;
 	g_iRequirementLevel = -1;
 	g_hRequirementUpgradeList = INVALID_HANDLE;
 }
@@ -236,6 +270,22 @@ public SMCResult:URConfig_NewSection(Handle:smc, const String:name[], bool:opt_q
 	{
 		if (StrEqual(name, "access", false))
 			g_iConfigSection = RSection_UpgradeAccess;
+		else if (StrEqual(name, "rpg_level", false))
+		{
+			g_iConfigSection = RSection_RPGLevels;
+			
+			new iRestriction[UpgradeRestriction];
+			GetTrieArray(g_hUpgradeRestrictions, g_sCurrentUpgrade, iRestriction[0], _:UpgradeRestriction);
+			
+			// Allow multiple "rpg_level" sections for flexibility.
+			// We'll try to catch interferences later.
+			if (!iRestriction[UR_minimumRPGLevels])
+			{
+				// Use an adt_array to sort it ascending after parsing.
+				iRestriction[UR_minimumRPGLevels] = CreateArray(_:MinimumRPGLevel);
+				SetTrieArray(g_hUpgradeRestrictions, g_sCurrentUpgrade, iRestriction[0], _:UpgradeRestriction);
+			}
+		}
 		else if (StrEqual(name, "upgrades", false))
 		{
 			g_iConfigSection = RSection_UpgradeDependencies;
@@ -254,6 +304,10 @@ public SMCResult:URConfig_NewSection(Handle:smc, const String:name[], bool:opt_q
 		}
 		else
 			g_iIgnoreLevel++;
+	}
+	else if (g_iConfigSection == RSection_RPGLevels)
+	{
+		g_iConfigSection = RSection_RPGLevelRule;
 	}
 	else if (g_iConfigSection == RSection_UpgradeDependencies)
 	{
@@ -301,27 +355,59 @@ public SMCResult:URConfig_KeyValue(Handle:smc, const String:key[], const String:
 	if (g_iIgnoreLevel > 0)
 		return SMCParse_Continue;
 	
-	if (g_iConfigSection == RSection_Upgrade)
+	if (g_iConfigSection == RSection_RPGLevelRule)
 	{
-		if (StrEqual(key, "min_rpg_level", false))
+		// The upgrade level of the current upgrade to restrict to a minimal rpg level.
+		if (StrEqual(key, "upgrade_level", false))
 		{
+			// We've been here before :/
+			if (g_TempMinRPGLevel[MRL_upgradeLevel] != -1)
+			{
+				LogError("Multiple \"upgrade_level\" keys in same section for upgrade \"%s\".", g_sCurrentUpgrade);
+				return SMCParse_HaltFail;
+			}
+			
+			// Some sanity checks
 			new iLevel;
 			if (StringToIntEx(value, iLevel) == 0)
 			{
-				LogError("Upgrade \"%s\"'s min_rpg_level is not an integer.", g_sCurrentUpgrade);
+				LogError("Upgrade \"%s\"'s upgrade_level is not an integer.", g_sCurrentUpgrade);
+				return SMCParse_HaltFail;
+			}
+			
+			if (iLevel < 1)
+			{
+				LogError("Upgrade \"%s\"'s upgrade_level has to be at least 1.", g_sCurrentUpgrade);
+				return SMCParse_HaltFail;
+			}
+			
+			g_TempMinRPGLevel[MRL_upgradeLevel] = iLevel;
+		}
+		// The required minimum rpg level for an upgrade level.
+		else if (StrEqual(key, "rpg_level", false))
+		{
+			// We've been here before :/
+			if (g_TempMinRPGLevel[MRL_minRPGLevel] != -1)
+			{
+				LogError("Multiple \"rpg_level\" keys in same section for upgrade \"%s\".", g_sCurrentUpgrade);
+				return SMCParse_HaltFail;
+			}
+			
+			// Some sanity checks
+			new iLevel;
+			if (StringToIntEx(value, iLevel) == 0)
+			{
+				LogError("Upgrade \"%s\"'s rpg_level is not an integer.", g_sCurrentUpgrade);
 				return SMCParse_HaltFail;
 			}
 			
 			if (iLevel < 0)
 			{
-				LogError("Upgrade \"%s\"'s min_rpg_level can't be negative.", g_sCurrentUpgrade);
+				LogError("Upgrade \"%s\"'s rpg_level can't be negative.", g_sCurrentUpgrade);
 				return SMCParse_HaltFail;
 			}
 			
-			new iRestriction[UpgradeRestriction];
-			GetTrieArray(g_hUpgradeRestrictions, g_sCurrentUpgrade, iRestriction[0], _:UpgradeRestriction);
-			iRestriction[UR_minimumRPGLevel] = iLevel;
-			SetTrieArray(g_hUpgradeRestrictions, g_sCurrentUpgrade, iRestriction[0], _:UpgradeRestriction);
+			g_TempMinRPGLevel[MRL_minRPGLevel] = iLevel;
 		}
 	}
 	else if (g_iConfigSection == RSection_UpgradeRequirementLevel)
@@ -369,12 +455,13 @@ public SMCResult:URConfig_EndSection(Handle:smc)
 	{
 		g_iConfigSection = RSection_Root;
 		
-		// Done with the upgrade. Sort the upgrade requirements by ascending level.
+		// Done with the upgrade.
 		new iRestriction[UpgradeRestriction];
 		GetTrieArray(g_hUpgradeRestrictions, g_sCurrentUpgrade, iRestriction[0], _:UpgradeRestriction);
 		
 		if (iRestriction[UR_upgrades])
 		{
+			// Sort the upgrade requirements by ascending level.
 			SortADTArrayCustom(iRestriction[UR_upgrades], Sort_UpgradeRequirements);
 			
 			// Check for duplicate level sections
@@ -397,11 +484,70 @@ public SMCResult:URConfig_EndSection(Handle:smc)
 			// "upgrades" { "2" { "health" "4" } "4" { "health" "2" } }
 		}
 		
+		if (iRestriction[UR_minimumRPGLevels])
+		{
+			// Sort the rpg level requirements by ascending level.
+			SortADTArrayCustom(iRestriction[UR_minimumRPGLevels], Sort_RPGLevelRequirements);
+			
+			// Check for duplicate level sections and assert the rpg level is linearly ascending.
+			new iLastLevel = -1, iLastMinRPGLevel = -1;
+			new iMinRPGLevel[MinimumRPGLevel];
+			new iSize = GetArraySize(iRestriction[UR_minimumRPGLevels]);
+			for (new i=0; i<iSize; i++)
+			{
+				GetArrayArray(iRestriction[UR_minimumRPGLevels], i, iMinRPGLevel[0], _:MinimumRPGLevel);
+				
+				// Can't have multiple sections for the same upgrade level.
+				if (iLastLevel != -1 && iLastLevel == iMinRPGLevel[MRL_upgradeLevel])
+				{
+					LogError("There are multiple sections for upgrade level %d in the \"rpg_level\" sections of upgrade \"%s\". Please merge them.", iLastLevel, g_sCurrentUpgrade);
+					return SMCParse_HaltFail;
+				}
+				iLastLevel = iMinRPGLevel[MRL_upgradeLevel];
+				
+				// Minimum rpg level for upgrade level 1 has to be smaller than minimum rpg level for upgrade level 2.
+				if (iLastMinRPGLevel > iMinRPGLevel[MRL_minRPGLevel])
+				{
+					LogError("The required rpg level for upgrade \"%s\" level %d can't be set to %d, because the previous section already set the minimum rpg level to %d.", g_sCurrentUpgrade, iMinRPGLevel[MRL_upgradeLevel], iMinRPGLevel[MRL_minRPGLevel], iLastMinRPGLevel);
+					return SMCParse_HaltFail;
+				}
+				iLastMinRPGLevel = iMinRPGLevel[MRL_minRPGLevel];
+			}
+		}
+		
 		g_sCurrentUpgrade[0] = '\0';
 	}
-	else if (g_iConfigSection == RSection_UpgradeAccess || g_iConfigSection == RSection_UpgradeDependencies)
+	else if (g_iConfigSection == RSection_RPGLevels 
+			|| g_iConfigSection == RSection_UpgradeAccess 
+			|| g_iConfigSection == RSection_UpgradeDependencies)
 	{
 		g_iConfigSection = RSection_Upgrade;
+	}
+	else if (g_iConfigSection == RSection_RPGLevelRule)
+	{
+		g_iConfigSection = RSection_RPGLevels;
+		
+		// Both "upgrade_level" and "rpg_level" have to be set.
+		if (g_TempMinRPGLevel[MRL_upgradeLevel] == -1)
+		{
+			LogError("Missing \"upgrade_level\" setting in \"rpg_level\" section of upgrade \"%s\".", g_sCurrentUpgrade);
+			return SMCParse_HaltFail;
+		}
+		
+		if (g_TempMinRPGLevel[MRL_minRPGLevel] == -1)
+		{
+			LogError("Missing \"rpg_level\" setting in \"rpg_level\" section of upgrade \"%s\".", g_sCurrentUpgrade);
+			return SMCParse_HaltFail;
+		}
+		
+		// Save this section
+		new iRestriction[UpgradeRestriction];
+		GetTrieArray(g_hUpgradeRestrictions, g_sCurrentUpgrade, iRestriction[0], _:UpgradeRestriction);
+		PushArrayArray(iRestriction[UR_minimumRPGLevels], g_TempMinRPGLevel[0], _:MinimumRPGLevel);
+		
+		// Reset temp data for another section.
+		g_TempMinRPGLevel[MRL_minRPGLevel] = -1;
+		g_TempMinRPGLevel[MRL_upgradeLevel] = -1;
 	}
 	else if (g_iConfigSection == RSection_UpgradeRequirementLevel)
 	{
@@ -440,3 +586,12 @@ public Sort_UpgradeRequirements(index1, index2, Handle:array, Handle:hndl)
 	return iRequirementLevel1[URL_level] - iRequirementLevel2[URL_level];
 }
 
+// Sort by upgrade level ascending
+public Sort_RPGLevelRequirements(index1, index2, Handle:array, Handle:hndl)
+{
+	new iMinRPGLevel1[MinimumRPGLevel], iMinRPGLevel2[MinimumRPGLevel];
+	GetArrayArray(array, index1, iMinRPGLevel1[0], _:UpgradeRequirementLevel);
+	GetArrayArray(array, index2, iMinRPGLevel2[0], _:UpgradeRequirementLevel);
+	
+	return iMinRPGLevel1[MRL_upgradeLevel] - iMinRPGLevel2[MRL_upgradeLevel];
+}

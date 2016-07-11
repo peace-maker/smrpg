@@ -302,9 +302,10 @@ DisplayUpgradeRestrictions(client, upgrade[InternalUpgradeInfo])
 	
 	new String:sBuffer[128];
 	new iLevel = GetClientLevel(client);
+	new iNewUpgradeLevel = GetClientPurchasedUpgradeLevel(client, upgrade[UPGR_index])+1;
 	
 	// See if this upgrade requires some minimum rpg level and see if the player is high enough yet.
-	new iMinLevel = GetMinimumRPGLevelForUpgrade(upgrade);
+	new iMinLevel = GetMinimumRPGLevelForUpgrade(upgrade, iNewUpgradeLevel);
 	if (iMinLevel > 0 && iLevel < iMinLevel)
 	{
 		Format(sBuffer, sizeof(sBuffer), "Minimum RPG level: %d (currently %d)", iMinLevel, iLevel);
@@ -312,7 +313,7 @@ DisplayUpgradeRestrictions(client, upgrade[InternalUpgradeInfo])
 	}
 	
 	// List all required upgrades
-	new Handle:hRequiredUpgrades = GetRequiredUpgradesForClient(client, upgrade, GetClientPurchasedUpgradeLevel(client, upgrade[UPGR_index])+1);
+	new Handle:hRequiredUpgrades = GetRequiredUpgradesForClient(client, upgrade, iNewUpgradeLevel);
 	if (hRequiredUpgrades != INVALID_HANDLE)
 	{
 		new Handle:hSnapshot = CreateTrieSnapshot(hRequiredUpgrades);
