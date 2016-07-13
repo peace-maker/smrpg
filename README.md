@@ -89,6 +89,9 @@ See the available upgrade plugins for examples. You can use the [example upgrade
 * Stealth - Renders yourself more and more invisible.
 * Vampire - Steal HP from players when damaging them.
 
+# RPG Top 10 on your website
+There is an [example PHP script](https://github.com/peace-maker/smrpg/blob/master/helper_scripts/webtop10_example.php) to list the top 10 rpg players including their stats and selected levels. You might want to merge it into your website.
+
 # Credits
 * SeLfkiLL - author of the original MM:S [CSS:RPG](http://forums.alliedmods.net/showthread.php?t=51039) plugin.
 * arsirc - author of [THC:RPG](https://forums.alliedmods.net/showthread.php?t=123596). Provided the Damage+, Speed+ and Gravity- upgrade ideas and the team lock option.
