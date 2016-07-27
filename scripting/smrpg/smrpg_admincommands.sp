@@ -4,23 +4,23 @@
 RegisterAdminCommands()
 {
 	RegAdminCmd("sm_rpgadmin", Cmd_OpenRPGAdminMenu, ADMFLAG_CONFIG, "Opens the SM:RPG admin menu.", "smrpg");
-	RegAdminCmd("smrpg_player", Cmd_PlayerInfo, ADMFLAG_ROOT, "Get info about a certain player. Usage smrpg_player <player name | userid | steamid>", "smrpg");
-	RegAdminCmd("smrpg_resetstats", Cmd_ResetStats, ADMFLAG_ROOT, "Reset a player's Level, Credits, Experience, and Upgrades (this cannot be undone!). Usage smrpg_resetstats <player name | userid | steamid>", "smrpg");
-	RegAdminCmd("smrpg_resetexp", Cmd_ResetExp, ADMFLAG_ROOT, "Reset a player's Experience. Usage smrpg_resetexp <player name | userid | steamid>", "smrpg");
-	RegAdminCmd("smrpg_setlvl", Cmd_SetLvl, ADMFLAG_ROOT, "Set a player's Level. Usage smrpg_setlvl <player name | userid | steamid> <new level>", "smrpg");
-	RegAdminCmd("smrpg_addlvl", Cmd_AddLvl, ADMFLAG_ROOT, "Add Level(s) to a player's current Level. Usage smrpg_addlvl <player name | userid | steamid> <levels>", "smrpg");
-	RegAdminCmd("smrpg_setexp", Cmd_SetExp, ADMFLAG_ROOT, "Set a player's Experience. Usage smrpg_setexp <player name | userid | steamid> <new exp>", "smrpg");
-	RegAdminCmd("smrpg_addexp", Cmd_AddExp, ADMFLAG_ROOT, "Give a player Experience. Usage smrpg_addexp <player name | userid | steamid> <exp>", "smrpg");
-	RegAdminCmd("smrpg_setcredits", Cmd_SetCredits, ADMFLAG_ROOT, "Set a player's Credits. Usage smrpg_setcredits <player name | userid | steamid> <new credits>", "smrpg");
-	RegAdminCmd("smrpg_addcredits", Cmd_AddCredits, ADMFLAG_ROOT, "Add to player's Credits. Usage smrpg_addcredits <player name | userid | steamid> <credits>", "smrpg");
+	RegAdminCmd("smrpg_player", Cmd_PlayerInfo, ADMFLAG_ROOT, "Get info about a certain player. Usage smrpg_player <player name | #userid | #steamid>", "smrpg");
+	RegAdminCmd("smrpg_resetstats", Cmd_ResetStats, ADMFLAG_ROOT, "Reset a player's Level, Credits, Experience, and Upgrades (this cannot be undone!). Usage smrpg_resetstats <player name | #userid | #steamid>", "smrpg");
+	RegAdminCmd("smrpg_resetexp", Cmd_ResetExp, ADMFLAG_ROOT, "Reset a player's Experience. Usage smrpg_resetexp <player name | #userid | #steamid>", "smrpg");
+	RegAdminCmd("smrpg_setlvl", Cmd_SetLvl, ADMFLAG_ROOT, "Set a player's Level. Usage smrpg_setlvl <player name | #userid | #steamid> <new level>", "smrpg");
+	RegAdminCmd("smrpg_addlvl", Cmd_AddLvl, ADMFLAG_ROOT, "Add Level(s) to a player's current Level. Usage smrpg_addlvl <player name | #userid | #steamid> <levels>", "smrpg");
+	RegAdminCmd("smrpg_setexp", Cmd_SetExp, ADMFLAG_ROOT, "Set a player's Experience. Usage smrpg_setexp <player name | #userid | #steamid> <new exp>", "smrpg");
+	RegAdminCmd("smrpg_addexp", Cmd_AddExp, ADMFLAG_ROOT, "Give a player Experience. Usage smrpg_addexp <player name | #userid | #steamid> <exp>", "smrpg");
+	RegAdminCmd("smrpg_setcredits", Cmd_SetCredits, ADMFLAG_ROOT, "Set a player's Credits. Usage smrpg_setcredits <player name | #userid | #steamid> <new credits>", "smrpg");
+	RegAdminCmd("smrpg_addcredits", Cmd_AddCredits, ADMFLAG_ROOT, "Add to player's Credits. Usage smrpg_addcredits <player name | #userid | #steamid> <credits>", "smrpg");
 	RegAdminCmd("smrpg_listupgrades", Cmd_ListUpgrades, ADMFLAG_ROOT, "List all available upgrades.", "smrpg");
-	RegAdminCmd("smrpg_setupgradelvl", Cmd_SetUpgradeLvl, ADMFLAG_ROOT, "Set a player's Upgrade Level. Usage smrpg_setupgradelvl <player name | userid | steamid> <upgrade> <level|max>", "smrpg");
-	RegAdminCmd("smrpg_giveupgrade", Cmd_GiveUpgrade, ADMFLAG_ROOT, "Give a player an Upgrade (increment). Usage smrpg_giveupgrade <player name | userid | steamid> <upgrade>", "smrpg");
-	RegAdminCmd("smrpg_giveall", Cmd_GiveAll, ADMFLAG_ROOT, "Give a player all the Upgrades available. Usage smrpg_giveall <player name | userid | steamid>", "smrpg");
-	RegAdminCmd("smrpg_takeupgrade", Cmd_TakeUpgrade, ADMFLAG_ROOT, "Take an Upgrade from a player (decrement). Usage smrpg_takeupgrade <player name | userid | steamid> <upgrade>", "smrpg");
-	RegAdminCmd("smrpg_buyupgrade", Cmd_BuyUpgrade, ADMFLAG_ROOT, "Force a player to buy an Upgrade. Usage smrpg_buyupgrade <player name | userid | steamid> <upgrade>", "smrpg");
-	RegAdminCmd("smrpg_sellupgrade", Cmd_SellUpgrade, ADMFLAG_ROOT, "Force a player to sell an Upgrade (full refund). Usage smrpg_sellupgrade <player name | userid | steamid> <upgrade>", "smrpg");
-	RegAdminCmd("smrpg_sellall", Cmd_SellAll, ADMFLAG_ROOT, "Force a player to sell all their Upgrades (full refund). Usage smrpg_sellall <player name | userid | steamid>", "smrpg");
+	RegAdminCmd("smrpg_setupgradelvl", Cmd_SetUpgradeLvl, ADMFLAG_ROOT, "Set a player's Upgrade Level. Usage smrpg_setupgradelvl <player name | #userid | #steamid> <upgrade> <level|max>", "smrpg");
+	RegAdminCmd("smrpg_giveupgrade", Cmd_GiveUpgrade, ADMFLAG_ROOT, "Give a player an Upgrade (increment). Usage smrpg_giveupgrade <player name | #userid | #steamid> <upgrade>", "smrpg");
+	RegAdminCmd("smrpg_giveall", Cmd_GiveAll, ADMFLAG_ROOT, "Give a player all the Upgrades available. Usage smrpg_giveall <player name | #userid | #steamid>", "smrpg");
+	RegAdminCmd("smrpg_takeupgrade", Cmd_TakeUpgrade, ADMFLAG_ROOT, "Take an Upgrade from a player (decrement). Usage smrpg_takeupgrade <player name | #userid | #steamid> <upgrade>", "smrpg");
+	RegAdminCmd("smrpg_buyupgrade", Cmd_BuyUpgrade, ADMFLAG_ROOT, "Force a player to buy an Upgrade. Usage smrpg_buyupgrade <player name | #userid | #steamid> <upgrade>", "smrpg");
+	RegAdminCmd("smrpg_sellupgrade", Cmd_SellUpgrade, ADMFLAG_ROOT, "Force a player to sell an Upgrade (full refund). Usage smrpg_sellupgrade <player name | #userid | #steamid> <upgrade>", "smrpg");
+	RegAdminCmd("smrpg_sellall", Cmd_SellAll, ADMFLAG_ROOT, "Force a player to sell all their Upgrades (full refund). Usage smrpg_sellall <player name | #userid | #steamid>", "smrpg");
 	
 	RegAdminCmd("smrpg_reload_weaponexperience", Cmd_ReloadWeaponExperience, ADMFLAG_CONFIG, "Reload the weapon_experience.cfg config for individual experience rates per weapon.", "smrpg");
 	
@@ -204,7 +204,7 @@ public Action:Cmd_SetLvl(client, args)
 {
 	if(args < 2)
 	{
-		ReplyToCommand(client, "SM:RPG: Usage: smrpg_setlvl <player name | #userid | steamid> <new level>");
+		ReplyToCommand(client, "SM:RPG: Usage: smrpg_setlvl <player name | #userid | #steamid> <new level>");
 		return Plugin_Handled;
 	}
 	
@@ -300,7 +300,7 @@ public Action:Cmd_AddLvl(client, args)
 {
 	if(args < 2)
 	{
-		ReplyToCommand(client, "SM:RPG: Usage: smrpg_addlvl <player name | #userid | steamid> <levels>");
+		ReplyToCommand(client, "SM:RPG: Usage: smrpg_addlvl <player name | #userid | #steamid> <levels>");
 		return Plugin_Handled;
 	}
 	
@@ -381,7 +381,7 @@ public Action:Cmd_SetExp(client, args)
 {
 	if(args < 2)
 	{
-		ReplyToCommand(client, "SM:RPG: Usage: smrpg_setexp <player name | #userid | steamid> <new exp>");
+		ReplyToCommand(client, "SM:RPG: Usage: smrpg_setexp <player name | #userid | #steamid> <new exp>");
 		return Plugin_Handled;
 	}
 	
@@ -450,7 +450,7 @@ public Action:Cmd_AddExp(client, args)
 {
 	if(args < 2)
 	{
-		ReplyToCommand(client, "SM:RPG: Usage: smrpg_addexp <player name | #userid | steamid> <exp>");
+		ReplyToCommand(client, "SM:RPG: Usage: smrpg_addexp <player name | #userid | #steamid> <exp>");
 		return Plugin_Handled;
 	}
 	
@@ -513,7 +513,7 @@ public Action:Cmd_SetCredits(client, args)
 {
 	if(args < 2)
 	{
-		ReplyToCommand(client, "SM:RPG: Usage: smrpg_setcredits <player name | #userid | steamid> <new credits>");
+		ReplyToCommand(client, "SM:RPG: Usage: smrpg_setcredits <player name | #userid | #steamid> <new credits>");
 		return Plugin_Handled;
 	}
 	
@@ -574,7 +574,7 @@ public Action:Cmd_AddCredits(client, args)
 {
 	if(args < 2)
 	{
-		ReplyToCommand(client, "SM:RPG: Usage: smrpg_addcredits <player name | #userid | steamid> <credits>");
+		ReplyToCommand(client, "SM:RPG: Usage: smrpg_addcredits <player name | #userid | #steamid> <credits>");
 		return Plugin_Handled;
 	}
 	
@@ -664,7 +664,7 @@ public Action:Cmd_SetUpgradeLvl(client, args)
 {
 	if(args < 3)
 	{
-		ReplyToCommand(client, "SM:RPG: Usage: smrpg_setupgradelvl <player name | #userid | steamid> <upgrade shortname> <level|max>");
+		ReplyToCommand(client, "SM:RPG: Usage: smrpg_setupgradelvl <player name | #userid | #steamid> <upgrade shortname> <level|max>");
 		return Plugin_Handled;
 	}
 	
@@ -762,7 +762,7 @@ public Action:Cmd_GiveUpgrade(client, args)
 {
 	if(args < 2)
 	{
-		ReplyToCommand(client, "SM:RPG: Usage: smrpg_giveupgrade <player name | #userid | steamid> <upgrade shortname>");
+		ReplyToCommand(client, "SM:RPG: Usage: smrpg_giveupgrade <player name | #userid | #steamid> <upgrade shortname>");
 		return Plugin_Handled;
 	}
 	
@@ -855,7 +855,7 @@ public Action:Cmd_GiveAll(client, args)
 {
 	if(args < 1)
 	{
-		ReplyToCommand(client, "SM:RPG: Usage: smrpg_giveall <player name | #userid | steamid>");
+		ReplyToCommand(client, "SM:RPG: Usage: smrpg_giveall <player name | #userid | #steamid>");
 		return Plugin_Handled;
 	}
 	
@@ -915,7 +915,7 @@ public Action:Cmd_TakeUpgrade(client, args)
 {
 	if(args < 2)
 	{
-		ReplyToCommand(client, "SM:RPG: Usage: smrpg_takeupgrade <player name | #userid | steamid> <upgrade shortname>");
+		ReplyToCommand(client, "SM:RPG: Usage: smrpg_takeupgrade <player name | #userid | #steamid> <upgrade shortname>");
 		return Plugin_Handled;
 	}
 	
@@ -1009,7 +1009,7 @@ public Action:Cmd_BuyUpgrade(client, args)
 {
 	if(args < 2)
 	{
-		ReplyToCommand(client, "SM:RPG: Usage: smrpg_buyupgrade <player name | #userid | steamid> <upgrade shortname>");
+		ReplyToCommand(client, "SM:RPG: Usage: smrpg_buyupgrade <player name | #userid | #steamid> <upgrade shortname>");
 		return Plugin_Handled;
 	}
 	
@@ -1125,7 +1125,7 @@ public Action:Cmd_SellUpgrade(client, args)
 {
 	if(args < 2)
 	{
-		ReplyToCommand(client, "SM:RPG: Usage: smrpg_sellupgrade <player name | #userid | steamid> <upgrade shortname>");
+		ReplyToCommand(client, "SM:RPG: Usage: smrpg_sellupgrade <player name | #userid | #steamid> <upgrade shortname>");
 		return Plugin_Handled;
 	}
 	
@@ -1223,7 +1223,7 @@ public Action:Cmd_SellAll(client, args)
 {
 	if(args < 1)
 	{
-		ReplyToCommand(client, "SM:RPG: Usage: smrpg_sellall <player name | #userid | steamid>");
+		ReplyToCommand(client, "SM:RPG: Usage: smrpg_sellall <player name | #userid | #steamid>");
 		return Plugin_Handled;
 	}
 	
