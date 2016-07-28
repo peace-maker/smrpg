@@ -1,7 +1,8 @@
 // Top level structure for an upgrade section.
-enum UpgradeRestriction {
-	Handle:UR_minimumRPGLevels, // Array of MinimumRPGLevel in "rpg_level" section. requirements on the minimum rpg level for different upgrade levels.
-	Handle:UR_upgrades // Array of UpgradeRequirementLevel's in "upgrades" section. requirements on the minimum levels of other upgrades
+enum UpgradeRestrictionConfig {
+	Handle:URC_minimumRPGLevels, // Array of MinimumRPGLevel in "rpg_level" section. requirements on the minimum rpg level for different upgrade levels.
+	Handle:URC_upgradesRequirements, // Array of UpgradeRequirementLevel's in "upgrade_requirements" section. requirements on the minimum levels of other upgrades
+	Handle:URC_upgradesRestrictions, // Array of UpgradeRestrictionRule's in "upgrade_restrictions" section. conditions of maxmimal level of other upgrades/rpg level for this upgrade to appear.
 }
 
 enum MinimumRPGLevel {
@@ -14,10 +15,16 @@ enum UpgradeRequirementLevel {
 	Handle:URL_requirements // array of UpgradeRequirement's
 }
 
-// Single key => value pair in "upgrades" section of an upgrade
+// Single key => value pair in "upgrades_requirements" section of an upgrade
 enum UpgradeRequirement {
 	UR_minLevel,
 	String:UR_shortName[MAX_UPGRADE_SHORTNAME_LENGTH]
+}
+
+// Structure holding the "upgrade_restrictions" section
+enum UpgradeRestrictionRule {
+	URR_maxLevel, // maximal rpg level for this upgrade to be usable
+	Handle:URR_upgradeRestrictions // Trie of "upgrade shortname" => "maximal level" pairs
 }
 
 new Handle:g_hUpgradeRestrictions;
@@ -30,8 +37,10 @@ enum RestrictionConfigSection {
 	RSection_RPGLevels,
 	RSection_RPGLevelRule,
 	RSection_UpgradeAccess,
-	RSection_UpgradeDependencies,
-	RSection_UpgradeRequirementLevel
+	RSection_UpgradeRequirements,
+	RSection_UpgradeRequirementLevel,
+	RSection_UpgradeRestrictions,
+	RSection_UpgradeRestrictionRule
 };
 
 new RestrictionConfigSection:g_iConfigSection;
@@ -40,6 +49,7 @@ new String:g_sCurrentUpgrade[MAX_UPGRADE_SHORTNAME_LENGTH];
 new g_TempMinRPGLevel[MinimumRPGLevel];
 new g_iRequirementLevel = -1; // For error messages
 new Handle:g_hRequirementUpgradeList;
+new g_TempRestrictionRule[UpgradeRestrictionRule];
 
 InitUpgradeRestrictions()
 {
@@ -50,7 +60,7 @@ InitUpgradeRestrictions()
  * Helpers to get info for upgrades.
  */
  
-bool:IsUpgradeRestricted(client, upgrade[InternalUpgradeInfo])
+bool:UpgradeHasUnmetRequirements(client, upgrade[InternalUpgradeInfo])
 {
 	new iNewLevel = GetClientPurchasedUpgradeLevel(client, upgrade[UPGR_index])+1;
 	
@@ -71,19 +81,19 @@ bool:IsUpgradeRestricted(client, upgrade[InternalUpgradeInfo])
 // returns 0 if there is no minimum configured
 GetMinimumRPGLevelForUpgrade(upgrade[InternalUpgradeInfo], iUpgradeLevel)
 {
-	new iRestriction[UpgradeRestriction];
-	if (!GetTrieArray(g_hUpgradeRestrictions, upgrade[UPGR_shortName], iRestriction[0], _:UpgradeRestriction))
+	new iRestriction[UpgradeRestrictionConfig];
+	if (!GetTrieArray(g_hUpgradeRestrictions, upgrade[UPGR_shortName], iRestriction[0], _:UpgradeRestrictionConfig))
 		return 0;
 	
-	if (!iRestriction[UR_minimumRPGLevels])
+	if (!iRestriction[URC_minimumRPGLevels])
 		return 0;
 	
 	// Find highest setting below or equal to iUpgradeLevel.
-	new iSize = GetArraySize(iRestriction[UR_minimumRPGLevels]);
+	new iSize = GetArraySize(iRestriction[URC_minimumRPGLevels]);
 	new iMinRPGLevel[MinimumRPGLevel], iRequiredRPGLevel;
 	for (new i=0; i<iSize; i++)
 	{
-		GetArrayArray(iRestriction[UR_minimumRPGLevels], i, iMinRPGLevel[0], _:MinimumRPGLevel);
+		GetArrayArray(iRestriction[URC_minimumRPGLevels], i, iMinRPGLevel[0], _:MinimumRPGLevel);
 		
 		// The array is sorted ascending by upgrade level. We went too far.
 		if (iMinRPGLevel[MRL_upgradeLevel] > iUpgradeLevel)
@@ -137,23 +147,23 @@ Handle:GetRequiredUpgradesForClient(client, upgrade[InternalUpgradeInfo], iUpgra
 // Return a hashmap of "shortname" => "minlevel" required upgrades for the given level.
 Handle:GetRequiredUpgradesForLevel(upgrade[InternalUpgradeInfo], iLevel)
 {
-	new iRestriction[UpgradeRestriction];
-	if (!GetTrieArray(g_hUpgradeRestrictions, upgrade[UPGR_shortName], iRestriction[0], _:UpgradeRestriction))
+	new iRestriction[UpgradeRestrictionConfig];
+	if (!GetTrieArray(g_hUpgradeRestrictions, upgrade[UPGR_shortName], iRestriction[0], _:UpgradeRestrictionConfig))
 		return INVALID_HANDLE;
 		
-	if (!iRestriction[UR_upgrades])
+	if (!iRestriction[URC_upgradesRequirements])
 		return INVALID_HANDLE;
 	
 	// Use a trie to merge multiple requirements for the same upgrade for the same level.
 	new Handle:hRequiredUpgrades = CreateTrie();
 	
 	// Collect all the requirements up until iLevel
-	new iSize = GetArraySize(iRestriction[UR_upgrades]);
+	new iSize = GetArraySize(iRestriction[URC_upgradesRequirements]);
 	new iRequirementLevel[UpgradeRequirementLevel];
 	new iRequirement[UpgradeRequirement], iNumRequirements;
 	for (new i=0; i<iSize; i++)
 	{
-		GetArrayArray(iRestriction[UR_upgrades], i, iRequirementLevel[0], _:UpgradeRequirementLevel);
+		GetArrayArray(iRestriction[URC_upgradesRequirements], i, iRequirementLevel[0], _:UpgradeRequirementLevel);
 		if (iRequirementLevel[URL_level] > iLevel)
 			break; // The array is sorted. Don't need to look at the next ones.
 		
@@ -168,6 +178,78 @@ Handle:GetRequiredUpgradesForLevel(upgrade[InternalUpgradeInfo], iLevel)
 	return hRequiredUpgrades;
 }
 
+// Does one of the rules in the "upgrade_restrictions" section apply to this client?
+// RPG level too high and/or other upgrade levels too high?
+bool:IsUpgradeRestricted(client, upgrade[InternalUpgradeInfo])
+{
+	new iRestriction[UpgradeRestrictionConfig];
+	if (!GetTrieArray(g_hUpgradeRestrictions, upgrade[UPGR_shortName], iRestriction[0], _:UpgradeRestrictionConfig))
+		return false;
+		
+	if (!iRestriction[URC_upgradesRestrictions])
+		return false;
+
+	new iRPGLevel = GetClientLevel(client);
+	
+	new iSize = GetArraySize(iRestriction[URC_upgradesRestrictions]);
+	new iRestrictionRule[UpgradeRestrictionRule];
+	new Handle:hSnapshot, iSnapshotLength, String:sShortname[MAX_UPGRADE_SHORTNAME_LENGTH];
+	new otherUpgrade[InternalUpgradeInfo], iMaximalLevel;
+	new bool:bRuleApplies;
+	for (new i=0; i<iSize; i++)
+	{
+		GetArrayArray(iRestriction[URC_upgradesRestrictions], i, iRestrictionRule[0], _:UpgradeRestrictionRule);
+		bRuleApplies = false;
+		
+		// Player is still below the maximal level?
+		// This rule does not apply. Check the next one.
+		if (iRPGLevel < iRestrictionRule[URR_maxLevel])
+			continue;
+		
+		// Maximal rpg level is set and reached here. Check for the other conditions in the rule section now.
+		if (iRestrictionRule[URR_maxLevel] != -1)
+			bRuleApplies = true;
+		
+		// No upgrade restrictions?
+		if (iRestrictionRule[URR_upgradeRestrictions] == INVALID_HANDLE)
+		{
+			// Player's rpg level is too high.
+			break;
+		}
+		
+		// Check the other upgrade restrictions.
+		hSnapshot = CreateTrieSnapshot(iRestrictionRule[URR_upgradeRestrictions]);
+		iSnapshotLength = TrieSnapshotLength(hSnapshot);
+		for (new j=0; j<iSnapshotLength; j++)
+		{
+			GetTrieSnapshotKey(hSnapshot, j, sShortname, sizeof(sShortname));
+			// See if that upgrade even exists
+			if (!GetUpgradeByShortname(sShortname, otherUpgrade) || !IsValidUpgrade(otherUpgrade) || !otherUpgrade[UPGR_enabled])
+				continue;
+			
+			// Player reached the max level of the other upgrade?
+			GetTrieValue(iRestrictionRule[URR_upgradeRestrictions], sShortname, iMaximalLevel);
+			if (GetClientPurchasedUpgradeLevel(client, otherUpgrade[UPGR_index]) >= iMaximalLevel)
+				continue;
+			
+			// Player is still below the max level of the other upgrade. This rule doesn't apply.
+			bRuleApplies = false;
+			break;
+		}
+		CloseHandle(hSnapshot);
+		
+		// No need to check the other rule sections. It's enough if one applies.
+		if (bRuleApplies)
+			break;
+	}
+	
+	return bRuleApplies;
+}
+
+// TODO Add function to check if the change of an upgrade's level let to a restriction of another upgrade
+// And disable/refund the other upgrade's cost?
+
+
 /**
  * SMC Parser for upgrade_restrictions.cfg config.
  */
@@ -177,26 +259,41 @@ bool:ResetRestrictionConfig()
 	new Handle:hSnapshot = CreateTrieSnapshot(g_hUpgradeRestrictions);
 	new iTrieSize = TrieSnapshotLength(hSnapshot), iSize;
 	new String:sShortname[MAX_UPGRADE_SHORTNAME_LENGTH];
-	new iRestriction[UpgradeRestriction], iRequirementLevel[UpgradeRequirementLevel];
+	new iRestriction[UpgradeRestrictionConfig], iRequirementLevel[UpgradeRequirementLevel];
+	new iRestrictionRule[UpgradeRestrictionRule];
 	for (new i=0; i<iTrieSize; i++)
 	{
 		GetTrieSnapshotKey(hSnapshot, i, sShortname, sizeof(sShortname));
-		GetTrieArray(g_hUpgradeRestrictions, sShortname, iRestriction[0], _:UpgradeRestriction);
+		GetTrieArray(g_hUpgradeRestrictions, sShortname, iRestriction[0], _:UpgradeRestrictionConfig);
 		
-		if (iRestriction[UR_upgrades] != INVALID_HANDLE)
+		// Close MinimumRPGLevel array if created
+		if (iRestriction[URC_minimumRPGLevels] != INVALID_HANDLE)
 		{
-			iSize = GetArraySize(iRestriction[UR_upgrades]);
-			for (new j=0; j<iSize; j++)
-			{
-				GetArrayArray(iRestriction[UR_upgrades], j, iRequirementLevel[0], _:UpgradeRequirementLevel);
-				CloseHandle(iRequirementLevel[URL_requirements]);
-			}
-			CloseHandle(iRestriction[UR_upgrades]);
+			CloseHandle(iRestriction[URC_minimumRPGLevels]);
 		}
 		
-		if (iRestriction[UR_minimumRPGLevels] != INVALID_HANDLE)
+		// Close all upgrade requirement arrays
+		if (iRestriction[URC_upgradesRequirements] != INVALID_HANDLE)
 		{
-			CloseHandle(iRestriction[UR_minimumRPGLevels]);
+			iSize = GetArraySize(iRestriction[URC_upgradesRequirements]);
+			for (new j=0; j<iSize; j++)
+			{
+				GetArrayArray(iRestriction[URC_upgradesRequirements], j, iRequirementLevel[0], _:UpgradeRequirementLevel);
+				CloseHandle(iRequirementLevel[URL_requirements]);
+			}
+			CloseHandle(iRestriction[URC_upgradesRequirements]);
+		}
+		
+		// Close all upgrade restriction arrays
+		if (iRestriction[URC_upgradesRestrictions] != INVALID_HANDLE)
+		{
+			iSize = GetArraySize(iRestriction[URC_upgradesRestrictions]);
+			for (new j=0; j<iSize; j++)
+			{
+				GetArrayArray(iRestriction[URC_upgradesRestrictions], j, iRestrictionRule[0], _:UpgradeRestrictionRule);
+				CloseHandle(iRestrictionRule[URR_upgradeRestrictions]);
+			}
+			CloseHandle(iRestriction[URC_upgradesRestrictions]);
 		}
 	}
 	CloseHandle(hSnapshot);
@@ -210,6 +307,8 @@ bool:ResetRestrictionConfig()
 	g_TempMinRPGLevel[MRL_upgradeLevel] = -1;
 	g_iRequirementLevel = -1;
 	g_hRequirementUpgradeList = INVALID_HANDLE;
+	g_TempRestrictionRule[URR_maxLevel] = -1;
+	ClearHandle(g_TempRestrictionRule[URR_upgradeRestrictions]);
 }
 
 bool:ReadRestrictionConfig()
@@ -237,6 +336,8 @@ bool:ReadRestrictionConfig()
 		ResetRestrictionConfig(); // Don't let some bad state mess us up later.
 	}
 	
+	// TODO: Enforce new upgrade restriction rules on all connected players.
+	
 	return iErr == SMCError_Okay;
 }
 
@@ -256,15 +357,15 @@ public SMCResult:URConfig_NewSection(Handle:smc, const String:name[], bool:opt_q
 		g_iConfigSection = RSection_Upgrade;
 		strcopy(g_sCurrentUpgrade, sizeof(g_sCurrentUpgrade), name);
 		
-		new iRestriction[UpgradeRestriction];
+		new iRestriction[UpgradeRestrictionConfig];
 		// Make sure there are no structures open for this upgrade yet.
-		if (GetTrieArray(g_hUpgradeRestrictions, name, iRestriction[0], _:UpgradeRestriction))
+		if (GetTrieArray(g_hUpgradeRestrictions, name, iRestriction[0], _:UpgradeRestrictionConfig))
 		{
 			LogError("Multiple sections for upgrade \"%s\". Only one per upgrade is supported.", name);
 			return SMCParse_HaltFail;
 		}
 		
-		SetTrieArray(g_hUpgradeRestrictions, name, iRestriction[0], _:UpgradeRestriction);
+		SetTrieArray(g_hUpgradeRestrictions, name, iRestriction[0], _:UpgradeRestrictionConfig);
 	}
 	else if (g_iConfigSection == RSection_Upgrade)
 	{
@@ -274,32 +375,46 @@ public SMCResult:URConfig_NewSection(Handle:smc, const String:name[], bool:opt_q
 		{
 			g_iConfigSection = RSection_RPGLevels;
 			
-			new iRestriction[UpgradeRestriction];
-			GetTrieArray(g_hUpgradeRestrictions, g_sCurrentUpgrade, iRestriction[0], _:UpgradeRestriction);
+			new iRestriction[UpgradeRestrictionConfig];
+			GetTrieArray(g_hUpgradeRestrictions, g_sCurrentUpgrade, iRestriction[0], _:UpgradeRestrictionConfig);
 			
 			// Allow multiple "rpg_level" sections for flexibility.
 			// We'll try to catch interferences later.
-			if (!iRestriction[UR_minimumRPGLevels])
+			if (!iRestriction[URC_minimumRPGLevels])
 			{
 				// Use an adt_array to sort it ascending after parsing.
-				iRestriction[UR_minimumRPGLevels] = CreateArray(_:MinimumRPGLevel);
-				SetTrieArray(g_hUpgradeRestrictions, g_sCurrentUpgrade, iRestriction[0], _:UpgradeRestriction);
+				iRestriction[URC_minimumRPGLevels] = CreateArray(_:MinimumRPGLevel);
+				SetTrieArray(g_hUpgradeRestrictions, g_sCurrentUpgrade, iRestriction[0], _:UpgradeRestrictionConfig);
 			}
 		}
-		else if (StrEqual(name, "upgrades", false))
+		else if (StrEqual(name, "upgrade_requirements", false))
 		{
-			g_iConfigSection = RSection_UpgradeDependencies;
+			g_iConfigSection = RSection_UpgradeRequirements;
 			
-			new iRestriction[UpgradeRestriction];
-			GetTrieArray(g_hUpgradeRestrictions, g_sCurrentUpgrade, iRestriction[0], _:UpgradeRestriction);
+			new iRestriction[UpgradeRestrictionConfig];
+			GetTrieArray(g_hUpgradeRestrictions, g_sCurrentUpgrade, iRestriction[0], _:UpgradeRestrictionConfig);
 			
-			// Allow multiple "upgrades" sections to help readability.
+			// Allow multiple "upgrades_requirements" sections to help readability.
 			// We'll try to catch interferences later
-			if (!iRestriction[UR_upgrades])
+			if (!iRestriction[URC_upgradesRequirements])
 			{
 				// Use an adt_array to sort it ascending after parsing.
-				iRestriction[UR_upgrades] = CreateArray(_:UpgradeRequirementLevel);
-				SetTrieArray(g_hUpgradeRestrictions, g_sCurrentUpgrade, iRestriction[0], _:UpgradeRestriction);
+				iRestriction[URC_upgradesRequirements] = CreateArray(_:UpgradeRequirementLevel);
+				SetTrieArray(g_hUpgradeRestrictions, g_sCurrentUpgrade, iRestriction[0], _:UpgradeRestrictionConfig);
+			}
+		}
+		else if (StrEqual(name, "upgrade_restrictions", false))
+		{
+			g_iConfigSection = RSection_UpgradeRestrictions;
+			
+			new iRestriction[UpgradeRestrictionConfig];
+			GetTrieArray(g_hUpgradeRestrictions, g_sCurrentUpgrade, iRestriction[0], _:UpgradeRestrictionConfig);
+			
+			// Allow multiple "upgrade_restrictions" sections to help readability.
+			if (!iRestriction[URC_upgradesRestrictions])
+			{
+				iRestriction[URC_upgradesRestrictions] = CreateArray(_:UpgradeRestrictionRule);
+				SetTrieArray(g_hUpgradeRestrictions, g_sCurrentUpgrade, iRestriction[0], _:UpgradeRestrictionRule);
 			}
 		}
 		else
@@ -309,7 +424,7 @@ public SMCResult:URConfig_NewSection(Handle:smc, const String:name[], bool:opt_q
 	{
 		g_iConfigSection = RSection_RPGLevelRule;
 	}
-	else if (g_iConfigSection == RSection_UpgradeDependencies)
+	else if (g_iConfigSection == RSection_UpgradeRequirements)
 	{
 		g_iConfigSection = RSection_UpgradeRequirementLevel;
 		
@@ -326,19 +441,23 @@ public SMCResult:URConfig_NewSection(Handle:smc, const String:name[], bool:opt_q
 			return SMCParse_HaltFail;
 		}
 		
-		new iRestriction[UpgradeRestriction];
-		GetTrieArray(g_hUpgradeRestrictions, g_sCurrentUpgrade, iRestriction[0], _:UpgradeRestriction);
+		new iRestriction[UpgradeRestrictionConfig];
+		GetTrieArray(g_hUpgradeRestrictions, g_sCurrentUpgrade, iRestriction[0], _:UpgradeRestrictionConfig);
 		
 		new iRequirementLevel[UpgradeRequirementLevel];
 		iRequirementLevel[URL_level] = iLevel;
 		iRequirementLevel[URL_requirements] = CreateArray(_:UpgradeRequirement);
-		PushArrayArray(iRestriction[UR_upgrades], iRequirementLevel[0], _:UpgradeRequirementLevel);
+		PushArrayArray(iRestriction[URC_upgradesRequirements], iRequirementLevel[0], _:UpgradeRequirementLevel);
 		
 		// Remember for better error messages when parsing the other upgrade requirements
 		g_iRequirementLevel = iLevel;
 		
 		// So we don't have to search for the correct list in the array.
 		g_hRequirementUpgradeList = iRequirementLevel[URL_requirements];
+	}
+	else if (g_iConfigSection == RSection_UpgradeRestrictions)
+	{
+		g_iConfigSection = RSection_UpgradeRestrictionRule;
 	}
 	else
 	{
@@ -436,6 +555,54 @@ public SMCResult:URConfig_KeyValue(Handle:smc, const String:key[], const String:
 		strcopy(iRequirement[UR_shortName], MAX_UPGRADE_SHORTNAME_LENGTH, key);
 		PushArrayArray(g_hRequirementUpgradeList, iRequirement[0], _:UpgradeRequirement);
 	}
+	else if (g_iConfigSection == RSection_UpgradeRestrictionRule)
+	{
+		new iLevel;
+		if (StringToIntEx(value, iLevel) == 0)
+		{
+			LogError("Upgrade \"%s\"'s maximal allowed level for \"%s\" is not an integer.", g_sCurrentUpgrade, key);
+			return SMCParse_HaltFail;
+		}
+		
+		if (iLevel < 0)
+		{
+			LogError("Upgrade \"%s\"'s maximal allowed level for \"%s\" can't be negative.", g_sCurrentUpgrade, key);
+			return SMCParse_HaltFail;
+		}
+		
+		if (StrEqual(g_sCurrentUpgrade, key, false))
+		{
+			LogError("Upgrade \"%s\" can't have a restriction on its own level.", g_sCurrentUpgrade);
+			return SMCParse_HaltFail;
+		}
+		
+		// max rpg level setting?
+		if (StrEqual(key, "max_rpg_level", false))
+		{
+			if (g_TempRestrictionRule[URR_maxLevel] != -1)
+			{
+				LogError("Upgrade \"%s\" has multiple \"max_rpg_level\" keys in \"upgrade_restrictions\" section.", g_sCurrentUpgrade);
+				return SMCParse_HaltFail;
+			}
+			
+			g_TempRestrictionRule[URR_maxLevel] = iLevel;
+		}
+		// This must be an upgrade
+		else
+		{
+			if (g_TempRestrictionRule[URR_upgradeRestrictions] == INVALID_HANDLE)
+				g_TempRestrictionRule[URR_upgradeRestrictions] = CreateTrie();
+			
+			new iTemp;
+			if (GetTrieValue(g_TempRestrictionRule[URR_upgradeRestrictions], key, iTemp))
+			{
+				LogError("Upgrade \"%s\" has multiple \"%s\" keys in \"upgrade_restrictions\" section.", g_sCurrentUpgrade, key);
+				return SMCParse_HaltFail;
+			}
+			
+			SetTrieValue(g_TempRestrictionRule[URR_upgradeRestrictions], key, iLevel);
+		}
+	}
 	return SMCParse_Continue;
 }
 
@@ -456,24 +623,24 @@ public SMCResult:URConfig_EndSection(Handle:smc)
 		g_iConfigSection = RSection_Root;
 		
 		// Done with the upgrade.
-		new iRestriction[UpgradeRestriction];
-		GetTrieArray(g_hUpgradeRestrictions, g_sCurrentUpgrade, iRestriction[0], _:UpgradeRestriction);
+		new iRestriction[UpgradeRestrictionConfig];
+		GetTrieArray(g_hUpgradeRestrictions, g_sCurrentUpgrade, iRestriction[0], _:UpgradeRestrictionConfig);
 		
-		if (iRestriction[UR_upgrades])
+		if (iRestriction[URC_upgradesRequirements])
 		{
 			// Sort the upgrade requirements by ascending level.
-			SortADTArrayCustom(iRestriction[UR_upgrades], Sort_UpgradeRequirements);
+			SortADTArrayCustom(iRestriction[URC_upgradesRequirements], Sort_UpgradeRequirements);
 			
 			// Check for duplicate level sections
 			new iLastLevel = -1;
 			new iRequirementLevel[UpgradeRequirementLevel];
-			new iSize = GetArraySize(iRestriction[UR_upgrades]);
+			new iSize = GetArraySize(iRestriction[URC_upgradesRequirements]);
 			for (new i=0; i<iSize; i++)
 			{
-				GetArrayArray(iRestriction[UR_upgrades], i, iRequirementLevel[0], _:UpgradeRequirementLevel);
+				GetArrayArray(iRestriction[URC_upgradesRequirements], i, iRequirementLevel[0], _:UpgradeRequirementLevel);
 				if (iLastLevel != -1 && iLastLevel == iRequirementLevel[URL_level])
 				{
-					LogError("There are multiple sections for level %d in the \"upgrades\" sections of upgrade \"%s\". Please merge them.", iLastLevel, g_sCurrentUpgrade);
+					LogError("There are multiple sections for level %d in the \"upgrade_requirements\" sections of upgrade \"%s\". Please merge them.", iLastLevel, g_sCurrentUpgrade);
 					return SMCParse_HaltFail;
 				}
 				
@@ -484,18 +651,18 @@ public SMCResult:URConfig_EndSection(Handle:smc)
 			// "upgrades" { "2" { "health" "4" } "4" { "health" "2" } }
 		}
 		
-		if (iRestriction[UR_minimumRPGLevels])
+		if (iRestriction[URC_minimumRPGLevels])
 		{
 			// Sort the rpg level requirements by ascending level.
-			SortADTArrayCustom(iRestriction[UR_minimumRPGLevels], Sort_RPGLevelRequirements);
+			SortADTArrayCustom(iRestriction[URC_minimumRPGLevels], Sort_RPGLevelRequirements);
 			
 			// Check for duplicate level sections and assert the rpg level is linearly ascending.
 			new iLastLevel = -1, iLastMinRPGLevel = -1;
 			new iMinRPGLevel[MinimumRPGLevel];
-			new iSize = GetArraySize(iRestriction[UR_minimumRPGLevels]);
+			new iSize = GetArraySize(iRestriction[URC_minimumRPGLevels]);
 			for (new i=0; i<iSize; i++)
 			{
-				GetArrayArray(iRestriction[UR_minimumRPGLevels], i, iMinRPGLevel[0], _:MinimumRPGLevel);
+				GetArrayArray(iRestriction[URC_minimumRPGLevels], i, iMinRPGLevel[0], _:MinimumRPGLevel);
 				
 				// Can't have multiple sections for the same upgrade level.
 				if (iLastLevel != -1 && iLastLevel == iMinRPGLevel[MRL_upgradeLevel])
@@ -519,7 +686,8 @@ public SMCResult:URConfig_EndSection(Handle:smc)
 	}
 	else if (g_iConfigSection == RSection_RPGLevels 
 			|| g_iConfigSection == RSection_UpgradeAccess 
-			|| g_iConfigSection == RSection_UpgradeDependencies)
+			|| g_iConfigSection == RSection_UpgradeRequirements
+			|| g_iConfigSection == RSection_UpgradeRestrictions)
 	{
 		g_iConfigSection = RSection_Upgrade;
 	}
@@ -541,9 +709,9 @@ public SMCResult:URConfig_EndSection(Handle:smc)
 		}
 		
 		// Save this section
-		new iRestriction[UpgradeRestriction];
-		GetTrieArray(g_hUpgradeRestrictions, g_sCurrentUpgrade, iRestriction[0], _:UpgradeRestriction);
-		PushArrayArray(iRestriction[UR_minimumRPGLevels], g_TempMinRPGLevel[0], _:MinimumRPGLevel);
+		new iRestriction[UpgradeRestrictionConfig];
+		GetTrieArray(g_hUpgradeRestrictions, g_sCurrentUpgrade, iRestriction[0], _:UpgradeRestrictionConfig);
+		PushArrayArray(iRestriction[URC_minimumRPGLevels], g_TempMinRPGLevel[0], _:MinimumRPGLevel);
 		
 		// Reset temp data for another section.
 		g_TempMinRPGLevel[MRL_minRPGLevel] = -1;
@@ -551,7 +719,7 @@ public SMCResult:URConfig_EndSection(Handle:smc)
 	}
 	else if (g_iConfigSection == RSection_UpgradeRequirementLevel)
 	{
-		g_iConfigSection = RSection_UpgradeDependencies;
+		g_iConfigSection = RSection_UpgradeRequirements;
 		
 		// Make sure there are no duplicate entries for the same other upgrade.
 		new iRequirement[UpgradeRequirement], iTemp;
@@ -572,6 +740,23 @@ public SMCResult:URConfig_EndSection(Handle:smc)
 		
 		g_iRequirementLevel = -1;
 		g_hRequirementUpgradeList = INVALID_HANDLE;
+	}
+	else if (g_iConfigSection == RSection_UpgradeRestrictionRule)
+	{
+		g_iConfigSection = RSection_UpgradeRestrictions;
+		
+		// If this section wasn't empty ..
+		if (g_TempRestrictionRule[URR_maxLevel] != -1 || g_TempRestrictionRule[URL_requirements] != INVALID_HANDLE)
+		{
+			// .. Save it
+			new iRestriction[UpgradeRestrictionConfig];
+			GetTrieArray(g_hUpgradeRestrictions, g_sCurrentUpgrade, iRestriction[0], _:UpgradeRestrictionConfig);
+			PushArrayArray(iRestriction[URC_upgradesRestrictions], g_TempRestrictionRule[0], _:UpgradeRestrictionRule);
+		}
+		
+		// Reset the state
+		g_TempRestrictionRule[URR_maxLevel] = -1;
+		g_TempRestrictionRule[URL_requirements] = INVALID_HANDLE;
 	}
 	return SMCParse_Continue;
 }

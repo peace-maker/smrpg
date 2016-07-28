@@ -458,6 +458,8 @@ ShowPlayerUpgradeManageMenu(client)
 		if(!IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled])
 			continue;
 		
+		// TODO: What about restricted upgrades? IsUpgradeRestricted(iTarget, upgrade)
+		
 		GetUpgradeTranslatedName(client, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
 		
 		sPermissions[0] = 0;
@@ -491,6 +493,8 @@ ShowPlayerUpgradeManageMenu(client)
 		}
 		else
 		{
+			// TODO: Show the [R] if the upgrade has unmet requirements and would normally be restricted for the user.
+			
 			Format(sLine, sizeof(sLine), "%s Lvl %d/%d%s%s", sTranslatedName, iCurrentLevel, upgrade[UPGR_maxLevel], sPermissions, sTeamlock);
 		}
 		

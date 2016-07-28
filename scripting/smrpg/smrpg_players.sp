@@ -625,6 +625,9 @@ bool:BuyClientUpgrade(client, iUpgradeIndex)
 	if(iCost > g_iPlayerInfo[client][PLR_credits])
 		return false;
 	
+	// TODO: Check if the upgrade is restricted to this level or has open requirements for the next level.
+	// Add another argument to ignore restrictions (for admin commands)?
+	
 	if(!GiveClientUpgrade(client, iUpgradeIndex))
 		return false;
 	
@@ -964,6 +967,11 @@ public SQL_GetPlayerUpgrades(Handle:owner, Handle:hndl, const String:error[], an
 	}
 	
 	CheckItemMaxLevels(client);
+	
+	// TODO: Check upgrade requirements and take action if configured to do so
+	
+	// TODO: Check if the upgrade is restricted to some lower level than the currently purchased
+	// Config might have changed since the player last connected?
 	
 	CallOnClientLoaded(client);
 }

@@ -94,6 +94,8 @@ public Native_RegisterUpgradeType(Handle:plugin, numParams)
 	new String:sShortName[len+1];
 	GetNativeString(2, sShortName, len+1);
 
+	// TODO: Restrict "max_rpg_level" as upgrade shortname due to upgrade_restrictions.cfg parsing..
+	
 	// There already is an upgrade with that name loaded. Don't load it twice. shortnames have to be unique.
 	new upgrade[InternalUpgradeInfo], bool:bAlreadyLoaded;
 	if(GetUpgradeByShortname(sShortName, upgrade))

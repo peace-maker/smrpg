@@ -203,11 +203,11 @@ public TopMenu_HandleUpgrades(Handle:topmenu, TopMenuAction:action, TopMenuObjec
 			else
 			{
 				// Only need to check if it's restricted, if we still are able to buy more levels.
-				new String:sRestricted[] = "[R] ";
-				if (!IsUpgradeRestricted(param, upgrade))
-					sRestricted = "";
+				new String:sRequirements[] = "[R] ";
+				if (!UpgradeHasUnmetRequirements(param, upgrade))
+					sRequirements = "";
 				
-				Format(buffer, maxlength, "%s%s Lvl %d%s [%T: %d]%s", sRestricted, sTranslatedName, iCurrentLevel+1, sMaxlevel, "Cost", param, GetUpgradeCost(upgrade[UPGR_index], iCurrentLevel+1), sTeamlock);
+				Format(buffer, maxlength, "%s%s Lvl %d%s [%T: %d]%s", sRequirements, sTranslatedName, iCurrentLevel+1, sMaxlevel, "Cost", param, GetUpgradeCost(upgrade[UPGR_index], iCurrentLevel+1), sTeamlock);
 			}
 		}
 		case TopMenuAction_DrawOption:
@@ -217,8 +217,23 @@ public TopMenu_HandleUpgrades(Handle:topmenu, TopMenuAction:action, TopMenuObjec
 			
 			new upgrade[InternalUpgradeInfo];
 			// Don't show invalid upgrades at all in the menu.
-			if(!GetUpgradeByShortname(sShortname[11], upgrade) || !IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled] || !HasAccessToUpgrade(param, upgrade))
+			if(!GetUpgradeByShortname(sShortname[11], upgrade) || !IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled])
 			{
+				buffer[0] = ITEMDRAW_IGNORE;
+				return;
+			}
+			
+			// Make sure the user has the required admin flags to use this upgrade
+			if (!HasAccessToUpgrade(param, upgrade))
+			{
+				buffer[0] = ITEMDRAW_IGNORE;
+				return;
+			}
+			
+			// Check if the user doesn't exceed any restrictions on rpg level or other upgrade levels
+			if (!IsUpgradeRestricted(param, upgrade))
+			{
+				// TODO: Add config option to still show restricted upgrades?
 				buffer[0] = ITEMDRAW_IGNORE;
 				return;
 			}
@@ -248,10 +263,10 @@ public TopMenu_HandleUpgrades(Handle:topmenu, TopMenuAction:action, TopMenuObjec
 				return;
 			}
 			
-			// List the unmet restrictions and the progress if this upgrade can't be bought yet.
-			if (IsUpgradeRestricted(param, upgrade))
+			// List the unmet requirements and the progress if this upgrade can't be bought yet.
+			if (UpgradeHasUnmetRequirements(param, upgrade))
 			{
-				DisplayUpgradeRestrictions(param, upgrade);
+				DisplayUpgradeRequirements(param, upgrade);
 				return;
 			}
 			
@@ -291,9 +306,9 @@ public TopMenu_HandleUpgrades(Handle:topmenu, TopMenuAction:action, TopMenuObjec
 }
 
 // List unmet requirements for the upgrade
-DisplayUpgradeRestrictions(client, upgrade[InternalUpgradeInfo])
+DisplayUpgradeRequirements(client, upgrade[InternalUpgradeInfo])
 {
-	new Handle:hMenu = CreateMenu(Menu_HandleRestrictions, MENU_ACTIONS_DEFAULT);
+	new Handle:hMenu = CreateMenu(Menu_HandleRequirements, MENU_ACTIONS_DEFAULT);
 	SetMenuExitBackButton(hMenu, true);
 
 	new String:sTranslatedName[MAX_UPGRADE_NAME_LENGTH];
@@ -337,7 +352,7 @@ DisplayUpgradeRestrictions(client, upgrade[InternalUpgradeInfo])
 	DisplayMenu(hMenu, client, MENU_TIME_FOREVER);
 }
 
-public Menu_HandleRestrictions(Handle:menu, MenuAction:action, param1, param2)
+public Menu_HandleRequirements(Handle:menu, MenuAction:action, param1, param2)
 {
 	if(action == MenuAction_Select)
 	{
