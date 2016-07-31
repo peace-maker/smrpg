@@ -493,9 +493,13 @@ ShowPlayerUpgradeManageMenu(client)
 		}
 		else
 		{
-			// TODO: Show the [R] if the upgrade has unmet requirements and would normally be restricted for the user.
+			// Show the [R] if the upgrade has unmet requirements and would normally be restricted for the user.
+			// Only need to check if it's restricted, if we still are able to buy more levels.
+			new String:sRequirements[] = "[R] ";
+			if (!UpgradeHasUnmetRequirements(g_iCurrentMenuTarget[client], upgrade))
+				sRequirements = "";
 			
-			Format(sLine, sizeof(sLine), "%s Lvl %d/%d%s%s", sTranslatedName, iCurrentLevel, upgrade[UPGR_maxLevel], sPermissions, sTeamlock);
+			Format(sLine, sizeof(sLine), "%s%s Lvl %d/%d%s%s", sRequirements, sTranslatedName, iCurrentLevel, upgrade[UPGR_maxLevel], sPermissions, sTeamlock);
 		}
 		
 		AddMenuItem(hMenu, sIndex, sLine);
@@ -622,9 +626,13 @@ ShowPlayerUpgradeLevelMenu(client)
 	new String:sTranslatedName[MAX_UPGRADE_NAME_LENGTH];
 	GetUpgradeTranslatedName(client, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
 	
+	new String:sRequirements[] = "\nHas unmet requirements!";
+	if (!UpgradeHasUnmetRequirements(g_iCurrentMenuTarget[client], upgrade))
+		sRequirements = "";
+	
 	new Handle:hMenu = CreateMenu(Menu_HandlePlayerUpgradeLevelChange);
 	SetMenuExitBackButton(hMenu, true);
-	SetMenuTitle(hMenu, "Change %N's upgrade level\n%s: %d/%d", g_iCurrentMenuTarget[client], sTranslatedName, GetClientPurchasedUpgradeLevel(g_iCurrentMenuTarget[client], iItemIndex), upgrade[UPGR_maxLevel]);
+	SetMenuTitle(hMenu, "Change %N's upgrade level\n%s: %d/%d%s", g_iCurrentMenuTarget[client], sTranslatedName, GetClientPurchasedUpgradeLevel(g_iCurrentMenuTarget[client], iItemIndex), upgrade[UPGR_maxLevel], sRequirements);
 	
 	if(CheckCommandAccess(client, "smrpg_setupgradelvl", ADMFLAG_ROOT))
 		AddMenuItem(hMenu, "reset", "Reset upgrade to 0 with full refund\n");
