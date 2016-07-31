@@ -29,6 +29,21 @@ enum UpgradeRestrictionRule {
 
 new Handle:g_hUpgradeRestrictions;
 
+// For fast lookup on upgrade levelup
+// "regen"
+// {
+//     "upgrade_requirements"
+//     {
+//         "2" // Which level of the current upgrade "regen" is restricted by this section?
+//         {
+//             "health"    "1" // Need at least "health" level 1 to buy "regen" level 2 and above.
+//         }
+//     }
+// }
+// Would add a link "health" => ["regen"] so we check if the requirements for "regen" are still met when the level of "health" changes.
+// Saves us from running through all upgrades everytime a level changes.
+new Handle:g_hUpgradeReqDependents; // Map of upgrade shortname => List of upgrades depending on other plugin
+
 // Config parser
 enum RestrictionConfigSection {
 	RSection_None = 0,
@@ -54,6 +69,7 @@ new g_TempRestrictionRule[UpgradeRestrictionRule];
 InitUpgradeRestrictions()
 {
 	g_hUpgradeRestrictions = CreateTrie();
+	g_hUpgradeReqDependents = CreateTrie();
 }
 
 /**
@@ -103,6 +119,33 @@ GetMinimumRPGLevelForUpgrade(upgrade[InternalUpgradeInfo], iUpgradeLevel)
 	}
 	
 	return iRequiredRPGLevel;
+}
+
+// Returns -1 if no requirements for the rpg level on the upgrade.
+GetMaximalPossibleUpgradeLevelForRPGLevel(upgrade[InternalUpgradeInfo], iRPGLevel)
+{
+	new iRestriction[UpgradeRestrictionConfig];
+	if (!GetTrieArray(g_hUpgradeRestrictions, upgrade[UPGR_shortName], iRestriction[0], _:UpgradeRestrictionConfig))
+		return -1;
+	
+	if (!iRestriction[URC_minimumRPGLevels])
+		return -1;
+	
+	new iSize = GetArraySize(iRestriction[URC_minimumRPGLevels]);
+	new iMinRPGLevel[MinimumRPGLevel], iPossibleLevel;
+	for (new i=0; i<iSize; i++)
+	{
+		GetArrayArray(iRestriction[URC_minimumRPGLevels], i, iMinRPGLevel[0], _:MinimumRPGLevel);
+		
+		// The array is sorted ascending by upgrade level.
+		// Can stop here, because all following rules wouldn't be checked until the current one is met.
+		if (iMinRPGLevel[MRL_minRPGLevel] > iRPGLevel)
+			break;
+		
+		iPossibleLevel = iMinRPGLevel[MRL_upgradeLevel];
+	}
+	
+	return iPossibleLevel;
 }
 
 Handle:GetRequiredUpgradesForClient(client, upgrade[InternalUpgradeInfo], iUpgradeLevel)
@@ -176,6 +219,97 @@ Handle:GetRequiredUpgradesForLevel(upgrade[InternalUpgradeInfo], iLevel)
 	}
 	
 	return hRequiredUpgrades;
+}
+
+Requirements_OnUpgradeLevelChange(client, upgrade[InternalUpgradeInfo])
+{
+	//only needed when changing player level.
+	//new iCurrentLevel = GetClientPurchasedUpgradeLevel(client, upgrade[UPGR_index]);
+	//new iMaxPossibleUpgradeLevel = GetMaximalPossibleUpgradeLevelForRPGLevel(upgrade, GetClientLevel(client));
+	//if (iMaxPossibleUpgradeLevel != -1 && iCurrentLevel > iMaxPossibleUpgradeLevel)
+	//	SetClientSelectedUpgradeLevel(client, upgrade[UPGR_index], iMaxPossibleUpgradeLevel);
+
+	// See if some other upgrades have a requirement on the level of this one.
+	new Handle:hUpgradeList;
+	if (!GetTrieValue(g_hUpgradeReqDependents, upgrade[UPGR_shortName], hUpgradeList))
+		return;
+	
+	new iSize = GetArraySize(hUpgradeList);
+	new String:sShortname[MAX_UPGRADE_SHORTNAME_LENGTH];
+	new otherUpgrade[InternalUpgradeInfo];
+	for (new i=0; i<iSize; i++)
+	{
+		// Dependent upgrade loaded?
+		GetArrayString(hUpgradeList, i, sShortname, sizeof(sShortname));
+		if (!GetUpgradeByShortname(sShortname, otherUpgrade) || !IsValidUpgrade(otherUpgrade))
+			continue;
+		
+		// Got a requirement?
+		new iMaxPossibleUpgradeLevel = GetPossibleLevelByRequirements(client, sShortname);
+		if (iMaxPossibleUpgradeLevel == -1)
+			continue;
+		
+		new iCurrentLevel = GetClientPurchasedUpgradeLevel(client, otherUpgrade[UPGR_index]);
+		// Due to the change of the upgrade level, this other upgrade has lower unmet requirements now.
+		if (iCurrentLevel > iMaxPossibleUpgradeLevel)
+		{
+			SetClientSelectedUpgradeLevel(client, otherUpgrade[UPGR_index], iMaxPossibleUpgradeLevel);
+			Requirements_OnUpgradeLevelChange(client, otherUpgrade);
+		}
+		// TODO: Set other upgrade back to max, if the restriction is now gone.
+		// Find a way to see if it was restricted before.
+		/*else if (iCurrentLevel > GetClientSelectedUpgradeLevel(client, otherUpgrade[UPGR_index]))
+		{
+			SetClientSelectedUpgradeLevel(client, otherUpgrade[UPGR_index], iCurrentLevel);
+			Requirements_OnUpgradeLevelChange(client, otherUpgrade);
+		}*/
+	}
+}
+
+GetPossibleLevelByRequirements(client, const String:sShortname[])
+{
+	new iRestriction[UpgradeRestrictionConfig];
+	if (!GetTrieArray(g_hUpgradeRestrictions, sShortname, iRestriction[0], _:UpgradeRestrictionConfig))
+		return -1;
+		
+	if (!iRestriction[URC_upgradesRequirements])
+		return -1;
+	
+	// Run through all requirements until the first one fails.
+	new iSize = GetArraySize(iRestriction[URC_upgradesRequirements]);
+	new iRequirementLevel[UpgradeRequirementLevel];
+	new iRequirement[UpgradeRequirement], iNumRequirements;
+	new otherUpgrade[InternalUpgradeInfo], iPossibleLevel, bool:bAllFine;
+	for (new i=0; i<iSize; i++)
+	{
+		GetArrayArray(iRestriction[URC_upgradesRequirements], i, iRequirementLevel[0], _:UpgradeRequirementLevel);
+		
+		// See if all requirements are met.
+		bAllFine = true;
+		iNumRequirements = GetArraySize(iRequirementLevel[URL_requirements]);
+		for (new j=0; j<iNumRequirements; j++)
+		{
+			GetArrayArray(iRequirementLevel[URL_requirements], j, iRequirement[0], _:UpgradeRequirement);
+			if (!GetUpgradeByShortname(iRequirement[UR_shortName], otherUpgrade) || !IsValidUpgrade(otherUpgrade))
+				continue;
+			
+			// Client doesn't have this upgrade high enough.
+			// FIXME: Consider the other upgrade having unmet requirements as well, so it is capped at a lower level than the currently purchased one.
+			if (GetClientPurchasedUpgradeLevel(client, otherUpgrade[UPGR_index]) < iRequirement[UR_minLevel])
+			{
+				bAllFine = false;
+				break;
+			}
+		}
+		
+		// There are unmet requirements for this upgrade.
+		if (!bAllFine)
+			break;
+		
+		iPossibleLevel = iRequirementLevel[URL_level];
+	}
+	
+	return iPossibleLevel;
 }
 
 // Does one of the rules in the "upgrade_restrictions" section apply to this client?
@@ -298,6 +432,19 @@ bool:ResetRestrictionConfig()
 	}
 	CloseHandle(hSnapshot);
 	ClearTrie(g_hUpgradeRestrictions);
+	
+	// Clear fast lookup map
+	hSnapshot = CreateTrieSnapshot(g_hUpgradeReqDependents);
+	iTrieSize = TrieSnapshotLength(hSnapshot);
+	new Handle:hUpgradeList;
+	for (new i=0; i<iTrieSize; i++)
+	{
+		GetTrieSnapshotKey(hSnapshot, i, sShortname, sizeof(sShortname));
+		GetTrieValue(g_hUpgradeReqDependents, sShortname, hUpgradeList);
+		CloseHandle(hUpgradeList);
+	}
+	CloseHandle(hSnapshot);
+	ClearTrie(g_hUpgradeReqDependents);
 	
 	// Reset reader state
 	g_iConfigSection = RSection_None;
@@ -554,6 +701,17 @@ public SMCResult:URConfig_KeyValue(Handle:smc, const String:key[], const String:
 		iRequirement[UR_minLevel] = iLevel;
 		strcopy(iRequirement[UR_shortName], MAX_UPGRADE_SHORTNAME_LENGTH, key);
 		PushArrayArray(g_hRequirementUpgradeList, iRequirement[0], _:UpgradeRequirement);
+		
+		// Remember the dependency for fast lookup when the other upgrade changes its level.
+		new Handle:hUpgradeList;
+		if (!GetTrieValue(g_hUpgradeReqDependents, iRequirement[UR_shortName], hUpgradeList))
+		{
+			hUpgradeList = CreateArray(ByteCountToCells(MAX_UPGRADE_SHORTNAME_LENGTH));
+			SetTrieValue(g_hUpgradeReqDependents, iRequirement[UR_shortName], hUpgradeList);
+		}
+		
+		if (FindStringInArray(hUpgradeList, g_sCurrentUpgrade) == -1)
+			PushArrayString(hUpgradeList, g_sCurrentUpgrade);
 	}
 	else if (g_iConfigSection == RSection_UpgradeRestrictionRule)
 	{

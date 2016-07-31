@@ -670,8 +670,9 @@ bool:TakeClientUpgrade(client, iUpgradeIndex)
 	// Actually update the upgrade level.
 	SetClientPurchasedUpgradeLevel(client, iUpgradeIndex, iCurrentLevel);
 	
-	// TODO: Check for new unmet requirements due to this upgrade leveling down. 
+	// Check for new unmet requirements due to this upgrade leveling down. 
 	// Force and limit selected upgrade level to highest possible level if higher one is selected.
+	Requirements_OnUpgradeLevelChange(client, upgrade);
 	
 	Call_StartForward(g_hfwdOnSellUpgradePost);
 	Call_PushCell(client);
