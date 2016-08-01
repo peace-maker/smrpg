@@ -101,9 +101,19 @@ InitPlayer(client, bool:bGetBotName = true)
 {
 	g_bFirstLoaded[client] = true;
 	
-	g_iPlayerInfo[client][PLR_level] = 1;
+	// See if the player should start at a higher level than 1?
+	new iStartLevel = GetConVarInt(g_hCVLevelStart);
+	if (iStartLevel < 1)
+		iStartLevel = 1;
+	
+	// If the start level is at a higher level than 1, he might get more credits for his level.
+	new iStartCredits = GetConVarInt(g_hCVCreditsStart);
+	if (GetConVarBool(g_hCVLevelStartGiveCredits))
+		iStartCredits += GetConVarInt(g_hCVCreditsInc) * (iStartLevel - 1);
+	
+	g_iPlayerInfo[client][PLR_level] = iStartLevel;
 	g_iPlayerInfo[client][PLR_experience] = 0;
-	g_iPlayerInfo[client][PLR_credits] = GetConVarInt(g_hCVCreditsStart);
+	g_iPlayerInfo[client][PLR_credits] = iStartCredits;
 	g_iPlayerInfo[client][PLR_dbId] = -1;
 	g_iPlayerInfo[client][PLR_dataLoadedFromDB] = false;
 	g_iPlayerInfo[client][PLR_showMenuOnLevelup] = GetConVarBool(g_hCVShowMenuOnLevelDefault);
@@ -116,7 +126,7 @@ InitPlayer(client, bool:bGetBotName = true)
 	
 	for(new i=0;i<iNumUpgrades;i++)
 	{
-		// level 0 for all upgrades
+		// start level (default 0) for all upgrades
 		InitPlayerNewUpgrade(client);
 	}
 	
@@ -451,6 +461,11 @@ bool:IsClientUpgradeEnabled(client, iUpgradeIndex)
 
 InitPlayerNewUpgrade(client)
 {
+	// Let the player start this upgrade on its set start level by default.
+	new iIndex = GetArraySize(GetClientUpgrades(client));
+	new upgrade[InternalUpgradeInfo];
+	GetUpgradeByIndex(iIndex, upgrade);
+	
 	new playerupgrade[PlayerUpgradeInfo];
 	playerupgrade[PUI_purchasedlevel] = 0;
 	playerupgrade[PUI_selectedlevel] = 0;
@@ -458,6 +473,24 @@ InitPlayerNewUpgrade(client)
 	playerupgrade[PUI_visuals] = true;
 	playerupgrade[PUI_sounds] = true;
 	PushArrayArray(GetClientUpgrades(client), playerupgrade[0], _:PlayerUpgradeInfo);
+	
+	// Get the money for the start level?
+	// TODO: Make sure to document the OnBuyUpgrade forward being called on clients not ingame yet + test.
+	// (This is can be called OnClientConnected.)
+	new bool:bFree = GetConVarBool(g_hCVUpgradeStartLevelsFree);
+	for (new i=0; i<upgrade[UPGR_startLevel]; i++)
+	{
+		if (bFree)
+		{
+			if (!GiveClientUpgrade(client, iIndex))
+				break;
+		}
+		else
+		{
+			if (!BuyClientUpgrade(client, iIndex))
+				break; // TODO: Log if there are not enough credits for the start level?
+		}
+	}
 }
 
 ShowMenuOnLevelUp(client)
@@ -987,6 +1020,10 @@ public SQL_InsertPlayer(Handle:owner, Handle:hndl, const String:error[], any:use
 	SavePlayerUpgradeLevels(client);
 	
 	g_iPlayerInfo[client][PLR_dataLoadedFromDB] = true;
+	
+	// Notify the upgrade plugins of the possible start level of the new player.
+	if (IsClientInGame(client))
+		NotifyUpgradePluginsOfLevel(client);
 	CallOnClientLoaded(client);
 }
 

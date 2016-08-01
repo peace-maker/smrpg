@@ -43,9 +43,10 @@ functag public bool:SMRPG_ActiveQueryCB(client);
  * The shortname is like an unique identifier for this upgrade.
  * Other plugins might use the shortname to check for information of the upgrade.
  *
- * This native registers 7 default convars for the upgrade and saves them in a seperate config file in cfg/sourcemod/smrpg/smrpg_upgrade_<shortname>.cfg
+ * This native registers 8 default convars for the upgrade and saves them in a seperate config file in cfg/sourcemod/smrpg/smrpg_upgrade_<shortname>.cfg
  *  - smrpg_<shortname>_enable     ~ Enable or disable the upgrade. The upgrade needs to check this value and should obey it..
  *  - smrpg_<shortname>_maxlevel   ~ The maximal level a player can buy the upgrade.
+ *  - smrpg_<shortname>_startlevel ~ The initial levels players get of this upgrade when they first join the server.
  *  - smrpg_<shortname>_cost       ~ The start cost of this item when purchasing level 1.
  *  - smrpg_<shortname>_icost      ~ The amount to increase the cost for each level: cost for level x = startcost + icost * (level-1)
  *  - smrpg_<shortname>_adminflag  ~ The required admin flag to use this upgrade.
@@ -242,9 +243,10 @@ enum UpgradeInfo
 	UI_incCost, // The amount of credits each level costs more
 	UI_adminFlag, // The admin flag(s) (ADMFLAG_*) this upgrade is restricted to. (See SMRPG_CheckUpgradeAccess and SMRPG_RunUpgradeEffect)
 	UI_teamlock, // The team this upgrade is restricted to. 0 = Disabled, 2 = RED/Terrorist team, 3 = BLU/Counter-Terrorist team
-	String:UI_name[MAX_UPGRADE_NAME_LENGTH],
+	String:UI_name[MAX_UPGRADE_NAME_LENGTH], // Upgrade readable name as given when registering the upgrade.
 	String:UI_shortName[MAX_UPGRADE_SHORTNAME_LENGTH], // shortname used as unique identifier in all commands and database
-	String:UI_description[MAX_UPGRADE_DESCRIPTION_LENGTH]
+	String:UI_description[MAX_UPGRADE_DESCRIPTION_LENGTH], // Upgrade description as given when registering the upgrade.
+	UI_startLevel // Initial level of upgrade when players first join the server.
 };
 
 /**

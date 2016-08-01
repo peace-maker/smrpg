@@ -12,6 +12,7 @@ enum InternalUpgradeInfo
 	bool:UPGR_unavailable, // plugin providing this upgrade gone?
 	UPGR_maxLevelBarrier, // upper limit of maxlevel setting. Can't set maxlevel higher than that.
 	UPGR_maxLevel, // Maximal level a player can get for this upgrade
+	UPGR_startLevel, // The level players start with, when they first join the server.
 	UPGR_startCost, // The amount of credits the first level costs
 	UPGR_incCost, // The amount of credits each level costs more
 	UPGR_adminFlag, // Admin flag(s) this upgrade is restricted to
@@ -27,6 +28,7 @@ enum InternalUpgradeInfo
 	// Convar handles to track changes and upgrade the right value in the cache
 	Handle:UPGR_enableConvar,
 	Handle:UPGR_maxLevelConvar,
+	Handle:UPGR_startLevelConvar,
 	Handle:UPGR_startCostConvar,
 	Handle:UPGR_incCostConvar,
 	Handle:UPGR_adminFlagConvar,
@@ -164,6 +166,7 @@ public Native_RegisterUpgradeType(Handle:plugin, numParams)
 	upgrade[UPGR_unavailable] = false;
 	upgrade[UPGR_maxLevelBarrier] = iMaxLevelBarrier;
 	upgrade[UPGR_maxLevel] = iDefaultMaxLevel;
+	upgrade[UPGR_startLevel] = 0;
 	upgrade[UPGR_startCost] = iDefaultStartCost;
 	upgrade[UPGR_incCost] = iDefaultCostInc;
 	upgrade[UPGR_enableVisuals] = true;
@@ -207,6 +210,19 @@ public Native_RegisterUpgradeType(Handle:plugin, numParams)
 	HookConVarChange(hCvar, ConVar_UpgradeMaxLevelChanged);
 	upgrade[UPGR_maxLevelConvar] = hCvar;
 	upgrade[UPGR_maxLevel] = GetConVarInt(hCvar);
+	
+	Format(sCvarName, sizeof(sCvarName), "smrpg_%s_startlevel", sShortName);
+	Format(sCvarDescription, sizeof(sCvarDescription), "%s upgrade start level. The initial levels players get of this upgrade when they first join the server.", sName);
+	hCvar = AutoExecConfig_CreateConVar(sCvarName, "0", sCvarDescription, 0, true, 0.0);
+	HookConVarChange(hCvar, ConVar_UpgradeChanged);
+	upgrade[UPGR_startLevelConvar] = hCvar;
+	upgrade[UPGR_startLevel] = GetConVarInt(hCvar);
+	if (upgrade[UPGR_startLevel] > upgrade[UPGR_maxLevel])
+	{
+		LogError("Upgrade %s smrpg_%s_startlevel convar (%d) is set higher than the maxlevel (%d). Clamping.", sName, sShortName, upgrade[UPGR_startLevel], upgrade[UPGR_maxLevel]);
+		upgrade[UPGR_startLevel] = upgrade[UPGR_maxLevel];
+		SetConVarInt(hCvar, upgrade[UPGR_startLevel]);
+	}
 	
 	Format(sCvarName, sizeof(sCvarName), "smrpg_%s_cost", sShortName);
 	Format(sCvarDescription, sizeof(sCvarDescription), "%s upgrade start cost. The initial amount of credits the first level of this upgrade costs.", sName);
@@ -425,6 +441,7 @@ public Native_GetUpgradeInfo(Handle:plugin, numParams)
 	strcopy(publicUpgrade[UI_name], MAX_UPGRADE_NAME_LENGTH, upgrade[UPGR_name]);
 	strcopy(publicUpgrade[UI_shortName], MAX_UPGRADE_SHORTNAME_LENGTH, upgrade[UPGR_shortName]);
 	strcopy(publicUpgrade[UI_description], MAX_UPGRADE_DESCRIPTION_LENGTH, upgrade[UPGR_description]);
+	publicUpgrade[UI_startLevel] = upgrade[UPGR_startLevel];
 	
 	SetNativeArray(2, publicUpgrade[0], arraysize);
 }
@@ -873,6 +890,24 @@ public ConVar_UpgradeChanged(Handle:convar, const String:oldValue[], const Strin
 		if(upgrade[UPGR_enableConvar] == convar)
 		{
 			upgrade[UPGR_enabled] = GetConVarBool(convar);
+			SaveUpgradeConfig(upgrade);
+			Call_OnUpgradeSettingsChanged(upgrade[UPGR_shortName]);
+			break;
+		}
+		else if(upgrade[UPGR_startLevelConvar] == convar)
+		{
+			upgrade[UPGR_startLevel] = GetConVarInt(convar);
+			if (upgrade[UPGR_startLevel] > upgrade[UPGR_maxLevel])
+			{
+				LogError("Upgrade %s smrpg_%s_startlevel convar (%d) is set higher than the maxlevel (%d). Clamping.", upgrade[UPGR_name], upgrade[UPGR_shortName], upgrade[UPGR_startLevel], upgrade[UPGR_maxLevel]);
+				upgrade[UPGR_startLevel] = upgrade[UPGR_maxLevel];
+				
+				// Reflect the cap in the convar value as well.
+				UnhookConVarChange(convar, ConVar_UpgradeChanged);
+				SetConVarInt(convar, upgrade[UPGR_startLevel]);
+				HookConVarChange(convar, ConVar_UpgradeChanged);
+			}
+			
 			SaveUpgradeConfig(upgrade);
 			Call_OnUpgradeSettingsChanged(upgrade[UPGR_shortName]);
 			break;

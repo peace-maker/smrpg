@@ -64,6 +64,9 @@ new Handle:g_hCVExpTeamwin;
 
 new Handle:g_hCVLastExperienceCount;
 
+new Handle:g_hCVLevelStart;
+new Handle:g_hCVLevelStartGiveCredits;
+new Handle:g_hCVUpgradeStartLevelsFree;
 new Handle:g_hCVCreditsInc;
 new Handle:g_hCVCreditsStart;
 new Handle:g_hCVSalePercent;
@@ -186,6 +189,9 @@ public OnPluginStart()
 	
 	g_hCVLastExperienceCount = AutoExecConfig_CreateConVar("smrpg_lastexperience_count", "50", "How many times should we remember why each player got some experience in the recent past?", 0, true, 1.0);
 	
+	g_hCVLevelStart = AutoExecConfig_CreateConVar("smrpg_level_start", "1", "Starting level for new players.", 0, true, 1.0);
+	g_hCVLevelStartGiveCredits = AutoExecConfig_CreateConVar("smrpg_level_start_give_credits", "1", "Give the players the credits for all additional start levels as if they'd leveled up themselves?", 0, true, 0.0, true, 1.0);
+	g_hCVUpgradeStartLevelsFree = AutoExecConfig_CreateConVar("smrpg_upgrade_start_levels_free", "1", "Don't charge the players for the initial upgrade levels (smrpg_<upgr>_startlevel)?", 0, true, 0.0, true, 1.0);
 	g_hCVCreditsInc = AutoExecConfig_CreateConVar("smrpg_credits_inc", "5", "Credits given to each new level", 0, true, 0.0);
 	g_hCVCreditsStart = AutoExecConfig_CreateConVar("smrpg_credits_start", "0", "Starting credits for Level 1", 0, true, 0.0);
 	g_hCVSalePercent = AutoExecConfig_CreateConVar("smrpg_sale_percent", "0.75", "Percentage of credits a player gets for selling an upgrade", 0, true, 0.0);
