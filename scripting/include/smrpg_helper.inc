@@ -81,5 +81,5 @@ stock SMRPG_TE_SendToAllEnabled(const String:shortname[], Float:delay=0.0)
 			iClients[iNumClients++] = i;
 		}
 	}
-	return TE_Send(iClients, iNumClients, delay);
+	TE_Send(iClients, iNumClients, delay);
 }
