@@ -117,9 +117,9 @@ public SMRPG_TranslateUpgrade(client, const String:shortname[], TranslationType:
 
 // Optionally block some other conflicting effect, if i'm currently active.
 /*
-public Action:SMRPG_OnUpgradeEffect(client, const String:shortname[])
+public Action:SMRPG_OnUpgradeEffect(target, const String:shortname[], issuer)
 {
-	if(SMRPG_IsUpgradeActiveOnClient(client, UPGRADE_SHORTNAME) && StrEqual(shortname, "other_conflicting_effect"))
+	if(SMRPG_IsUpgradeActiveOnClient(target, UPGRADE_SHORTNAME) && StrEqual(shortname, "other_conflicting_effect"))
 		return Plugin_Handled;
 	return Plugin_Continue;
 }

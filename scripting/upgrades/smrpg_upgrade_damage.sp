@@ -143,7 +143,7 @@ public Action:Hook_OnTakeDamage(victim, &attacker, &inflictor, &Float:damage, &d
 	if (fDmgIncreasePercent <= 0.0)
 		return Plugin_Continue;
 	
-	if(!SMRPG_RunUpgradeEffect(victim, UPGRADE_SHORTNAME))
+	if(!SMRPG_RunUpgradeEffect(victim, UPGRADE_SHORTNAME, attacker))
 		return Plugin_Continue; // Some other plugin doesn't want this effect to run
 	
 	// Increase the damage

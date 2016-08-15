@@ -161,7 +161,7 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 	if(StrContains(sWeapon, sTargetWeapon) == -1)
 		return;
 	
-	if(!SMRPG_RunUpgradeEffect(victim, UPGRADE_SHORTNAME))
+	if(!SMRPG_RunUpgradeEffect(victim, UPGRADE_SHORTNAME, attacker))
 		return; // Some other plugin doesn't want this effect to run
 	
 	// Freeze the player.

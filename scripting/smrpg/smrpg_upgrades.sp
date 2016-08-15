@@ -73,7 +73,7 @@ RegisterUpgradeNatives()
 
 RegisterUpgradeForwards()
 {
-	g_hfwdOnUpgradeEffect = CreateGlobalForward("SMRPG_OnUpgradeEffect", ET_Hook, Param_Cell, Param_String);
+	g_hfwdOnUpgradeEffect = CreateGlobalForward("SMRPG_OnUpgradeEffect", ET_Hook, Param_Cell, Param_String, Param_Cell);
 	g_hfwdOnUpgradeSettingsChanged = CreateGlobalForward("SMRPG_OnUpgradeSettingsChanged", ET_Ignore, Param_String);
 	g_hfwdOnUpgradeRegistered = CreateGlobalForward("SMRPG_OnUpgradeRegistered", ET_Ignore, Param_String);
 	g_hfwdOnUpgradeUnregistered = CreateGlobalForward("SMRPG_OnUpgradeUnregistered", ET_Ignore, Param_String);
@@ -587,13 +587,13 @@ public Native_ResetUpgradeEffectOnClient(Handle:plugin, numParams)
 	Call_Finish();
 }
 
-// native bool:SMRPG_RunUpgradeEffect(client, const String:shortname[]);
+// native bool:SMRPG_RunUpgradeEffect(target, const String:shortname[], issuer=-1);
 public Native_RunUpgradeEffect(Handle:plugin, numParams)
 {
-	new client = GetNativeCell(1);
-	if(client < 0 || client > MaxClients)
+	new target = GetNativeCell(1);
+	if(target < 0 || target > MaxClients)
 	{
-		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
+		ThrowNativeError(SP_ERROR_NATIVE, "Invalid target client index %d.", target);
 		return false;
 	}
 	
@@ -601,6 +601,22 @@ public Native_RunUpgradeEffect(Handle:plugin, numParams)
 	GetNativeStringLength(2, len);
 	new String:sShortName[len+1];
 	GetNativeString(2, sShortName, len+1);
+	
+	// Validate the client index of the person starting the effect
+	new issuer = -1;
+	if (numParams > 2)
+	{
+		issuer = GetNativeCell(3);
+		if (issuer < -1 || issuer > MaxClients)
+		{
+			ThrowNativeError(SP_ERROR_NATIVE, "Invalid issuer client index %d.", issuer);
+			return false;
+		}
+	}
+	
+	// If there is no explicit different issuer given, the upgrade effect is on the target itself.
+	if (issuer == -1)
+		issuer = target;
 	
 	new upgrade[InternalUpgradeInfo];
 	if(!GetUpgradeByShortname(sShortName, upgrade) || !IsValidUpgrade(upgrade))
@@ -611,28 +627,29 @@ public Native_RunUpgradeEffect(Handle:plugin, numParams)
 
 	// Don't allow this client to use the upgrade, if he doesn't have the required admin flag.
 	// Don't inform the other plugins at all.
-	if(!HasAccessToUpgrade(client, upgrade))
+	if(!HasAccessToUpgrade(issuer, upgrade))
 	{
 		// Might still allow them to use the effects of the upgrade, if they already got a level for it.
-		new iLevel = GetClientPurchasedUpgradeLevel(client, upgrade[UPGR_index]);
+		new iLevel = GetClientPurchasedUpgradeLevel(issuer, upgrade[UPGR_index]);
 		if(iLevel <= 0 || !GetConVarBool(g_hCVAllowPresentUpgradeUsage))
 			return false;
 	}
 	
 	// Block the effect from running, if the client is in the wrong team and there is a teamlock on the upgrade.
-	if(!IsClientInLockedTeam(client, upgrade))
+	if(!IsClientInLockedTeam(issuer, upgrade))
 		return false;
 	
 	// Don't allow bots to use this upgrade at all and don't inform other plugins that this effect would be about to start.
-	if(!upgrade[UPGR_allowBots] && IsFakeClient(client))
+	if(!upgrade[UPGR_allowBots] && IsFakeClient(issuer))
 	{
 		return false;
 	}
 	
 	new Action:result;
 	Call_StartForward(g_hfwdOnUpgradeEffect);
-	Call_PushCell(client);
+	Call_PushCell(target);
 	Call_PushString(sShortName);
+	Call_PushCell(issuer);
 	Call_Finish(result);
 	
 	return result < Plugin_Handled;

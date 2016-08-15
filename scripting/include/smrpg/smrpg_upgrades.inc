@@ -201,14 +201,15 @@ native bool:SMRPG_ClientWantsCosmetics(client, const String:shortname[], SMRPG_F
  * This should be checked before applying any effects on a client, to see, if some other plugin doesn't want the effects to happen.
  * That way you can e.g. avoid interferences between upgrades that change the same prop.
  *
- * This also returns false, if the client doesn't have the required admin permissions (smrpg_[shortname]_adminflag convar) for this upgrade. (see SMRPG_CheckUpgradeAccess)
+ * This also returns false, if the issuer doesn't have the required admin permissions (smrpg_[shortname]_adminflag convar) for this upgrade. (see SMRPG_CheckUpgradeAccess)
  *
- * @param client         The client which is about to get some effect applied.
+ * @param target         The client which is about to get some effect applied.
  * @param shortname      The shortname of the upgrade that is about to apply its effect on the client.
+ * @param issuer         (Optional) The client which starts the effect on the target. Leave at -1 to use the target as issuer for self effects.
  * @return True, if it's ok to run the effect, false if some other plugin doesn't want you to apply the effects.
  * @error Invalid client index, unknown upgrade shortname.
  */
-native bool:SMRPG_RunUpgradeEffect(client, const String:shortname[]);
+native bool:SMRPG_RunUpgradeEffect(target, const String:shortname[], issuer=-1);
 
 /**
  * Check if an upgrade with that shortname exists.
@@ -420,11 +421,12 @@ forward SMRPG_OnSellUpgradePost(client, const String:shortname[], newlevel);
  * Called when an upgrade is about to start his effect on a client.
  * The upgrades have to call SMRPG_RunUpgradeEffect for this to work.
  *
- * @param client         The client which is about to get some effect applied by the upgrade.
+ * @param target         The client which is about to get some effect applied by the upgrade.
  * @param shortname      The shortname of the upgrade that is about to apply an effect.
+ * @param issuer         (Optional) The client which starts the effect on the target. (Same as target by default)
  * @return >= Plugin_Handled to tell the upgrade to NOT run the effect, Plugin_Continue to let it pass.
  */
-forward Action:SMRPG_OnUpgradeEffect(client, const String:shortname[]);
+forward Action:SMRPG_OnUpgradeEffect(target, const String:shortname[], issuer);
 
 /**
  * Called after the default convars of an upgrade have changed.

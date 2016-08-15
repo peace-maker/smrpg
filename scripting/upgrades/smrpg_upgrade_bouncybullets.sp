@@ -163,7 +163,7 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 	
 	// This calls the SMRPG_OnUpgradeEffect global forward where other plugins can stop you from applying your effect, if it conflicts with theirs.
 	// This also returns false, if the client doesn't have the required admin flags to use the upgrade, so no need to call SMRPG_CheckUpgradeAccess.
-	if(!SMRPG_RunUpgradeEffect(attacker, UPGRADE_SHORTNAME))
+	if(!SMRPG_RunUpgradeEffect(victim, UPGRADE_SHORTNAME, attacker))
 		return; // Some other plugin doesn't want this effect to run
 
 	// Don't push frozen people around.

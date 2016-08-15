@@ -194,7 +194,7 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 	if(!GetTrieValue(g_hWeaponSpeeds, sWeapon, fSpeed))
 		return;
 	
-	if(!SMRPG_RunUpgradeEffect(victim, UPGRADE_SHORTNAME))
+	if(!SMRPG_RunUpgradeEffect(victim, UPGRADE_SHORTNAME, attacker))
 		return; // Some other plugin doesn't want this effect to run
 	
 	new Float:fTime = float(iLevel) * GetConVarFloat(g_hCVTimeIncrease);
