@@ -1,5 +1,11 @@
 "Phrases"
 {
+	"Inform about plugin"
+	{
+		// 1: Running SM:RPG plugin version (e.g. 1.0)
+		"ru"			"Этот сервер работает в режиме SM:RPG v{1}."
+	}
+	
 	"Advertise rpgmenu command"
 	{
 		"ru"			"{G}Напишите \"{N}rpgmenu{G}\" для выбора опций."
@@ -21,12 +27,12 @@
 	//Newbie Text
 	"Newbie instructions new level"
 	{
-		"ru"			"{G}Вы получили новый Уровень! Это означает, что Вы можете купить Обновления, которые дадут Вам преимущество перед оппонентами."
+		"ru"			"{G}Вы получили {N}новый Уровень{G}! Это означает, что Вы можете {N}купить навыки{G}, которые дадут Вам преимущество перед оппонентами."
 	}
 	
 	"Newbie instructions use rpgmenu"
 	{
-		"ru"			"{G}Напишите \"{L}rpgmenu{G}\" в чате, или напишите это в консоли для вызова меню, в котором Вы сможете купить Upgrades."
+		"ru"			"{G}Напишите \"{L}rpgmenu{G}\" в чате, или напишите это в консоли для вызова меню, в котором Вы сможете купить навыки."
 	}
 	
 	//Experience Hintbox
@@ -55,6 +61,18 @@
 		"ru"			"Top 10 SM:RPG Игроков"
 	}
 	
+	"Next ranked players"
+	{
+		"ru"			"Следующая Ранг игроков"
+	}
+	
+	"Player reached maxlevel"
+	{
+		// 1: Name of the player
+		// 2: Maximum level a player can reach.
+		"ru"			"{1} достиг максимального уровня {2} и рестартнулся."
+	}
+	
 	// Menu text
 	"Level"
 	{
@@ -64,8 +82,8 @@
 	
 	"Experience short"
 	{
-		// 1: Current rpg rank of the player.
-		// 2: Total amount of ranked players.
+		// 1: Current amount of experience of the player.
+		// 2: Experience required for next level.
 		"ru"			"Опыт: {1}/{2}"
 	}
 	
@@ -77,7 +95,7 @@
 	"Credits"
 	{
 		// 1: Amount of credits the player has.
-		"ru"			"Кредиты: {1}"
+		"ru"			"кредиты: {1}"
 	}
 	
 	"Rank"
@@ -87,9 +105,35 @@
 		"ru"			"Ранг: {1}/{2}"
 	}
 	
+	"Last reset"
+	{
+		// 1: date and time representation of the last time the stats were reset to 0 for this player
+		"ru"			"Последний сброс: {1}"
+	}
+	
+	"Experience Reason Other Client"
+	{
+		// 1: The amount of experience added to a client.
+		// 2: The reason this experience was added for
+		// 3: The name of the other client involved in the reason for this experience. (e.g. name of victim hurt)
+		"ru"			 "{1} exp. for \"{2}\" against {3}"
+	}
+	
+	"Experience Reason General"
+	{
+		// 1: The amount of experience added to a client.
+		// 2: The reason this experience was added for
+		"ru"			 "{1} exp. for \"{2}\""
+	}
+	
+	"Nothing to display"
+	{
+		"ru"			"Нет ничего, чтобы отобразить."
+	}
+	
 	"Cost"
 	{
-		"ru"			"Стоимость"
+		"ru"			"цена"
 	}
 	
 	"Sale"
@@ -97,15 +141,62 @@
 		"ru"			"Продажа"
 	}
 	
+	"Is teamlocked"
+	{
+		// 1: The team name of the team the upgrade is restricted to.
+		"ru"			"ТОЛЬКО {1} КОМАНДА!"
+	}
+	
+	"Session"
+	{
+		"ru"			"Сессия"
+	}
+	
+	"Playtime"
+	{
+		// 1: The time in hh:mm:ss the player is on the server since he joined.
+		"ru"			"Время сессии: {1}"
+	}
+	
+	"Changed level"
+	{
+		"ru"			"Изменение уровня"
+	}
+	
+	"Changed experience"
+	{
+		"ru"			"Изменение опыта"
+	}
+	
+	"Changed credits"
+	{
+		"ru"			"Изменение кредитов"
+	}
+	
+	"Changed rank"
+	{
+		"ru"			"Изменение ранга"
+	}
+	
 	// Menu Options
 	"Upgrades"
 	{
-		"ru"			"Обновления"
+		"ru"			"Покупка"
 	}
 	
 	"Sell"
 	{
 		"ru"			"Продажа"
+	}
+	
+	"Upgrade Settings"
+	{
+		"ru"			"Настройка навыков"
+	}
+	
+	"Last Experience"
+	{
+		"ru"			"LOG Последнего опыта"
 	}
 	
 	"Stats"
@@ -128,6 +219,21 @@
 		"ru"			"Сброс Статистики"
 	}
 	
+	"Show menu on levelup"
+	{
+		"ru"			"Показать RPG меню пры Levelup"
+	}
+	
+	"Fade screen on levelup"
+	{
+		"ru"			"Вспышка на экране пры Levelup"
+	}
+	
+	"Auto refresh panel"
+	{
+		"ru"			"Автоматическое обновление"
+	}
+	
 	// Menu selection result
 	"Stats have been reset"
 	{
@@ -144,7 +250,7 @@
 		// 1: The name of the upgrade the player wanted to buy.
 		// 2: The level of the upgrade the player wanted to buy.
 		// 3: The amount of credits this level of the upgrade costs.
-		"ru"			"У Вас недостаточно Кредита для покупки {1} Lvl {2}. (Необходимо {3} Кредитов)"
+		"ru"			"У Вас недостаточно Кредитов для покупки {1} ур {2}. (Нужно {3} Кредитов)"
 	}
 	
 	"Upgrade bought"
@@ -152,6 +258,14 @@
 		// 1: The name of the upgrade the player just bought.
 		// 2: The new level of this upgrade.
 		"ru"			"{1} Уровень {2} успешно приобретён."
+	}
+	
+	"Upgrade purchase notification"
+	{
+		// 1: The name of the player who bought an upgrade.
+		// 2: The name of the upgrade the player just bought.
+		// 3: The new level of this upgrade.
+		"ru"			"{1} купленный {2} уровень {3}."
 	}
 	
 	"Upgrade sold"
@@ -170,5 +284,158 @@
 	"Confirm stats reset"
 	{
 		"ru"			"Внимание: Вы потеряете все Уровни, Кредиты и Опыт.\nОбнулить статистику?"
+	}
+	
+	//Menu upgrade settings
+	"Enabled"
+	{
+		"ru"			"Включено"
+	}
+	
+	"Selected level"
+	{
+		"ru"			"Выбранный уровень"
+	}
+	
+	"Increase selected level"
+	{
+		"ru"			"Повысить уровень"
+	}
+	
+	"Decrease selected level"
+	{
+		"ru"			"Понизить уровень"
+	}
+	
+	"Visual effects"
+	{
+		"ru"			"Визуальные эффекты"
+	}
+	
+	"Sound effects"
+	{
+		"ru"			"Звуковые эффекты"
+	}
+	
+	// Command help
+	"rpgmenu short desc"
+	{
+		"ru"			"Открывает главное RPG меню"
+	}
+	
+	"rpgmenu desc"
+	{
+		"ru"			"Открывает главное RPG меню. Вы можете купить или продать обновления, просматривать статистику, посмотреть список команд и изменить другие настройки."
+	}
+	
+	"rpgmenu advert"
+	{
+		"ru"			"Введите {N}rpgmenu{G}, чтобы открыть главное RPG меню."
+	}
+	
+	"rpgrank short desc"
+	{
+		"ru"			"Показывает ваш ранг или ранг указаного человека"
+	}
+	
+	"rpgrank desc"
+	{
+		"ru"			"Показывает ваш ранг или ранг указаного человека. Используйте: {N}rpgrank [name|#steamid|#userid]"
+	}
+	
+	"rpgrank advert"
+	{
+		"ru"			"Введите {N}rpgrank{G} чтобы посмотреть свою статистику или {N}rpgrank <имя игрока>{G}, чтобы отобразить статистику других игроков."
+	}
+	
+	"rpginfo short desc"
+	{
+		"ru"			"Показывает, приобретенные навыки указаного человека"
+	}
+	
+	"rpginfo desc"
+	{
+		"ru"			"Показывает, приобретенные навыки указаного человека. Используйте: {N}rpginfo <name|#steamid|#userid>"
+	}
+	
+	"rpginfo advert"
+	{
+		"ru"			"Введите {N}rpginfo <имя игрока>{G}, чтобы посмотреть какие навыки купил другой игрок."
+	}
+	
+	"rpgtop10 short desc"
+	{
+		"ru"			"Показать SM:RPG top 10"
+	}
+	
+	"rpgtop10 desc"
+	{
+		"ru"			"Показать RPG топ 10 лучших игроков на этом сервере."
+	}
+	
+	"rpgtop10 advert"
+	{
+		"ru"			"Введите {N}rpgtop10{G}, чтобы посмотреть топ-10 RPG игроков на этом сервере."
+	}
+	
+	"rpgnext short desc"
+	{
+		"ru"			"Показать следующих игроков в ранге перед вами"
+	}
+	
+	"rpgnext desc"
+	{
+		"ru"			"Показать список игроков, которые прямо перед вами в рейтинге."
+	}
+	
+	"rpgnext advert"
+	{
+		"ru"			"Введите {N}rpgnext{G} для просмотра списка игроков, которые прямо перед вами в рейтинге."
+	}
+	
+	"rpgsession short desc"
+	{
+		"ru"			"Показать текущий сеанс RPG статистики"
+	}
+	
+	"rpgsession desc"
+	{
+		"ru"			"Показать текущий сеанс RPG статистики."
+	}
+	
+	"rpgsession advert"
+	{
+		"ru"			"Введите {N}rpgsession{G}, чтобы посмотреть,изменения вашей статистики в текущей сессии."
+	}
+	
+	"rpghelp short desc"
+	{
+		"ru"			"Показать справку об навыках"
+	}
+	
+	"rpghelp desc"
+	{
+		"ru"			"Показать меню справки, где вы получите подробные описания об различных доступных РПГ навыковах."
+	}
+	
+	"rpghelp advert"
+	{
+		"ru"			"Введите {N}rpghelp{G}, чтобы получить подробное описание того, что делают навыки."
+	}
+	
+	"rpgexp short desc"
+	{
+		"ru"			"Показать последний заработанный опыт"
+	}
+	
+	"rpgexp desc"
+	{
+		"ru"			"Показывает количество и причины получения последнего опыта которого вы заработали."
+	}
+	
+	"rpgexp advert"
+	{
+		// 1: Value of smrpg_lastexperience_count. The amount of experience saved in the array.
+		"ru"			"Введите {N}rpgexp{G}, чтобы увидеть список последних {1} причин и количества опыта которого вы заработали."
 	}
 }
