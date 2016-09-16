@@ -342,7 +342,7 @@
 
 	"rpgrank desc"
 	{
-		"fr"	"Affiche ton rang ou le rang d'autres personnes. Utilisation: {N}rpgrank [nom|steamid|#userid]"
+		"fr"	"Affiche ton rang ou le rang d'autres personnes. Utilisation: {N}rpgrank [nom|#steamid|#userid]"
 	}
 
 	"rpgrank advert"
@@ -357,7 +357,7 @@
 
 	"rpginfo desc"
 	{
-		"fr"	"Affiche les améliorations d'une autre personne. Utilisation: {N}rpginfo <nom|steamid|#userid>"
+		"fr"	"Affiche les améliorations d'une autre personne. Utilisation: {N}rpginfo <nom|#steamid|#userid>"
 	}
 
 	"rpginfo advert"

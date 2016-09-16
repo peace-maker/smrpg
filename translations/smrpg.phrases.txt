@@ -89,8 +89,8 @@
 	
 	"Experience short"
 	{
-		// 1: Current rpg rank of the player.
-		// 2: Total amount of ranked players.
+		// 1: Current amount of experience of the player.
+		// 2: Experience required for next level.
 		"#format" "{1:d},{2:d}"
 		"en"			"Exp: {1}/{2}"
 	}
@@ -359,7 +359,7 @@
 	
 	"rpgrank desc"
 	{
-		"en"			"Shows your rank or the rank of the target person. Usage: {N}rpgrank [name|steamid|#userid]"
+		"en"			"Shows your rank or the rank of the target person. Usage: {N}rpgrank [name|#steamid|#userid]"
 	}
 	
 	"rpgrank advert"
@@ -374,7 +374,7 @@
 	
 	"rpginfo desc"
 	{
-		"en"			"Shows the purchased upgrades of the target person. Usage: {N}rpginfo <name|steamid|#userid>"
+		"en"			"Shows the purchased upgrades of the target person. Usage: {N}rpginfo <name|#steamid|#userid>"
 	}
 	
 	"rpginfo advert"

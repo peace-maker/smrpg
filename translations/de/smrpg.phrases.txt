@@ -123,7 +123,6 @@
 	{
 		// 1: The amount of experience added to a client.
 		// 2: The reason this experience was added for
-		"#format"	"{1:d},{2:s}"
 		"de"			 "{1} Exp. für \"{2}\""
 	}
 	
@@ -341,7 +340,7 @@
 	
 	"rpgrank desc"
 	{
-		"de"			"Zeigt deinen Rank oder den eines anderen Spielers. Gebrauch: {N}rpgrank [name|steamid|#userid]"
+		"de"			"Zeigt deinen Rank oder den eines anderen Spielers. Gebrauch: {N}rpgrank [name|#steamid|#userid]"
 	}
 	
 	"rpgrank advert"
@@ -356,7 +355,7 @@
 	
 	"rpginfo desc"
 	{
-		"de"			"Zeigt welche Upgrades ein anderer Spieler gekauft hat. Gebrauch: {N}rpginfo <name|steamid|#userid>"
+		"de"			"Zeigt welche Upgrades ein anderer Spieler gekauft hat. Gebrauch: {N}rpginfo <name|#steamid|#userid>"
 	}
 	
 	"rpginfo advert"

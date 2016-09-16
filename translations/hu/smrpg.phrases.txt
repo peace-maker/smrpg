@@ -235,7 +235,7 @@
 	
 	"rpgrank desc"
 	{
-		"hu"			"Megmutatja a rangodat, vagy a személyét akire kíváncsi vagy. Írd be: {N}rpgrank [név|steamid|#userid]"
+		"hu"			"Megmutatja a rangodat, vagy a személyét akire kíváncsi vagy. Írd be: {N}rpgrank [név|#steamid|#userid]"
 	}
 	
 	"rpgrank advert"
@@ -250,7 +250,7 @@
 	
 	"rpginfo desc"
 	{
-		"hu"			"Megmutatja a megvásárolt képességeit az adott játékosnak. Használat: {N}rpginfo <név|steamid|#userid>"
+		"hu"			"Megmutatja a megvásárolt képességeit az adott játékosnak. Használat: {N}rpginfo <név|#steamid|#userid>"
 	}
 	
 	"rpginfo advert"
