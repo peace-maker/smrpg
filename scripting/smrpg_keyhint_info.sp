@@ -27,6 +27,8 @@ new Handle:g_hExperienceMemory[MAXPLAYERS+1];
 new g_iExperienceThisMinute[MAXPLAYERS+1];
 new Float:g_fExperienceAverage[MAXPLAYERS+1];
 
+new bool:g_bIsCSGO;
+
 public Plugin:myinfo = 
 {
 	name = "SM:RPG > Key Hint Infopanel",
@@ -34,19 +36,6 @@ public Plugin:myinfo =
 	description = "Shows some RPG stats in a panel on the screen",
 	version = PLUGIN_VERSION,
 	url = "http://www.wcfan.de/"
-}
-
-public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
-{
-	new EngineVersion:engine = GetEngineVersion();
-	// Prevent known crash in bad games.
-	if(engine == Engine_CSGO)
-	{
-		Format(error, err_max, "This plugin can't be used in CS:GO.");
-		return APLRes_SilentFailure;
-	}
-	
-	return APLRes_Success;
 }
 
 public OnPluginStart()
@@ -62,6 +51,8 @@ public OnPluginStart()
 	if(LibraryExists("clientprefs"))
 		OnLibraryAdded("clientprefs");
 	
+	g_bIsCSGO = GetEngineVersion() == Engine_CSGO;
+	
 	for(new i=1;i<=MaxClients;i++)
 	{
 		if(IsClientInGame(i))
@@ -73,7 +64,7 @@ public OnLibraryAdded(const String:name[])
 {
 	if(StrEqual(name, "clientprefs"))
 	{
-		g_hCookieHidePanel = RegClientCookie("smrpg_keyhint_hide", "Hide the info panel on the right side of the screen showing RPG stats.", CookieAccess_Protected);
+		g_hCookieHidePanel = RegClientCookie("smrpg_keyhint_hide", "Hide the rpg info panel showing RPG stats.", CookieAccess_Protected);
 	}
 }
 
@@ -145,36 +136,74 @@ public Action:Timer_ShowInfoPanel(Handle:timer)
 				continue;
 		}
 		
-		strcopy(sBuffer, sizeof(sBuffer), "RPG Stats\n");
+		// CS:GO doesn't support the KeyHint usermessage.
+		// Show a 3 line formatted HintText instead.
+		if (g_bIsCSGO)
+			strcopy(sBuffer, sizeof(sBuffer), "<font size=\"20\"><u>RPG Stats</u></font>");
+		else
+			strcopy(sBuffer, sizeof(sBuffer), "RPG Stats\n");
+			
 		// Show the name of the player he's spectating
 		if(iTarget != i)
-			Format(sBuffer, sizeof(sBuffer), "%s%N\n", sBuffer, iTarget);
+		{
+			if (g_bIsCSGO)
+				Format(sBuffer, sizeof(sBuffer), "%s for <font color=\"#ff0000\">%N</font>\n", sBuffer, iTarget);
+			else
+				Format(sBuffer, sizeof(sBuffer), "%s%N\n", sBuffer, iTarget);
+		}
+		else if (g_bIsCSGO)
+			StrCat(sBuffer, sizeof(sBuffer), "\n");
 		
 		iLevel = SMRPG_GetClientLevel(iTarget);
 		iExp = SMRPG_GetClientExperience(iTarget),
 		iExpForLevel = SMRPG_LevelToExperience(iLevel);
-		Format(sBuffer, sizeof(sBuffer), "%s\n%T\n", sBuffer, "Level", i, iLevel);
-		Format(sBuffer, sizeof(sBuffer), "%s%T\n", sBuffer, "Experience short", i, iExp, iExpForLevel);
-		Format(sBuffer, sizeof(sBuffer), "%s%T", sBuffer, "Credits", i, SMRPG_GetClientCredits(iTarget));
 		
-		new iRank = SMRPG_GetClientRank(iTarget);
-		if(iRank > 0)
-			Format(sBuffer, sizeof(sBuffer), "%s\n%T", sBuffer, "Rank", i, iRank, iRankCount);
+		if (g_bIsCSGO)
+		{
+			Format(sBuffer, sizeof(sBuffer), "%s<font size=\"16\">%T\t", sBuffer, "Level", i, iLevel);
+			Format(sBuffer, sizeof(sBuffer), "%s%T\t", sBuffer, "Experience short", i, iExp, iExpForLevel);
+			Format(sBuffer, sizeof(sBuffer), "%s%T</font>", sBuffer, "Credits", i, SMRPG_GetClientCredits(iTarget));
+		}
+		else
+		{
+			Format(sBuffer, sizeof(sBuffer), "%s\n%T\n", sBuffer, "Level", i, iLevel);
+			Format(sBuffer, sizeof(sBuffer), "%s%T\n", sBuffer, "Experience short", i, iExp, iExpForLevel);
+			Format(sBuffer, sizeof(sBuffer), "%s%T", sBuffer, "Credits", i, SMRPG_GetClientCredits(iTarget));
+		}
+		
+		// No space for that in CS:GO :(
+		if (!g_bIsCSGO)
+		{
+			new iRank = SMRPG_GetClientRank(iTarget);
+			if(iRank > 0)
+				Format(sBuffer, sizeof(sBuffer), "%s\n%T", sBuffer, "Rank", i, iRank, iRankCount);
+		}
 		
 		if(g_fExperienceAverage[iTarget] > 0.0)
 		{
 			iExpNeeded = iExpForLevel - iExp;
 			SecondsToString(sTime, sizeof(sTime), RoundToCeil(float(iExpNeeded)/g_fExperienceAverage[iTarget]*SECONDS_EXP_AVG_CALC));
-			Format(sBuffer, sizeof(sBuffer), "%s\n%T: %s", sBuffer, "Estimated time until levelup", i, sTime);
+			
+			if (g_bIsCSGO)
+				Format(sBuffer, sizeof(sBuffer), "%s\t<font size=\"15\" color=\"#00ff00\"><i>%T: %s</i></font>", sBuffer, "Estimated time until levelup", i, sTime);
+			else
+				Format(sBuffer, sizeof(sBuffer), "%s\n%T: %s", sBuffer, "Estimated time until levelup", i, sTime);
 		}
 		
-		if(g_iLastExperience[iTarget] > 0)
-			Format(sBuffer, sizeof(sBuffer), "%s\n%T: +%d", sBuffer, "Last Experience Short", i, g_iLastExperience[iTarget]);
+		// Not enough space in csgo..
+		if(!g_bIsCSGO)
+		{
+			if(g_iLastExperience[iTarget] > 0)
+				Format(sBuffer, sizeof(sBuffer), "%s\n%T: +%d", sBuffer, "Last Experience Short", i, g_iLastExperience[iTarget]);
+			
+			if(SMRPG_IsClientAFK(iTarget))
+				Format(sBuffer, sizeof(sBuffer), "%s\n\n%T", sBuffer, "Player is AFK", i);
+		}
 		
-		if(SMRPG_IsClientAFK(iTarget))
-			Format(sBuffer, sizeof(sBuffer), "%s\n\n%T", sBuffer, "Player is AFK", i);
-		
-		Client_PrintKeyHintText(i, sBuffer);
+		if (g_bIsCSGO)
+			Client_PrintHintText(i, "%s", sBuffer);
+		else
+			Client_PrintKeyHintText(i, "%s", sBuffer);
 	}
 	
 	return Plugin_Continue;

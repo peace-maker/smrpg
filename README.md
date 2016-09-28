@@ -31,7 +31,7 @@ Server admins can install a new upgrade simply by loading the upgrade plugin.
   * smrpg_resetstats - Automatically reset the stats on different conditions and display next reset date in chat.
   * smrpg_commandlist - Teach players about different available rpg related chat commands.
   * smrpg_effects - Central library to apply similar upgrade effects. Required by some upgrades!
-  * smrpg_keyhint_info (On CS:S) - Display rpg stats and more info permanently on the screen.
+  * smrpg_keyhint_info - Display rpg stats and more info permanently on the screen.
   * smrpg_chatxpstats - Display infos in chat about gained experience for a kill or during the whole last life.
   * smrpg_gifting - Allow players to give other players rpg credits as a gift.
   * smrpg_turbomode - Increase the experience and credits rate for one map, but don't save the stats. For fun events.
