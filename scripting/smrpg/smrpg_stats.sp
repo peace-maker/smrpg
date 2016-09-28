@@ -210,7 +210,7 @@ Stats_PlayerNewLevel(client, iLevelIncrease)
 	}
 }
 
-bool:Stats_AddExperience(client, &iExperience, const String:sReason[], bool:bHideNotice, other)
+bool:Stats_AddExperience(client, &iExperience, const String:sReason[], bool:bHideNotice, other, bool:bIgnoreChecks=false)
 {
 	// Nothing to add?
 	if(iExperience <= 0)
@@ -219,49 +219,53 @@ bool:Stats_AddExperience(client, &iExperience, const String:sReason[], bool:bHid
 	IF_IGNORE_BOTS(client)
 		return false;
 	
-	new bool:bBotEnable = GetConVarBool(g_hCVBotEnable);
-	if(GetConVarBool(g_hCVNeedEnemies))
+	// Admin commands shouldn't worry about fairness.
+	if (!bIgnoreChecks)
 	{
-		// No enemies in the opposite team?
-		if(!Team_HaveAllPlayers(bBotEnable))
-			return false;
-	}
-	
-	// All players in the opposite team are AFK?
-	if(GetConVarBool(g_hCVEnemiesNotAFK))
-	{
-		new iMyTeam = GetClientTeam(client);
-		if(iMyTeam > 1)
+		new bool:bBotEnable = GetConVarBool(g_hCVBotEnable);
+		if(GetConVarBool(g_hCVNeedEnemies))
 		{
-			new bool:bAllAFK, iTeam;
-			for(new i=1;i<=MaxClients;i++)
+			// No enemies in the opposite team?
+			if(!Team_HaveAllPlayers(bBotEnable))
+				return false;
+		}
+		
+		// All players in the opposite team are AFK?
+		if(GetConVarBool(g_hCVEnemiesNotAFK))
+		{
+			new iMyTeam = GetClientTeam(client);
+			if(iMyTeam > 1)
 			{
-				if(IsClientInGame(i))
+				new bool:bAllAFK, iTeam;
+				for(new i=1;i<=MaxClients;i++)
 				{
-					if(IsFakeClient(i) && !bBotEnable)
-						continue;
-					
-					iTeam = GetClientTeam(i);
-					// This is an enemy?
-					if(iTeam > 1 && iTeam != iMyTeam)
+					if(IsClientInGame(i))
 					{
-						// This enemy isn't afk? Add experience then.
-						if(!IsClientAFK(i))
+						if(IsFakeClient(i) && !bBotEnable)
+							continue;
+						
+						iTeam = GetClientTeam(i);
+						// This is an enemy?
+						if(iTeam > 1 && iTeam != iMyTeam)
 						{
-							bAllAFK = false;
-							break;
-						}
-						else
-						{
-							bAllAFK = true;
+							// This enemy isn't afk? Add experience then.
+							if(!IsClientAFK(i))
+							{
+								bAllAFK = false;
+								break;
+							}
+							else
+							{
+								bAllAFK = true;
+							}
 						}
 					}
 				}
+				
+				// Don't count any experience, if all players in the opposite team are AFK.
+				if(bAllAFK)
+					return false;
 			}
-			
-			// Don't count any experience, if all players in the opposite team are AFK.
-			if(bAllAFK)
-				return false;
 		}
 	}
 	
@@ -531,6 +535,7 @@ public Native_AddClientExperience(Handle:plugin, numParams)
 #endif
 	
 	new iOriginalExperience = iExperience;
+	// TODO: Expose bIgnoreChecks parameter.
 	new bool:bAdded = Stats_AddExperience(client, iExperience, sReason, bHideNotice, other);
 	if(iOriginalExperience != iExperience)
 		SetNativeCellRef(2, iExperience);

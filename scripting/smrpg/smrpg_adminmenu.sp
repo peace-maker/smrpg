@@ -364,13 +364,17 @@ public Menu_HandlePlayerChangeExperience(Handle:menu, MenuAction:action, param1,
 		new iOldLevel = GetClientLevel(g_iCurrentMenuTarget[param1]);
 		new iOldExperience = GetClientExperience(g_iCurrentMenuTarget[param1]);
 		
+		new bool:bSuccess;
 		// If we're adding experience, add it properly and level up if necassary.
 		if(iAmount > 0)
-			Stats_AddExperience(g_iCurrentMenuTarget[param1], iAmount, ExperienceReason_Admin, false, -1);
+			bSuccess = Stats_AddExperience(g_iCurrentMenuTarget[param1], iAmount, ExperienceReason_Admin, false, -1, true);
 		else
-			SetClientExperience(g_iCurrentMenuTarget[param1], GetClientExperience(g_iCurrentMenuTarget[param1])+iAmount);
+			bSuccess = SetClientExperience(g_iCurrentMenuTarget[param1], GetClientExperience(g_iCurrentMenuTarget[param1])+iAmount);
 		
-		LogAction(param1, g_iCurrentMenuTarget[param1], "%L changed experience of %L by %d. He is now Level %d and has %d/%d Experience (previously Level %d with %d/%d Experience)", param1, g_iCurrentMenuTarget[param1], iAmount, GetClientLevel(g_iCurrentMenuTarget[param1]), GetClientExperience(g_iCurrentMenuTarget[param1]), Stats_LvlToExp(GetClientLevel(g_iCurrentMenuTarget[param1])), iOldLevel, iOldExperience, Stats_LvlToExp(iOldLevel));
+		if (!bSuccess)
+			LogAction(param1, g_iCurrentMenuTarget[param1], "%L tried to change experience of %L by %d, but the command failed.", param1, g_iCurrentMenuTarget[param1], iAmount);
+		else
+			LogAction(param1, g_iCurrentMenuTarget[param1], "%L changed experience of %L by %d. He is now Level %d and has %d/%d Experience (previously Level %d with %d/%d Experience)", param1, g_iCurrentMenuTarget[param1], iAmount, GetClientLevel(g_iCurrentMenuTarget[param1]), GetClientExperience(g_iCurrentMenuTarget[param1]), Stats_LvlToExp(GetClientLevel(g_iCurrentMenuTarget[param1])), iOldLevel, iOldExperience, Stats_LvlToExp(iOldLevel));
 		ShowPlayerExperienceManageMenu(param1);
 	}
 }

@@ -416,6 +416,7 @@ public Action:Cmd_SetExp(client, args)
 	}
 	
 	new iLastOldLevel, iLastOldExperience;
+	new iFailCount, bool:bSuccess;
 	for(new i=0;i<iTargetCount;i++)
 	{
 		iLastOldLevel = GetClientLevel(iTargetList[i]);
@@ -425,22 +426,31 @@ public Action:Cmd_SetExp(client, args)
 		if(iExperience > iLastOldExperience)
 		{
 			new iNewExperience = iExperience-iLastOldExperience;
-			Stats_AddExperience(iTargetList[i], iNewExperience, ExperienceReason_Admin, false, -1);
+			bSuccess = Stats_AddExperience(iTargetList[i], iNewExperience, ExperienceReason_Admin, false, -1, true);
 		}
 		else
-			SetClientExperience(iTargetList[i], iExperience);
+			bSuccess = SetClientExperience(iTargetList[i], iExperience);
 		
-		LogAction(client, iTargetList[i], "%L set experience of %L to %d. He is now level %d and has %d/%d experience (previously level %d with %d/%d experience)", client, iTargetList[i], iExperience, GetClientLevel(iTargetList[i]), GetClientExperience(iTargetList[i]), Stats_LvlToExp(GetClientLevel(iTargetList[i])), iLastOldLevel, iLastOldExperience, Stats_LvlToExp(iLastOldLevel));
+		if (bSuccess)
+			LogAction(client, iTargetList[i], "%L set experience of %L to %d. He is now level %d and has %d/%d experience (previously level %d with %d/%d experience)", client, iTargetList[i], iExperience, GetClientLevel(iTargetList[i]), GetClientExperience(iTargetList[i]), Stats_LvlToExp(GetClientLevel(iTargetList[i])), iLastOldLevel, iLastOldExperience, Stats_LvlToExp(iLastOldLevel));
+		else
+		{
+			LogAction(client, iTargetList[i], "%L tried to set experience of %L to %d, but the command failed.", client, iTargetList[i], iExperience);
+			iFailCount++;
+		}
 	}
 	
 	if(tn_is_ml)
 	{
-		LogAction(client, -1, "%L set experience of %T (%d players) to %d.", client, sTargetName, LANG_SERVER, iTargetCount, iExperience);
-		ReplyToCommand(client, "SM:RPG setexp: Experience has been set to %d for %t (%d players).", iExperience, sTargetName, iTargetCount);
+		LogAction(client, -1, "%L set experience of %T (%d players, %d failed) to %d.", client, sTargetName, LANG_SERVER, iTargetCount, iFailCount, iExperience);
+		ReplyToCommand(client, "SM:RPG setexp: Experience has been set to %d for %t (%d players, %d failed).", iExperience, sTargetName, iTargetCount, iFailCount);
 	}
 	else
 	{
-		ReplyToCommand(client, "SM:RPG setexp: %N is now level %d and has %d/%d experience (previously level %d with %d/%d experience)", iTargetList[0], GetClientLevel(iTargetList[0]), GetClientExperience(iTargetList[0]), Stats_LvlToExp(GetClientLevel(iTargetList[0])), iLastOldLevel, iLastOldExperience, Stats_LvlToExp(iLastOldLevel));
+		if (iFailCount > 0)
+			ReplyToCommand(client, "SM:RPG setexp: Failed to set %N's experience to %d.", iTargetList[0], iExperience);
+		else
+			ReplyToCommand(client, "SM:RPG setexp: %N is now level %d and has %d/%d experience (previously level %d with %d/%d experience)", iTargetList[0], GetClientLevel(iTargetList[0]), GetClientExperience(iTargetList[0]), Stats_LvlToExp(GetClientLevel(iTargetList[0])), iLastOldLevel, iLastOldExperience, Stats_LvlToExp(iLastOldLevel));
 	}
 
 	return Plugin_Handled;
@@ -485,25 +495,33 @@ public Action:Cmd_AddExp(client, args)
 	}
 	
 	new iLastOldLevel, iLastOldExperience;
+	new iFailCount;
 	for(new i=0;i<iTargetCount;i++)
 	{
 		iLastOldLevel = GetClientLevel(iTargetList[i]);
 		iLastOldExperience = GetClientExperience(iTargetList[i]);
 		
 		// Do a proper level up if enough experience.
-		Stats_AddExperience(iTargetList[i], iExperienceIncrease, ExperienceReason_Admin, false, -1);
-		
-		LogAction(client, iTargetList[i], "%L added %d experience to %L. He is now level %d and has %d/%d experience (previously level %d with %d/%d experience)", client, iExperienceIncrease, iTargetList[i], GetClientLevel(iTargetList[i]), GetClientExperience(iTargetList[i]), Stats_LvlToExp(GetClientLevel(iTargetList[i])), iLastOldLevel, iLastOldExperience, Stats_LvlToExp(iLastOldLevel));
+		if (Stats_AddExperience(iTargetList[i], iExperienceIncrease, ExperienceReason_Admin, false, -1, true))
+			LogAction(client, iTargetList[i], "%L added %d experience to %L. He is now level %d and has %d/%d experience (previously level %d with %d/%d experience)", client, iExperienceIncrease, iTargetList[i], GetClientLevel(iTargetList[i]), GetClientExperience(iTargetList[i]), Stats_LvlToExp(GetClientLevel(iTargetList[i])), iLastOldLevel, iLastOldExperience, Stats_LvlToExp(iLastOldLevel));
+		else
+		{
+			LogAction(client, iTargetList[i], "%L tried to add %d experience to %L, but the command failed.", client, iExperienceIncrease, iTargetList[i]);
+			iFailCount++;
+		}
 	}
 	
 	if(tn_is_ml)
 	{
-		LogAction(client, -1, "%L added %d experience to %T (%d players).", client, iExperienceIncrease, sTargetName, LANG_SERVER, iTargetCount);
-		ReplyToCommand(client, "SM:RPG addexp: %d experience has been added for %t (%d players).", iExperienceIncrease, sTargetName, iTargetCount);
+		LogAction(client, -1, "%L added %d experience to %T (%d players, %d failed).", client, iExperienceIncrease, sTargetName, LANG_SERVER, iTargetCount, iFailCount);
+		ReplyToCommand(client, "SM:RPG addexp: %d experience has been added for %t (%d players, %d failed).", iExperienceIncrease, sTargetName, iTargetCount, iFailCount);
 	}
 	else
 	{
-		ReplyToCommand(client, "SM:RPG addexp: %N is now level %d and has %d/%d experience (previously level %d with %d/%d experience)", iTargetList[0], GetClientLevel(iTargetList[0]), GetClientExperience(iTargetList[0]), Stats_LvlToExp(GetClientLevel(iTargetList[0])), iLastOldLevel, iLastOldExperience, Stats_LvlToExp(iLastOldLevel));
+		if (iFailCount > 0)
+			ReplyToCommand(client, "SM:RPG addexp: Failed to add %d experience to %N.", iExperienceIncrease, iTargetList[0]);
+		else
+			ReplyToCommand(client, "SM:RPG addexp: %N is now level %d and has %d/%d experience (previously level %d with %d/%d experience)", iTargetList[0], GetClientLevel(iTargetList[0]), GetClientExperience(iTargetList[0]), Stats_LvlToExp(GetClientLevel(iTargetList[0])), iLastOldLevel, iLastOldExperience, Stats_LvlToExp(iLastOldLevel));
 	}
 	
 	return Plugin_Handled;
