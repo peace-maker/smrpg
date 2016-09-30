@@ -11,8 +11,17 @@
 #define UPGRADE_SHORTNAME "impulse"
 #define PLUGIN_VERSION "1.0"
 
-new Handle:g_hCVSpeedIncrease;
-new Handle:g_hCVDuration;
+// Config
+new Handle:g_hCVDefaultSpeedIncrease;
+new Handle:g_hCVDefaultDuration;
+
+new Handle:g_hWeaponConfig;
+
+enum WeaponConfig
+{
+	Float:Config_SpeedIncrease,
+	Float:Config_Duration
+};
 
 new g_iImpulseTrailSprites[MAXPLAYERS+1] = {-1,...};
 
@@ -32,6 +41,8 @@ public OnPluginStart()
 	LoadTranslations("smrpg_stock_upgrades.phrases");
 	
 	SMRPG_GC_CheckSharedMaterialsAndSounds();
+	
+	g_hWeaponConfig = CreateTrie();
 	
 	// Account for late loading
 	for(new i=1;i<=MaxClients;i++)
@@ -62,14 +73,17 @@ public OnLibraryAdded(const String:name[])
 		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
 		SMRPG_SetUpgradeDefaultCosmeticEffect(UPGRADE_SHORTNAME, SMRPG_FX_Visuals, true);
 		
-		g_hCVSpeedIncrease = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_impulse_speed_inc", "0.2", "Speed increase for each level when player is damaged.", 0, true, 0.1);
-		g_hCVDuration = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_impulse_duration", "0.8", "Duration of Impulse's effect in seconds.", 0, true, 0.1);
+		g_hCVDefaultSpeedIncrease = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_impulse_speed_inc", "0.2", "Speed increase for each level when player is damaged.", 0, true, 0.1);
+		g_hCVDefaultDuration = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_impulse_duration", "0.8", "Duration of Impulse's effect in seconds.", 0, true, 0.1);
 	}
 }
 
 public OnMapStart()
 {
 	SMRPG_GC_PrecacheModel("SpriteRedTrail");
+	
+	if(!LoadWeaponConfig())
+		LogError("Can't read config file in configs/smrpg/impulse_weapons.cfg!");
 }
 
 public OnClientPutInServer(client)
@@ -175,12 +189,29 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 	if(SMRPG_IsClientLaggedMovementChanged(victim, LMT_Faster, true))
 		return; //Player is already faster
 	
+	new iWeapon = inflictor;
+	if(inflictor > 0 && inflictor <= MaxClients)
+		iWeapon = Client_GetActiveWeapon(inflictor);
+	
+	new String:sWeapon[256];
+	if(iWeapon != -1)
+		GetEntityClassname(iWeapon, sWeapon, sizeof(sWeapon));
+	
+	// Upgrade disabled for this weapon?
+	new Float:fSpeedIncreasePercent = GetWeaponSpeedIncrease(sWeapon);
+	if (fSpeedIncreasePercent <= 0.0)
+		return;
+	
+	new Float:fSpeedDuration = GetWeaponEffectDuration(sWeapon);
+	if (fSpeedDuration <= 0.0)
+		return;
+	
 	if(!SMRPG_RunUpgradeEffect(victim, UPGRADE_SHORTNAME))
 		return; // Some other plugin doesn't want this effect to run
 	
 	/* Set player speed */
-	new Float:fSpeed = 1.0 + float(iLevel) * GetConVarFloat(g_hCVSpeedIncrease);
-	SMRPG_ChangeClientLaggedMovement(victim, fSpeed, GetConVarFloat(g_hCVDuration));
+	new Float:fSpeed = 1.0 + float(iLevel) * fSpeedIncreasePercent;
+	SMRPG_ChangeClientLaggedMovement(victim, fSpeed, fSpeedDuration);
 	
 	// No effect for this game:(
 	new iRedTrailSprite = SMRPG_GC_GetPrecachedIndex("SpriteRedTrail");
@@ -209,6 +240,71 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 	SetVariantString("!activator");
 	AcceptEntityInput(iSprite, "SetParent", victim);
 	
-	TE_SetupBeamFollow(iSprite, iRedTrailSprite, iRedTrailSprite, GetConVarFloat(g_hCVDuration), 10.0, 4.0, 2, {255,0,0,255});
+	TE_SetupBeamFollow(iSprite, iRedTrailSprite, iRedTrailSprite, fSpeedDuration, 10.0, 4.0, 2, {255,0,0,255});
 	SMRPG_TE_SendToAllEnabled(UPGRADE_SHORTNAME);
+}
+
+/**
+ * Helpers
+ */
+bool:LoadWeaponConfig()
+{
+	ClearTrie(g_hWeaponConfig);
+	
+	new String:sPath[PLATFORM_MAX_PATH];
+	BuildPath(Path_SM, sPath, sizeof(sPath), "configs/smrpg/impulse_weapons.cfg");
+	
+	if(!FileExists(sPath))
+		return false;
+	
+	new Handle:hKV = CreateKeyValues("ImpulseWeapons");
+	if(!FileToKeyValues(hKV, sPath))
+	{
+		CloseHandle(hKV);
+		return false;
+	}
+	
+	new String:sWeapon[64], config[WeaponConfig];
+	if(KvGotoFirstSubKey(hKV, false))
+	{
+		do
+		{
+			KvGetSectionName(hKV, sWeapon, sizeof(sWeapon));
+			config[Config_SpeedIncrease] = KvGetFloat(hKV, "speed_increase", -1.0);
+			config[Config_Duration] = KvGetFloat(hKV, "duration", -1.0);
+			
+			SetTrieArray(g_hWeaponConfig, sWeapon, config[0], _:WeaponConfig);
+			
+		} while (KvGotoNextKey(hKV));
+	}
+	CloseHandle(hKV);
+	return true;
+}
+
+Float:GetWeaponSpeedIncrease(const String:sWeapon[])
+{
+	// See if there is a value for this weapon in the config.
+	new config[WeaponConfig];
+	if (GetTrieArray(g_hWeaponConfig, sWeapon, config[0], _:WeaponConfig))
+	{
+		if (config[Config_SpeedIncrease] >= 0.0)
+			return config[Config_SpeedIncrease];
+	}
+	
+	// Just use the default value
+	return GetConVarFloat(g_hCVDefaultSpeedIncrease);
+}
+
+Float:GetWeaponEffectDuration(const String:sWeapon[])
+{
+	// See if there is a value for this weapon in the config.
+	new config[WeaponConfig];
+	if (GetTrieArray(g_hWeaponConfig, sWeapon, config[0], _:WeaponConfig))
+	{
+		if (config[Config_Duration] >= 0.0)
+			return config[Config_Duration];
+	}
+	
+	// Just use the default value
+	return GetConVarFloat(g_hCVDefaultDuration);
 }
