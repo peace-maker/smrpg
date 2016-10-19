@@ -132,7 +132,7 @@ public Action:Timer_ShowInfoPanel(Handle:timer)
 			
 			// Make sure he's really observing someone.
 			iTarget = Client_GetObserverTarget(i);
-			if(iTarget <= 0)
+			if(iTarget <= 0 || iTarget > MaxClients)
 				continue;
 		}
 		
@@ -292,7 +292,7 @@ public TopMenu_SettingsItemHandler(Handle:topmenu, TopMenuAction:action, TopMenu
 			DisplayTopMenu(g_hRPGMenu, param, TopMenuPosition_LastCategory);
 			
 			// Hide the panel right away to be responsive!
-			if(g_bClientHidePanel[param])
+			if(g_bClientHidePanel[param] && !g_bIsCSGO)
 				Client_PrintKeyHintText(param, "");
 		}
 	}
