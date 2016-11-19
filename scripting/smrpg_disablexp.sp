@@ -5,12 +5,14 @@
 #undef REQUIRE_PLUGIN
 #include <adminmenu>
 
+#pragma newdecls required
+
 #define PLUGIN_VERSION "1.0"
 
-new Handle:g_hTopMenu;
-new bool:g_bDisableExperience[MAXPLAYERS+1];
+TopMenu g_hTopMenu;
+bool g_bDisableExperience[MAXPLAYERS+1];
 
-public Plugin:myinfo = 
+public Plugin myinfo = 
 {
 	name = "SM:RPG > Disable experience",
 	author = "Jannik \"Peace-Maker\" Hartung",
@@ -19,7 +21,7 @@ public Plugin:myinfo =
 	url = "http://www.wcfan.de/"
 }
 
-public OnPluginStart()
+public void OnPluginStart()
 {
 	RegAdminCmd("sm_togglexp", Cmd_ToggleExp, ADMFLAG_CHEATS, "Toggle experience gaining for a player. Usage sm_toggleexp <name|steamid|#userid>", "smrpg");
 	RegAdminCmd("sm_listdisabledexp", Cmd_ListDisabledExp, ADMFLAG_CHEATS, "Lists all players and whether they have experience disabled or not.", "smrpg");
@@ -29,8 +31,8 @@ public OnPluginStart()
 	HookEvent("player_disconnect", Event_OnPlayerDisconnect);
 	
 	// See if the menu plugin is already ready
-	new Handle:topmenu;
-	if (LibraryExists("adminmenu") && ((topmenu = GetAdminTopMenu()) != INVALID_HANDLE))
+	TopMenu topmenu;
+	if (LibraryExists("adminmenu") && ((topmenu = GetAdminTopMenu()) != null))
 	{
 		// If so, manually fire the callback
 		OnAdminMenuReady(topmenu);
@@ -38,9 +40,9 @@ public OnPluginStart()
 }
 
 // Only reset on real disconnects. Don't care for mapchanges.
-public Event_OnPlayerDisconnect(Handle:event, const String:name[], bool:dontBroadcast)
+public void Event_OnPlayerDisconnect(Event event, const char[] name, bool dontBroadcast)
 {
-	new client = GetClientOfUserId(GetEventInt(event, "userid"));
+	int client = GetClientOfUserId(event.GetInt("userid"));
 	if(!client)
 		return;
 	
@@ -48,7 +50,7 @@ public Event_OnPlayerDisconnect(Handle:event, const String:name[], bool:dontBroa
 	g_bDisableExperience[client] = false;
 }
 
-public Action:Cmd_ToggleExp(client, args)
+public Action Cmd_ToggleExp(int client, int args)
 {
 	if(args < 1)
 	{
@@ -60,14 +62,14 @@ public Action:Cmd_ToggleExp(client, args)
 		return Plugin_Handled;
 	}
 	
-	decl String:sTarget[256];
+	char sTarget[256];
 	GetCmdArgString(sTarget, sizeof(sTarget));
 	StripQuotes(sTarget);
 	TrimString(sTarget);
 	
-	decl String:sTargetName[MAX_TARGET_LENGTH];
-	new iTargetList[MAXPLAYERS], iTargetCount;
-	new bool:tn_is_ml;
+	char sTargetName[MAX_TARGET_LENGTH];
+	int iTargetList[MAXPLAYERS], iTargetCount;
+	bool tn_is_ml;
 	if((iTargetCount = ProcessTargetString(sTarget,
 							client, 
 							iTargetList,
@@ -81,9 +83,9 @@ public Action:Cmd_ToggleExp(client, args)
 		return Plugin_Handled;
 	}
 	
-	new iCountEnabled, iCountDisabled;
+	int iCountEnabled, iCountDisabled;
 	
-	for(new i=0;i<iTargetCount;i++)
+	for(int i=0;i<iTargetCount;i++)
 	{
 		g_bDisableExperience[iTargetList[i]] = !g_bDisableExperience[iTargetList[i]];
 		
@@ -115,10 +117,10 @@ public Action:Cmd_ToggleExp(client, args)
 	return Plugin_Handled;
 }
 
-public Action:Cmd_ListDisabledExp(client, args)
+public Action Cmd_ListDisabledExp(int client, int args)
 {
-	decl String:sAuth[64];
-	for(new i=1;i<=MaxClients;i++)
+	char sAuth[64];
+	for(int i=1;i<=MaxClients;i++)
 	{
 		if(!IsClientInGame(i))
 			continue;
@@ -130,7 +132,7 @@ public Action:Cmd_ListDisabledExp(client, args)
 	}
 }
 
-public Action:SMRPG_OnAddExperience(client, const String:reason[], &iExperience, other)
+public Action SMRPG_OnAddExperience(int client, const char[] reason, int &iExperience, int other)
 {
 	// Don't give him any regular experience.
 	if(g_bDisableExperience[client] && !StrEqual(reason, ExperienceReason_Admin))
@@ -143,23 +145,23 @@ public Action:SMRPG_OnAddExperience(client, const String:reason[], &iExperience,
 /**
  * Admin menu integration.
  */
-public OnAdminMenuReady(Handle:topmenu)
+public void OnAdminMenuReady(Handle topmenu)
 {
 	// Get the rpg category
-	new TopMenuObject:iRPGCategory = FindTopMenuCategory(topmenu, "SM:RPG");
+	TopMenuObject iRPGCategory = FindTopMenuCategory(topmenu, "SM:RPG");
 	
 	if(iRPGCategory == INVALID_TOPMENUOBJECT)
 		return;
 	
-	if(g_hTopMenu == topmenu)
+	if(g_hTopMenu == view_as<TopMenu>(topmenu))
 		return;
 	
-	g_hTopMenu = topmenu;
+	g_hTopMenu = view_as<TopMenu>(topmenu);
 	
-	AddToTopMenu(topmenu, "Toggle experience", TopMenuObject_Item, TopMenu_AdminHandleToggleExp, iRPGCategory, "sm_togglexp", ADMFLAG_CHEATS);
+	g_hTopMenu.AddItem("Toggle experience", TopMenu_AdminHandleToggleExp, iRPGCategory, "sm_togglexp", ADMFLAG_CHEATS);
 }
 
-public TopMenu_AdminHandleToggleExp(Handle:topmenu, TopMenuAction:action, TopMenuObject:object_id, param, String:buffer[], maxlength)
+public void TopMenu_AdminHandleToggleExp(TopMenu topmenu, TopMenuAction action, TopMenuObject object_id, int param, char[] buffer, int maxlength)
 {
 	if (action == TopMenuAction_DisplayOption)
 	{
@@ -171,16 +173,16 @@ public TopMenu_AdminHandleToggleExp(Handle:topmenu, TopMenuAction:action, TopMen
 	}
 }
 
-DisplayPlayerList(client, iPosition=0)
+void DisplayPlayerList(int client, int iPosition=0)
 {
-	new Handle:hMenu = CreateMenu(Menu_HandlePlayerlist);
-	SetMenuExitBackButton(hMenu, true);
-	SetMenuTitle(hMenu, "Toggle experience on..");
+	Menu hMenu = new Menu(Menu_HandlePlayerlist);
+	hMenu.ExitBackButton = true;
+	hMenu.SetTitle("Toggle experience on..");
 	
-	new bool:bIgnoreBots = SMRPG_IgnoreBots();
+	bool bIgnoreBots = SMRPG_IgnoreBots();
 	
-	decl String:sBuffer[128], String:sUserId[16], String:sAuth[64];
-	for(new i=1;i<=MaxClients;i++)
+	char sBuffer[128], sUserId[16], sAuth[64];
+	for(int i=1;i<=MaxClients;i++)
 	{
 		if(!IsClientInGame(i) || (bIgnoreBots && IsFakeClient(i)) || IsClientSourceTV(i) || IsClientReplay(i))
 			continue;
@@ -190,30 +192,30 @@ DisplayPlayerList(client, iPosition=0)
 		
 		Format(sBuffer, sizeof(sBuffer), "%N <%s>: %T", i, sAuth, (g_bDisableExperience[i]?"Off":"On"), client);
 		IntToString(GetClientUserId(i), sUserId, sizeof(sUserId));
-		AddMenuItem(hMenu, sUserId, sBuffer);
+		hMenu.AddItem(sUserId, sBuffer);
 	}
 	
-	DisplayMenuAtItem(hMenu, client, iPosition, MENU_TIME_FOREVER);
+	hMenu.DisplayAt(client, iPosition, MENU_TIME_FOREVER);
 }
 
-public Menu_HandlePlayerlist(Handle:menu, MenuAction:action, param1, param2)
+public int Menu_HandlePlayerlist(Menu menu, MenuAction action, int param1, int param2)
 {
 	if(action == MenuAction_End)
 	{
-		CloseHandle(menu);
+		delete menu;
 	}
 	else if(action == MenuAction_Cancel)
 	{
-		if(param2 == MenuCancel_ExitBack && g_hTopMenu != INVALID_HANDLE)
+		if(param2 == MenuCancel_ExitBack && g_hTopMenu != null)
 			RedisplayAdminMenu(g_hTopMenu, param1);
 	}
 	else if(action == MenuAction_Select)
 	{
-		decl String:sInfo[16];
-		GetMenuItem(menu, param2, sInfo, sizeof(sInfo));
-		new iUserId = StringToInt(sInfo);
+		char sInfo[16];
+		menu.GetItem(param2, sInfo, sizeof(sInfo));
+		int iUserId = StringToInt(sInfo);
 		
-		new iTarget = GetClientOfUserId(iUserId);
+		int iTarget = GetClientOfUserId(iUserId);
 		if(iTarget > 0)
 		{
 			g_bDisableExperience[iTarget] = !g_bDisableExperience[iTarget];

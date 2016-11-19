@@ -2,6 +2,8 @@
 #include <sourcemod>
 #include <topmenus>
 #include <smlib>
+
+#pragma newdecls required
 #include <smrpg>
 #include <smrpg_commandlist>
 
@@ -12,7 +14,7 @@
 
 #define MAX_COMMAND_NAME_LENGTH 32
 
-new Handle:g_hCVCommandAdvertInterval;
+ConVar g_hCVCommandAdvertInterval;
 
 enum RPGCommand {
 	Handle:c_plugin,
@@ -21,22 +23,22 @@ enum RPGCommand {
 	TopMenuObject:c_topmenuobject
 }
 
-new Handle:g_hCommandList;
+ArrayList g_hCommandList;
 
 // Command advertising
-new Handle:g_hCommandAdvertTimer;
-new g_iLastAdvertizedCommand = -1;
+Handle g_hCommandAdvertTimer;
+int g_iLastAdvertizedCommand = -1;
 
 // RPG top menu
-new Handle:g_hRPGMenu;
-new TopMenuObject:g_TopMenuCommands;
-new TopMenuObject:g_TopMenuSettings;
+TopMenu g_hRPGMenu;
+TopMenuObject g_TopMenuCommands;
+TopMenuObject g_TopMenuSettings;
 
 // Clientprefs
-new bool:g_bClientHideAdvert[MAXPLAYERS+1];
-new Handle:g_hCookieHideAdvert;
+bool g_bClientHideAdvert[MAXPLAYERS+1];
+Handle g_hCookieHideAdvert;
 
-public Plugin:myinfo = 
+public Plugin myinfo = 
 {
 	name = "SM:RPG > Command List",
 	author = "Jannik \"Peace-Maker\" Hartung",
@@ -45,7 +47,7 @@ public Plugin:myinfo =
 	url = "http://www.wcfan.de/"
 }
 
-public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
+public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
 	RegPluginLibrary("smrpg_commandlist");
 	
@@ -55,26 +57,26 @@ public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
 	return APLRes_Success;
 }
 
-public OnPluginStart()
+public void OnPluginStart()
 {
-	new Handle:hVersion = CreateConVar("smrpg_commandlist_version", PLUGIN_VERSION, "", FCVAR_NOTIFY|FCVAR_DONTRECORD);
-	if(hVersion != INVALID_HANDLE)
+	ConVar hVersion = CreateConVar("smrpg_commandlist_version", PLUGIN_VERSION, "", FCVAR_NOTIFY|FCVAR_DONTRECORD);
+	if(hVersion != null)
 	{
-		SetConVarString(hVersion, PLUGIN_VERSION);
-		HookConVarChange(hVersion, ConVar_VersionChanged);
+		hVersion.SetString(PLUGIN_VERSION);
+		hVersion.AddChangeHook(ConVar_VersionChanged);
 	}
 	
 	LoadTranslations("common.phrases");
 	LoadTranslations("smrpg.phrases");
 	LoadTranslations("smrpg_commandlist.phrases");
 	
-	g_hCommandList = CreateArray(_:RPGCommand);
+	g_hCommandList = new ArrayList(view_as<int>(RPGCommand));
 	
 	g_hCVCommandAdvertInterval = CreateConVar("smrpg_commandadvert_interval", "300", "Show the description of an available commmand in chat every x seconds. (0 = disabled)", 0, true, 0.0);
-	HookConVarChange(g_hCVCommandAdvertInterval, ConVar_AdvertIntervalChanged);
+	g_hCVCommandAdvertInterval.AddChangeHook(ConVar_AdvertIntervalChanged);
 	
-	new Handle:hTopMenu = SMRPG_GetTopMenu();
-	if(hTopMenu != INVALID_HANDLE)
+	TopMenu hTopMenu = SMRPG_GetTopMenu();
+	if(hTopMenu != null)
 	{
 		SMRPG_OnRPGMenuCreated(hTopMenu);
 		SMRPG_OnRPGMenuReady(hTopMenu);
@@ -84,12 +86,12 @@ public OnPluginStart()
 		OnLibraryAdded("clientprefs");
 }
 
-public ConVar_VersionChanged(Handle:convar, const String:oldValue[], const String:newValue[])
+public void ConVar_VersionChanged(ConVar convar, const char[] oldValue, const char[] newValue)
 {
-	SetConVarString(convar, PLUGIN_VERSION);
+	convar.SetString(PLUGIN_VERSION);
 }
 
-public OnLibraryAdded(const String:name[])
+public void OnLibraryAdded(const char[] name)
 {
 	if(StrEqual(name, "clientprefs"))
 	{
@@ -97,35 +99,35 @@ public OnLibraryAdded(const String:name[])
 	}
 }
 
-public OnLibraryRemoved(const String:name[])
+public void OnLibraryRemoved(const char[] name)
 {
 	if(StrEqual(name, "smrpg"))
 	{
-		g_hRPGMenu = INVALID_HANDLE;
+		g_hRPGMenu = null;
 		g_TopMenuCommands = INVALID_TOPMENUOBJECT;
 	}
 }
 
-public OnMapStart()
+public void OnMapStart()
 {
-	new Float:fInterval = GetConVarFloat(g_hCVCommandAdvertInterval);
+	float fInterval = g_hCVCommandAdvertInterval.FloatValue;
 	if(fInterval > 0.0)
 		g_hCommandAdvertTimer = CreateTimer(fInterval, Timer_ShowCommandAdvert, _, TIMER_FLAG_NO_MAPCHANGE|TIMER_REPEAT);
 }
 
-public OnClientDisconnect(client)
+public void OnClientDisconnect(int client)
 {
 	g_bClientHideAdvert[client] = true;
 }
 
-public OnClientCookiesCached(client)
+public void OnClientCookiesCached(int client)
 {
-	decl String:sBuffer[4];
+	char sBuffer[4];
 	GetClientCookie(client, g_hCookieHideAdvert, sBuffer, sizeof(sBuffer));
 	g_bClientHideAdvert[client] = StringToInt(sBuffer)==1;
 }
 
-public SMRPG_OnRPGMenuCreated(Handle:topmenu)
+public void SMRPG_OnRPGMenuCreated(TopMenu topmenu)
 {
 	// Block us from being called twice!
 	if(g_hRPGMenu == topmenu)
@@ -133,30 +135,30 @@ public SMRPG_OnRPGMenuCreated(Handle:topmenu)
 	
 	g_hRPGMenu = topmenu;
 	
-	g_TopMenuCommands = AddToTopMenu(g_hRPGMenu, RPGMENU_COMMANDS, TopMenuObject_Category, TopMenu_CommandCategoryHandler, INVALID_TOPMENUOBJECT);
+	g_TopMenuCommands = topmenu.AddCategory(RPGMENU_COMMANDS, TopMenu_CommandCategoryHandler);
 }
 
-public SMRPG_OnRPGMenuReady(Handle:topmenu)
+public void SMRPG_OnRPGMenuReady(TopMenu topmenu)
 {
-	g_TopMenuSettings = FindTopMenuCategory(g_hRPGMenu, RPGMENU_SETTINGS);
+	g_TopMenuSettings = g_hRPGMenu.FindCategory(RPGMENU_SETTINGS);
 	if(g_TopMenuSettings != INVALID_TOPMENUOBJECT)
 	{
-		AddToTopMenu(g_hRPGMenu, "rpgcmdlist_hidead", TopMenuObject_Item, TopMenu_SettingsItemHandler, g_TopMenuSettings);
+		g_hRPGMenu.AddItem("rpgcmdlist_hidead", TopMenu_SettingsItemHandler, g_TopMenuSettings);
 	}
 	
-	new iSize = GetArraySize(g_hCommandList);
-	new iCommand[RPGCommand];
-	decl String:sCommandName[MAX_COMMAND_NAME_LENGTH+10];
-	for(new i=0;i<iSize;i++)
+	int iSize = g_hCommandList.Length;
+	int iCommand[RPGCommand];
+	char sCommandName[MAX_COMMAND_NAME_LENGTH+10];
+	for(int i=0;i<iSize;i++)
 	{
-		GetArrayArray(g_hCommandList, i, iCommand[0], _:RPGCommand);
+		g_hCommandList.GetArray(i, iCommand[0], view_as<int>(RPGCommand));
 		
 		Format(sCommandName, sizeof(sCommandName), "rpgcmd_%s", iCommand[c_command]);
-		iCommand[c_topmenuobject] = AddToTopMenu(g_hRPGMenu, sCommandName, TopMenuObject_Item, TopMenu_CommandItemHandler, g_TopMenuCommands);
+		iCommand[c_topmenuobject] = g_hRPGMenu.AddItem(sCommandName, TopMenu_CommandItemHandler, g_TopMenuCommands);
 	}
 }
 
-public TopMenu_CommandCategoryHandler(Handle:topmenu, TopMenuAction:action, TopMenuObject:object_id, param, String:buffer[], maxlength)
+public void TopMenu_CommandCategoryHandler(TopMenu topmenu, TopMenuAction action, TopMenuObject object_id, int param, char[] buffer, int maxlength)
 {
 	switch(action)
 	{
@@ -176,20 +178,20 @@ public TopMenu_CommandCategoryHandler(Handle:topmenu, TopMenuAction:action, TopM
 	}
 }
 
-public TopMenu_CommandItemHandler(Handle:topmenu, TopMenuAction:action, TopMenuObject:object_id, param, String:buffer[], maxlength)
+public void TopMenu_CommandItemHandler(TopMenu topmenu, TopMenuAction action, TopMenuObject object_id, int param, char[] buffer, int maxlength)
 {
 	switch(action)
 	{
 		case TopMenuAction_DisplayOption:
 		{
-			decl String:sCommandName[MAX_COMMAND_NAME_LENGTH+10];
-			GetTopMenuObjName(topmenu, object_id, sCommandName, sizeof(sCommandName));
+			char sCommandName[MAX_COMMAND_NAME_LENGTH+10];
+			topmenu.GetObjName(object_id, sCommandName, sizeof(sCommandName));
 			
-			new iCommand[RPGCommand];
+			int iCommand[RPGCommand];
 			if(!GetCommandByName(sCommandName[7], iCommand))
 				return;
 		
-			decl String:sShortDescription[64];
+			char sShortDescription[64];
 			if(!GetCommandTranslation(param, iCommand[c_command], CommandTranslationType_ShortDescription, sShortDescription, sizeof(sShortDescription)))
 				return;
 			
@@ -197,28 +199,28 @@ public TopMenu_CommandItemHandler(Handle:topmenu, TopMenuAction:action, TopMenuO
 		}
 		case TopMenuAction_SelectOption:
 		{
-			decl String:sCommandName[MAX_COMMAND_NAME_LENGTH+10];
-			GetTopMenuObjName(topmenu, object_id, sCommandName, sizeof(sCommandName));
+			char sCommandName[MAX_COMMAND_NAME_LENGTH+10];
+			topmenu.GetObjName(object_id, sCommandName, sizeof(sCommandName));
 			
-			new iCommand[RPGCommand];
+			int iCommand[RPGCommand];
 			if(!GetCommandByName(sCommandName[7], iCommand))
 			{
-				DisplayTopMenu(g_hRPGMenu, param, TopMenuPosition_LastCategory);
+				g_hRPGMenu.Display(param, TopMenuPosition_LastCategory);
 				return;
 			}
 			
-			decl String:sDescription[256];
+			char sDescription[256];
 			if(GetCommandTranslation(param, iCommand[c_command], CommandTranslationType_Description, sDescription, sizeof(sDescription)))
 				Client_PrintToChat(param, false, "{OG}SM:RPG{N} > {G}%s{N}: %s", iCommand[c_command], sDescription);
 			
-			DisplayTopMenu(g_hRPGMenu, param, TopMenuPosition_LastCategory);
+			g_hRPGMenu.Display(param, TopMenuPosition_LastCategory);
 		}
 		case TopMenuAction_DrawOption:
 		{
-			decl String:sCommandName[MAX_COMMAND_NAME_LENGTH+10];
-			GetTopMenuObjName(topmenu, object_id, sCommandName, sizeof(sCommandName));
+			char sCommandName[MAX_COMMAND_NAME_LENGTH+10];
+			topmenu.GetObjName(object_id, sCommandName, sizeof(sCommandName));
 			
-			new iCommand[RPGCommand];
+			int iCommand[RPGCommand];
 			if(!GetCommandByName(sCommandName[7], iCommand) || !IsValidPlugin(iCommand[c_plugin]))
 			{
 				buffer[0] = ITEMDRAW_IGNORE;
@@ -227,7 +229,7 @@ public TopMenu_CommandItemHandler(Handle:topmenu, TopMenuAction:action, TopMenuO
 	}
 }
 
-public TopMenu_SettingsItemHandler(Handle:topmenu, TopMenuAction:action, TopMenuObject:object_id, param, String:buffer[], maxlength)
+public void TopMenu_SettingsItemHandler(TopMenu topmenu, TopMenuAction action, TopMenuObject object_id, int param, char[] buffer, int maxlength)
 {
 	switch(action)
 	{
@@ -240,32 +242,28 @@ public TopMenu_SettingsItemHandler(Handle:topmenu, TopMenuAction:action, TopMenu
 			g_bClientHideAdvert[param] = !g_bClientHideAdvert[param];
 			if(AreClientCookiesCached(param))
 			{
-				decl String:sBuffer[4];
+				char sBuffer[4];
 				IntToString(g_bClientHideAdvert[param], sBuffer, sizeof(sBuffer));
 				SetClientCookie(param, g_hCookieHideAdvert, sBuffer);
 			}
 			
-			DisplayTopMenu(g_hRPGMenu, param, TopMenuPosition_LastCategory);
+			g_hRPGMenu.Display(param, TopMenuPosition_LastCategory);
 		}
 	}
 }
 
-// native SMRPG_RegisterCommand(const String:command[], SMRPG_TranslateUpgradeCB:callback);
-public Native_RegisterCommand(Handle:plugin, numParams)
+// native void SMRPG_RegisterCommand(const char[] command, SMRPG_TranslateUpgradeCB callback);
+public int Native_RegisterCommand(Handle plugin, int numParams)
 {
-	new String:sCommand[MAX_COMMAND_NAME_LENGTH];
+	char sCommand[MAX_COMMAND_NAME_LENGTH];
 	GetNativeString(1, sCommand, sizeof(sCommand));
-#if SOURCEMOD_V_MAJOR >= 1 && SOURCEMOD_V_MINOR >= 7
-	new Function:iCallback = GetNativeFunction(2);
-#else
-	new Function:iCallback = Function:GetNativeCell(2);
-#endif
+	Function iCallback = GetNativeFunction(2);
 	
-	new iCommand[RPGCommand];
-	new iSize = GetArraySize(g_hCommandList);
-	for(new i=0;i<iSize;i++)
+	int iCommand[RPGCommand];
+	int iSize = g_hCommandList.Length;
+	for(int i=0;i<iSize;i++)
 	{
-		GetArrayArray(g_hCommandList, i, iCommand[0], _:RPGCommand);
+		g_hCommandList.GetArray(i, iCommand[0], view_as<int>(RPGCommand));
 		if(StrEqual(sCommand, iCommand[c_command], false))
 		{
 			// This command was registered by a different plugin..
@@ -277,7 +275,7 @@ public Native_RegisterCommand(Handle:plugin, numParams)
 			else
 			{
 				iCommand[c_callback] = iCallback;
-				SetArrayArray(g_hCommandList, i, iCommand[0], _:RPGCommand);
+				g_hCommandList.SetArray(i, iCommand[0], view_as<int>(RPGCommand));
 			}
 			// We're done here already.
 			return;
@@ -289,30 +287,30 @@ public Native_RegisterCommand(Handle:plugin, numParams)
 	strcopy(iCommand[c_command], MAX_COMMAND_NAME_LENGTH, sCommand);
 	iCommand[c_callback] = iCallback;
 	
-	decl String:sCommandName[MAX_COMMAND_NAME_LENGTH+10];
+	char sCommandName[MAX_COMMAND_NAME_LENGTH+10];
 	Format(sCommandName, sizeof(sCommandName), "rpgcmd_%s", iCommand[c_command]);
-	if(g_hRPGMenu != INVALID_HANDLE && g_TopMenuCommands != INVALID_TOPMENUOBJECT)
-		iCommand[c_topmenuobject] = AddToTopMenu(g_hRPGMenu, sCommandName, TopMenuObject_Item, TopMenu_CommandItemHandler, g_TopMenuCommands);
-	PushArrayArray(g_hCommandList, iCommand[0], _:RPGCommand);
+	if(g_hRPGMenu != null && g_TopMenuCommands != INVALID_TOPMENUOBJECT)
+		iCommand[c_topmenuobject] = g_hRPGMenu.AddItem(sCommandName, TopMenu_CommandItemHandler, g_TopMenuCommands);
+	g_hCommandList.PushArray(iCommand[0], view_as<int>(RPGCommand));
 }
 
-// native SMRPG_UnregisterCommand(const String:command[]);
-public Native_UnregisterCommand(Handle:plugin, numParams)
+// native void SMRPG_UnregisterCommand(const char[] command);
+public int Native_UnregisterCommand(Handle plugin, int numParams)
 {
-	new String:sCommand[MAX_COMMAND_NAME_LENGTH];
+	char sCommand[MAX_COMMAND_NAME_LENGTH];
 	GetNativeString(1, sCommand, sizeof(sCommand));
 	
-	new iCommand[RPGCommand];
-	new iSize = GetArraySize(g_hCommandList);
-	for(new i=0;i<iSize;i++)
+	int iCommand[RPGCommand];
+	int iSize = g_hCommandList.Length;
+	for(int i=0;i<iSize;i++)
 	{
-		GetArrayArray(g_hCommandList, i, iCommand[0], _:RPGCommand);
+		g_hCommandList.GetArray(i, iCommand[0], view_as<int>(RPGCommand));
 		// Found the command and it was registered by this plugin?
 		if(StrEqual(sCommand, iCommand[c_command], false) && plugin == iCommand[c_plugin])
 		{
-			if(iCommand[c_topmenuobject] != INVALID_TOPMENUOBJECT && g_hRPGMenu != INVALID_HANDLE && g_TopMenuCommands != INVALID_TOPMENUOBJECT)
-				RemoveFromTopMenu(g_hRPGMenu, iCommand[c_topmenuobject]);
-			RemoveFromArray(g_hCommandList, i);
+			if(iCommand[c_topmenuobject] != INVALID_TOPMENUOBJECT && g_hRPGMenu != null && g_TopMenuCommands != INVALID_TOPMENUOBJECT)
+				g_hRPGMenu.Remove(iCommand[c_topmenuobject]);
+			g_hCommandList.Erase(i);
 			return;
 		}
 	}
@@ -323,24 +321,24 @@ public Native_UnregisterCommand(Handle:plugin, numParams)
 /**
  * Timer callbacks
  */
-public Action:Timer_ShowCommandAdvert(Handle:timer)
+public Action Timer_ShowCommandAdvert(Handle timer)
 {
 	// No commands to advertise?!
-	new iNumCommands = GetArraySize(g_hCommandList);
+	int iNumCommands = g_hCommandList.Length;
 	if(iNumCommands == 0)
 		return Plugin_Continue;
 	
 	// No players to show stuff to, don't do anything.
-	new iPlayerCount = Client_GetCount(true, false);
+	int iPlayerCount = Client_GetCount(true, false);
 	if(iPlayerCount == 0)
 		return Plugin_Continue;
 	
 	if(!SMRPG_IsEnabled())
 		return Plugin_Continue;
 	
-	new iCommand[RPGCommand];
-	decl String:sText[512];
-	new iSentMessages, iTriedCommands;
+	int iCommand[RPGCommand];
+	char sText[512];
+	int iSentMessages, iTriedCommands;
 	do
 	{
 		// Show the next command
@@ -351,9 +349,9 @@ public Action:Timer_ShowCommandAdvert(Handle:timer)
 		if(g_iLastAdvertizedCommand >= iNumCommands)
 			g_iLastAdvertizedCommand = 0;
 		
-		GetArrayArray(g_hCommandList, g_iLastAdvertizedCommand, iCommand[0], _:RPGCommand);
+		g_hCommandList.GetArray(g_iLastAdvertizedCommand, iCommand[0], view_as<int>(RPGCommand));
 		
-		for(new client=1;client<=MaxClients;client++)
+		for(int client=1;client<=MaxClients;client++)
 		{
 			// That client has adverts disabled in his !settings.
 			if(g_bClientHideAdvert[client])
@@ -381,14 +379,14 @@ public Action:Timer_ShowCommandAdvert(Handle:timer)
 /**
  * Convar change handlers
  */
-public ConVar_AdvertIntervalChanged(Handle:convar, const String:oldValue[], const String:newValue[])
+public void ConVar_AdvertIntervalChanged(ConVar convar, const char[] oldValue, const char[] newValue)
 {
 	if(StrEqual(oldValue, newValue, false))
 		return;
 	
 	ClearHandle(g_hCommandAdvertTimer);
 	
-	new Float:fInterval = GetConVarFloat(g_hCVCommandAdvertInterval);
+	float fInterval = g_hCVCommandAdvertInterval.FloatValue;
 	if(fInterval > 0.0)
 		g_hCommandAdvertTimer = CreateTimer(fInterval, Timer_ShowCommandAdvert, _, TIMER_FLAG_NO_MAPCHANGE|TIMER_REPEAT);
 }
@@ -396,33 +394,33 @@ public ConVar_AdvertIntervalChanged(Handle:convar, const String:oldValue[], cons
 /**
  * Helpers
  */
-bool:GetCommandByName(const String:sCommand[], iCommand[RPGCommand])
+bool GetCommandByName(const char[] sCommand, int iCommand[RPGCommand])
 {
-	new iSize = GetArraySize(g_hCommandList);
-	for(new i=0;i<iSize;i++)
+	int iSize = g_hCommandList.Length;
+	for(int i=0;i<iSize;i++)
 	{
-		GetArrayArray(g_hCommandList, i, iCommand[0], _:RPGCommand);
+		g_hCommandList.GetArray(i, iCommand[0], view_as<int>(RPGCommand));
 		if(StrEqual(sCommand, iCommand[c_command], false))
 			return true;
 	}
-	iCommand[c_plugin] = INVALID_HANDLE;
+	iCommand[c_plugin] = null;
 	iCommand[c_command][0] = '\0';
 	iCommand[c_callback] = INVALID_FUNCTION;
 	return false;
 }
 
-bool:GetCommandTranslation(client, const String:sCommand[], CommandTranslationType:type, String:buffer[], maxlen)
+bool GetCommandTranslation(int client, const char[] sCommand, CommandTranslationType type, char[] buffer, int maxlen)
 {
 	buffer[0] = '\0';
 	
-	new iCommand[RPGCommand];
+	int iCommand[RPGCommand];
 	if(!GetCommandByName(sCommand, iCommand))
 		return false;
 	
 	if(!IsValidPlugin(iCommand[c_plugin]))
 		return false;
 	
-	new Action:iRet;
+	Action iRet;
 	Call_StartFunction(iCommand[c_plugin], iCommand[c_callback]);
 	Call_PushCell(client);
 	Call_PushString(sCommand);
@@ -436,22 +434,22 @@ bool:GetCommandTranslation(client, const String:sCommand[], CommandTranslationTy
  
 // IsValidHandle() is deprecated, let's do a real check then...
 // By Thraaawn
-stock bool:IsValidPlugin(Handle:hPlugin) {
-	if(hPlugin == INVALID_HANDLE)
+stock bool IsValidPlugin(Handle hPlugin) {
+	if(hPlugin == null)
 		return false;
 
-	new Handle:hIterator = GetPluginIterator();
+	Handle hIterator = GetPluginIterator();
 
-	new bool:bPluginExists = false;
+	bool bPluginExists = false;
 	while(MorePlugins(hIterator)) {
-		new Handle:hLoadedPlugin = ReadPlugin(hIterator);
+		Handle hLoadedPlugin = ReadPlugin(hIterator);
 		if(hLoadedPlugin == hPlugin) {
 			bPluginExists = true;
 			break;
 		}
 	}
 
-	CloseHandle(hIterator);
+	delete hIterator;
 
 	return bPluginExists;
 }

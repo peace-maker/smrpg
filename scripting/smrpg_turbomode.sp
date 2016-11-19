@@ -13,23 +13,24 @@
 #undef REQUIRE_PLUGIN
 #include <adminmenu>
 
+#pragma newdecls required
 #define PLUGIN_VERSION "1.0"
 
-new Handle:g_hCVRPGSaveData;
-new bool:g_bRPGSaveDataOld;
+ConVar g_hCVRPGSaveData;
+bool g_bRPGSaveDataOld;
 
-new Handle:g_hCVTurboMode;
-new Handle:g_hCVTurboModeAnnounce;
-new Handle:g_hCVExperienceMultiplier;
-new Handle:g_hCVCreditsMultiplier;
+ConVar g_hCVTurboMode;
+ConVar g_hCVTurboModeAnnounce;
+ConVar g_hCVExperienceMultiplier;
+ConVar g_hCVCreditsMultiplier;
 
-new bool:g_bMapEnded;
+bool g_bMapEnded;
 
-new bool:g_bClientLeveledUp[MAXPLAYERS+1];
+bool g_bClientLeveledUp[MAXPLAYERS+1];
 
-new Handle:g_hTopMenu;
+TopMenu g_hTopMenu;
 
-public Plugin:myinfo = 
+public Plugin myinfo = 
 {
 	name = "SM:RPG > Turbo Mode",
 	author = "Jannik \"Peace-Maker\" Hartung",
@@ -38,14 +39,14 @@ public Plugin:myinfo =
 	url = "http://www.wcfan.de/"
 }
 
-public OnPluginStart()
+public void OnPluginStart()
 {
 	g_hCVTurboMode = CreateConVar("smrpg_turbomode_enabled", "0", "Enable SM:RPG turbo mode with higher experience and credits rates.", FCVAR_NOTIFY, true, 0.0, true, 1.0);
 	g_hCVTurboModeAnnounce = CreateConVar("smrpg_turbomode_announce", "1", "Announce turbomode to all players in chat when it's enabled.", 0, true, 0.0, true, 1.0);
 	g_hCVExperienceMultiplier = CreateConVar("smrpg_turbomode_expmultiplier", "3", "Multiply all earned experience by this value.", 0, true, 1.0);
 	g_hCVCreditsMultiplier = CreateConVar("smrpg_turbomode_creditsmultiplier", "2", "Multiply all earned credits by this value.", 0, true, 1.0);
 	
-	HookConVarChange(g_hCVTurboMode, ConVar_TurboModeChanged);
+	g_hCVTurboMode.AddChangeHook(ConVar_TurboModeChanged);
 	
 	AutoExecConfig();
 	
@@ -57,8 +58,8 @@ public OnPluginStart()
 	LoadTranslations("smrpg_turbomode.phrases");
 	
 	// See if the menu plugin is already ready
-	new Handle:topmenu;
-	if (LibraryExists("adminmenu") && ((topmenu = GetAdminTopMenu()) != INVALID_HANDLE))
+	TopMenu topmenu;
+	if (LibraryExists("adminmenu") && ((topmenu = GetAdminTopMenu()) != null))
 	{
 		// If so, manually fire the callback
 		OnAdminMenuReady(topmenu);
@@ -68,65 +69,65 @@ public OnPluginStart()
 /**
  * Public forwards
  */
-public OnAllPluginsLoaded()
+public void OnAllPluginsLoaded()
 {
 	// Disable saving stuff to the database during turbo mode.
 	g_hCVRPGSaveData = FindConVar("smrpg_save_data");
-	if(g_hCVRPGSaveData != INVALID_HANDLE)
-		HookConVarChange(g_hCVRPGSaveData, ConVar_SaveDataChanged);
+	if(g_hCVRPGSaveData != null)
+		g_hCVRPGSaveData.AddChangeHook(ConVar_SaveDataChanged);
 }
 
-public OnConfigsExecuted()
+public void OnConfigsExecuted()
 {
 	// Trigger the config, if it's set already.
-	g_bRPGSaveDataOld = GetConVarBool(g_hCVRPGSaveData);
-	if(GetConVarBool(g_hCVTurboMode))
+	g_bRPGSaveDataOld = g_hCVRPGSaveData.BoolValue;
+	if(g_hCVTurboMode.BoolValue)
 		ConVar_TurboModeChanged(g_hCVTurboMode, "0", "1");
 }
 
-public OnMapStart()
+public void OnMapStart()
 {
 	g_bMapEnded = false;
 }
 
-public OnMapEnd()
+public void OnMapEnd()
 {
 	g_bMapEnded = true;
 	
 	// Disable turbo mode.
-	SetConVarBool(g_hCVTurboMode, false);
+	g_hCVTurboMode.SetBool(false);
 }
 
 /**
  * ConVar change callbacks
  */
-public ConVar_SaveDataChanged(Handle:convar, const String:oldValue[], const String:newValue[])
+public void ConVar_SaveDataChanged(ConVar convar, const char[] oldValue, const char[] newValue)
 {
 	// DON'T SAVE ANYTHING DURING TURBO MODE!
-	if(GetConVarBool(g_hCVTurboMode) && GetConVarBool(convar))
-		SetConVarBool(convar, false);
+	if(g_hCVTurboMode.BoolValue && convar.BoolValue)
+		convar.SetBool(false);
 	else
-		g_bRPGSaveDataOld = GetConVarBool(convar);
+		g_bRPGSaveDataOld = convar.BoolValue;
 }
 
-public ConVar_TurboModeChanged(Handle:convar, const String:oldValue[], const String:newValue[])
+public void ConVar_TurboModeChanged(ConVar convar, const char[] oldValue, const char[] newValue)
 {
 	if(StrEqual(oldValue, newValue))
 		return;
 	
-	if(GetConVarBool(g_hCVTurboMode))
+	if(g_hCVTurboMode.BoolValue)
 	{
 		// Remember the old value before enabling turbo mode.
-		g_bRPGSaveDataOld = GetConVarBool(g_hCVRPGSaveData);
+		g_bRPGSaveDataOld = g_hCVRPGSaveData.BoolValue;
 		
 		// Save all current progress to the database!
 		SMRPG_FlushDatabase();
 		
 		// Disable saving.
-		SetConVarBool(g_hCVRPGSaveData, false);
+		g_hCVRPGSaveData.SetBool(false);
 		
 		// Reset all ingame players.
-		for(new i=1;i<=MaxClients;i++)
+		for(int i=1;i<=MaxClients;i++)
 		{
 			if(IsClientInGame(i))
 				SMRPG_ResetClientStats(i);
@@ -135,21 +136,21 @@ public ConVar_TurboModeChanged(Handle:convar, const String:oldValue[], const Str
 		// Restart the round.
 		//ServerCommand("mp_restartgame 2");
 		
-		Client_PrintToChatAll(false, "{OG}SM:RPG{N} > %t", "Turbo mode enabled", GetConVarFloat(g_hCVExperienceMultiplier), GetConVarFloat(g_hCVCreditsMultiplier));
+		Client_PrintToChatAll(false, "{OG}SM:RPG{N} > %t", "Turbo mode enabled", g_hCVExperienceMultiplier.FloatValue, g_hCVCreditsMultiplier.FloatValue);
 		
 		// Start showing a constant message on the screen.
-		if(Timer_DisplayTurboModeHud(INVALID_HANDLE) == Plugin_Continue)
+		if(Timer_DisplayTurboModeHud(null) == Plugin_Continue)
 			CreateTimer(1.0, Timer_DisplayTurboModeHud, _, TIMER_FLAG_NO_MAPCHANGE|TIMER_REPEAT);
 	}
 	else
 	{
 		// Reset saving
-		SetConVarBool(g_hCVRPGSaveData, g_bRPGSaveDataOld);
+		g_hCVRPGSaveData.SetBool(g_bRPGSaveDataOld);
 		
 		if(!g_bMapEnded)
 		{
 			// Reconnect all clients so their old level is loaded.
-			for(new i=1;i<=MaxClients;i++)
+			for(int i=1;i<=MaxClients;i++)
 			{
 				if(IsClientInGame(i))
 				{
@@ -169,32 +170,32 @@ public ConVar_TurboModeChanged(Handle:convar, const String:oldValue[], const Str
 /**
  * Event handlers
  */
-public Event_OnPlayerSpawn(Handle:event, const String:name[], bool:dontBroadcast)
+public void Event_OnPlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 {
-	new client = GetClientOfUserId(GetEventInt(event, "userid"));
+	int client = GetClientOfUserId(event.GetInt("userid"));
 	if(!client)
 		return;
 	
-	if(IsPlayerAlive(client) && GetConVarBool(g_hCVTurboMode) && GetConVarBool(g_hCVTurboModeAnnounce))
-		Client_PrintToChat(client, false, "{OG}SM:RPG{N} > %t", "Turbo mode enabled", GetConVarFloat(g_hCVExperienceMultiplier), GetConVarFloat(g_hCVCreditsMultiplier));
+	if(IsPlayerAlive(client) && g_hCVTurboMode.BoolValue && g_hCVTurboModeAnnounce.BoolValue)
+		Client_PrintToChat(client, false, "{OG}SM:RPG{N} > %t", "Turbo mode enabled", g_hCVExperienceMultiplier.FloatValue, g_hCVCreditsMultiplier.FloatValue);
 }
 
 /**
  * Command handlers
  */
-public Action:Cmd_TurboMode(client, args)
+public Action Cmd_TurboMode(int client, int args)
 {
-	if(!GetConVarBool(g_hCVTurboMode))
+	if(!g_hCVTurboMode.BoolValue)
 	{
 		LogAction(client, -1, "%L enabled SM:RPG turbo mode.", client);
 		ReplyToCommand(client, "SM:RPG > %t", "Command Turbo mode enabled");
-		SetConVarBool(g_hCVTurboMode, true);
+		g_hCVTurboMode.SetBool(true);
 	}
 	else
 	{
 		LogAction(client, -1, "%L disabled SM:RPG turbo mode.", client);
 		ReplyToCommand(client, "SM:RPG > %t", "Command Turbo mode disabled");
-		SetConVarBool(g_hCVTurboMode, false);
+		g_hCVTurboMode.SetBool(false);
 	}
 	
 	return Plugin_Handled;
@@ -203,16 +204,16 @@ public Action:Cmd_TurboMode(client, args)
 /**
  * Timer callbacks
  */
-public Action:Timer_DisplayTurboModeHud(Handle:timer)
+public Action Timer_DisplayTurboModeHud(Handle timer)
 {
-	if(!GetConVarBool(g_hCVTurboMode))
+	if(!g_hCVTurboMode.BoolValue)
 		return Plugin_Stop;
 	
 	SetHudTextParams(0.8, 0.2, 2.0, 255, 0, 0, 200);
 	
-	decl String:sBuffer[64];
+	char sBuffer[64];
 	
-	for(new i=1;i<=MaxClients;i++)
+	for(int i=1;i<=MaxClients;i++)
 	{
 		if(IsClientInGame(i) && !IsFakeClient(i))
 		{
@@ -231,45 +232,45 @@ public Action:Timer_DisplayTurboModeHud(Handle:timer)
 /**
  * SMRPG callbacks
  */
-public SMRPG_OnClientLoaded(client)
+public void SMRPG_OnClientLoaded(int client)
 {
 	// Reset client to 0 during turbo mode.
-	if(GetConVarBool(g_hCVTurboMode))
+	if(g_hCVTurboMode.BoolValue)
 		SMRPG_ResetClientStats(client);
 }
 
-public Action:SMRPG_OnAddExperience(client, const String:reason[], &iExperience, other)
+public Action SMRPG_OnAddExperience(int client, const char[] reason, int &iExperience, int other)
 {
-	if(!GetConVarBool(g_hCVTurboMode))
+	if(!g_hCVTurboMode.BoolValue)
 		return Plugin_Continue;
 	
 	if(!StrEqual(reason, ExperienceReason_Admin))
 	{
 		// Higher experience rate
-		iExperience = RoundToCeil(float(iExperience) * GetConVarFloat(g_hCVExperienceMultiplier));
+		iExperience = RoundToCeil(float(iExperience) * g_hCVExperienceMultiplier.FloatValue);
 		return Plugin_Changed;
 	}
 	return Plugin_Continue;
 }
 
-public Action:SMRPG_OnClientLevel(client, oldlevel, newlevel)
+public Action SMRPG_OnClientLevel(int client, int oldlevel, int newlevel)
 {
 	// The next credits change should be multiplied!
 	g_bClientLeveledUp[client] = true;
 	return Plugin_Continue;
 }
 
-public Action:SMRPG_OnClientCredits(client, oldcredits, newcredits)
+public Action SMRPG_OnClientCredits(int client, int oldcredits, int newcredits)
 {
 	if(g_bClientLeveledUp[client])
 	{
 		g_bClientLeveledUp[client] = false;
 		
 		// Credits were actually given not taken
-		if(GetConVarBool(g_hCVTurboMode) && oldcredits < newcredits)
+		if(g_hCVTurboMode.BoolValue && oldcredits < newcredits)
 		{
-			new iInc = newcredits - oldcredits;
-			iInc = RoundToCeil(float(iInc) * GetConVarFloat(g_hCVCreditsMultiplier));
+			int iInc = newcredits - oldcredits;
+			iInc = RoundToCeil(float(iInc) * g_hCVCreditsMultiplier.FloatValue);
 			
 			// Give him more credits.
 			SMRPG_SetClientCredits(client, oldcredits + iInc);
@@ -286,10 +287,11 @@ public Action:SMRPG_OnClientCredits(client, oldcredits, newcredits)
 /**
  * Admin menu integration.
  */
-public OnAdminMenuReady(Handle:topmenu)
+public void OnAdminMenuReady(Handle hndl)
 {
+	TopMenu topmenu = TopMenu.FromHandle(hndl);
 	// Get the rpg category
-	new TopMenuObject:iRPGCategory = FindTopMenuCategory(topmenu, "SM:RPG");
+	TopMenuObject iRPGCategory = topmenu.FindCategory("SM:RPG");
 	
 	if(iRPGCategory == INVALID_TOPMENUOBJECT)
 		return;
@@ -299,14 +301,14 @@ public OnAdminMenuReady(Handle:topmenu)
 	
 	g_hTopMenu = topmenu;
 	
-	AddToTopMenu(topmenu, "Toggle Turbo Mode", TopMenuObject_Item, TopMenu_AdminHandleTurboMode, iRPGCategory, "sm_turbomode", ADMFLAG_CONFIG);
+	topmenu.AddItem("Toggle Turbo Mode", TopMenu_AdminHandleTurboMode, iRPGCategory, "sm_turbomode", ADMFLAG_CONFIG);
 }
 
-public TopMenu_AdminHandleTurboMode(Handle:topmenu, TopMenuAction:action, TopMenuObject:object_id, param, String:buffer[], maxlength)
+public void TopMenu_AdminHandleTurboMode(TopMenu topmenu, TopMenuAction action, TopMenuObject object_id, int param, char[] buffer, int maxlength)
 {
 	if (action == TopMenuAction_DisplayOption)
 	{
-		Format(buffer, maxlength, "%T: %T", "Turbo mode", param, (GetConVarBool(g_hCVTurboMode)?"On":"Off"), param);
+		Format(buffer, maxlength, "%T: %T", "Turbo mode", param, (g_hCVTurboMode.BoolValue?"On":"Off"), param);
 	}
 	else if (action == TopMenuAction_SelectOption)
 	{
@@ -316,9 +318,9 @@ public TopMenu_AdminHandleTurboMode(Handle:topmenu, TopMenuAction:action, TopMen
 	}
 }
 
-public Frame_AfterMenuHandle(any:userid)
+public void Frame_AfterMenuHandle(any userid)
 {
-	new client = GetClientOfUserId(userid);
+	int client = GetClientOfUserId(userid);
 	if(!client)
 		return;
 	

@@ -16,7 +16,7 @@
  * @param client  The client whos maxhealth you want to know.
  * @return        The client's maxhealth depending on his SM:RPG maxhealth level.
  */
-native SMRPG_Armor_GetClientMaxArmorEx(client);
+native int SMRPG_Armor_GetClientMaxArmorEx(int client);
 
 /**
  * Get the maximal health for a client, if the smrpg_upgrade_health plugin is loaded.
@@ -25,7 +25,7 @@ native SMRPG_Armor_GetClientMaxArmorEx(client);
  * @param client  The client whos maxhealth you want to know.
  * @return        The client's maxhealth depending on his SM:RPG maxhealth level, or default maxhealth, if SM:RPG unavailable.
  */
-stock SMRPG_Armor_GetClientMaxArmor(client)
+stock int SMRPG_Armor_GetClientMaxArmor(int client)
 {
 	// Use Armor+ maxlevel, if available.
 	if(GetFeatureStatus(FeatureType_Native, "SMRPG_Armor_GetClientMaxArmorEx") == FeatureStatus_Available)
@@ -34,7 +34,7 @@ stock SMRPG_Armor_GetClientMaxArmor(client)
 	return DEFAULT_MAX_ARMOR;
 }
 
-public SharedPlugin:__pl_smrpg_armorplus = 
+public SharedPlugin __pl_smrpg_armorplus = 
 {
 	name = "smrpg_armorplus",
 	file = "smrpg_upgrade_armorplus_cstrike.smx",
@@ -46,7 +46,7 @@ public SharedPlugin:__pl_smrpg_armorplus =
 };
 
 #if !defined REQUIRE_PLUGIN
-public __pl_smrpg_armorplus_SetNTVOptional()
+public void __pl_smrpg_armorplus_SetNTVOptional()
 {
 	MarkNativeAsOptional("SMRPG_Armor_GetClientMaxArmorEx");
 }

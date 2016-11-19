@@ -16,16 +16,15 @@
  * @return                   True if client was frozen, false otherwise.
  * @error                    Invalid client index.
  */
-native bool:SMRPG_FreezeClient(client, Float:fTime, Float:fDamageLimit, const String:sUpgradeName[], bool:bPlaySound=true, bool:bFadeColor=true, bool:bResetVelocity=false);
+native bool SMRPG_FreezeClient(int client, float fTime, float fDamageLimit, const char[] sUpgradeName, bool bPlaySound=true, bool bFadeColor=true, bool bResetVelocity=false);
 
 /**
  * Unfreeze a client, if he was frozen by SMRPG_FreezeClient previously.
  *
  * @param client             The client index.
- * @noreturn
  * @error                    Invalid client index or client not frozen.
  */
-native SMRPG_UnfreezeClient(client);
+native void SMRPG_UnfreezeClient(int client);
 
 /**
  * Checks whether a client is frozen by this plugin.
@@ -34,7 +33,7 @@ native SMRPG_UnfreezeClient(client);
  * @return                   True if frozen, false otherwise.
  * @error                    Invalid client index.
  */
-native bool:SMRPG_IsClientFrozen(client);
+native bool SMRPG_IsClientFrozen(int client);
 
 /**
  * Ignites a client. Can play optional effects on him.
@@ -47,16 +46,15 @@ native bool:SMRPG_IsClientFrozen(client);
  * @return                   True if client was ignited, false otherwise.
  * @error                    Invalid client index.
  */
-native bool:SMRPG_IgniteClient(client, Float:fTime, const String:sUpgradeName[], bool:bFadeColor=true, attacker=-1);
+native bool SMRPG_IgniteClient(int client, float fTime, const char[] sUpgradeName, bool bFadeColor=true, int attacker=-1);
 
 /**
  * Extinguish a client, if he was ignited by SMRPG_IgniteClient previously.
  *
  * @param client             The client index.
- * @noreturn
  * @error                    Invalid client index or client not burning.
  */
-native SMRPG_ExtinguishClient(client);
+native void SMRPG_ExtinguishClient(int client);
 
 /**
  * Checks whether a client is ignited by this plugin.
@@ -65,7 +63,7 @@ native SMRPG_ExtinguishClient(client);
  * @return                   True if burning, false otherwise.
  * @error                    Invalid client index.
  */
-native bool:SMRPG_IsClientBurning(client);
+native bool SMRPG_IsClientBurning(int client);
 
 /**
  * Set the default color of the player to reset to after some effects are run.
@@ -76,10 +74,9 @@ native bool:SMRPG_IsClientBurning(client);
  * @param g                  The green channel (0-255) or -1 to leave unchanged.
  * @param b                  The blue channel (0-255) or -1 to leave unchanged.
  * @param a                  The alpha channel (0-255) or -1 to leave unchanged.
- * @noreturn
  * @error                    Invalid client index.
  */
-native SMRPG_SetClientDefaultColor(client, r=-1, g=-1, b=-1, a=-1);
+native void SMRPG_SetClientDefaultColor(int client, int r=-1, int g=-1, int b=-1, int a=-1);
 
 /**
  * Set the render color of the player.
@@ -90,10 +87,9 @@ native SMRPG_SetClientDefaultColor(client, r=-1, g=-1, b=-1, a=-1);
  * @param g                  The green channel (0-255) or -1 to leave unchanged.
  * @param b                  The blue channel (0-255) or -1 to leave unchanged.
  * @param a                  The alpha channel (0-255) or -1 to leave unchanged.
- * @noreturn
  * @error                    Invalid client index.
  */
-native SMRPG_SetClientRenderColor(client, r=-1, g=-1, b=-1, a=-1);
+native void SMRPG_SetClientRenderColor(int client, int r=-1, int g=-1, int b=-1, int a=-1);
 
 /**
  * Start fading the render color from the current value to this target color.
@@ -108,7 +104,7 @@ native SMRPG_SetClientRenderColor(client, r=-1, g=-1, b=-1, a=-1);
  * @noreturn
  * @error                    Invalid client index.
  */
-native SMRPG_SetClientRenderColorFadeTarget(client, r=-1, g=-1, b=-1, a=-1);
+native void SMRPG_SetClientRenderColorFadeTarget(int client, int r=-1, int g=-1, int b=-1, int a=-1);
 
 /**
  * Set the fade stepsize for each channel. Every frame the channel moves by that stepsize towards the fade target.
@@ -122,7 +118,7 @@ native SMRPG_SetClientRenderColorFadeTarget(client, r=-1, g=-1, b=-1, a=-1);
  * @noreturn
  * @error                    Invalid client index.
  */
-native SMRPG_SetClientRenderColorFadeStepsize(client, Float:r=-1.0, Float:g=-1.0, Float:b=-1.0, Float:a=-1.0);
+native int SMRPG_SetClientRenderColorFadeStepsize(int client, float r=-1.0, float g=-1.0, float b=-1.0, float a=-1.0);
 
 /**
  * Reset the render color of the client back to the set default color.
@@ -137,10 +133,9 @@ native SMRPG_SetClientRenderColorFadeStepsize(client, Float:r=-1.0, Float:g=-1.0
  * @param bResetBlue         Should we reset the blue channel back to default?
  * @param bResetAlpha        Should we reset the alpha channel back to default?
  * @param bForceReset        Ignore which plugin last changed the channels and force a reset?
- * @noreturn
  * @error                    Invalid client index.
  */
-native SMRPG_ResetClientToDefaultColor(client, bool:bResetRed, bool:bResetGreen, bool:bResetBlue, bool:bResetAlpha, bool:bForceReset=false);
+native void SMRPG_ResetClientToDefaultColor(int client, bool bResetRed, bool bResetGreen, bool bResetBlue, bool bResetAlpha, bool bForceReset=false);
 
 /**
  * Determines if the player was slowed down or sped up.
@@ -167,7 +162,7 @@ enum LaggedMovementType {
  * @return                   True if players speed was changed, false otherwise. Could return false if the client is already slowed down further by another plugin than you want to set it to.
  * @error                    Invalid client index, negative fValue, negative fTime or fValue == 1.0. Use SMRPG_ResetClientLaggedMovement to reset to 1.0.
  */
-native bool:SMRPG_ChangeClientLaggedMovement(client, Float:fValue, Float:fTime);
+native bool SMRPG_ChangeClientLaggedMovement(int client, float fValue, float fTime);
 
 /**
  * Reset the previously changed speed of the player before the set time runs out.
@@ -180,7 +175,7 @@ native bool:SMRPG_ChangeClientLaggedMovement(client, Float:fValue, Float:fTime);
  * @return                   True if the speed of that type was reset, false otherwise.
  * @error                    Invalid client index.
  */
-native bool:SMRPG_ResetClientLaggedMovement(client, LaggedMovementType:type, bool:bForce=false);
+native bool SMRPG_ResetClientLaggedMovement(int client, LaggedMovementType type, bool bForce=false);
 
 /**
  * Check whether a client has his speed changed up or down (or both).
@@ -191,7 +186,7 @@ native bool:SMRPG_ResetClientLaggedMovement(client, LaggedMovementType:type, boo
  * @return                   True if speed was changed, false otherwise.
  * @error                    Invalid client index.
  */
-native bool:SMRPG_IsClientLaggedMovementChanged(client, LaggedMovementType:type, bool:bByMe=false);
+native bool SMRPG_IsClientLaggedMovementChanged(int client, LaggedMovementType type, bool bByMe=false);
 
 /**
  * Called when a client is about to be frozen for fTime seconds.
@@ -200,24 +195,22 @@ native bool:SMRPG_IsClientLaggedMovementChanged(client, LaggedMovementType:type,
  * @param &fTime     The time to freeze for. You can change it and return Plugin_Changed.
  * @return           >= Plugin_Handled to block, Plugin_Continue to allow freezing.
  */
-forward Action:SMRPG_OnClientFreeze(client, &Float:fTime);
+forward Action SMRPG_OnClientFreeze(int client, float &fTime);
 
 /**
  * Called when a client was frozen for fTime seconds.
  *
  * @param client     The client index.
  * @param fTime      The time to freeze for.
- * @noreturn
  */
-forward SMRPG_OnClientFrozen(client, Float:fTime);
+forward void SMRPG_OnClientFrozen(int client, float fTime);
 
 /**
  * Called when a client was unfrozen.
  *
  * @param client     The client index.
- * @noreturn
  */
-forward SMRPG_OnClientUnfrozen(client);
+forward void SMRPG_OnClientUnfrozen(int client);
 
 /**
  * Called when a client is about to be ignited for fTime seconds.
@@ -226,24 +219,22 @@ forward SMRPG_OnClientUnfrozen(client);
  * @param &fTime     The time to burn for. You can change it and return Plugin_Changed.
  * @return           >= Plugin_Handled to block, Plugin_Continue to allow burning.
  */
-forward Action:SMRPG_OnClientIgnite(client, &Float:fTime);
+forward Action SMRPG_OnClientIgnite(int client, float &fTime);
 
 /**
  * Called when a client was ignited for fTime seconds.
  *
  * @param client     The client index.
  * @param fTime      The time to freeze for.
- * @noreturn
  */
-forward SMRPG_OnClientIgnited(client, Float:fTime);
+forward void SMRPG_OnClientIgnited(int client, float fTime);
 
 /**
  * Called when a client was extinguished.
  *
  * @param client     The client index.
- * @noreturn
  */
-forward SMRPG_OnClientExtinguished(client);
+forward void SMRPG_OnClientExtinguished(int client);
 
 /**
  * Called when the speed of a client is about to be changed for fTime seconds.
@@ -253,7 +244,7 @@ forward SMRPG_OnClientExtinguished(client);
  * @param &fTime     The time to change the speed for. You can change it and return Plugin_Changed.
  * @return           >= Plugin_Handled to block, Plugin_Continue to allow the change of the speed.
  */
-forward Action:SMRPG_OnClientLaggedMovementChange(client, LaggedMovementType:type, &Float:fTime);
+forward Action SMRPG_OnClientLaggedMovementChange(int client, LaggedMovementType type, float &fTime);
 
 /**
  * Called after the speed of a client was changed.
@@ -261,20 +252,18 @@ forward Action:SMRPG_OnClientLaggedMovementChange(client, LaggedMovementType:typ
  * @param client     The client index.
  * @param type       The type of the speed change. LMT_Faster or LMT_Slower.
  * @param fTime      The time the speed is changed for.
- * @noreturn
  */
-forward SMRPG_OnClientLaggedMovementChanged(client, LaggedMovementType:type, Float:fTime);
+forward void SMRPG_OnClientLaggedMovementChanged(int client, LaggedMovementType type, float fTime);
 
 /**
  * Called when the speed of the client is reset to normal for the set type.
  * 
  * @param client     The client index.
  * @param type       The type of the reset speed change. LMT_Faster or LMT_Slower.
- * @noreturn
  */
-forward SMRPG_OnClientLaggedMovementReset(client, LaggedMovementType:type);
+forward void SMRPG_OnClientLaggedMovementReset(int client, LaggedMovementType type);
 
-public SharedPlugin:__pl_smrpg_effects = 
+public SharedPlugin __pl_smrpg_effects = 
 {
 	name = "smrpg_effects",
 	file = "smrpg_effects.smx",
@@ -286,7 +275,7 @@ public SharedPlugin:__pl_smrpg_effects =
 };
 
 #if !defined REQUIRE_PLUGIN
-public __pl_smrpg_effects_SetNTVOptional()
+public void __pl_smrpg_effects_SetNTVOptional()
 {
 	MarkNativeAsOptional("SMRPG_FreezeClient");
 	MarkNativeAsOptional("SMRPG_UnfreezeClient");

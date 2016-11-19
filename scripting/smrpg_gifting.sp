@@ -3,14 +3,16 @@
 #include <smlib>
 #include <smrpg>
 
+#pragma newdecls required
+
 #undef REQUIRE_PLUGIN
 #include <smrpg_commandlist>
 
 #define PLUGIN_VERSION "1.0"
 
-new Handle:g_hCVMinLevel;
+ConVar g_hCVMinLevel;
 
-public Plugin:myinfo = 
+public Plugin myinfo = 
 {
 	name = "SM:RPG > Credit Gifting",
 	author = "Peace-Maker",
@@ -19,13 +21,13 @@ public Plugin:myinfo =
 	url = "http://www.wcfan.de/"
 }
 
-public OnPluginStart()
+public void OnPluginStart()
 {
-	new Handle:hVersion = CreateConVar("smrpg_gifting_version", PLUGIN_VERSION, "SM:RPG Credit Gifting version", FCVAR_NOTIFY|FCVAR_DONTRECORD);
-	if(hVersion != INVALID_HANDLE)
+	ConVar hVersion = CreateConVar("smrpg_gifting_version", PLUGIN_VERSION, "SM:RPG Credit Gifting version", FCVAR_NOTIFY|FCVAR_DONTRECORD);
+	if(hVersion != null)
 	{
-		SetConVarString(hVersion, PLUGIN_VERSION);
-		HookConVarChange(hVersion, ConVar_VersionChanged);
+		hVersion.SetString(PLUGIN_VERSION);
+		hVersion.AddChangeHook(ConVar_VersionChanged);
 	}
 	
 	g_hCVMinLevel = CreateConVar("smrpg_gifting_minlevel", "10", "The minimum level a player has to be to be allowed to gift credits to other players.", _, true, 0.0);
@@ -41,24 +43,24 @@ public OnPluginStart()
 	RegConsoleCmd("rpggift", Cmd_RPGGift, "Give your credits to some other player. Usage: rpggift <#userid|authid|name> <credits>");
 }
 
-public ConVar_VersionChanged(Handle:convar, const String:oldValue[], const String:newValue[])
+public void ConVar_VersionChanged(ConVar convar, const char[] oldValue, const char[] newValue)
 {
-	SetConVarString(convar, PLUGIN_VERSION);
+	convar.SetString(PLUGIN_VERSION);
 }
 
-public OnPluginEnd()
+public void OnPluginEnd()
 {
 	if(LibraryExists("smrpg_commandlist"))
 		SMRPG_UnregisterCommand("rpggift");
 }
 
-public OnAllPluginsLoaded()
+public void OnAllPluginsLoaded()
 {
 	if(LibraryExists("smrpg_commandlist"))
 		OnLibraryAdded("smrpg_commandlist");
 }
 
-public OnLibraryAdded(const String:name[])
+public void OnLibraryAdded(const char[] name)
 {
 	// Register the command in SM:RPG
 	if(StrEqual(name, "smrpg_commandlist"))
@@ -67,7 +69,7 @@ public OnLibraryAdded(const String:name[])
 	}
 }
 
-public Action:SMRPG_TranslateCommand(client, const String:command[], CommandTranslationType:type, String:translation[], maxlen)
+public Action SMRPG_TranslateCommand(int client, const char[] command, CommandTranslationType type, char[] translation, int maxlen)
 {
 	if(type == CommandTranslationType_ShortDescription)
 		Format(translation, maxlen, "%T", "rpggift short desc", client);
@@ -78,7 +80,7 @@ public Action:SMRPG_TranslateCommand(client, const String:command[], CommandTran
 	return Plugin_Continue;
 }
 
-public Action:Cmd_RPGGift(client, args)
+public Action Cmd_RPGGift(int client, int args)
 {
 	if(!client)
 	{
@@ -92,32 +94,32 @@ public Action:Cmd_RPGGift(client, args)
 		return Plugin_Handled;
 	}
 	
-	decl String:sTarget[MAX_NAME_LENGTH];
+	char sTarget[MAX_NAME_LENGTH];
 	GetCmdArg(1, sTarget, sizeof(sTarget));
 	
-	decl String:sCredits[10];
+	char sCredits[10];
 	GetCmdArg(2, sCredits, sizeof(sCredits));
 	
 	HandleGifting(client, sTarget, sCredits);
 	return Plugin_Handled;
 }
 
-public Action:CmdLstnr_Say(client, const String:command[], argc)
+public Action CmdLstnr_Say(int client, const char[] command, int argc)
 {
 	if(!client)
 		return Plugin_Continue;
 	
-	decl String:sText[512];
+	char sText[512];
 	GetCmdArgString(sText, sizeof(sText));
 	StripQuotes(sText);
 	
 	if(StrContains(sText, "rpggift", false) != 0)
 		return Plugin_Continue;
 	
-	new iIndex, iRet;
-	decl String:sArg[MAX_NAME_LENGTH];
-	decl String:sTarget[MAX_NAME_LENGTH], String:sCredits[10];
-	new iArgCount;
+	int iIndex, iRet;
+	char sArg[MAX_NAME_LENGTH];
+	char sTarget[MAX_NAME_LENGTH], sCredits[10];
+	int iArgCount;
 	while(iRet != -1)
 	{
 		iRet = BreakString(sText[iIndex], sArg, sizeof(sArg));
@@ -143,9 +145,9 @@ public Action:CmdLstnr_Say(client, const String:command[], argc)
 	return Plugin_Continue;
 }
 
-HandleGifting(client, String:sTarget[], String:sCredits[])
+void HandleGifting(int client, char[] sTarget, char[] sCredits)
 {
-	new iTarget = FindTarget(client, sTarget, true, false);
+	int iTarget = FindTarget(client, sTarget, true, false);
 	if(iTarget == -1)
 		return;
 
@@ -155,21 +157,21 @@ HandleGifting(client, String:sTarget[], String:sCredits[])
 		return;
 	}
 	
-	new iCredits = StringToInt(sCredits);
+	int iCredits = StringToInt(sCredits);
 	if(iCredits <= 0)
 	{
 		Client_PrintToChat(client, false, "{OG}SM:RPG{N} > {G}%t", "Need at least 1 credit");
 		return;
 	}
 	
-	new iPlayerCredits = SMRPG_GetClientCredits(client);
+	int iPlayerCredits = SMRPG_GetClientCredits(client);
 	if(iPlayerCredits < iCredits)
 	{
 		Client_PrintToChat(client, false, "{OG}SM:RPG{N} > {G}%t", "You don't have enough credits");
 		return;
 	}
 	
-	new iMinLevel = GetConVarInt(g_hCVMinLevel);
+	int iMinLevel = g_hCVMinLevel.IntValue;
 	if(SMRPG_GetClientLevel(client) < iMinLevel)
 	{
 		Client_PrintToChat(client, false, "{OG}SM:RPG{N} > {G}%t", "You have to be min level", iMinLevel);

@@ -4,12 +4,10 @@
 
 /**
  * Loads the smrpg_sharedmaterials.games gamedata file and errors if it fails.
- * 
- * @noreturn
  */
-stock SMRPG_GC_CheckSharedMaterialsAndSounds(const String:sGameDataFile[] = "smrpg_sharedmaterials.games")
+stock void SMRPG_GC_CheckSharedMaterialsAndSounds(const char[] sGameDataFile = "smrpg_sharedmaterials.games")
 {
-	if(SMRPG_GC_GetSMRPGGameData(sGameDataFile) == INVALID_HANDLE)
+	if(SMRPG_GC_GetSMRPGGameData(sGameDataFile) == null)
 		SetFailState("Missing required gamedata %s!", sGameDataFile);
 }
 
@@ -19,9 +17,9 @@ stock SMRPG_GC_CheckSharedMaterialsAndSounds(const String:sGameDataFile[] = "smr
  * @param key	The key to search for in the gamedata file.
  * @return		The value of the key in the gamedata file.
  */
-stock String:SMRPG_GC_GetKeyValue(const String:key[])
+stock char[] SMRPG_GC_GetKeyValue(const char[] key)
 {
-	new String:sBuffer[PLATFORM_MAX_PATH];
+	char sBuffer[PLATFORM_MAX_PATH];
 	GameConfGetKeyValue(SMRPG_GC_GetSMRPGGameData(), key, sBuffer, sizeof(sBuffer));
 	return sBuffer;
 }
@@ -32,11 +30,11 @@ stock String:SMRPG_GC_GetKeyValue(const String:key[])
  * @param key	The key of the modelpath in the gamedata file.
  * @return		Modelindex of the precached model.
  */
-stock SMRPG_GC_PrecacheModel(const String:key[])
+stock int SMRPG_GC_PrecacheModel(const char[] key)
 {
-	new String:sBuffer[PLATFORM_MAX_PATH];
+	char sBuffer[PLATFORM_MAX_PATH];
 	sBuffer = SMRPG_GC_GetKeyValue(key);
-	new iIndex = -1;
+	int iIndex = -1;
 	if(sBuffer[0] != '\0')
 	{
 		iIndex = PrecacheModel(sBuffer);
@@ -51,11 +49,11 @@ stock SMRPG_GC_PrecacheModel(const String:key[])
  * @param key	The key of the soundpath in the gamedata file.
  * @return		True if precached successfully, false otherwise.
  */
-stock bool:SMRPG_GC_PrecacheSound(const String:key[])
+stock bool SMRPG_GC_PrecacheSound(const char[] key)
 {
-	new String:sBuffer[PLATFORM_MAX_PATH];
+	char sBuffer[PLATFORM_MAX_PATH];
 	sBuffer = SMRPG_GC_GetKeyValue(key);
-	new bool:bSuccess;
+	bool bSuccess;
 	if(sBuffer[0] != '\0')
 	{
 		bSuccess = PrecacheSound(sBuffer, true);
@@ -69,9 +67,9 @@ stock bool:SMRPG_GC_PrecacheSound(const String:key[])
  * @param key	The key of the model in the gamedata file.
  * @return		The precached model index if it was precached, -1 if not precached or failed.
  */
-stock SMRPG_GC_GetPrecachedIndex(const String:key[])
+stock int SMRPG_GC_GetPrecachedIndex(const char[] key)
 {
-	new iValue = -1;
+	int iValue = -1;
 	GetTrieValue(SMRPG_GC_GetGameDataCache(), key, iValue);
 	return iValue;
 }
@@ -84,11 +82,11 @@ stock SMRPG_GC_GetPrecachedIndex(const String:key[])
 /**
  * Gets the Handle to the smrpg_sharedmaterials.games gameconfig.
  * 
- * @return Handle to the smrpg_sharedmaterials.games gameconfig or INVALID_HANDLE if not found.
+ * @return Handle to the smrpg_sharedmaterials.games gameconfig or null if not found.
  */
-stock Handle:SMRPG_GC_GetSMRPGGameData(const String:sGameDataFile[] = "")
+stock Handle SMRPG_GC_GetSMRPGGameData(const char[] sGameDataFile = "")
 {
-	static Handle:hGameData = INVALID_HANDLE;
+	static Handle hGameData = null;
 	if(!hGameData && sGameDataFile[0] != '\0')
 	{
 		hGameData = LoadGameConfigFile(sGameDataFile);
@@ -102,12 +100,12 @@ stock Handle:SMRPG_GC_GetSMRPGGameData(const String:sGameDataFile[] = "")
  * 
  * @return Handle to the precached models indices trie.
  */
-stock Handle:SMRPG_GC_GetGameDataCache()
+stock StringMap SMRPG_GC_GetGameDataCache()
 {
-	static Handle:hCache = INVALID_HANDLE;
+	static StringMap hCache = null;
 	if(!hCache)
 	{
-		hCache = CreateTrie();
+		hCache = new StringMap();
 	}
 	return hCache;
 }

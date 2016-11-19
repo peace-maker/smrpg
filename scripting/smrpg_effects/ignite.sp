@@ -3,37 +3,37 @@
  * Handles igniting of players.
  */
 
-new Handle:g_hfwdOnClientIgnite;
-new Handle:g_hfwdOnClientIgnited;
-new Handle:g_hfwdOnClientExtinguished;
+Handle g_hfwdOnClientIgnite;
+Handle g_hfwdOnClientIgnited;
+Handle g_hfwdOnClientExtinguished;
 
-new Handle:g_hExtinguish[MAXPLAYERS+1];
-new Handle:g_hIgnitePlugin[MAXPLAYERS+1];
-new g_iAttacker[MAXPLAYERS+1] = {-1, ...};
+Handle g_hExtinguish[MAXPLAYERS+1];
+Handle g_hIgnitePlugin[MAXPLAYERS+1];
+int g_iAttacker[MAXPLAYERS+1] = {-1, ...};
 
 /**
  * Setup helpers
  */
-RegisterIgniteNatives()
+void RegisterIgniteNatives()
 {
 	CreateNative("SMRPG_IgniteClient", Native_IgniteClient);
 	CreateNative("SMRPG_ExtinguishClient", Native_ExtinguishClient);
 	CreateNative("SMRPG_IsClientBurning", Native_IsClientBurning);
 }
 
-RegisterIgniteForwards()
+void RegisterIgniteForwards()
 {
-	// forward Action:SMRPG_OnClientIgnite(client, &Float:fTime);
+	// forward Action SMRPG_OnClientIgnite(int client, float &fTime);
 	g_hfwdOnClientIgnite = CreateGlobalForward("SMRPG_OnClientIgnite", ET_Hook, Param_Cell, Param_FloatByRef);
-	// forward SMRPG_OnClientIgnited(client, Float:fTime);
+	// forward void SMRPG_OnClientIgnited(int client, float fTime);
 	g_hfwdOnClientIgnited = CreateGlobalForward("SMRPG_OnClientIgnited", ET_Ignore, Param_Cell, Param_Float);
-	// forward SMRPG_OnClientExtinguished(client);
+	// forward void SMRPG_OnClientExtinguished(int client);
 	g_hfwdOnClientExtinguished = CreateGlobalForward("SMRPG_OnClientExtinguished", ET_Ignore, Param_Cell);
 }
 
-ResetIgniteClient(client, bool:bDisconnect)
+void ResetIgniteClient(int client, bool bDisconnect)
 {
-	if(g_hIgnitePlugin[client] != INVALID_HANDLE && IsClientInGame(client))
+	if(g_hIgnitePlugin[client] != null && IsClientInGame(client))
 		ExtinguishClient(client);
 	ResetClientIgniteState(client);
 	ClearHandle(g_hExtinguish[client]);
@@ -46,13 +46,13 @@ ResetIgniteClient(client, bool:bDisconnect)
 /**
  * Timer callbacks
  */
-public Action:Timer_Extinguish(Handle:timer, any:userid)
+public Action Timer_Extinguish(Handle timer, any userid)
 {
-	new client = GetClientOfUserId(userid);
+	int client = GetClientOfUserId(userid);
 	if(!client)
 		return Plugin_Stop;
 	
-	g_hExtinguish[client] = INVALID_HANDLE;
+	g_hExtinguish[client] = null;
 	
 	ExtinguishClient(client);
 	
@@ -63,10 +63,10 @@ public Action:Timer_Extinguish(Handle:timer, any:userid)
  * Hook callbacks
  */
 // Change the attacker to the right player when a victim gets damage from fire.
-Action:Ignite_OnTakeDamage(victim, &attacker, &inflictor, &Float:damage, &damagetype)
+Action Ignite_OnTakeDamage(int victim, int &attacker, int &inflictor, float &damage, int &damagetype)
 {
 	// Not ignited by this plugin.
-	if (g_hExtinguish[victim] == INVALID_HANDLE)
+	if (g_hExtinguish[victim] == null)
 		return Plugin_Continue;
 	
 	// No attacker passed to SMRPG_IgniteClient.
@@ -81,7 +81,7 @@ Action:Ignite_OnTakeDamage(victim, &attacker, &inflictor, &Float:damage, &damage
 	if (attacker > 0 && attacker <= MaxClients)
 		return Plugin_Continue;
 	
-	new iAttacker = GetClientFromSerial(g_iAttacker[victim]);
+	int iAttacker = GetClientFromSerial(g_iAttacker[victim]);
 	// Attacker left the server?
 	if (!iAttacker)
 	{
@@ -98,25 +98,22 @@ Action:Ignite_OnTakeDamage(victim, &attacker, &inflictor, &Float:damage, &damage
 /**
  * Native handlers
  */
-// native bool:SMRPG_IgniteClient(client, Float:fTime, const String:sUpgradeName[], bool:bFadeColor=true, attacker=-1);
-public Native_IgniteClient(Handle:plugin, numParams)
+// native bool SMRPG_IgniteClient(int client, float fTime, const char[] sUpgradeName, bool bFadeColor=true, int attacker=-1);
+public int Native_IgniteClient(Handle plugin, int numParams)
 {
-	new client = GetNativeCell(1);
+	int client = GetNativeCell(1);
 	
 	if(client <= 0 || client > MaxClients)
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d", client);
-		return false;
-	}
+		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d", client);
 	
-	new Float:fIgniteTime = Float:GetNativeCell(2);
-	new iLen;
+	float fIgniteTime = view_as<float>(GetNativeCell(2));
+	int iLen;
 	GetNativeStringLength(3, iLen);
-	new String:sUpgradeName[iLen+1];
+	char[] sUpgradeName = new char[iLen+1];
 	GetNativeString(3, sUpgradeName, iLen+1);
-	new bool:bFadeColor = GetNativeCell(4);
+	bool bFadeColor = GetNativeCell(4);
 	
-	new attacker = -1;
+	int attacker = -1;
 	// Attacker parameter was added later.
 	if (numParams > 4)
 		attacker = GetNativeCell(5);
@@ -126,12 +123,9 @@ public Native_IgniteClient(Handle:plugin, numParams)
 		attacker = -1;
 	
 	if (attacker != -1 && (attacker <= 0 || attacker > MaxClients))
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "Invalid attacker client index %d", attacker);
-		return false;
-	}
+		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid attacker client index %d", attacker);
 	
-	new Action:ret;
+	Action ret;
 	Call_StartForward(g_hfwdOnClientIgnite);
 	Call_PushCell(client);
 	Call_PushFloatRef(fIgniteTime);
@@ -142,10 +136,7 @@ public Native_IgniteClient(Handle:plugin, numParams)
 	
 	// Are you insane?
 	if(fIgniteTime < 0.0)
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "Invalid ignite time %f.", fIgniteTime);
-		return false;
-	}
+		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid ignite time %f.", fIgniteTime);
 	
 	// Ignite the player.
 	if (attacker != -1)
@@ -166,8 +157,8 @@ public Native_IgniteClient(Handle:plugin, numParams)
 	{
 		Help_SetClientRenderColorFadeTarget(plugin, client, 255, 255, 255, -1);
 		// Fade as long as the player is burning.
-		new Float:fTickrate = 1.0 / GetTickInterval();
-		new Float:fStepsize = 255.0 / (fTickrate * fIgniteTime);
+		float fTickrate = 1.0 / GetTickInterval();
+		float fStepsize = 255.0 / (fTickrate * fIgniteTime);
 		SMRPG_SetClientRenderColorFadeStepsize(client, -1.0, fStepsize, fStepsize);
 		Help_SetClientRenderColor(plugin, client, 255, 0, 0, -1);
 	}
@@ -180,50 +171,42 @@ public Native_IgniteClient(Handle:plugin, numParams)
 	return true;
 }
 
-// native SMRPG_ExtinguishClient(client);
-public Native_ExtinguishClient(Handle:plugin, numParams)
+// native SMRPG_ExtinguishClient(int client);
+public int Native_ExtinguishClient(Handle plugin, int numParams)
 {
-	new client = GetNativeCell(1);
+	int client = GetNativeCell(1);
 	
 	if(client <= 0 || client > MaxClients)
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d", client);
-		return;
-	}
+		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d", client);
 	
 	if(!g_hExtinguish[client])
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "Client is not burning.");
-		return;
-	}
+		return ThrowNativeError(SP_ERROR_NATIVE, "Client is not burning.");
 	
 	ResetIgniteClient(client, false);
+	return 0;
 }
 
-// native bool:SMRPG_IsClientBurning(client);
-public Native_IsClientBurning(Handle:plugin, numParams)
+// native bool SMRPG_IsClientBurning(int client);
+public int Native_IsClientBurning(Handle plugin, int numParams)
 {
-	new client = GetNativeCell(1);
+	int client = GetNativeCell(1);
 	
 	if(client <= 0 || client > MaxClients)
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d", client);
-		return false;
-	}
+		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d", client);
 	
-	return g_hExtinguish[client] != INVALID_HANDLE;
+	return g_hExtinguish[client] != null;
 }
 
 /**
  * Helpers
  */
-ExtinguishClient(client)
+void ExtinguishClient(int client)
 {
 	ExtinguishEntity(client);
 	// Extinguish the ragdoll too!
 	if(!IsPlayerAlive(client))
 	{
-		new iRagdoll = GetEntPropEnt(client, Prop_Send, "m_hRagdoll");
+		int iRagdoll = GetEntPropEnt(client, Prop_Send, "m_hRagdoll");
 		if(iRagdoll > 0)
 			ExtinguishEntity(iRagdoll);
 	}
@@ -237,8 +220,8 @@ ExtinguishClient(client)
 }
 
 // Client doesn't have to ingame for this one.
-ResetClientIgniteState(client)
+void ResetClientIgniteState(int client)
 {
-	g_hIgnitePlugin[client] = INVALID_HANDLE;
+	g_hIgnitePlugin[client] = null;
 	g_iAttacker[client] = -1;
 }

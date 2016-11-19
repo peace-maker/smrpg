@@ -4,28 +4,29 @@
 #include <smrpg>
 #include <smlib/clients>
 
+#pragma newdecls required
 #undef REQUIRE_EXTENSIONS
 #include <clientprefs>
 
 #define PLUGIN_VERSION "1.0"
 
 // RPG Topmenu
-new Handle:g_hRPGMenu;
+TopMenu g_hRPGMenu;
 
 // Clientprefs
-new bool:g_bClientPrintKillXP[MAXPLAYERS+1];
-new Handle:g_hCookiePrintKillXP;
-new bool:g_bClientPrintLifeXP[MAXPLAYERS+1];
-new Handle:g_hCookiePrintLifeXP;
+bool g_bClientPrintKillXP[MAXPLAYERS+1];
+Handle g_hCookiePrintKillXP;
+bool g_bClientPrintLifeXP[MAXPLAYERS+1];
+Handle g_hCookiePrintLifeXP;
 
 // Convars
-new Handle:g_hCVPrintKillXP;
-new Handle:g_hCVPrintLifeXP;
+ConVar g_hCVPrintKillXP;
+ConVar g_hCVPrintLifeXP;
 
 // Last experience memory
-new g_iExpSinceSpawn[MAXPLAYERS+1];
+int g_iExpSinceSpawn[MAXPLAYERS+1];
 
-public Plugin:myinfo = 
+public Plugin myinfo = 
 {
 	name = "SM:RPG > Chat Experience Stats",
 	author = "Jannik \"Peace-Maker\" Hartung",
@@ -34,7 +35,7 @@ public Plugin:myinfo =
 	url = "http://www.wcfan.de/"
 }
 
-public OnPluginStart()
+public void OnPluginStart()
 {
 	LoadTranslations("common.phrases");
 	LoadTranslations("smrpg_chatxpstats.phrases");
@@ -50,25 +51,25 @@ public OnPluginStart()
 		OnLibraryAdded("clientprefs");
 	
 	// Initialize default values.
-	for(new i=1;i<=MaxClients;i++)
+	for(int i=1;i<=MaxClients;i++)
 		OnClientDisconnect(i);
 	
-	new Handle:hTopMenu;
-	if((hTopMenu = SMRPG_GetTopMenu()) != INVALID_HANDLE)
+	TopMenu hTopMenu;
+	if((hTopMenu = SMRPG_GetTopMenu()) != null)
 		SMRPG_OnRPGMenuReady(hTopMenu);
 }
 
-public OnClientDisconnect(client)
+public void OnClientDisconnect(int client)
 {
 	g_iExpSinceSpawn[client] = 0;
-	g_bClientPrintKillXP[client] = GetConVarBool(g_hCVPrintKillXP);
-	g_bClientPrintLifeXP[client] = GetConVarBool(g_hCVPrintLifeXP);
+	g_bClientPrintKillXP[client] = g_hCVPrintKillXP.BoolValue;
+	g_bClientPrintLifeXP[client] = g_hCVPrintLifeXP.BoolValue;
 }
 
 /**
  * Client preferences handling
  */
-public OnLibraryAdded(const String:name[])
+public void OnLibraryAdded(const char[] name)
 {
 	if(StrEqual(name, "clientprefs"))
 	{
@@ -77,18 +78,18 @@ public OnLibraryAdded(const String:name[])
 	}
 }
 
-public OnLibraryRemoved(const String:name[])
+public void OnLibraryRemoved(const char[] name)
 {
 	if(StrEqual(name, "clientprefs"))
 	{
-		g_hCookiePrintKillXP = INVALID_HANDLE;
-		g_hCookiePrintLifeXP = INVALID_HANDLE;
+		g_hCookiePrintKillXP = null;
+		g_hCookiePrintLifeXP = null;
 	}
 }
 
-public OnClientCookiesCached(client)
+public void OnClientCookiesCached(int client)
 {
-	new String:sBuffer[4];
+	char sBuffer[4];
 	GetClientCookie(client, g_hCookiePrintKillXP, sBuffer, sizeof(sBuffer));
 	if(strlen(sBuffer) > 0)
 		g_bClientPrintKillXP[client] = StringToInt(sBuffer)==1;
@@ -100,9 +101,9 @@ public OnClientCookiesCached(client)
 /**
  * Event callbacks
  */
-public Event_OnPlayerDeath(Handle:event, const String:name[], bool:dontBroadcast)
+public void Event_OnPlayerDeath(Event event, const char[] name, bool dontBroadcast)
 {
-	new client = GetClientOfUserId(GetEventInt(event, "userid"));
+	int client = GetClientOfUserId(event.GetInt("userid"));
 	if(!client)
 		return;
 	
@@ -120,7 +121,7 @@ public Event_OnPlayerDeath(Handle:event, const String:name[], bool:dontBroadcast
 /**
  * SM:RPG callbacks
  */
-public SMRPG_OnAddExperiencePost(client, const String:reason[], iExperience, other)
+public void SMRPG_OnAddExperiencePost(int client, const char[] reason, int iExperience, int other)
 {
 	g_iExpSinceSpawn[client] += iExperience;
 	
@@ -132,15 +133,13 @@ public SMRPG_OnAddExperiencePost(client, const String:reason[], iExperience, oth
 			Client_PrintToChat(client, false, "{OG}SM:RPG{N} > {G}%t", "Earned experience for kill", iExperience, other);
 		Client_PrintToConsole(client, "{OG}SM:RPG{N} > {G}%t", "Earned experience for kill", iExperience, other);
 	}
-	
-	return;
 }
 
 /**
  * RPG Topmenu stuff
  */
 
-public SMRPG_OnRPGMenuReady(Handle:topmenu)
+public void SMRPG_OnRPGMenuReady(TopMenu topmenu)
 {
 	// Block us from being called twice!
 	if(g_hRPGMenu == topmenu)
@@ -148,22 +147,22 @@ public SMRPG_OnRPGMenuReady(Handle:topmenu)
 	
 	g_hRPGMenu = topmenu;
 	
-	new TopMenuObject:iTopMenuSettings = FindTopMenuCategory(g_hRPGMenu, RPGMENU_SETTINGS);
+	TopMenuObject iTopMenuSettings = g_hRPGMenu.FindCategory(RPGMENU_SETTINGS);
 	if(iTopMenuSettings != INVALID_TOPMENUOBJECT)
 	{
-		AddToTopMenu(g_hRPGMenu, "rpgchatxpstats_xpforkill", TopMenuObject_Item, TopMenu_SettingsItemHandler, iTopMenuSettings);
-		AddToTopMenu(g_hRPGMenu, "rpgchatxpstats_xplastlife", TopMenuObject_Item, TopMenu_SettingsItemHandler, iTopMenuSettings);
+		g_hRPGMenu.AddItem("rpgchatxpstats_xpforkill", TopMenu_SettingsItemHandler, iTopMenuSettings);
+		g_hRPGMenu.AddItem("rpgchatxpstats_xplastlife", TopMenu_SettingsItemHandler, iTopMenuSettings);
 	}
 }
 
-public TopMenu_SettingsItemHandler(Handle:topmenu, TopMenuAction:action, TopMenuObject:object_id, param, String:buffer[], maxlength)
+public void TopMenu_SettingsItemHandler(TopMenu topmenu, TopMenuAction action, TopMenuObject object_id, int param, char[] buffer, int maxlength)
 {
 	switch(action)
 	{
 		case TopMenuAction_DisplayOption:
 		{
-			decl String:sBuffer[32];
-			GetTopMenuObjName(topmenu, object_id, sBuffer, sizeof(sBuffer));
+			char sBuffer[32];
+			topmenu.GetObjName(object_id, sBuffer, sizeof(sBuffer));
 			
 			if(StrEqual(sBuffer, "rpgchatxpstats_xpforkill", false))
 				Format(buffer, maxlength, "%T: %T", "Print xp for last kill in chat", param, (g_bClientPrintKillXP[param]?"Yes":"No"), param);
@@ -172,14 +171,14 @@ public TopMenu_SettingsItemHandler(Handle:topmenu, TopMenuAction:action, TopMenu
 		}
 		case TopMenuAction_SelectOption:
 		{
-			decl String:sBuffer[32];
-			GetTopMenuObjName(topmenu, object_id, sBuffer, sizeof(sBuffer));
+			char sBuffer[32];
+			topmenu.GetObjName(object_id, sBuffer, sizeof(sBuffer));
 			
 			if(StrEqual(sBuffer, "rpgchatxpstats_xpforkill", false))
 			{
 				g_bClientPrintKillXP[param] = !g_bClientPrintKillXP[param];
 			
-				if(g_hCookiePrintKillXP != INVALID_HANDLE && AreClientCookiesCached(param))
+				if(g_hCookiePrintKillXP != null && AreClientCookiesCached(param))
 				{
 					IntToString(g_bClientPrintKillXP[param], sBuffer, sizeof(sBuffer));
 					SetClientCookie(param, g_hCookiePrintKillXP, sBuffer);
@@ -189,14 +188,14 @@ public TopMenu_SettingsItemHandler(Handle:topmenu, TopMenuAction:action, TopMenu
 			{
 				g_bClientPrintLifeXP[param] = !g_bClientPrintLifeXP[param];
 			
-				if(g_hCookiePrintLifeXP != INVALID_HANDLE && AreClientCookiesCached(param))
+				if(g_hCookiePrintLifeXP != null && AreClientCookiesCached(param))
 				{
 					IntToString(g_bClientPrintLifeXP[param], sBuffer, sizeof(sBuffer));
 					SetClientCookie(param, g_hCookiePrintLifeXP, sBuffer);
 				}
 			}
 			
-			DisplayTopMenu(g_hRPGMenu, param, TopMenuPosition_LastCategory);
+			g_hRPGMenu.Display(param, TopMenuPosition_LastCategory);
 		}
 	}
 }

@@ -25,7 +25,7 @@ enum CommandTranslationType {
  * @param maxlen      The maximal length of the buffer.
  * @return            Return Plugin_Handled to stop the command from being listed in the menu or the advert printed, otherwise return Plugin_Continue.
  */
-functag public Action:SMRPG_TranslateCommandCB(client, const String:command[], CommandTranslationType:type, String:translation[], maxlen);
+typedef SMRPG_TranslateCommandCB = function Action (int client, const char[] command, CommandTranslationType type, char[] translation, int maxlen);
 
 /**
  * Register a rpg related command in the core.
@@ -33,21 +33,19 @@ functag public Action:SMRPG_TranslateCommandCB(client, const String:command[], C
  *
  * @param command   The command you want to register.
  * @param callback  The callback to call to get the description and advert text.
- * @noreturn
  * @error Command already registered by other plugin.
  */
-native SMRPG_RegisterCommand(const String:command[], SMRPG_TranslateCommandCB:callback);
+native void SMRPG_RegisterCommand(const char[] command, SMRPG_TranslateCommandCB callback);
 
 /**
  * Unregister the rpg related command from the core.
  * Call this in OnPluginEnd!
  * 
  * @param command   The command you previously registered and want to unregister now.
- * @noreturn
  */
-native SMRPG_UnregisterCommand(const String:command[]);
+native void SMRPG_UnregisterCommand(const char[] command);
 
-public SharedPlugin:__pl_smrpg_commandlist = 
+public SharedPlugin __pl_smrpg_commandlist = 
 {
 	name = "smrpg_commandlist",
 	file = "smrpg_commandlist.smx",
@@ -59,7 +57,7 @@ public SharedPlugin:__pl_smrpg_commandlist =
 };
 
 #if !defined REQUIRE_PLUGIN
-public __pl_smrpg_commandlist_SetNTVOptional()
+public void __pl_smrpg_commandlist_SetNTVOptional()
 {
 	MarkNativeAsOptional("SMRPG_RegisterCommand");
 	MarkNativeAsOptional("SMRPG_UnregisterCommand");
