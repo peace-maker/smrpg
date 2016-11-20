@@ -1,7 +1,7 @@
 #pragma semicolon 1
 #include <sourcemod>
 
-RegisterAdminCommands()
+void RegisterAdminCommands()
 {
 	RegAdminCmd("sm_rpgadmin", Cmd_OpenRPGAdminMenu, ADMFLAG_CONFIG, "Opens the SM:RPG admin menu.", "smrpg");
 	RegAdminCmd("smrpg_player", Cmd_PlayerInfo, ADMFLAG_ROOT, "Get info about a certain player. Usage smrpg_player <player name | #userid | #steamid>", "smrpg");
@@ -32,7 +32,7 @@ RegisterAdminCommands()
 	RegAdminCmd("smrpg_debug_playerlist", Cmd_DebugPlayerlist, ADMFLAG_ROOT, "List all RPG players", "smrpg");
 }
 
-public Action:Cmd_OpenRPGAdminMenu(client, args)
+public Action Cmd_OpenRPGAdminMenu(int client, int args)
 {
 	if (!client)
 	{
@@ -46,32 +46,32 @@ public Action:Cmd_OpenRPGAdminMenu(client, args)
 	return Plugin_Handled;
 }
 
-public Action:Cmd_PlayerInfo(client, args)
+public Action Cmd_PlayerInfo(int client, int args)
 {
-	decl String:sText[256];
+	char sText[256];
 	GetCmdArgString(sText, sizeof(sText));
 	TrimString(sText);
-	new iTarget = FindTarget(client, sText, false, false);
+	int iTarget = FindTarget(client, sText, false, false);
 	if(iTarget == -1)
 		return Plugin_Handled;
 	
 	ReplyToCommand(client, "SM:RPG: ----------");
 	ReplyToCommand(client, "SM:RPG %N: ", iTarget);
 	
-	new playerInfo[PlayerInfo];
+	int playerInfo[PlayerInfo];
 	GetClientRPGInfo(iTarget, playerInfo);
 	
-	new String:sSteamID[64];
+	char sSteamID[64];
 	GetClientAuthId(iTarget, AuthId_Engine, sSteamID, sizeof(sSteamID));
 	ReplyToCommand(client, "SM:RPG Info: Index: %d, UserID: %d, SteamID: %s, Database ID: %d, AFK: %d", iTarget, GetClientUserId(iTarget), sSteamID, playerInfo[PLR_dbId], IsClientAFK(iTarget));
 	
 	ReplyToCommand(client, "SM:RPG Stats: Level: %d, Experience: %d/%d, Credits: %d, Rank: %d/%d", GetClientLevel(iTarget), GetClientExperience(iTarget), Stats_LvlToExp(GetClientLevel(iTarget)), GetClientCredits(iTarget), GetClientRank(iTarget), GetRankCount());
 	
 	ReplyToCommand(client, "SM:RPG Upgrades: ");
-	new iSize = GetUpgradeCount();
-	new upgrade[InternalUpgradeInfo];
-	decl String:sPermission[30];
-	for(new i=0;i<iSize;i++)
+	int iSize = GetUpgradeCount();
+	int upgrade[InternalUpgradeInfo];
+	char sPermission[30];
+	for(int i=0;i<iSize;i++)
 	{
 		GetUpgradeByIndex(i, upgrade);
 		if(!IsValidUpgrade(upgrade))
@@ -95,15 +95,15 @@ public Action:Cmd_PlayerInfo(client, args)
 	return Plugin_Handled;
 }
 
-public Action:Cmd_ResetStats(client, args)
+public Action Cmd_ResetStats(int client, int args)
 {
-	decl String:sTarget[256];
+	char sTarget[256];
 	GetCmdArgString(sTarget, sizeof(sTarget));
 	TrimString(sTarget);
 	
-	decl String:sTargetName[MAX_TARGET_LENGTH];
-	new iTargetList[MAXPLAYERS], iTargetCount;
-	new bool:tn_is_ml;
+	char sTargetName[MAX_TARGET_LENGTH];
+	int iTargetList[MAXPLAYERS], iTargetCount;
+	bool tn_is_ml;
 	if((iTargetCount = ProcessTargetString(sTarget,
 							client, 
 							iTargetList,
@@ -117,7 +117,7 @@ public Action:Cmd_ResetStats(client, args)
 		return Plugin_Handled;
 	}
 	
-	for(new i=0;i<iTargetCount;i++)
+	for(int i=0;i<iTargetCount;i++)
 	{
 		ResetStats(iTargetList[i]);
 		SetPlayerLastReset(iTargetList[i], GetTime());
@@ -138,15 +138,15 @@ public Action:Cmd_ResetStats(client, args)
 	return Plugin_Handled;
 }
 
-public Action:Cmd_ResetExp(client, args)
+public Action Cmd_ResetExp(int client, int args)
 {
-	decl String:sTarget[256];
+	char sTarget[256];
 	GetCmdArgString(sTarget, sizeof(sTarget));
 	TrimString(sTarget);
 	
-	decl String:sTargetName[MAX_TARGET_LENGTH];
-	new iTargetList[MAXPLAYERS], iTargetCount;
-	new bool:tn_is_ml;
+	char sTargetName[MAX_TARGET_LENGTH];
+	int iTargetList[MAXPLAYERS], iTargetCount;
+	bool tn_is_ml;
 	if((iTargetCount = ProcessTargetString(sTarget,
 							client, 
 							iTargetList,
@@ -160,9 +160,9 @@ public Action:Cmd_ResetExp(client, args)
 		return Plugin_Handled;
 	}
 	
-	new iFailedTargets[MAXPLAYERS];
-	new iFailedCount;
-	for(new i=0;i<iTargetCount;i++)
+	int iFailedTargets[MAXPLAYERS];
+	int iFailedCount;
+	for(int i=0;i<iTargetCount;i++)
 	{
 		if(SetClientExperience(iTargetList[i], 0))
 		{
@@ -180,9 +180,9 @@ public Action:Cmd_ResetExp(client, args)
 		ReplyToCommand(client, "SM:RPG resetexp: Experience has been reset for %t (%d players).", sTargetName, iTargetCount);
 		if(iFailedCount > 0)
 		{
-			decl String:sFailedList[1024];
+			char sFailedList[1024];
 			Format(sFailedList, sizeof(sFailedList), "SM:RPG resetexp: Can't reset experience for %d client(s) (blocked by other plugin): ", iFailedCount);
-			for(new i=0;i<iFailedCount;i++)
+			for(int i=0;i<iFailedCount;i++)
 			{
 				Format(sFailedList, sizeof(sFailedList), "%s%s %N", sFailedList, (i>0?",":""), iFailedTargets[i]);
 			}
@@ -200,7 +200,7 @@ public Action:Cmd_ResetExp(client, args)
 	return Plugin_Handled;
 }
 
-public Action:Cmd_SetLvl(client, args)
+public Action Cmd_SetLvl(int client, int args)
 {
 	if(args < 2)
 	{
@@ -208,13 +208,13 @@ public Action:Cmd_SetLvl(client, args)
 		return Plugin_Handled;
 	}
 	
-	decl String:sTarget[256];
+	char sTarget[256];
 	GetCmdArg(1, sTarget, sizeof(sTarget));
 	TrimString(sTarget);
 	
-	decl String:sLevel[16];
+	char sLevel[16];
 	GetCmdArg(2, sLevel, sizeof(sLevel));
-	new iLevel = StringToInt(sLevel);
+	int iLevel = StringToInt(sLevel);
 	
 	if(iLevel < 1)
 	{
@@ -222,9 +222,9 @@ public Action:Cmd_SetLvl(client, args)
 		return Plugin_Handled;
 	}
 	
-	decl String:sTargetName[MAX_TARGET_LENGTH];
-	new iTargetList[MAXPLAYERS], iTargetCount;
-	new bool:tn_is_ml;
+	char sTargetName[MAX_TARGET_LENGTH];
+	int iTargetList[MAXPLAYERS], iTargetCount;
+	bool tn_is_ml;
 	if((iTargetCount = ProcessTargetString(sTarget,
 							client, 
 							iTargetList,
@@ -238,10 +238,10 @@ public Action:Cmd_SetLvl(client, args)
 		return Plugin_Handled;
 	}
 	
-	new iLastOldLevel;
-	new iFailedTargets[MAXPLAYERS], iFailedOldLevels[MAXPLAYERS];
-	new iFailedCount;
-	for(new i=0;i<iTargetCount;i++)
+	int iLastOldLevel;
+	int iFailedTargets[MAXPLAYERS], iFailedOldLevels[MAXPLAYERS];
+	int iFailedCount;
+	for(int i=0;i<iTargetCount;i++)
 	{
 		iLastOldLevel = GetClientLevel(iTargetList[i]);
 		// Don't touch players who already are on the desired level.
@@ -259,7 +259,7 @@ public Action:Cmd_SetLvl(client, args)
 			SetClientLevel(iTargetList[i], iLevel);
 			SetClientExperience(iTargetList[i], 0);
 			
-			if(GetConVarBool(g_hCVAnnounceNewLvl))
+			if(g_hCVAnnounceNewLvl.BoolValue)
 				Client_PrintToChatAll(false, "%t", "Client level changed", iTargetList[i], GetClientLevel(iTargetList[i]));
 		}
 		
@@ -279,9 +279,9 @@ public Action:Cmd_SetLvl(client, args)
 		ReplyToCommand(client, "SM:RPG setlvl: Level has been set to %d for %t (%d players).", iLevel, sTargetName, iTargetCount);
 		if(iFailedCount > 0)
 		{
-			decl String:sFailedList[1024];
+			char sFailedList[1024];
 			Format(sFailedList, sizeof(sFailedList), "SM:RPG setlvl: %d clients failed: ", iFailedCount);
-			for(new i=0;i<iFailedCount;i++)
+			for(int i=0;i<iFailedCount;i++)
 			{
 				Format(sFailedList, sizeof(sFailedList), "%s%s%N (level: %d, old: %d)", sFailedList, (i>0?", ":""), iFailedTargets[i], GetClientLevel(iFailedTargets[0]), iFailedOldLevels[0]);
 			}
@@ -296,7 +296,7 @@ public Action:Cmd_SetLvl(client, args)
 	return Plugin_Handled;
 }
 
-public Action:Cmd_AddLvl(client, args)
+public Action Cmd_AddLvl(int client, int args)
 {
 	if(args < 2)
 	{
@@ -304,13 +304,13 @@ public Action:Cmd_AddLvl(client, args)
 		return Plugin_Handled;
 	}
 	
-	decl String:sTarget[256];
+	char sTarget[256];
 	GetCmdArg(1, sTarget, sizeof(sTarget));
 	TrimString(sTarget);
 	
-	decl String:sLevel[16];
+	char sLevel[16];
 	GetCmdArg(2, sLevel, sizeof(sLevel));
-	new iLevelIncrease = StringToInt(sLevel);
+	int iLevelIncrease = StringToInt(sLevel);
 	
 	if(iLevelIncrease < 1)
 	{
@@ -318,9 +318,9 @@ public Action:Cmd_AddLvl(client, args)
 		return Plugin_Handled;
 	}
 	
-	decl String:sTargetName[MAX_TARGET_LENGTH];
-	new iTargetList[MAXPLAYERS], iTargetCount;
-	new bool:tn_is_ml;
+	char sTargetName[MAX_TARGET_LENGTH];
+	int iTargetList[MAXPLAYERS], iTargetCount;
+	bool tn_is_ml;
 	if((iTargetCount = ProcessTargetString(sTarget,
 							client, 
 							iTargetList,
@@ -334,10 +334,10 @@ public Action:Cmd_AddLvl(client, args)
 		return Plugin_Handled;
 	}
 	
-	new iLastOldLevel;
-	new iFailedTargets[MAXPLAYERS], iFailedOldLevels[MAXPLAYERS];
-	new iFailedCount;
-	for(new i=0;i<iTargetCount;i++)
+	int iLastOldLevel;
+	int iFailedTargets[MAXPLAYERS], iFailedOldLevels[MAXPLAYERS];
+	int iFailedCount;
+	for(int i=0;i<iTargetCount;i++)
 	{
 		iLastOldLevel = GetClientLevel(iTargetList[i]);
 		
@@ -360,9 +360,9 @@ public Action:Cmd_AddLvl(client, args)
 		ReplyToCommand(client, "SM:RPG addlvl: Added %d levels to %t (%d players).", iLevelIncrease, sTargetName, iTargetCount);
 		if(iFailedCount > 0)
 		{
-			decl String:sFailedList[1024];
+			char sFailedList[1024];
 			Format(sFailedList, sizeof(sFailedList), "SM:RPG addlvl: %d clients failed: ", iFailedCount);
-			for(new i=0;i<iFailedCount;i++)
+			for(int i=0;i<iFailedCount;i++)
 			{
 				Format(sFailedList, sizeof(sFailedList), "%s%s%N (level: %d, old: %d)", sFailedList, (i>0?", ":""), iFailedTargets[i], GetClientLevel(iFailedTargets[0]), iFailedOldLevels[0]);
 			}
@@ -377,7 +377,7 @@ public Action:Cmd_AddLvl(client, args)
 	return Plugin_Handled;
 }
 
-public Action:Cmd_SetExp(client, args)
+public Action Cmd_SetExp(int client, int args)
 {
 	if(args < 2)
 	{
@@ -385,13 +385,13 @@ public Action:Cmd_SetExp(client, args)
 		return Plugin_Handled;
 	}
 	
-	decl String:sTarget[256];
+	char sTarget[256];
 	GetCmdArg(1, sTarget, sizeof(sTarget));
 	TrimString(sTarget);
 	
-	decl String:sExperience[16];
+	char sExperience[16];
 	GetCmdArg(2, sExperience, sizeof(sExperience));
-	new iExperience = StringToInt(sExperience);
+	int iExperience = StringToInt(sExperience);
 	
 	if(iExperience < 0)
 	{
@@ -399,9 +399,9 @@ public Action:Cmd_SetExp(client, args)
 		return Plugin_Handled;
 	}
 	
-	decl String:sTargetName[MAX_TARGET_LENGTH];
-	new iTargetList[MAXPLAYERS], iTargetCount;
-	new bool:tn_is_ml;
+	char sTargetName[MAX_TARGET_LENGTH];
+	int iTargetList[MAXPLAYERS], iTargetCount;
+	bool tn_is_ml;
 	if((iTargetCount = ProcessTargetString(sTarget,
 							client, 
 							iTargetList,
@@ -415,9 +415,10 @@ public Action:Cmd_SetExp(client, args)
 		return Plugin_Handled;
 	}
 	
-	new iLastOldLevel, iLastOldExperience;
-	new iFailCount, bool:bSuccess;
-	for(new i=0;i<iTargetCount;i++)
+	int iLastOldLevel, iLastOldExperience;
+	int iFailCount;
+	bool bSuccess;
+	for(int i=0;i<iTargetCount;i++)
 	{
 		iLastOldLevel = GetClientLevel(iTargetList[i]);
 		iLastOldExperience = GetClientExperience(iTargetList[i]);
@@ -425,7 +426,7 @@ public Action:Cmd_SetExp(client, args)
 		// Do a proper level up if enough experience.
 		if(iExperience > iLastOldExperience)
 		{
-			new iNewExperience = iExperience-iLastOldExperience;
+			int iNewExperience = iExperience-iLastOldExperience;
 			bSuccess = Stats_AddExperience(iTargetList[i], iNewExperience, ExperienceReason_Admin, false, -1, true);
 		}
 		else
@@ -456,7 +457,7 @@ public Action:Cmd_SetExp(client, args)
 	return Plugin_Handled;
 }
 
-public Action:Cmd_AddExp(client, args)
+public Action Cmd_AddExp(int client, int args)
 {
 	if(args < 2)
 	{
@@ -464,13 +465,13 @@ public Action:Cmd_AddExp(client, args)
 		return Plugin_Handled;
 	}
 	
-	decl String:sTarget[256];
+	char sTarget[256];
 	GetCmdArg(1, sTarget, sizeof(sTarget));
 	TrimString(sTarget);
 	
-	decl String:sExperienceIncrease[16];
+	char sExperienceIncrease[16];
 	GetCmdArg(2, sExperienceIncrease, sizeof(sExperienceIncrease));
-	new iExperienceIncrease = StringToInt(sExperienceIncrease);
+	int iExperienceIncrease = StringToInt(sExperienceIncrease);
 	
 	if(iExperienceIncrease < 1)
 	{
@@ -478,9 +479,9 @@ public Action:Cmd_AddExp(client, args)
 		return Plugin_Handled;
 	}
 	
-	decl String:sTargetName[MAX_TARGET_LENGTH];
-	new iTargetList[MAXPLAYERS], iTargetCount;
-	new bool:tn_is_ml;
+	char sTargetName[MAX_TARGET_LENGTH];
+	int iTargetList[MAXPLAYERS], iTargetCount;
+	bool tn_is_ml;
 	if((iTargetCount = ProcessTargetString(sTarget,
 							client, 
 							iTargetList,
@@ -494,9 +495,9 @@ public Action:Cmd_AddExp(client, args)
 		return Plugin_Handled;
 	}
 	
-	new iLastOldLevel, iLastOldExperience;
-	new iFailCount;
-	for(new i=0;i<iTargetCount;i++)
+	int iLastOldLevel, iLastOldExperience;
+	int iFailCount;
+	for(int i=0;i<iTargetCount;i++)
 	{
 		iLastOldLevel = GetClientLevel(iTargetList[i]);
 		iLastOldExperience = GetClientExperience(iTargetList[i]);
@@ -527,7 +528,7 @@ public Action:Cmd_AddExp(client, args)
 	return Plugin_Handled;
 }
 
-public Action:Cmd_SetCredits(client, args)
+public Action Cmd_SetCredits(int client, int args)
 {
 	if(args < 2)
 	{
@@ -535,13 +536,13 @@ public Action:Cmd_SetCredits(client, args)
 		return Plugin_Handled;
 	}
 	
-	decl String:sTarget[256];
+	char sTarget[256];
 	GetCmdArg(1, sTarget, sizeof(sTarget));
 	TrimString(sTarget);
 	
-	decl String:sCredits[16];
+	char sCredits[16];
 	GetCmdArg(2, sCredits, sizeof(sCredits));
-	new iCredits = StringToInt(sCredits);
+	int iCredits = StringToInt(sCredits);
 	
 	if(iCredits < 0)
 	{
@@ -549,9 +550,9 @@ public Action:Cmd_SetCredits(client, args)
 		return Plugin_Handled;
 	}
 	
-	decl String:sTargetName[MAX_TARGET_LENGTH];
-	new iTargetList[MAXPLAYERS], iTargetCount;
-	new bool:tn_is_ml;
+	char sTargetName[MAX_TARGET_LENGTH];
+	int iTargetList[MAXPLAYERS], iTargetCount;
+	bool tn_is_ml;
 	if((iTargetCount = ProcessTargetString(sTarget,
 							client, 
 							iTargetList,
@@ -565,8 +566,8 @@ public Action:Cmd_SetCredits(client, args)
 		return Plugin_Handled;
 	}
 	
-	new iLastOldCredits;
-	for(new i=0;i<iTargetCount;i++)
+	int iLastOldCredits;
+	for(int i=0;i<iTargetCount;i++)
 	{
 		iLastOldCredits = GetClientCredits(iTargetList[i]);
 		
@@ -588,7 +589,7 @@ public Action:Cmd_SetCredits(client, args)
 	return Plugin_Handled;
 }
 
-public Action:Cmd_AddCredits(client, args)
+public Action Cmd_AddCredits(int client, int args)
 {
 	if(args < 2)
 	{
@@ -596,13 +597,13 @@ public Action:Cmd_AddCredits(client, args)
 		return Plugin_Handled;
 	}
 	
-	decl String:sTarget[256];
+	char sTarget[256];
 	GetCmdArg(1, sTarget, sizeof(sTarget));
 	TrimString(sTarget);
 	
-	decl String:sCredits[16];
+	char sCredits[16];
 	GetCmdArg(2, sCredits, sizeof(sCredits));
-	new iCredits = StringToInt(sCredits);
+	int iCredits = StringToInt(sCredits);
 	
 	if(iCredits < 1)
 	{
@@ -610,9 +611,9 @@ public Action:Cmd_AddCredits(client, args)
 		return Plugin_Handled;
 	}
 	
-	decl String:sTargetName[MAX_TARGET_LENGTH];
-	new iTargetList[MAXPLAYERS], iTargetCount;
-	new bool:tn_is_ml;
+	char sTargetName[MAX_TARGET_LENGTH];
+	int iTargetList[MAXPLAYERS], iTargetCount;
+	bool tn_is_ml;
 	if((iTargetCount = ProcessTargetString(sTarget,
 							client, 
 							iTargetList,
@@ -626,8 +627,8 @@ public Action:Cmd_AddCredits(client, args)
 		return Plugin_Handled;
 	}
 	
-	new iLastOldCredits;
-	for(new i=0;i<iTargetCount;i++)
+	int iLastOldCredits;
+	for(int i=0;i<iTargetCount;i++)
 	{
 		iLastOldCredits = GetClientCredits(iTargetList[i]);
 		
@@ -649,13 +650,14 @@ public Action:Cmd_AddCredits(client, args)
 	return Plugin_Handled;
 }
 
-public Action:Cmd_ListUpgrades(client, args)
+public Action Cmd_ListUpgrades(int client, int args)
 {
-	new iSize = GetUpgradeCount();
+	int iSize = GetUpgradeCount();
 	ReplyToCommand(client, "There are %d upgrades registered.", iSize);
-	new upgrade[InternalUpgradeInfo];
-	new iUnavailableCount, String:sPluginFile[64], String:sPermissions[30];
-	for(new i=0;i<iSize;i++)
+	int upgrade[InternalUpgradeInfo];
+	int iUnavailableCount;
+	char sPluginFile[64], sPermissions[30];
+	for(int i=0;i<iSize;i++)
 	{
 		GetUpgradeByIndex(i, upgrade);
 		if(!IsValidUpgrade(upgrade))
@@ -678,7 +680,7 @@ public Action:Cmd_ListUpgrades(client, args)
 	return Plugin_Handled;
 }
 
-public Action:Cmd_SetUpgradeLvl(client, args)
+public Action Cmd_SetUpgradeLvl(int client, int args)
 {
 	if(args < 3)
 	{
@@ -686,27 +688,27 @@ public Action:Cmd_SetUpgradeLvl(client, args)
 		return Plugin_Handled;
 	}
 	
-	decl String:sTarget[256];
+	char sTarget[256];
 	GetCmdArg(1, sTarget, sizeof(sTarget));
 	TrimString(sTarget);
 	
-	decl String:sUpgrade[MAX_UPGRADE_SHORTNAME_LENGTH];
+	char sUpgrade[MAX_UPGRADE_SHORTNAME_LENGTH];
 	GetCmdArg(2, sUpgrade, sizeof(sUpgrade));
 	TrimString(sUpgrade);
 	StripQuotes(sUpgrade);
-	new upgrade[InternalUpgradeInfo];
+	int upgrade[InternalUpgradeInfo];
 	if(!GetUpgradeByShortname(sUpgrade, upgrade) || !IsValidUpgrade(upgrade))
 	{
 		ReplyToCommand(client, "SM:RPG: There is no upgrade with name \"%s\".", sUpgrade);
 		return Plugin_Handled;
 	}
 	
-	decl String:sLevel[16];
+	char sLevel[16];
 	GetCmdArg(3, sLevel, sizeof(sLevel));
 	StripQuotes(sLevel);
 	
 	// Make sure we're not over the maxlevel
-	new iLevel = StringToInt(sLevel);
+	int iLevel = StringToInt(sLevel);
 	if(StrEqual(sLevel, "max", false) || iLevel > upgrade[UPGR_maxLevel])
 		iLevel = upgrade[UPGR_maxLevel];
 	
@@ -716,11 +718,11 @@ public Action:Cmd_SetUpgradeLvl(client, args)
 		return Plugin_Handled;
 	}
 	
-	new iIndex = upgrade[UPGR_index];
+	int iIndex = upgrade[UPGR_index];
 	
-	decl String:sTargetName[MAX_TARGET_LENGTH];
-	new iTargetList[MAXPLAYERS], iTargetCount;
-	new bool:tn_is_ml;
+	char sTargetName[MAX_TARGET_LENGTH];
+	int iTargetList[MAXPLAYERS], iTargetCount;
+	bool tn_is_ml;
 	if((iTargetCount = ProcessTargetString(sTarget,
 							client, 
 							iTargetList,
@@ -734,8 +736,8 @@ public Action:Cmd_SetUpgradeLvl(client, args)
 		return Plugin_Handled;
 	}
 	
-	new iLastOldUpgradeLevel;
-	for(new i=0;i<iTargetCount;i++)
+	int iLastOldUpgradeLevel;
+	for(int i=0;i<iTargetCount;i++)
 	{
 		iLastOldUpgradeLevel = GetClientPurchasedUpgradeLevel(iTargetList[i], iIndex);
 		
@@ -776,7 +778,7 @@ public Action:Cmd_SetUpgradeLvl(client, args)
 	return Plugin_Handled;
 }
 
-public Action:Cmd_GiveUpgrade(client, args)
+public Action Cmd_GiveUpgrade(int client, int args)
 {
 	if(args < 2)
 	{
@@ -784,26 +786,26 @@ public Action:Cmd_GiveUpgrade(client, args)
 		return Plugin_Handled;
 	}
 	
-	decl String:sTarget[256];
+	char sTarget[256];
 	GetCmdArg(1, sTarget, sizeof(sTarget));
 	TrimString(sTarget);
 	
-	decl String:sUpgrade[MAX_UPGRADE_SHORTNAME_LENGTH];
+	char sUpgrade[MAX_UPGRADE_SHORTNAME_LENGTH];
 	GetCmdArg(2, sUpgrade, sizeof(sUpgrade));
 	TrimString(sUpgrade);
 	StripQuotes(sUpgrade);
-	new upgrade[InternalUpgradeInfo];
+	int upgrade[InternalUpgradeInfo];
 	if(!GetUpgradeByShortname(sUpgrade, upgrade) || !IsValidUpgrade(upgrade))
 	{
 		ReplyToCommand(client, "SM:RPG giveupgrade: There is no upgrade with name \"%s\".", sUpgrade);
 		return Plugin_Handled;
 	}
 	
-	new iIndex = upgrade[UPGR_index];
+	int iIndex = upgrade[UPGR_index];
 	
-	decl String:sTargetName[MAX_TARGET_LENGTH];
-	new iTargetList[MAXPLAYERS], iTargetCount;
-	new bool:tn_is_ml;
+	char sTargetName[MAX_TARGET_LENGTH];
+	int iTargetList[MAXPLAYERS], iTargetCount;
+	bool tn_is_ml;
 	if((iTargetCount = ProcessTargetString(sTarget,
 							client, 
 							iTargetList,
@@ -817,10 +819,10 @@ public Action:Cmd_GiveUpgrade(client, args)
 		return Plugin_Handled;
 	}
 	
-	new iLastOldUpgradeLevel;
-	new iCountAlreadyMaxed;
-	new iFailedTargets[MAXPLAYERS], iFailedCount;
-	for(new i=0;i<iTargetCount;i++)
+	int iLastOldUpgradeLevel;
+	int iCountAlreadyMaxed;
+	int iFailedTargets[MAXPLAYERS], iFailedCount;
+	for(int i=0;i<iTargetCount;i++)
 	{
 		iLastOldUpgradeLevel = GetClientPurchasedUpgradeLevel(iTargetList[i], iIndex);
 		
@@ -847,9 +849,9 @@ public Action:Cmd_GiveUpgrade(client, args)
 			ReplyToCommand(client, "SM:RPG giveupgrade: %d players already had it on max.", iCountAlreadyMaxed);
 		if(iFailedCount > 0)
 		{
-			decl String:sFailedList[1024];
+			char sFailedList[1024];
 			Format(sFailedList, sizeof(sFailedList), "SM:RPG giveupgrade: %d clients failed: ", iFailedCount);
-			for(new i=0;i<iFailedCount;i++)
+			for(int i=0;i<iFailedCount;i++)
 			{
 				Format(sFailedList, sizeof(sFailedList), "%s%s%N ", sFailedList, (i>0?", ":""), iFailedTargets[i]);
 			}
@@ -869,7 +871,7 @@ public Action:Cmd_GiveUpgrade(client, args)
 	return Plugin_Handled;
 }
 
-public Action:Cmd_GiveAll(client, args)
+public Action Cmd_GiveAll(int client, int args)
 {
 	if(args < 1)
 	{
@@ -877,13 +879,13 @@ public Action:Cmd_GiveAll(client, args)
 		return Plugin_Handled;
 	}
 	
-	decl String:sTarget[256];
+	char sTarget[256];
 	GetCmdArg(1, sTarget, sizeof(sTarget));
 	TrimString(sTarget);
 	
-	decl String:sTargetName[MAX_TARGET_LENGTH];
-	new iTargetList[MAXPLAYERS], iTargetCount;
-	new bool:tn_is_ml;
+	char sTargetName[MAX_TARGET_LENGTH];
+	int iTargetList[MAXPLAYERS], iTargetCount;
+	bool tn_is_ml;
 	if((iTargetCount = ProcessTargetString(sTarget,
 							client, 
 							iTargetList,
@@ -897,12 +899,12 @@ public Action:Cmd_GiveAll(client, args)
 		return Plugin_Handled;
 	}
 	
-	new iSize = GetUpgradeCount();
-	new upgrade[InternalUpgradeInfo];
-	for(new i=0;i<iTargetCount;i++)
+	int iSize = GetUpgradeCount();
+	int upgrade[InternalUpgradeInfo];
+	for(int i=0;i<iTargetCount;i++)
 	{
 		// Run through all upgrades
-		for(new u=0;u<iSize;u++)
+		for(int u=0;u<iSize;u++)
 		{
 			GetUpgradeByIndex(u, upgrade);
 			if(!IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled])
@@ -929,7 +931,7 @@ public Action:Cmd_GiveAll(client, args)
 	return Plugin_Handled;
 }
 
-public Action:Cmd_TakeUpgrade(client, args)
+public Action Cmd_TakeUpgrade(int client, int args)
 {
 	if(args < 2)
 	{
@@ -937,24 +939,24 @@ public Action:Cmd_TakeUpgrade(client, args)
 		return Plugin_Handled;
 	}
 	
-	decl String:sTarget[256];
+	char sTarget[256];
 	GetCmdArg(1, sTarget, sizeof(sTarget));
 	TrimString(sTarget);
 	
-	decl String:sUpgrade[MAX_UPGRADE_SHORTNAME_LENGTH];
+	char sUpgrade[MAX_UPGRADE_SHORTNAME_LENGTH];
 	GetCmdArg(2, sUpgrade, sizeof(sUpgrade));
 	TrimString(sUpgrade);
 	StripQuotes(sUpgrade);
-	new upgrade[InternalUpgradeInfo];
+	int upgrade[InternalUpgradeInfo];
 	if(!GetUpgradeByShortname(sUpgrade, upgrade) || !IsValidUpgrade(upgrade))
 	{
 		ReplyToCommand(client, "SM:RPG takeupgrade: There is no upgrade with shortname \"%s\".", sUpgrade);
 		return Plugin_Handled;
 	}
 	
-	decl String:sTargetName[MAX_TARGET_LENGTH];
-	new iTargetList[MAXPLAYERS], iTargetCount;
-	new bool:tn_is_ml;
+	char sTargetName[MAX_TARGET_LENGTH];
+	int iTargetList[MAXPLAYERS], iTargetCount;
+	bool tn_is_ml;
 	if((iTargetCount = ProcessTargetString(sTarget,
 							client, 
 							iTargetList,
@@ -968,12 +970,12 @@ public Action:Cmd_TakeUpgrade(client, args)
 		return Plugin_Handled;
 	}
 	
-	new iIndex = upgrade[UPGR_index];
+	int iIndex = upgrade[UPGR_index];
 	
-	new iLastOldUpgradeLevel;
-	new iCountDontOwn;
-	new iFailedTargets[MAXPLAYERS], iFailedCount;
-	for(new i=0;i<iTargetCount;i++)
+	int iLastOldUpgradeLevel;
+	int iCountDontOwn;
+	int iFailedTargets[MAXPLAYERS], iFailedCount;
+	for(int i=0;i<iTargetCount;i++)
 	{
 		iLastOldUpgradeLevel = GetClientPurchasedUpgradeLevel(iTargetList[i], iIndex);
 		
@@ -1001,9 +1003,9 @@ public Action:Cmd_TakeUpgrade(client, args)
 			ReplyToCommand(client, "SM:RPG takeupgrade: %d players didn't own the upgrade at all.", iCountDontOwn);
 		if(iFailedCount > 0)
 		{
-			decl String:sFailedList[1024];
+			char sFailedList[1024];
 			Format(sFailedList, sizeof(sFailedList), "SM:RPG takeupgrade: %d clients failed: ", iFailedCount);
-			for(new i=0;i<iFailedCount;i++)
+			for(int i=0;i<iFailedCount;i++)
 			{
 				Format(sFailedList, sizeof(sFailedList), "%s%s%N ", sFailedList, (i>0?", ":""), iFailedTargets[i]);
 			}
@@ -1023,7 +1025,7 @@ public Action:Cmd_TakeUpgrade(client, args)
 	return Plugin_Handled;
 }
 
-public Action:Cmd_BuyUpgrade(client, args)
+public Action Cmd_BuyUpgrade(int client, int args)
 {
 	if(args < 2)
 	{
@@ -1031,24 +1033,24 @@ public Action:Cmd_BuyUpgrade(client, args)
 		return Plugin_Handled;
 	}
 	
-	decl String:sTarget[256];
+	char sTarget[256];
 	GetCmdArg(1, sTarget, sizeof(sTarget));
 	TrimString(sTarget);
 	
-	decl String:sUpgrade[MAX_UPGRADE_SHORTNAME_LENGTH];
+	char sUpgrade[MAX_UPGRADE_SHORTNAME_LENGTH];
 	GetCmdArg(2, sUpgrade, sizeof(sUpgrade));
 	TrimString(sUpgrade);
 	StripQuotes(sUpgrade);
-	new upgrade[InternalUpgradeInfo];
+	int upgrade[InternalUpgradeInfo];
 	if(!GetUpgradeByShortname(sUpgrade, upgrade) || !IsValidUpgrade(upgrade))
 	{
 		ReplyToCommand(client, "SM:RPG buyupgrade: There is no upgrade with shortname \"%s\".", sUpgrade);
 		return Plugin_Handled;
 	}
 	
-	decl String:sTargetName[MAX_TARGET_LENGTH];
-	new iTargetList[MAXPLAYERS], iTargetCount;
-	new bool:tn_is_ml;
+	char sTargetName[MAX_TARGET_LENGTH];
+	int iTargetList[MAXPLAYERS], iTargetCount;
+	bool tn_is_ml;
 	if((iTargetCount = ProcessTargetString(sTarget,
 							client, 
 							iTargetList,
@@ -1062,13 +1064,13 @@ public Action:Cmd_BuyUpgrade(client, args)
 		return Plugin_Handled;
 	}
 	
-	new iIndex = upgrade[UPGR_index];
+	int iIndex = upgrade[UPGR_index];
 	
-	new iLastOldUpgradeLevel;
-	new iCountAlreadyMaxed;
-	new iPoorTargets[MAXPLAYERS], iPoorCount;
-	new iFailedTargets[MAXPLAYERS], iFailedCount;
-	for(new i=0;i<iTargetCount;i++)
+	int iLastOldUpgradeLevel;
+	int iCountAlreadyMaxed;
+	int iPoorTargets[MAXPLAYERS], iPoorCount;
+	int iFailedTargets[MAXPLAYERS], iFailedCount;
+	for(int i=0;i<iTargetCount;i++)
 	{
 		iLastOldUpgradeLevel = GetClientPurchasedUpgradeLevel(iTargetList[i], iIndex);
 		
@@ -1080,7 +1082,7 @@ public Action:Cmd_BuyUpgrade(client, args)
 		}
 		
 		// Doesn't have enough credits.
-		new iCost = GetUpgradeCost(iIndex, iLastOldUpgradeLevel);
+		int iCost = GetUpgradeCost(iIndex, iLastOldUpgradeLevel);
 		if(iCost > GetClientCredits(iTargetList[i]))
 		{
 			iPoorTargets[iPoorCount++] = iTargetList[i];
@@ -1105,9 +1107,9 @@ public Action:Cmd_BuyUpgrade(client, args)
 			ReplyToCommand(client, "SM:RPG buyupgrade: %d players already had the upgrade at the maximal level.", iCountAlreadyMaxed);
 		if(iPoorCount > 0)
 		{
-			decl String:sPoorList[1024];
+			char sPoorList[1024];
 			Format(sPoorList, sizeof(sPoorList), "SM:RPG buyupgrade: %d clients don't have enough credits: ", iPoorCount);
-			for(new i=0;i<iPoorCount;i++)
+			for(int i=0;i<iPoorCount;i++)
 			{
 				Format(sPoorList, sizeof(sPoorList), "%s%s%N ", sPoorList, (i>0?", ":""), iPoorTargets[i]);
 			}
@@ -1115,9 +1117,9 @@ public Action:Cmd_BuyUpgrade(client, args)
 		}
 		if(iFailedCount > 0)
 		{
-			decl String:sFailedList[1024];
+			char sFailedList[1024];
 			Format(sFailedList, sizeof(sFailedList), "SM:RPG buyupgrade: %d clients failed: ", iFailedCount);
-			for(new i=0;i<iFailedCount;i++)
+			for(int i=0;i<iFailedCount;i++)
 			{
 				Format(sFailedList, sizeof(sFailedList), "%s%s%N ", sFailedList, (i>0?", ":""), iFailedTargets[i]);
 			}
@@ -1139,7 +1141,7 @@ public Action:Cmd_BuyUpgrade(client, args)
 	return Plugin_Handled;
 }
 
-public Action:Cmd_SellUpgrade(client, args)
+public Action Cmd_SellUpgrade(int client, int args)
 {
 	if(args < 2)
 	{
@@ -1147,24 +1149,24 @@ public Action:Cmd_SellUpgrade(client, args)
 		return Plugin_Handled;
 	}
 	
-	decl String:sTarget[256];
+	char sTarget[256];
 	GetCmdArg(1, sTarget, sizeof(sTarget));
 	TrimString(sTarget);
 	
-	decl String:sUpgrade[MAX_UPGRADE_SHORTNAME_LENGTH];
+	char sUpgrade[MAX_UPGRADE_SHORTNAME_LENGTH];
 	GetCmdArg(2, sUpgrade, sizeof(sUpgrade));
 	TrimString(sUpgrade);
 	StripQuotes(sUpgrade);
-	new upgrade[InternalUpgradeInfo];
+	int upgrade[InternalUpgradeInfo];
 	if(!GetUpgradeByShortname(sUpgrade, upgrade) || !IsValidUpgrade(upgrade))
 	{
 		ReplyToCommand(client, "SM:RPG sellupgrade: There is no upgrade with name \"%s\".", sUpgrade);
 		return Plugin_Handled;
 	}
 	
-	decl String:sTargetName[MAX_TARGET_LENGTH];
-	new iTargetList[MAXPLAYERS], iTargetCount;
-	new bool:tn_is_ml;
+	char sTargetName[MAX_TARGET_LENGTH];
+	int iTargetList[MAXPLAYERS], iTargetCount;
+	bool tn_is_ml;
 	if((iTargetCount = ProcessTargetString(sTarget,
 							client, 
 							iTargetList,
@@ -1178,12 +1180,12 @@ public Action:Cmd_SellUpgrade(client, args)
 		return Plugin_Handled;
 	}
 	
-	new iIndex = upgrade[UPGR_index];
+	int iIndex = upgrade[UPGR_index];
 	
-	new iLastOldUpgradeLevel;
-	new iCountDontOwn;
-	new iFailedTargets[MAXPLAYERS], iFailedCount;
-	for(new i=0;i<iTargetCount;i++)
+	int iLastOldUpgradeLevel;
+	int iCountDontOwn;
+	int iFailedTargets[MAXPLAYERS], iFailedCount;
+	for(int i=0;i<iTargetCount;i++)
 	{
 		iLastOldUpgradeLevel = GetClientPurchasedUpgradeLevel(iTargetList[i], iIndex);
 		
@@ -1201,7 +1203,7 @@ public Action:Cmd_SellUpgrade(client, args)
 		}
 		
 		// Full refund!
-		new iUpgradeCosts = GetUpgradeCost(iIndex, iLastOldUpgradeLevel);
+		int iUpgradeCosts = GetUpgradeCost(iIndex, iLastOldUpgradeLevel);
 		SetClientCredits(iTargetList[i], GetClientCredits(iTargetList[i]) + iUpgradeCosts);
 		
 		LogAction(client, iTargetList[i], "%L forced %L to sell a level of upgrade %s with full refund of the costs. The upgrade level changed from %d to %d and he received %d credits.", client, iTargetList[i], upgrade[UPGR_name], iLastOldUpgradeLevel, GetClientPurchasedUpgradeLevel(iTargetList[i], iIndex), iUpgradeCosts);
@@ -1215,9 +1217,9 @@ public Action:Cmd_SellUpgrade(client, args)
 			ReplyToCommand(client, "SM:RPG sellupgrade: %d players didn't own the upgrade at all.", iCountDontOwn);
 		if(iFailedCount > 0)
 		{
-			decl String:sFailedList[1024];
+			char sFailedList[1024];
 			Format(sFailedList, sizeof(sFailedList), "SM:RPG sellupgrade: %d clients failed: ", iFailedCount);
-			for(new i=0;i<iFailedCount;i++)
+			for(int i=0;i<iFailedCount;i++)
 			{
 				Format(sFailedList, sizeof(sFailedList), "%s%s%N ", sFailedList, (i>0?", ":""), iFailedTargets[i]);
 			}
@@ -1237,7 +1239,7 @@ public Action:Cmd_SellUpgrade(client, args)
 	return Plugin_Handled;
 }
 
-public Action:Cmd_SellAll(client, args)
+public Action Cmd_SellAll(int client, int args)
 {
 	if(args < 1)
 	{
@@ -1245,13 +1247,13 @@ public Action:Cmd_SellAll(client, args)
 		return Plugin_Handled;
 	}
 	
-	decl String:sTarget[256];
+	char sTarget[256];
 	GetCmdArg(1, sTarget, sizeof(sTarget));
 	TrimString(sTarget);
 	
-	decl String:sTargetName[MAX_TARGET_LENGTH];
-	new iTargetList[MAXPLAYERS], iTargetCount;
-	new bool:tn_is_ml;
+	char sTargetName[MAX_TARGET_LENGTH];
+	int iTargetList[MAXPLAYERS], iTargetCount;
+	bool tn_is_ml;
 	if((iTargetCount = ProcessTargetString(sTarget,
 							client, 
 							iTargetList,
@@ -1265,13 +1267,13 @@ public Action:Cmd_SellAll(client, args)
 		return Plugin_Handled;
 	}
 	
-	new iSize = GetUpgradeCount();
-	new upgrade[InternalUpgradeInfo];
-	new iLastCreditsReturned;
-	for(new i=0;i<iTargetCount;i++)
+	int iSize = GetUpgradeCount();
+	int upgrade[InternalUpgradeInfo];
+	int iLastCreditsReturned;
+	for(int i=0;i<iTargetCount;i++)
 	{
 		// Run through all upgrades
-		for(new u=0;u<iSize;u++)
+		for(int u=0;u<iSize;u++)
 		{
 			GetUpgradeByIndex(u, upgrade);
 			if(!IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled])
@@ -1303,7 +1305,7 @@ public Action:Cmd_SellAll(client, args)
 	return Plugin_Handled;
 }
 
-public Action:Cmd_DBDelPlayer(client, args)
+public Action Cmd_DBDelPlayer(int client, int args)
 {
 	if(args < 1)
 	{
@@ -1311,54 +1313,55 @@ public Action:Cmd_DBDelPlayer(client, args)
 		return Plugin_Handled;
 	}
 	
-	decl String:sTarget[64];
+	char sTarget[64];
 	GetCmdArgString(sTarget, sizeof(sTarget));
 	TrimString(sTarget);
 	StripQuotes(sTarget);
 	
-	decl String:sQuery[128], iPlayerID;
-	new Handle:hPack = CreateDataPack();
-	WritePackCell(hPack, client);
-	WritePackString(hPack, sTarget);
+	char sQuery[128];
+	int iPlayerID;
+	DataPack hPack = new DataPack();
+	hPack.WriteCell(client);
+	hPack.WriteString(sTarget);
 	
 	// Match as steamid
-	new iAccountId = GetAccountIdFromSteamId(sTarget);
+	int iAccountId = GetAccountIdFromSteamId(sTarget);
 	if(iAccountId != -1)
 	{
-		new iTarget = FindClientBySteamID(sTarget);
+		int iTarget = FindClientBySteamID(sTarget);
 		if(iTarget != -1)
 			RemovePlayer(iTarget);
 		
-		WritePackCell(hPack, iTarget);
+		hPack.WriteCell(iTarget);
 		Format(sQuery, sizeof(sQuery), "SELECT player_id, name FROM %s WHERE steamid = %d", TBL_PLAYERS, iAccountId);
-		SQL_TQuery(g_hDatabase, SQL_CheckDeletePlayer, sQuery, hPack);
+		g_hDatabase.Query(SQL_CheckDeletePlayer, sQuery, hPack);
 	}
 	// Match as playerid
 	else if(StringToIntEx(sTarget, iPlayerID) && iPlayerID > 0)
 	{
-		new iTarget = GetClientByPlayerID(iPlayerID);
+		int iTarget = GetClientByPlayerID(iPlayerID);
 		if(iTarget != -1)
 			RemovePlayer(iTarget);
 		
-		WritePackCell(hPack, iTarget);
+		hPack.WriteCell(iTarget);
 		Format(sQuery, sizeof(sQuery), "SELECT player_id, name FROM %s WHERE player_id = %d", TBL_PLAYERS, iPlayerID);
-		SQL_TQuery(g_hDatabase, SQL_CheckDeletePlayer, sQuery, hPack);
+		g_hDatabase.Query(SQL_CheckDeletePlayer, sQuery, hPack);
 	}
 	// Match as name
 	else
 	{
-		new iTarget = FindClientByExactName(sTarget);
+		int iTarget = FindClientByExactName(sTarget);
 		if(iTarget != -1)
 			RemovePlayer(iTarget);
 		
-		WritePackCell(hPack, iTarget);
+		hPack.WriteCell(iTarget);
 		Format(sQuery, sizeof(sQuery), "SELECT player_id, name FROM %s WHERE name = '%s'", TBL_PLAYERS, sTarget);
-		SQL_TQuery(g_hDatabase, SQL_CheckDeletePlayer, sQuery, hPack);
+		g_hDatabase.Query(SQL_CheckDeletePlayer, sQuery, hPack);
 	}
 	return Plugin_Handled;
 }
 
-public Action:Cmd_DBMassSell(client, args)
+public Action Cmd_DBMassSell(int client, int args)
 {
 	if(args < 1)
 	{
@@ -1367,22 +1370,22 @@ public Action:Cmd_DBMassSell(client, args)
 	}
 	
 	// TODO: check database for column instead of only currently loaded upgrades?
-	decl String:sUpgrade[MAX_UPGRADE_SHORTNAME_LENGTH];
+	char sUpgrade[MAX_UPGRADE_SHORTNAME_LENGTH];
 	GetCmdArg(1, sUpgrade, sizeof(sUpgrade));
 	TrimString(sUpgrade);
 	StripQuotes(sUpgrade);
-	new upgrade[InternalUpgradeInfo];
+	int upgrade[InternalUpgradeInfo];
 	if(!GetUpgradeByShortname(sUpgrade, upgrade) || !IsValidUpgrade(upgrade))
 	{
 		ReplyToCommand(client, "SM:RPG: There is no upgrade with name \"%s\" loaded.", sUpgrade);
 		return Plugin_Handled;
 	}
 	
-	new iIndex = upgrade[UPGR_index];
+	int iIndex = upgrade[UPGR_index];
 	
 	// Handle players ingame
-	new iOldLevel;
-	for(new i=1;i<=MaxClients;i++)
+	int iOldLevel;
+	for(int i=1;i<=MaxClients;i++)
 	{
 		if(!IsClientInGame(i) || !IsClientAuthorized(i))
 			continue;
@@ -1400,18 +1403,18 @@ public Action:Cmd_DBMassSell(client, args)
 	}
 	
 	// Update all other players in the database
-	new Handle:hData = CreateDataPack();
-	WritePackCell(hData, client);
-	WritePackCell(hData, iIndex);
+	DataPack hData = new DataPack();
+	hData.WriteCell(client);
+	hData.WriteCell(iIndex);
 	
-	decl String:sQuery[128];
+	char sQuery[128];
 	Format(sQuery, sizeof(sQuery), "SELECT player_id, purchasedlevel FROM %s WHERE upgrade_id = %d AND purchasedlevel > 0", TBL_PLAYERUPGRADES, upgrade[UPGR_databaseId]);
-	SQL_TQuery(g_hDatabase, SQL_MassDeleteItem, sQuery, hData);
+	g_hDatabase.Query(SQL_MassDeleteItem, sQuery, hData);
 	
 	return Plugin_Handled;
 }
 
-public Action:Cmd_ReloadWeaponExperience(client, args)
+public Action Cmd_ReloadWeaponExperience(int client, int args)
 {
 	if(ReadWeaponExperienceConfig())
 		ReplyToCommand(client, "SM:RPG > The weapon experience config has been reloaded.");
@@ -1421,9 +1424,9 @@ public Action:Cmd_ReloadWeaponExperience(client, args)
 	return Plugin_Handled;
 }
 
-public Action:Cmd_DebugPlayerlist(client, args)
+public Action Cmd_DebugPlayerlist(int client, int args)
 {
-	for(new i=1;i<=MaxClients;i++)
+	for(int i=1;i<=MaxClients;i++)
 	{
 		if(!IsClientInGame(i))
 			continue;
@@ -1433,7 +1436,7 @@ public Action:Cmd_DebugPlayerlist(client, args)
 	return Plugin_Handled;
 }
 
-public Action:Cmd_DBWrite(client, args)
+public Action Cmd_DBWrite(int client, int args)
 {
 	SaveAllPlayers();
 	LogAction(client, -1, "%L saved all player data to the database.", client);
@@ -1441,30 +1444,31 @@ public Action:Cmd_DBWrite(client, args)
 	return Plugin_Handled;
 }
 
-public Action:Cmd_DBStats(client, args)
+public Action Cmd_DBStats(int client, int args)
 {
-	decl String:sQuery[512];
+	char sQuery[512];
 	Format(sQuery, sizeof(sQuery), "SELECT COUNT(*) AS total, (SELECT COUNT(*) FROM %s WHERE lastseen > %d) AS recent, AVG(level) FROM %s", TBL_PLAYERS, GetTime()-432000, TBL_PLAYERS);
-	new Handle:hPack = CreateDataPack();
-	WritePackCell(hPack, client?GetClientSerial(client):0);
-	WritePackCell(hPack, _:GetCmdReplySource());
-	SQL_TQuery(g_hDatabase, SQL_PrintPlayerStats, sQuery, hPack);
+	DataPack hPack = new DataPack();
+	hPack.WriteCell(client?GetClientSerial(client):0);
+	hPack.WriteCell(GetCmdReplySource());
+	g_hDatabase.Query(SQL_PrintPlayerStats, sQuery, hPack);
 	return Plugin_Handled;
 }
 
 /**
  * SQL callbacks
  */
-public SQL_CheckDeletePlayer(Handle:owner, Handle:hndl, const String:error[], any:data)
+public void SQL_CheckDeletePlayer(Database db, DBResultSet results, const char[] error, any data)
 {
-	ResetPack(data);
-	new client = ReadPackCell(data);
-	new String:sTarget[64];
-	ReadPackString(data, sTarget, sizeof(sTarget));
-	new iTarget = ReadPackCell(data);
-	CloseHandle(data);
+	DataPack dp = view_as<DataPack>(data);
+	dp.Reset();
+	int client = dp.ReadCell();
+	char sTarget[64];
+	dp.ReadString(sTarget, sizeof(sTarget));
+	int iTarget = dp.ReadCell();
+	delete dp;
 	
-	if(hndl == INVALID_HANDLE || strlen(error) > 0)
+	if(results == null)
 	{
 		LogError("Error while trying to find player for deletion (%s)", error);
 		if(iTarget != -1)
@@ -1472,7 +1476,7 @@ public SQL_CheckDeletePlayer(Handle:owner, Handle:hndl, const String:error[], an
 		return;
 	}
 	
-	if(!SQL_GetRowCount(hndl) || !SQL_FetchRow(hndl))
+	if(!results.RowCount || !results.FetchRow())
 	{
 		if(client == 0 || IsClientInGame(client))
 		{
@@ -1483,22 +1487,22 @@ public SQL_CheckDeletePlayer(Handle:owner, Handle:hndl, const String:error[], an
 		return;
 	}
 	
-	new iPlayerId = SQL_FetchInt(hndl, 0);
-	if(GetConVarBool(g_hCVSaveData))
+	int iPlayerId = results.FetchInt(0);
+	if(g_hCVSaveData.BoolValue)
 	{
-		decl String:sQuery[128];
-		new Transaction:hTransaction = SQL_CreateTransaction();
+		char sQuery[128];
+		Transaction hTransaction = new Transaction();
 		Format(sQuery, sizeof(sQuery), "DELETE FROM %s WHERE player_id = %d", TBL_PLAYERUPGRADES, iPlayerId);
-		SQL_AddQuery(hTransaction, sQuery);
+		hTransaction.AddQuery(sQuery);
 		Format(sQuery, sizeof(sQuery), "DELETE FROM %s WHERE player_id = %d", TBL_PLAYERS, iPlayerId);
-		SQL_AddQuery(hTransaction, sQuery);
-		SQL_ExecuteTransaction(g_hDatabase, hTransaction, _, SQLTxn_LogFailure);
+		hTransaction.AddQuery(sQuery);
+		g_hDatabase.Execute(hTransaction, _, SQLTxn_LogFailure);
 		
 		if(iTarget != -1)
 			g_iPlayerInfo[iTarget][PLR_dbId] = -1;
 		
-		decl String:sName[64];
-		SQL_FetchString(hndl, 1, sName, sizeof(sName));
+		char sName[64];
+		results.FetchString(1, sName, sizeof(sName));
 		if(client == 0 || IsClientInGame(client))
 		{
 			if(iTarget != -1)
@@ -1521,24 +1525,25 @@ public SQL_CheckDeletePlayer(Handle:owner, Handle:hndl, const String:error[], an
 	
 }
 
-public SQL_MassDeleteItem(Handle:owner, Handle:hndl, const String:error[], any:data)
+public void SQL_MassDeleteItem(Database db, DBResultSet results, const char[] error, any data)
 {
-	ResetPack(data);
-	new client = ReadPackCell(data);
-	new iIndex = ReadPackCell(data);
-	CloseHandle(data);
+	DataPack dp = view_as<DataPack>(data);
+	dp.Reset();
+	int client = dp.ReadCell();
+	int iIndex = dp.ReadCell();
+	delete dp;
 	
-	new upgrade[InternalUpgradeInfo];
+	int upgrade[InternalUpgradeInfo];
 	GetUpgradeByIndex(iIndex, upgrade);
 	
-	if(hndl == INVALID_HANDLE || strlen(error) > 0)
+	if(results == null)
 	{
 		LogAction(client, -1, "%L tried to mass sell upgrade \"%s\", but the select query failed. It might have been reset on some players ingame though!", client, upgrade[UPGR_name]);
 		LogError("Error during mass deletion of item (%s)", error);
 		return;
 	}
 	
-	if(SQL_GetRowCount(hndl) == 0)
+	if(results.RowCount == 0)
 	{
 		if(client == 0 || IsClientInGame(client))
 		{
@@ -1548,27 +1553,27 @@ public SQL_MassDeleteItem(Handle:owner, Handle:hndl, const String:error[], any:d
 		return;
 	}
 	
-	if(GetConVarBool(g_hCVSaveData))
+	if(g_hCVSaveData.BoolValue)
 	{
 		// Give players full refund for their upgrades.
-		new iOldLevel, iAddCredits, iPlayerID;
-		decl String:sQuery[128];
+		int iOldLevel, iAddCredits, iPlayerID;
+		char sQuery[128];
 		
 		// Update all players at once instead of firing lots of single update queries.
-		new Transaction:hTransaction = SQL_CreateTransaction();
+		Transaction hTransaction = new Transaction();
 		
-		while(SQL_MoreRows(hndl))
+		while(results.MoreRows)
 		{
-			if(!SQL_FetchRow(hndl))
+			if(!results.FetchRow())
 				continue;
 			
-			iPlayerID = SQL_FetchInt(hndl, 0);
+			iPlayerID = results.FetchInt(0);
 			
 			// This player is currently ingame and we already handled him. Don't add credits twice.
 			if(GetClientByPlayerID(iPlayerID) != -1)
 				continue;
 			
-			iOldLevel = SQL_FetchInt(hndl, 1);
+			iOldLevel = results.FetchInt(1);
 			if(iOldLevel < 0)
 			{
 				DebugMsg("Negative level for upgrade %s in database for player %d!", upgrade[UPGR_name], iPlayerID);
@@ -1585,19 +1590,19 @@ public SQL_MassDeleteItem(Handle:owner, Handle:hndl, const String:error[], any:d
 				iAddCredits += GetUpgradeCost(iIndex, iOldLevel--);
 			
 			Format(sQuery, sizeof(sQuery), "UPDATE %s SET credits = (credits + %d) WHERE player_id = %d", TBL_PLAYERS, iAddCredits, iPlayerID);
-			SQL_AddQuery(hTransaction, sQuery);
+			hTransaction.AddQuery(sQuery);
 		}
 		
-		SQL_ExecuteTransaction(g_hDatabase, hTransaction, _, SQLTxn_LogFailure);
+		g_hDatabase.Execute(hTransaction, _, SQLTxn_LogFailure);
 		
 		// Reset all players to upgrade level 0
 		Format(sQuery, sizeof(sQuery), "UPDATE %s SET purchasedlevel = 0, selectedlevel = 0 WHERE upgrade_id = %d", TBL_PLAYERUPGRADES, upgrade[UPGR_databaseId]);
-		SQL_TQuery(g_hDatabase, SQL_DoNothing, sQuery);
+		g_hDatabase.Query(SQL_DoNothing, sQuery);
 		
 		if(client == 0 || IsClientInGame(client))
 		{
-			LogAction(client, -1, "%L mass sold upgrade \"%s\" on all players with full costs refunded. %d players in the database have been refunded their credits.", client, upgrade[UPGR_name], SQL_GetRowCount(hndl));
-			ReplyToCommand(client, "SM:RPG db_mass_sell: All (%d) players in the database with Upgrade '%s' have been refunded their credits", SQL_GetRowCount(hndl), upgrade[UPGR_name]);
+			LogAction(client, -1, "%L mass sold upgrade \"%s\" on all players with full costs refunded. %d players in the database have been refunded their credits.", client, upgrade[UPGR_name], results.RowCount);
+			ReplyToCommand(client, "SM:RPG db_mass_sell: All (%d) players in the database with Upgrade '%s' have been refunded their credits", results.RowCount, upgrade[UPGR_name]);
 		}
 	}
 	else
@@ -1610,96 +1615,99 @@ public SQL_MassDeleteItem(Handle:owner, Handle:hndl, const String:error[], any:d
 	}
 }
 
-public SQL_PrintPlayerStats(Handle:owner, Handle:hndl, const String:error[], any:data)
+public void SQL_PrintPlayerStats(Database db, DBResultSet results, const char[] error, any data)
 {
-	ResetPack(data);
-	new client = GetClientFromSerial(ReadPackCell(data));
-	new ReplySource:source = ReplySource:ReadPackCell(data);
+	DataPack dp = view_as<DataPack>(data);
+	dp.Reset();
+	int client = GetClientFromSerial(dp.ReadCell());
+	ReplySource source = view_as<ReplySource>(dp.ReadCell());
 	
-	if(hndl == INVALID_HANDLE || strlen(error) > 0)
+	if(results == null)
 	{
 		LogError("Error getting player stats in smrpg_db_stats: %s", error);
-		CloseHandle(data);
+		delete dp;
 		return;
 	}
 
-	if(SQL_FetchRow(hndl))
+	if(results.FetchRow())
 	{
-		new ReplySource:oldSource = SetCmdReplySource(source);
-		new iPlayerCount = SQL_FetchInt(hndl, 0);
-		new iRecentPlayers = SQL_FetchInt(hndl, 1);
-		ReplyToCommand(client, "There are %d players in the database with an average level of %.2f. %d (%.2f%%) connected in the last 5 days.", iPlayerCount, SQL_FetchFloat(hndl, 2), iRecentPlayers, float(iRecentPlayers)/float(iPlayerCount)*100.0);
+		ReplySource oldSource = SetCmdReplySource(source);
+		int iPlayerCount = results.FetchInt(0);
+		int iRecentPlayers = results.FetchInt(1);
+		ReplyToCommand(client, "There are %d players in the database with an average level of %.2f. %d (%.2f%%) connected in the last 5 days.", iPlayerCount, SQL_FetchFloat(results, 2), iRecentPlayers, float(iRecentPlayers)/float(iPlayerCount)*100.0);
 		SetCmdReplySource(oldSource);
 	}
 	
-	decl String:sQuery[64];
+	char sQuery[64];
 	Format(sQuery, sizeof(sQuery), "SELECT upgrade_id, shortname FROM %s", TBL_UPGRADES);
-	SQL_TQuery(g_hDatabase, SQL_PrintUpgradeStats, sQuery, data);
+	g_hDatabase.Query(SQL_PrintUpgradeStats, sQuery, data);
 }
 
-public SQL_PrintUpgradeStats(Handle:owner, Handle:hndl, const String:error[], any:data)
+public void SQL_PrintUpgradeStats(Database db, DBResultSet results, const char[] error, any data)
 {
-	ResetPack(data);
-	new serial = ReadPackCell(data);
-	new client = GetClientFromSerial(serial);
-	new ReplySource:source = ReplySource:ReadPackCell(data);
+	DataPack dp = view_as<DataPack>(data);
+	dp.Reset();
+	int serial = dp.ReadCell();
+	int client = GetClientFromSerial(serial);
+	ReplySource source = view_as<ReplySource>(dp.ReadCell());
 	
-	if(hndl == INVALID_HANDLE || strlen(error) > 0)
+	if(results == null)
 	{
 		LogError("Error getting upgrade names in smrpg_db_stats: %s", error);
-		CloseHandle(data);
+		delete dp;
 		return;
 	}
 	
-	new ReplySource:oldSource = SetCmdReplySource(source);
-	ReplyToCommand(client, "Listing %d registered upgrades:", SQL_GetRowCount(hndl)-1);
+	ReplySource oldSource = SetCmdReplySource(source);
+	ReplyToCommand(client, "Listing %d registered upgrades:", results.RowCount-1);
 	ReplyToCommand(client, "%-15s%-8s%-10s%-8s", "Upgrade", "#bought", "AVG LVL", "Loaded");
 	SetCmdReplySource(oldSource);
 
-	decl String:sUpgradeName[MAX_UPGRADE_SHORTNAME_LENGTH];
-	decl String:sQuery[512];
-	new Handle:hPack;
-	while(SQL_MoreRows(hndl))
+	char sUpgradeName[MAX_UPGRADE_SHORTNAME_LENGTH];
+	char sQuery[512];
+	DataPack hPack;
+	while(results.MoreRows)
 	{
-		if(!SQL_FetchRow(hndl))
+		if(!results.FetchRow())
 			continue;
 		
-		SQL_FetchString(hndl, 1, sUpgradeName, sizeof(sUpgradeName));
+		results.FetchString(1, sUpgradeName, sizeof(sUpgradeName));
 		
-		hPack = CreateDataPack();
-		WritePackCell(hPack, serial);
-		WritePackCell(hPack, _:source);
-		WritePackString(hPack, sUpgradeName);
+		hPack = new DataPack();
+		hPack.WriteCell(serial);
+		hPack.WriteCell(source);
+		hPack.WriteString(sUpgradeName);
 		
-		Format(sQuery, sizeof(sQuery), "SELECT COUNT(*), AVG(purchasedlevel) FROM %s WHERE upgrade_id = %d AND purchasedlevel > 0", TBL_PLAYERUPGRADES, SQL_FetchInt(hndl, 0));
-		SQL_TQuery(g_hDatabase, SQL_PrintUpgradeUsage, sQuery, hPack);
+		Format(sQuery, sizeof(sQuery), "SELECT COUNT(*), AVG(purchasedlevel) FROM %s WHERE upgrade_id = %d AND purchasedlevel > 0", TBL_PLAYERUPGRADES, results.FetchInt(0));
+		g_hDatabase.Query(SQL_PrintUpgradeUsage, sQuery, hPack);
 	}
-	CloseHandle(data);
+	delete dp;
 }
 
-public SQL_PrintUpgradeUsage(Handle:owner, Handle:hndl, const String:error[], any:data)
+public void SQL_PrintUpgradeUsage(Database db, DBResultSet results, const char[] error, any data)
 {
-	ResetPack(data);
-	new client = GetClientFromSerial(ReadPackCell(data));
-	new ReplySource:source = ReplySource:ReadPackCell(data);
-	decl String:sUpgradeName[MAX_UPGRADE_SHORTNAME_LENGTH];
-	ReadPackString(data, sUpgradeName, sizeof(sUpgradeName));
-	CloseHandle(data);
+	DataPack dp = view_as<DataPack>(data);
+	dp.Reset();
+	int client = GetClientFromSerial(dp.ReadCell());
+	ReplySource source = view_as<ReplySource>(dp.ReadCell());
+	char sUpgradeName[MAX_UPGRADE_SHORTNAME_LENGTH];
+	dp.ReadString(sUpgradeName, sizeof(sUpgradeName));
+	delete dp;
 	
-	if(hndl == INVALID_HANDLE || strlen(error) > 0)
+	if(results == null)
 	{
 		LogError("Error getting upgrade stats in smrpg_db_stats: %s", error);
 		return;
 	}
 
-	new upgrade[InternalUpgradeInfo];
-	new ReplySource:oldSource = SetCmdReplySource(source);
-	while(SQL_MoreRows(hndl))
+	int upgrade[InternalUpgradeInfo];
+	ReplySource oldSource = SetCmdReplySource(source);
+	while(results.MoreRows)
 	{
-		if(!SQL_FetchRow(hndl))
+		if(!results.FetchRow())
 			continue;
 		
-		ReplyToCommand(client, "%-15s%-8d%-10.2f%-8s", sUpgradeName, SQL_FetchInt(hndl, 0), SQL_FetchFloat(hndl, 1), (GetUpgradeByShortname(sUpgradeName, upgrade)?"Yes":"No"));
+		ReplyToCommand(client, "%-15s%-8d%-10.2f%-8s", sUpgradeName, results.FetchInt(0), results.FetchFloat(1), (GetUpgradeByShortname(sUpgradeName, upgrade)?"Yes":"No"));
 	}
 	SetCmdReplySource(oldSource);
 }
@@ -1710,36 +1718,36 @@ public SQL_PrintUpgradeUsage(Handle:owner, Handle:hndl, const String:error[], an
 /**
  * Converts a steamid to the accountid.
  */
-stock GetAccountIdFromSteamId(String:sSteamID[])
+stock int GetAccountIdFromSteamId(char[] sSteamID)
 {
-	static Handle:hSteam2 = INVALID_HANDLE;
-	static Handle:hSteam3 = INVALID_HANDLE;
+	static Regex hSteam2 = null;
+	static Regex hSteam3 = null;
 	
-	if (hSteam2 == INVALID_HANDLE)
+	if (hSteam2 == null)
 		hSteam2 = CompileRegex("^STEAM_[0-9]:([0-9]):([0-9]+)$");
-	if (hSteam3 == INVALID_HANDLE)
+	if (hSteam3 == null)
 		hSteam3 = CompileRegex("^\\[U:[0-9]:([0-9]+)\\]$");
 	
-	new String:sBuffer[64];
+	char sBuffer[64];
 	
 	// Steam2 format?
-	if (hSteam2 != INVALID_HANDLE && MatchRegex(hSteam2, sSteamID) == 3)
+	if (hSteam2 != null && hSteam2.Match(sSteamID) == 3)
 	{
-		if(!GetRegexSubString(hSteam2, 1, sBuffer, sizeof(sBuffer)))
+		if(!hSteam2.GetSubString(1, sBuffer, sizeof(sBuffer)))
 			return -1;
 		
-		new Y = StringToInt(sBuffer);
-		if(!GetRegexSubString(hSteam2, 2, sBuffer, sizeof(sBuffer)))
+		int Y = StringToInt(sBuffer);
+		if(!hSteam2.GetSubString(2, sBuffer, sizeof(sBuffer)))
 			return -1;
 		
-		new Z = StringToInt(sBuffer);
+		int Z = StringToInt(sBuffer);
 		return Z*2 + Y;
 	}
 	
 	// Steam3 format?
-	if (hSteam3 != INVALID_HANDLE && MatchRegex(hSteam3, sSteamID) == 2)
+	if (hSteam3 != null && hSteam3.Match(sSteamID) == 2)
 	{
-		if(!GetRegexSubString(hSteam3, 1, sBuffer, sizeof(sBuffer)))
+		if(!hSteam3.GetSubString(1, sBuffer, sizeof(sBuffer)))
 			return -1;
 		
 		return StringToInt(sBuffer);
@@ -1748,10 +1756,10 @@ stock GetAccountIdFromSteamId(String:sSteamID[])
 	return -1;
 }
 
-stock FindClientBySteamID(const String:sSteamID[])
+stock int FindClientBySteamID(const char[] sSteamID)
 {
-	decl String:sTemp[64];
-	for(new i=1;i<=MaxClients;i++)
+	char sTemp[64];
+	for(int i=1;i<=MaxClients;i++)
 	{
 		if(IsClientInGame(i) && IsClientAuthorized(i))
 		{
@@ -1767,10 +1775,10 @@ stock FindClientBySteamID(const String:sSteamID[])
 	return -1;
 }
 
-stock FindClientByExactName(const String:sName[])
+stock int FindClientByExactName(const char[] sName)
 {
-	decl String:sTemp[MAX_NAME_LENGTH];
-	for(new i=1;i<=MaxClients;i++)
+	char sTemp[MAX_NAME_LENGTH];
+	for(int i=1;i<=MaxClients;i++)
 	{
 		if(IsClientInGame(i))
 		{
@@ -1782,13 +1790,13 @@ stock FindClientByExactName(const String:sName[])
 	return -1;
 }
 
-stock GetAdminFlagStringFromBits(flags, String:flagstring[], maxlen)
+stock void GetAdminFlagStringFromBits(int flags, char[] flagstring, int maxlen)
 {
-	new AdminFlag:iAdmFlags[AdminFlags_TOTAL];
-	new iNumFlags = FlagBitsToArray(flags, iAdmFlags, AdminFlags_TOTAL);
-	new iChar;
+	AdminFlag iAdmFlags[AdminFlags_TOTAL];
+	int iNumFlags = FlagBitsToArray(flags, iAdmFlags, AdminFlags_TOTAL);
+	int iChar;
 	flagstring[0] = 0;
-	for(new f=0;f<iNumFlags;f++)
+	for(int f=0;f<iNumFlags;f++)
 	{
 		if(FindFlagChar(iAdmFlags[f], iChar))
 			Format(flagstring, maxlen, "%s%c", flagstring, iChar);

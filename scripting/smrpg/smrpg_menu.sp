@@ -2,102 +2,102 @@
 #include <sourcemod>
 #include <topmenus>
 
-new Handle:g_hRPGTopMenu;
+TopMenu g_hRPGTopMenu;
 
-new TopMenuObject:g_TopMenuUpgrades;
-new TopMenuObject:g_TopMenuSell;
-new TopMenuObject:g_TopMenuUpgradeSettings;
-new TopMenuObject:g_TopMenuStats;
-new TopMenuObject:g_TopMenuSettings;
-new TopMenuObject:g_TopMenuHelp;
+TopMenuObject g_TopMenuUpgrades;
+TopMenuObject g_TopMenuSell;
+TopMenuObject g_TopMenuUpgradeSettings;
+TopMenuObject g_TopMenuStats;
+TopMenuObject g_TopMenuSettings;
+TopMenuObject g_TopMenuHelp;
 
-new Handle:g_hConfirmResetStatsMenu;
+Menu g_hConfirmResetStatsMenu;
 
-new Handle:g_hfwdOnRPGMenuCreated;
-new Handle:g_hfwdOnRPGMenuReady;
+Handle g_hfwdOnRPGMenuCreated;
+Handle g_hfwdOnRPGMenuReady;
 
-new g_iSelectedSettingsUpgrade[MAXPLAYERS+1] = {-1,...};
+int g_iSelectedSettingsUpgrade[MAXPLAYERS+1] = {-1,...};
 
 /**
  * Setup functions to create the topmenu and API.
  */
-RegisterTopMenu()
+void RegisterTopMenu()
 {
-	g_hRPGTopMenu = CreateTopMenu(TopMenu_DefaultCategoryHandler);
-	SetTopMenuTitleCaching(g_hRPGTopMenu, false);
+	g_hRPGTopMenu = new TopMenu(TopMenu_DefaultCategoryHandler);
+	g_hRPGTopMenu.CacheTitles = false;
 	
-	g_TopMenuUpgrades = AddToTopMenu(g_hRPGTopMenu, RPGMENU_UPGRADES, TopMenuObject_Category, TopMenu_DefaultCategoryHandler, INVALID_TOPMENUOBJECT);
-	g_TopMenuSell = AddToTopMenu(g_hRPGTopMenu, RPGMENU_SELL, TopMenuObject_Category, TopMenu_DefaultCategoryHandler, INVALID_TOPMENUOBJECT);
-	g_TopMenuUpgradeSettings = AddToTopMenu(g_hRPGTopMenu, RPGMENU_UPGRADESETTINGS, TopMenuObject_Category, TopMenu_DefaultCategoryHandler, INVALID_TOPMENUOBJECT);
-	g_TopMenuStats = AddToTopMenu(g_hRPGTopMenu, RPGMENU_STATS, TopMenuObject_Category, TopMenu_DefaultCategoryHandler, INVALID_TOPMENUOBJECT);
-	g_TopMenuSettings = AddToTopMenu(g_hRPGTopMenu, RPGMENU_SETTINGS, TopMenuObject_Category, TopMenu_DefaultCategoryHandler, INVALID_TOPMENUOBJECT);
-	g_TopMenuHelp = AddToTopMenu(g_hRPGTopMenu, RPGMENU_HELP, TopMenuObject_Category, TopMenu_DefaultCategoryHandler, INVALID_TOPMENUOBJECT);
+	g_TopMenuUpgrades = g_hRPGTopMenu.AddCategory(RPGMENU_UPGRADES, TopMenu_DefaultCategoryHandler);
+	g_TopMenuSell = g_hRPGTopMenu.AddCategory(RPGMENU_SELL, TopMenu_DefaultCategoryHandler);
+	g_TopMenuUpgradeSettings = g_hRPGTopMenu.AddCategory(RPGMENU_UPGRADESETTINGS, TopMenu_DefaultCategoryHandler);
+	g_TopMenuStats = g_hRPGTopMenu.AddCategory(RPGMENU_STATS, TopMenu_DefaultCategoryHandler);
+	g_TopMenuSettings = g_hRPGTopMenu.AddCategory(RPGMENU_SETTINGS, TopMenu_DefaultCategoryHandler);
+	g_TopMenuHelp = g_hRPGTopMenu.AddCategory(RPGMENU_HELP, TopMenu_DefaultCategoryHandler);
 }
 
-RegisterTopMenuForwards()
+void RegisterTopMenuForwards()
 {
 	g_hfwdOnRPGMenuCreated = CreateGlobalForward("SMRPG_OnRPGMenuCreated", ET_Ignore, Param_Cell);
 	g_hfwdOnRPGMenuReady = CreateGlobalForward("SMRPG_OnRPGMenuReady", ET_Ignore, Param_Cell);
 }
 
-RegisterTopMenuNatives()
+void RegisterTopMenuNatives()
 {
 	CreateNative("SMRPG_GetTopMenu", Native_GetTopMenu);
 }
 
-InitMenu()
+void InitMenu()
 {
 	// Add any already loaded upgrades to the menus
-	new iSize = GetUpgradeCount();
-	new upgrade[InternalUpgradeInfo];
-	decl String:sBuffer[MAX_UPGRADE_SHORTNAME_LENGTH+20];
-	for(new i=0;i<iSize;i++)
+	int iSize = GetUpgradeCount();
+	int upgrade[InternalUpgradeInfo];
+	char sBuffer[MAX_UPGRADE_SHORTNAME_LENGTH+20];
+	for(int i=0;i<iSize;i++)
 	{
 		GetUpgradeByIndex(i, upgrade);
 		
 		if(upgrade[UPGR_topmenuUpgrades] == INVALID_TOPMENUOBJECT)
 		{
 			Format(sBuffer, sizeof(sBuffer), "rpgupgrade_%s", upgrade[UPGR_shortName]);
-			upgrade[UPGR_topmenuUpgrades] = AddToTopMenu(g_hRPGTopMenu, sBuffer, TopMenuObject_Item, TopMenu_HandleUpgrades, g_TopMenuUpgrades);
+			upgrade[UPGR_topmenuUpgrades] = g_hRPGTopMenu.AddItem(sBuffer, TopMenu_HandleUpgrades, g_TopMenuUpgrades);
 		}
 		if(upgrade[UPGR_topmenuSell] == INVALID_TOPMENUOBJECT)
 		{
 			Format(sBuffer, sizeof(sBuffer), "rpgsell_%s", upgrade[UPGR_shortName]);
-			upgrade[UPGR_topmenuSell] = AddToTopMenu(g_hRPGTopMenu, sBuffer, TopMenuObject_Item, TopMenu_HandleSell, g_TopMenuSell);
+			upgrade[UPGR_topmenuSell] = g_hRPGTopMenu.AddItem(sBuffer, TopMenu_HandleSell, g_TopMenuSell);
 		}
 		if(upgrade[UPGR_topmenuUpgradeSettings] == INVALID_TOPMENUOBJECT)
 		{
 			Format(sBuffer, sizeof(sBuffer), "rpgupgrsettings_%s", upgrade[UPGR_shortName]);
-			upgrade[UPGR_topmenuUpgradeSettings] = AddToTopMenu(g_hRPGTopMenu, sBuffer, TopMenuObject_Item, TopMenu_HandleUpgradeSettings, g_TopMenuUpgradeSettings);
+			upgrade[UPGR_topmenuUpgradeSettings] = g_hRPGTopMenu.AddItem(sBuffer, TopMenu_HandleUpgradeSettings, g_TopMenuUpgradeSettings);
 		}
 		if(upgrade[UPGR_topmenuHelp] == INVALID_TOPMENUOBJECT)
 		{
 			Format(sBuffer, sizeof(sBuffer), "rpghelp_%s", upgrade[UPGR_shortName]);
-			upgrade[UPGR_topmenuHelp] = AddToTopMenu(g_hRPGTopMenu, sBuffer, TopMenuObject_Item, TopMenu_HandleHelp, g_TopMenuHelp);
+			upgrade[UPGR_topmenuHelp] = g_hRPGTopMenu.AddItem(sBuffer, TopMenu_HandleHelp, g_TopMenuHelp);
 		}
 		SaveUpgradeConfig(upgrade);
 	}
 	
 	// Stats Menu
-	AddToTopMenu(g_hRPGTopMenu, "level", TopMenuObject_Item, TopMenu_HandleStats, g_TopMenuStats);
-	AddToTopMenu(g_hRPGTopMenu, "exp", TopMenuObject_Item, TopMenu_HandleStats, g_TopMenuStats);
-	AddToTopMenu(g_hRPGTopMenu, "credits", TopMenuObject_Item, TopMenu_HandleStats, g_TopMenuStats);
-	AddToTopMenu(g_hRPGTopMenu, "rank", TopMenuObject_Item, TopMenu_HandleStats, g_TopMenuStats);
-	AddToTopMenu(g_hRPGTopMenu, "lastexp", TopMenuObject_Item, TopMenu_HandleStats, g_TopMenuStats);
+	g_hRPGTopMenu.AddItem("level", TopMenu_HandleStats, g_TopMenuStats);
+	g_hRPGTopMenu.AddItem("exp", TopMenu_HandleStats, g_TopMenuStats);
+	g_hRPGTopMenu.AddItem("credits", TopMenu_HandleStats, g_TopMenuStats);
+	g_hRPGTopMenu.AddItem("rank", TopMenu_HandleStats, g_TopMenuStats);
+	g_hRPGTopMenu.AddItem("lastexp", TopMenu_HandleStats, g_TopMenuStats);
 	
 	// Settings Menu
-	AddToTopMenu(g_hRPGTopMenu, "resetstats", TopMenuObject_Item, TopMenu_HandleSettings, g_TopMenuSettings);
-	AddToTopMenu(g_hRPGTopMenu, "toggleautoshow", TopMenuObject_Item, TopMenu_HandleSettings, g_TopMenuSettings);
-	AddToTopMenu(g_hRPGTopMenu, "togglefade", TopMenuObject_Item, TopMenu_HandleSettings, g_TopMenuSettings);
+	g_hRPGTopMenu.AddItem("resetstats", TopMenu_HandleSettings, g_TopMenuSettings);
+	g_hRPGTopMenu.AddItem("toggleautoshow", TopMenu_HandleSettings, g_TopMenuSettings);
+	g_hRPGTopMenu.AddItem("togglefade", TopMenu_HandleSettings, g_TopMenuSettings);
 	
 	// Reset Stats Confirmation
-	g_hConfirmResetStatsMenu = CreateMenu(Menu_ConfirmResetStats, MENU_ACTIONS_DEFAULT|MenuAction_Display|MenuAction_DisplayItem);
-	SetMenuExitBackButton(g_hConfirmResetStatsMenu, true);
+	g_hConfirmResetStatsMenu = new Menu(Menu_ConfirmResetStats, MENU_ACTIONS_DEFAULT|MenuAction_Display|MenuAction_DisplayItem);
+	g_hConfirmResetStatsMenu.ExitBackButton = true;
 
-	SetMenuTitle(g_hConfirmResetStatsMenu, "credits_display");
+	g_hConfirmResetStatsMenu.SetTitle("credits_display");
 	
-	AddMenuItem(g_hConfirmResetStatsMenu, "yes", "Yes");
-	AddMenuItem(g_hConfirmResetStatsMenu, "no", "No");
+	g_hConfirmResetStatsMenu.AddItem("yes", "Yes");
+	g_hConfirmResetStatsMenu.AddItem("no", "No");
 	
 	Call_StartForward(g_hfwdOnRPGMenuCreated);
 	Call_PushCell(g_hRPGTopMenu);
@@ -108,7 +108,7 @@ InitMenu()
 	Call_Finish();
 }
 
-ResetPlayerMenu(client)
+void ResetPlayerMenu(int client)
 {
 	g_iSelectedSettingsUpgrade[client] = -1;
 }
@@ -116,26 +116,26 @@ ResetPlayerMenu(client)
 /**
  * Native callbacks
  */
-public Native_GetTopMenu(Handle:plugin, numParams)
+public int Native_GetTopMenu(Handle plugin, int numParams)
 {
-	return _:g_hRPGTopMenu;
+	return view_as<int>(g_hRPGTopMenu);
 }
 
-DisplayMainMenu(client)
+void DisplayMainMenu(int client)
 {
-	DisplayTopMenu(g_hRPGTopMenu, client, TopMenuPosition_Start);
+	g_hRPGTopMenu.Display(client, TopMenuPosition_Start);
 }
 
-DisplayUpgradesMenu(client)
+void DisplayUpgradesMenu(int client)
 {
-	DisplayTopMenuCategory(g_hRPGTopMenu, g_TopMenuUpgrades, client);
+	g_hRPGTopMenu.DisplayCategory(g_TopMenuUpgrades, client);
 }
 
 /**
  * TopMenu callback handlers
  */
 // Print the default categories correctly.
-public TopMenu_DefaultCategoryHandler(Handle:topmenu, TopMenuAction:action, TopMenuObject:object_id, param, String:buffer[], maxlength)
+public void TopMenu_DefaultCategoryHandler(TopMenu topmenu, TopMenuAction action, TopMenuObject object_id, int param, char[] buffer, int maxlength)
 {
 	switch(action)
 	{
@@ -162,16 +162,16 @@ public TopMenu_DefaultCategoryHandler(Handle:topmenu, TopMenuAction:action, TopM
 	}
 }
 
-public TopMenu_HandleUpgrades(Handle:topmenu, TopMenuAction:action, TopMenuObject:object_id, param, String:buffer[], maxlength)
+public void TopMenu_HandleUpgrades(TopMenu topmenu, TopMenuAction action, TopMenuObject object_id, int param, char[] buffer, int maxlength)
 {
 	switch(action)
 	{
 		case TopMenuAction_DisplayOption:
 		{
-			decl String:sShortname[MAX_UPGRADE_SHORTNAME_LENGTH+20];
-			GetTopMenuObjName(topmenu, object_id, sShortname, sizeof(sShortname));
+			char sShortname[MAX_UPGRADE_SHORTNAME_LENGTH+20];
+			topmenu.GetObjName(object_id, sShortname, sizeof(sShortname));
 			
-			new upgrade[InternalUpgradeInfo];
+			int upgrade[InternalUpgradeInfo];
 			if(!GetUpgradeByShortname(sShortname[11], upgrade))
 				return;
 			
@@ -179,22 +179,22 @@ public TopMenu_HandleUpgrades(Handle:topmenu, TopMenuAction:action, TopMenuObjec
 				return;
 			
 			// Show the team this upgrade is locked to, if it is.
-			new String:sTeamlock[128];
-			if((!IsClientInLockedTeam(param, upgrade) || upgrade[UPGR_teamlock] > 1 && GetConVarBool(g_hCVShowTeamlockNoticeOwnTeam)) && upgrade[UPGR_teamlock] < GetTeamCount())
+			char sTeamlock[128];
+			if((!IsClientInLockedTeam(param, upgrade) || upgrade[UPGR_teamlock] > 1 && g_hCVShowTeamlockNoticeOwnTeam.BoolValue) && upgrade[UPGR_teamlock] < GetTeamCount())
 			{
 				GetTeamName(upgrade[UPGR_teamlock], sTeamlock, sizeof(sTeamlock));
 				Format(sTeamlock, sizeof(sTeamlock), " (%T)", "Is teamlocked", param, sTeamlock);
 			}
 			
 			// Optionally show the maxlevel of the upgrade
-			new String:sMaxlevel[8];
-			if (GetConVarBool(g_hCVShowMaxLevelInMenu))
+			char sMaxlevel[8];
+			if (g_hCVShowMaxLevelInMenu.BoolValue)
 				Format(sMaxlevel, sizeof(sMaxlevel), "/%d", upgrade[UPGR_maxLevel]);
 			
-			decl String:sTranslatedName[MAX_UPGRADE_NAME_LENGTH];
+			char sTranslatedName[MAX_UPGRADE_NAME_LENGTH];
 			GetUpgradeTranslatedName(param, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
 			
-			new iCurrentLevel = GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index]);
+			int iCurrentLevel = GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index]);
 			
 			if(iCurrentLevel >= upgrade[UPGR_maxLevel])
 			{
@@ -207,10 +207,10 @@ public TopMenu_HandleUpgrades(Handle:topmenu, TopMenuAction:action, TopMenuObjec
 		}
 		case TopMenuAction_DrawOption:
 		{
-			decl String:sShortname[MAX_UPGRADE_SHORTNAME_LENGTH+20];
-			GetTopMenuObjName(topmenu, object_id, sShortname, sizeof(sShortname));
+			char sShortname[MAX_UPGRADE_SHORTNAME_LENGTH+20];
+			topmenu.GetObjName(object_id, sShortname, sizeof(sShortname));
 			
-			new upgrade[InternalUpgradeInfo];
+			int upgrade[InternalUpgradeInfo];
 			// Don't show invalid upgrades at all in the menu.
 			if(!GetUpgradeByShortname(sShortname[11], upgrade) || !IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled] || !HasAccessToUpgrade(param, upgrade))
 			{
@@ -218,7 +218,7 @@ public TopMenu_HandleUpgrades(Handle:topmenu, TopMenuAction:action, TopMenuObjec
 				return;
 			}
 			
-			new iLevel = GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index]);
+			int iLevel = GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index]);
 			// The upgrade is teamlocked and the client is in the wrong team.
 			if(!IsClientInLockedTeam(param, upgrade))
 			{
@@ -231,23 +231,23 @@ public TopMenu_HandleUpgrades(Handle:topmenu, TopMenuAction:action, TopMenuObjec
 		}
 		case TopMenuAction_SelectOption:
 		{
-			decl String:sShortname[MAX_UPGRADE_SHORTNAME_LENGTH+20];
-			GetTopMenuObjName(topmenu, object_id, sShortname, sizeof(sShortname));
+			char sShortname[MAX_UPGRADE_SHORTNAME_LENGTH+20];
+			topmenu.GetObjName(object_id, sShortname, sizeof(sShortname));
 			
-			new upgrade[InternalUpgradeInfo];
+			int upgrade[InternalUpgradeInfo];
 			
 			// Bad upgrade?
 			if(!GetUpgradeByShortname(sShortname[11], upgrade) || !IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled] || !HasAccessToUpgrade(param, upgrade))
 			{
-				DisplayTopMenu(g_hRPGTopMenu, param, TopMenuPosition_LastCategory);
+				g_hRPGTopMenu.Display(param, TopMenuPosition_LastCategory);
 				return;
 			}
 			
-			new iItemIndex = upgrade[UPGR_index];
-			new iItemLevel = GetClientPurchasedUpgradeLevel(param, iItemIndex);
-			new iCost = GetUpgradeCost(iItemIndex, iItemLevel+1);
+			int iItemIndex = upgrade[UPGR_index];
+			int iItemLevel = GetClientPurchasedUpgradeLevel(param, iItemIndex);
+			int iCost = GetUpgradeCost(iItemIndex, iItemLevel+1);
 			
-			new String:sTranslatedName[MAX_UPGRADE_NAME_LENGTH];
+			char sTranslatedName[MAX_UPGRADE_NAME_LENGTH];
 			GetUpgradeTranslatedName(param, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
 			
 			if(iItemLevel >= upgrade[UPGR_maxLevel])
@@ -259,9 +259,9 @@ public TopMenu_HandleUpgrades(Handle:topmenu, TopMenuAction:action, TopMenuObjec
 				if(BuyClientUpgrade(param, iItemIndex))
 				{
 					Client_PrintToChat(param, false, "%t", "Upgrade bought", sTranslatedName, iItemLevel+1);
-					if(GetConVarBool(g_hCVShowUpgradePurchase))
+					if(g_hCVShowUpgradePurchase.BoolValue)
 					{
-						for(new i=1;i<=MaxClients;i++)
+						for(int i=1;i<=MaxClients;i++)
 						{
 							if(i != param && IsClientInGame(i) && !IsFakeClient(i))
 							{
@@ -273,21 +273,21 @@ public TopMenu_HandleUpgrades(Handle:topmenu, TopMenuAction:action, TopMenuObjec
 				}
 			}
 			
-			DisplayTopMenu(g_hRPGTopMenu, param, TopMenuPosition_LastCategory);
+			g_hRPGTopMenu.Display(param, TopMenuPosition_LastCategory);
 		}
 	}
 }
 
-public TopMenu_HandleSell(Handle:topmenu, TopMenuAction:action, TopMenuObject:object_id, param, String:buffer[], maxlength)
+public void TopMenu_HandleSell(TopMenu topmenu, TopMenuAction action, TopMenuObject object_id, int param, char[] buffer, int maxlength)
 {
 	switch(action)
 	{
 		case TopMenuAction_DisplayOption:
 		{
-			decl String:sShortname[MAX_UPGRADE_SHORTNAME_LENGTH+20];
-			GetTopMenuObjName(topmenu, object_id, sShortname, sizeof(sShortname));
+			char sShortname[MAX_UPGRADE_SHORTNAME_LENGTH+20];
+			topmenu.GetObjName(object_id, sShortname, sizeof(sShortname));
 			
-			new upgrade[InternalUpgradeInfo];
+			int upgrade[InternalUpgradeInfo];
 			if(!GetUpgradeByShortname(sShortname[8], upgrade))
 				return;
 			
@@ -295,29 +295,29 @@ public TopMenu_HandleSell(Handle:topmenu, TopMenuAction:action, TopMenuObject:ob
 				return;
 			
 			// Show the team this upgrade is locked to, if it is.
-			new String:sTeamlock[128];
-			if((!IsClientInLockedTeam(param, upgrade) || upgrade[UPGR_teamlock] > 1 && GetConVarBool(g_hCVShowTeamlockNoticeOwnTeam)) && upgrade[UPGR_teamlock] < GetTeamCount())
+			char sTeamlock[128];
+			if((!IsClientInLockedTeam(param, upgrade) || upgrade[UPGR_teamlock] > 1 && g_hCVShowTeamlockNoticeOwnTeam.BoolValue) && upgrade[UPGR_teamlock] < GetTeamCount())
 			{
 				GetTeamName(upgrade[UPGR_teamlock], sTeamlock, sizeof(sTeamlock));
 				Format(sTeamlock, sizeof(sTeamlock), " (%T)", "Is teamlocked", param, sTeamlock);
 			}
 			
 			// Optionally show the maxlevel of the upgrade
-			new String:sMaxlevel[8];
-			if (GetConVarBool(g_hCVShowMaxLevelInMenu))
+			char sMaxlevel[8];
+			if (g_hCVShowMaxLevelInMenu.BoolValue)
 				Format(sMaxlevel, sizeof(sMaxlevel), "/%d", upgrade[UPGR_maxLevel]);
 			
-			decl String:sTranslatedName[MAX_UPGRADE_NAME_LENGTH];
+			char sTranslatedName[MAX_UPGRADE_NAME_LENGTH];
 			GetUpgradeTranslatedName(param, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
 			
 			Format(buffer, maxlength, "%s Lvl %d%s [%T: %d]%s", sTranslatedName, GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index]), sMaxlevel, "Sale", param, GetUpgradeSale(upgrade[UPGR_index], GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index])), sTeamlock);
 		}
 		case TopMenuAction_DrawOption:
 		{
-			decl String:sShortname[MAX_UPGRADE_SHORTNAME_LENGTH];
-			GetTopMenuObjName(topmenu, object_id, sShortname, sizeof(sShortname));
+			char sShortname[MAX_UPGRADE_SHORTNAME_LENGTH];
+			topmenu.GetObjName(object_id, sShortname, sizeof(sShortname));
 			
-			new upgrade[InternalUpgradeInfo];
+			int upgrade[InternalUpgradeInfo];
 			// Don't show invalid upgrades at all in the menu.
 			if(!GetUpgradeByShortname(sShortname[8], upgrade) || !IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled])
 			{
@@ -325,7 +325,7 @@ public TopMenu_HandleSell(Handle:topmenu, TopMenuAction:action, TopMenuObject:ob
 				return;
 			}
 			
-			new iCurrentLevel = GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index]);
+			int iCurrentLevel = GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index]);
 			
 			// Allow clients to sell upgrades they no longer have access to, but don't show them, if they never bought it.
 			if(!HasAccessToUpgrade(param, upgrade) && iCurrentLevel <= 0)
@@ -346,73 +346,73 @@ public TopMenu_HandleSell(Handle:topmenu, TopMenuAction:action, TopMenuObject:ob
 		}
 		case TopMenuAction_SelectOption:
 		{
-			decl String:sShortname[MAX_UPGRADE_SHORTNAME_LENGTH];
-			GetTopMenuObjName(topmenu, object_id, sShortname, sizeof(sShortname));
+			char sShortname[MAX_UPGRADE_SHORTNAME_LENGTH];
+			topmenu.GetObjName(object_id, sShortname, sizeof(sShortname));
 			
-			new upgrade[InternalUpgradeInfo];
+			int upgrade[InternalUpgradeInfo];
 			
 			// Bad upgrade?
 			if(!GetUpgradeByShortname(sShortname[8], upgrade) || !IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled])
 			{
-				DisplayTopMenu(g_hRPGTopMenu, param, TopMenuPosition_LastCategory);
+				g_hRPGTopMenu.Display(param, TopMenuPosition_LastCategory);
 				return;
 			}
 			
-			new Handle:hMenu = CreateMenu(Menu_ConfirmSell, MENU_ACTIONS_DEFAULT|MenuAction_Display|MenuAction_DisplayItem);
-			SetMenuExitBackButton(hMenu, true);
+			Menu hMenu = new Menu(Menu_ConfirmSell, MENU_ACTIONS_DEFAULT|MenuAction_Display|MenuAction_DisplayItem);
+			hMenu.ExitBackButton = true;
 		
-			SetMenuTitle(hMenu, "credits_display");
+			hMenu.SetTitle("credits_display");
 			
-			decl String:sIndex[10];
+			char sIndex[10];
 			IntToString(upgrade[UPGR_index], sIndex, sizeof(sIndex));
-			AddMenuItem(hMenu, sIndex, "Yes");
-			AddMenuItem(hMenu, "no", "No");
+			hMenu.AddItem(sIndex, "Yes");
+			hMenu.AddItem("no", "No");
 			
-			DisplayMenu(hMenu, param, MENU_TIME_FOREVER);
+			hMenu.Display(param, MENU_TIME_FOREVER);
 		}
 	}
 }
 
-public Menu_ConfirmSell(Handle:menu, MenuAction:action, param1, param2)
+public int Menu_ConfirmSell(Menu menu, MenuAction action, int param1, int param2)
 {
 	if(action == MenuAction_Select)
 	{
-		decl String:sInfo[16];
-		GetMenuItem(menu, param2, sInfo, sizeof(sInfo));
+		char sInfo[16];
+		menu.GetItem(param2, sInfo, sizeof(sInfo));
 		
 		if(StrEqual(sInfo, "no"))
 			return 0;
 		
-		new iItemIndex = StringToInt(sInfo);
-		new upgrade[InternalUpgradeInfo];
+		int iItemIndex = StringToInt(sInfo);
+		int upgrade[InternalUpgradeInfo];
 		GetUpgradeByIndex(iItemIndex, upgrade);
 		SellClientUpgrade(param1, iItemIndex);
 		
-		new String:sTranslatedName[MAX_UPGRADE_NAME_LENGTH];
+		char sTranslatedName[MAX_UPGRADE_NAME_LENGTH];
 		GetUpgradeTranslatedName(param1, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
 		Client_PrintToChat(param1, false, "%t", "Upgrade sold", sTranslatedName, GetClientPurchasedUpgradeLevel(param1, iItemIndex)+1);
 		
-		DisplayTopMenu(g_hRPGTopMenu, param1, TopMenuPosition_LastCategory);
+		g_hRPGTopMenu.Display(param1, TopMenuPosition_LastCategory);
 	}
 	else if(action == MenuAction_Display)
 	{
 		// Change the title
-		new Handle:hPanel = Handle:param2;
+		Panel hPanel = view_as<Panel>(param2);
 		
 		// Display the current credits in the title
-		decl String:sBuffer[256];
+		char sBuffer[256];
 		Format(sBuffer, sizeof(sBuffer), "%T\n-----\n%T\n", "Credits", param1, GetClientCredits(param1), "Are you sure?", param1);
 		
-		SetPanelTitle(hPanel, sBuffer);
+		hPanel.SetTitle(sBuffer);
 	}
 	else if(action == MenuAction_DisplayItem)
 	{
 		/* Get the display string, we'll use it as a translation phrase */
-		decl String:sDisplay[64];
-		GetMenuItem(menu, param2, "", 0, _, sDisplay, sizeof(sDisplay));
+		char sDisplay[64];
+		menu.GetItem(param2, "", 0, _, sDisplay, sizeof(sDisplay));
 
 		/* Translate the string to the client's language */
-		decl String:sBuffer[255];
+		char sBuffer[255];
 		Format(sBuffer, sizeof(sBuffer), "%T", sDisplay, param1);
 
 		/* Override the text */
@@ -421,25 +421,25 @@ public Menu_ConfirmSell(Handle:menu, MenuAction:action, param1, param2)
 	else if(action == MenuAction_Cancel)
 	{
 		if(param2 == MenuCancel_ExitBack)
-			DisplayTopMenu(g_hRPGTopMenu, param1, TopMenuPosition_LastCategory);
+			g_hRPGTopMenu.Display(param1, TopMenuPosition_LastCategory);
 	}
 	else if(action == MenuAction_End)
 	{
-		CloseHandle(menu);
+		delete menu;
 	}
 	return 0;
 }
 
-public TopMenu_HandleUpgradeSettings(Handle:topmenu, TopMenuAction:action, TopMenuObject:object_id, param, String:buffer[], maxlength)
+public void TopMenu_HandleUpgradeSettings(TopMenu topmenu, TopMenuAction action, TopMenuObject object_id, int param, char[] buffer, int maxlength)
 {
 	switch(action)
 	{
 		case TopMenuAction_DisplayOption:
 		{
-			decl String:sShortname[MAX_UPGRADE_SHORTNAME_LENGTH];
-			GetTopMenuObjName(topmenu, object_id, sShortname, sizeof(sShortname));
+			char sShortname[MAX_UPGRADE_SHORTNAME_LENGTH];
+			topmenu.GetObjName(object_id, sShortname, sizeof(sShortname));
 			
-			new upgrade[InternalUpgradeInfo];
+			int upgrade[InternalUpgradeInfo];
 			if(!GetUpgradeByShortname(sShortname[16], upgrade))
 				return;
 			
@@ -447,18 +447,18 @@ public TopMenu_HandleUpgradeSettings(Handle:topmenu, TopMenuAction:action, TopMe
 				return;
 			
 			// Show the team this upgrade is locked to, if it is.
-			new String:sTeamlock[128];
-			if((!IsClientInLockedTeam(param, upgrade) || upgrade[UPGR_teamlock] > 1 && GetConVarBool(g_hCVShowTeamlockNoticeOwnTeam)) && upgrade[UPGR_teamlock] < GetTeamCount())
+			char sTeamlock[128];
+			if((!IsClientInLockedTeam(param, upgrade) || upgrade[UPGR_teamlock] > 1 && g_hCVShowTeamlockNoticeOwnTeam.BoolValue) && upgrade[UPGR_teamlock] < GetTeamCount())
 			{
 				GetTeamName(upgrade[UPGR_teamlock], sTeamlock, sizeof(sTeamlock));
 				Format(sTeamlock, sizeof(sTeamlock), " (%T)", "Is teamlocked", param, sTeamlock);
 			}
 			
-			new iPurchasedLevel = GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index]);
-			new iSelectedLevel = GetClientSelectedUpgradeLevel(param, upgrade[UPGR_index]);
-			decl String:sBuffer[128];
+			int iPurchasedLevel = GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index]);
+			int iSelectedLevel = GetClientSelectedUpgradeLevel(param, upgrade[UPGR_index]);
+			char sBuffer[128];
 			GetUpgradeTranslatedName(param, upgrade[UPGR_index], sBuffer, sizeof(sBuffer));
-			if(!GetConVarBool(g_hCVDisableLevelSelection))
+			if(!g_hCVDisableLevelSelection.BoolValue)
 				Format(sBuffer, sizeof(sBuffer), "%s Lvl %d/%d", sBuffer, iSelectedLevel, iPurchasedLevel);
 			
 			Format(sBuffer, sizeof(sBuffer), "%s [%T]%s", sBuffer, IsClientUpgradeEnabled(param, upgrade[UPGR_index])?"On":"Off", param, sTeamlock);
@@ -466,10 +466,10 @@ public TopMenu_HandleUpgradeSettings(Handle:topmenu, TopMenuAction:action, TopMe
 		}
 		case TopMenuAction_DrawOption:
 		{
-			decl String:sShortname[MAX_UPGRADE_SHORTNAME_LENGTH];
-			GetTopMenuObjName(topmenu, object_id, sShortname, sizeof(sShortname));
+			char sShortname[MAX_UPGRADE_SHORTNAME_LENGTH];
+			topmenu.GetObjName(object_id, sShortname, sizeof(sShortname));
 			
-			new upgrade[InternalUpgradeInfo];
+			int upgrade[InternalUpgradeInfo];
 			// Don't show invalid upgrades at all in the menu.
 			if(!GetUpgradeByShortname(sShortname[16], upgrade) || !IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled])
 			{
@@ -477,7 +477,7 @@ public TopMenu_HandleUpgradeSettings(Handle:topmenu, TopMenuAction:action, TopMe
 				return;
 			}
 			
-			new iCurrentLevel = GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index]);
+			int iCurrentLevel = GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index]);
 			
 			// Allow clients to view upgrades they no longer have access to, but don't show them, if they never bought it.
 			if(!HasAccessToUpgrade(param, upgrade) && iCurrentLevel <= 0)
@@ -496,15 +496,15 @@ public TopMenu_HandleUpgradeSettings(Handle:topmenu, TopMenuAction:action, TopMe
 		}
 		case TopMenuAction_SelectOption:
 		{
-			decl String:sShortname[MAX_UPGRADE_SHORTNAME_LENGTH];
-			GetTopMenuObjName(topmenu, object_id, sShortname, sizeof(sShortname));
+			char sShortname[MAX_UPGRADE_SHORTNAME_LENGTH];
+			topmenu.GetObjName(object_id, sShortname, sizeof(sShortname));
 			
-			new upgrade[InternalUpgradeInfo];
+			int upgrade[InternalUpgradeInfo];
 			
 			// Bad upgrade?
 			if(!GetUpgradeByShortname(sShortname[16], upgrade) || !IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled])
 			{
-				DisplayTopMenu(g_hRPGTopMenu, param, TopMenuPosition_LastCategory);
+				g_hRPGTopMenu.Display(param, TopMenuPosition_LastCategory);
 				return;
 			}
 			
@@ -513,65 +513,65 @@ public TopMenu_HandleUpgradeSettings(Handle:topmenu, TopMenuAction:action, TopMe
 	}
 }
 
-DisplayUpgradeSettingsMenu(client, iUpgradeIndex)
+void DisplayUpgradeSettingsMenu(int client, int iUpgradeIndex)
 {
-	new Handle:hMenu = CreateMenu(Menu_HandleUpgradeSettings, MENU_ACTIONS_DEFAULT);
-	SetMenuExitBackButton(hMenu, true);
+	Menu hMenu = new Menu(Menu_HandleUpgradeSettings);
+	hMenu.ExitBackButton = true;
 
-	new String:sTranslatedName[MAX_UPGRADE_NAME_LENGTH];
+	char sTranslatedName[MAX_UPGRADE_NAME_LENGTH];
 	GetUpgradeTranslatedName(client, iUpgradeIndex, sTranslatedName, sizeof(sTranslatedName));
-	SetMenuTitle(hMenu, "%T\n-----\n%s\n", "Credits", client, GetClientCredits(client), sTranslatedName);
+	hMenu.SetTitle("%T\n-----\n%s\n", "Credits", client, GetClientCredits(client), sTranslatedName);
 	
-	new playerupgrade[PlayerUpgradeInfo];
+	int playerupgrade[PlayerUpgradeInfo];
 	GetPlayerUpgradeInfoByIndex(client, iUpgradeIndex, playerupgrade);
 	
-	decl String:sBuffer[64];
+	char sBuffer[64];
 	Format(sBuffer, sizeof(sBuffer), "%T: %T", "Enabled", client, playerupgrade[PUI_enabled]?"On":"Off", client);
-	AddMenuItem(hMenu, "enable", sBuffer);
+	hMenu.AddItem("enable", sBuffer);
 	
-	if(!GetConVarBool(g_hCVDisableLevelSelection))
+	if(!g_hCVDisableLevelSelection.BoolValue)
 	{
 		Format(sBuffer, sizeof(sBuffer), "%T: %d/%d", "Selected level", client, playerupgrade[PUI_selectedlevel], playerupgrade[PUI_purchasedlevel]);
-		AddMenuItem(hMenu, "", sBuffer, ITEMDRAW_DISABLED);
+		hMenu.AddItem("", sBuffer, ITEMDRAW_DISABLED);
 		Format(sBuffer, sizeof(sBuffer), "%T", "Increase selected level", client);
-		AddMenuItem(hMenu, "incselect", sBuffer, playerupgrade[PUI_selectedlevel]<playerupgrade[PUI_purchasedlevel]?ITEMDRAW_DEFAULT:ITEMDRAW_DISABLED);
+		hMenu.AddItem("incselect", sBuffer, playerupgrade[PUI_selectedlevel]<playerupgrade[PUI_purchasedlevel]?ITEMDRAW_DEFAULT:ITEMDRAW_DISABLED);
 		Format(sBuffer, sizeof(sBuffer), "%T", "Decrease selected level", client);
-		AddMenuItem(hMenu, "decselect", sBuffer, playerupgrade[PUI_selectedlevel]>0?ITEMDRAW_DEFAULT:ITEMDRAW_DISABLED);
+		hMenu.AddItem("decselect", sBuffer, playerupgrade[PUI_selectedlevel]>0?ITEMDRAW_DEFAULT:ITEMDRAW_DISABLED);
 	}
 	
-	new upgrade[InternalUpgradeInfo];
+	int upgrade[InternalUpgradeInfo];
 	GetUpgradeByIndex(iUpgradeIndex, upgrade);
 	
-	new bool:bHasVisuals = upgrade[UPGR_visualsConvar] != INVALID_HANDLE && upgrade[UPGR_enableVisuals];
-	new bool:bHasSounds = upgrade[UPGR_soundsConvar] != INVALID_HANDLE && upgrade[UPGR_enableSounds];
+	bool bHasVisuals = upgrade[UPGR_visualsConvar] != null && upgrade[UPGR_enableVisuals];
+	bool bHasSounds = upgrade[UPGR_soundsConvar] != null && upgrade[UPGR_enableSounds];
 	
 	if(bHasVisuals || bHasSounds)
 	{
-		AddMenuItem(hMenu, "", "", ITEMDRAW_SPACER);
+		hMenu.AddItem("", "", ITEMDRAW_SPACER);
 		if(bHasVisuals)
 		{
 			Format(sBuffer, sizeof(sBuffer), "%T: %T", "Visual effects", client, playerupgrade[PUI_visuals]?"On":"Off", client);
-			AddMenuItem(hMenu, "visuals", sBuffer);
+			hMenu.AddItem("visuals", sBuffer);
 		}
 		if(bHasSounds)
 		{
 			Format(sBuffer, sizeof(sBuffer), "%T: %T", "Sound effects", client, playerupgrade[PUI_sounds]?"On":"Off", client);
-			AddMenuItem(hMenu, "sounds", sBuffer);
+			hMenu.AddItem("sounds", sBuffer);
 		}
 	}
 	
 	g_iSelectedSettingsUpgrade[client] = iUpgradeIndex;
-	DisplayMenu(hMenu, client, MENU_TIME_FOREVER);
+	hMenu.Display(client, MENU_TIME_FOREVER);
 }
 
-public Menu_HandleUpgradeSettings(Handle:menu, MenuAction:action, param1, param2)
+public int Menu_HandleUpgradeSettings(Menu menu, MenuAction action, int param1, int param2)
 {
 	if(action == MenuAction_Select)
 	{
-		decl String:sInfo[16];
-		GetMenuItem(menu, param2, sInfo, sizeof(sInfo));
+		char sInfo[16];
+		menu.GetItem(param2, sInfo, sizeof(sInfo));
 		
-		new playerupgrade[PlayerUpgradeInfo];
+		int playerupgrade[PlayerUpgradeInfo];
 		GetPlayerUpgradeInfoByIndex(param1, g_iSelectedSettingsUpgrade[param1], playerupgrade);
 		
 		if(StrEqual(sInfo, "enable"))
@@ -580,12 +580,12 @@ public Menu_HandleUpgradeSettings(Handle:menu, MenuAction:action, param1, param2
 		}
 		else if(StrEqual(sInfo, "incselect"))
 		{
-			if(!GetConVarBool(g_hCVDisableLevelSelection))
+			if(!g_hCVDisableLevelSelection.BoolValue)
 				SetClientSelectedUpgradeLevel(param1, g_iSelectedSettingsUpgrade[param1], playerupgrade[PUI_selectedlevel]+1);
 		}
 		else if(StrEqual(sInfo, "decselect"))
 		{
-			if(playerupgrade[PUI_selectedlevel] > 0 && !GetConVarBool(g_hCVDisableLevelSelection))
+			if(playerupgrade[PUI_selectedlevel] > 0 && !g_hCVDisableLevelSelection.BoolValue)
 				SetClientSelectedUpgradeLevel(param1, g_iSelectedSettingsUpgrade[param1], playerupgrade[PUI_selectedlevel]-1);
 		}
 		else if(StrEqual(sInfo, "visuals"))
@@ -605,27 +605,27 @@ public Menu_HandleUpgradeSettings(Handle:menu, MenuAction:action, param1, param2
 	{
 		g_iSelectedSettingsUpgrade[param1] = -1;
 		if(param2 == MenuCancel_ExitBack)
-			DisplayTopMenu(g_hRPGTopMenu, param1, TopMenuPosition_LastCategory);
+			g_hRPGTopMenu.Display(param1, TopMenuPosition_LastCategory);
 	}
 	else if(action == MenuAction_End)
 	{
-		CloseHandle(menu);
+		delete menu;
 	}
 }
 
-DisplayStatsMenu(client)
+void DisplayStatsMenu(int client)
 {
-	DisplayTopMenuCategory(g_hRPGTopMenu, g_TopMenuStats, client);
+	g_hRPGTopMenu.DisplayCategory(g_TopMenuStats, client);
 }
 
-public TopMenu_HandleStats(Handle:topmenu, TopMenuAction:action, TopMenuObject:object_id, param, String:buffer[], maxlength)
+public void TopMenu_HandleStats(TopMenu topmenu, TopMenuAction action, TopMenuObject object_id, int param, char[] buffer, int maxlength)
 {
 	switch(action)
 	{
 		case TopMenuAction_DisplayOption:
 		{
-			decl String:sName[64];
-			GetTopMenuObjName(topmenu, object_id, sName, sizeof(sName));
+			char sName[64];
+			topmenu.GetObjName(object_id, sName, sizeof(sName));
 			
 			if(StrEqual(sName, "level"))
 			{
@@ -650,8 +650,8 @@ public TopMenu_HandleStats(Handle:topmenu, TopMenuAction:action, TopMenuObject:o
 		}
 		case TopMenuAction_DrawOption:
 		{
-			decl String:sName[64];
-			GetTopMenuObjName(topmenu, object_id, sName, sizeof(sName));
+			char sName[64];
+			topmenu.GetObjName(object_id, sName, sizeof(sName));
 			
 			// HACKHACK: Don't disable the lastexp one
 			if(!StrEqual(sName, "lastexp"))
@@ -662,8 +662,8 @@ public TopMenu_HandleStats(Handle:topmenu, TopMenuAction:action, TopMenuObject:o
 		}
 		case TopMenuAction_SelectOption:
 		{
-			decl String:sName[64];
-			GetTopMenuObjName(topmenu, object_id, sName, sizeof(sName));
+			char sName[64];
+			topmenu.GetObjName(object_id, sName, sizeof(sName));
 			
 			if(StrEqual(sName, "lastexp"))
 			{
@@ -673,15 +673,15 @@ public TopMenu_HandleStats(Handle:topmenu, TopMenuAction:action, TopMenuObject:o
 	}	
 }
 
-DisplaySettingsMenu(client)
+void DisplaySettingsMenu(int client)
 {
-	DisplayTopMenuCategory(g_hRPGTopMenu, g_TopMenuSettings, client);
+	g_hRPGTopMenu.DisplayCategory(g_TopMenuSettings, client);
 }
 
-public TopMenu_HandleSettings(Handle:topmenu, TopMenuAction:action, TopMenuObject:object_id, param, String:buffer[], maxlength)
+public void TopMenu_HandleSettings(TopMenu topmenu, TopMenuAction action, TopMenuObject object_id, int param, char[] buffer, int maxlength)
 {
-	decl String:sName[64];
-	GetTopMenuObjName(topmenu, object_id, sName, sizeof(sName));
+	char sName[64];
+	topmenu.GetObjName(object_id, sName, sizeof(sName));
 	
 	switch(action)
 	{
@@ -705,7 +705,7 @@ public TopMenu_HandleSettings(Handle:topmenu, TopMenuAction:action, TopMenuObjec
 			if(StrEqual(sName, "resetstats"))
 			{
 				// Don't show the reset stats option, if disabled.
-				if(!GetConVarBool(g_hCVAllowSelfReset))
+				if(!g_hCVAllowSelfReset.BoolValue)
 					buffer[0] = ITEMDRAW_IGNORE;
 			}
 		}
@@ -713,38 +713,38 @@ public TopMenu_HandleSettings(Handle:topmenu, TopMenuAction:action, TopMenuObjec
 		{
 			if(StrEqual(sName, "resetstats"))
 			{
-				DisplayMenu(g_hConfirmResetStatsMenu, param, MENU_TIME_FOREVER);
+				g_hConfirmResetStatsMenu.Display(param, MENU_TIME_FOREVER);
 			}
 			else if(StrEqual(sName, "toggleautoshow"))
 			{
 				SetShowMenuOnLevelUp(param, !ShowMenuOnLevelUp(param));
-				DisplayTopMenu(g_hRPGTopMenu, param, TopMenuPosition_LastCategory);
+				g_hRPGTopMenu.Display(param, TopMenuPosition_LastCategory);
 			}
 			else if(StrEqual(sName, "togglefade"))
 			{
 				SetFadeScreenOnLevelUp(param, !FadeScreenOnLevelUp(param));
-				DisplayTopMenu(g_hRPGTopMenu, param, TopMenuPosition_LastCategory);
+				g_hRPGTopMenu.Display(param, TopMenuPosition_LastCategory);
 			}
 		}
 	}	
 }
 
-public Menu_ConfirmResetStats(Handle:menu, MenuAction:action, param1, param2)
+public int Menu_ConfirmResetStats(Menu menu, MenuAction action, int param1, int param2)
 {
 	if(action == MenuAction_Select)
 	{
-		decl String:sInfo[16];
-		GetMenuItem(menu, param2, sInfo, sizeof(sInfo));
+		char sInfo[16];
+		menu.GetItem(param2, sInfo, sizeof(sInfo));
 		
 		if(StrEqual(sInfo, "no"))
 		{
-			DisplayTopMenu(g_hRPGTopMenu, param1, TopMenuPosition_LastCategory);
+			g_hRPGTopMenu.Display(param1, TopMenuPosition_LastCategory);
 			return 0;
 		}
 		
 		// Are players allowed to reset themselves?
 		// Player might still had the menu open while this setting changed.
-		if(GetConVarBool(g_hCVAllowSelfReset))
+		if(g_hCVAllowSelfReset.BoolValue)
 		{
 			ResetStats(param1);
 			SetPlayerLastReset(param1, GetTime());
@@ -758,22 +758,22 @@ public Menu_ConfirmResetStats(Handle:menu, MenuAction:action, param1, param2)
 	else if(action == MenuAction_Display)
 	{
 		// Change the title
-		new Handle:hPanel = Handle:param2;
+		Panel hPanel = view_as<Panel>(param2);
 		
 		// Display the current credits in the title
-		decl String:sBuffer[256];
+		char sBuffer[256];
 		Format(sBuffer, sizeof(sBuffer), "%T\n-----\n%T\n", "Credits", param1, GetClientCredits(param1), "Confirm stats reset", param1);
 		
-		SetPanelTitle(hPanel, sBuffer);
+		hPanel.SetTitle(sBuffer);
 	}
 	else if(action == MenuAction_DisplayItem)
 	{
 		/* Get the display string, we'll use it as a translation phrase */
-		decl String:sDisplay[64];
-		GetMenuItem(menu, param2, "", 0, _, sDisplay, sizeof(sDisplay));
+		char sDisplay[64];
+		menu.GetItem(param2, "", 0, _, sDisplay, sizeof(sDisplay));
 
 		/* Translate the string to the client's language */
-		decl String:sBuffer[255];
+		char sBuffer[255];
 		Format(sBuffer, sizeof(sBuffer), "%T", sDisplay, param1);
 
 		/* Override the text */
@@ -782,26 +782,26 @@ public Menu_ConfirmResetStats(Handle:menu, MenuAction:action, param1, param2)
 	else if(action == MenuAction_Cancel)
 	{
 		if(param2 == MenuCancel_ExitBack)
-			DisplayTopMenu(g_hRPGTopMenu, param1, TopMenuPosition_LastCategory);
+			g_hRPGTopMenu.Display(param1, TopMenuPosition_LastCategory);
 	}
 	return 0;
 }
 
-DisplayHelpMenu(client)
+void DisplayHelpMenu(int client)
 {
-	DisplayTopMenuCategory(g_hRPGTopMenu, g_TopMenuHelp, client);
+	g_hRPGTopMenu.DisplayCategory(g_TopMenuHelp, client);
 }
 
-public TopMenu_HandleHelp(Handle:topmenu, TopMenuAction:action, TopMenuObject:object_id, param, String:buffer[], maxlength)
+public void TopMenu_HandleHelp(TopMenu topmenu, TopMenuAction action, TopMenuObject object_id, int param, char[] buffer, int maxlength)
 {
 	switch(action)
 	{
 		case TopMenuAction_DisplayOption:
 		{
-			decl String:sShortname[MAX_UPGRADE_SHORTNAME_LENGTH];
-			GetTopMenuObjName(topmenu, object_id, sShortname, sizeof(sShortname));
+			char sShortname[MAX_UPGRADE_SHORTNAME_LENGTH];
+			topmenu.GetObjName(object_id, sShortname, sizeof(sShortname));
 			
-			new upgrade[InternalUpgradeInfo];
+			int upgrade[InternalUpgradeInfo];
 			if(!GetUpgradeByShortname(sShortname[8], upgrade))
 				return;
 			
@@ -809,24 +809,24 @@ public TopMenu_HandleHelp(Handle:topmenu, TopMenuAction:action, TopMenuObject:ob
 				return;
 			
 			// Show the team this upgrade is locked to, if it is.
-			new String:sTeamlock[128];
-			if((!IsClientInLockedTeam(param, upgrade) || upgrade[UPGR_teamlock] > 1 && GetConVarBool(g_hCVShowTeamlockNoticeOwnTeam)) && upgrade[UPGR_teamlock] < GetTeamCount())
+			char sTeamlock[128];
+			if((!IsClientInLockedTeam(param, upgrade) || upgrade[UPGR_teamlock] > 1 && g_hCVShowTeamlockNoticeOwnTeam.BoolValue) && upgrade[UPGR_teamlock] < GetTeamCount())
 			{
 				GetTeamName(upgrade[UPGR_teamlock], sTeamlock, sizeof(sTeamlock));
 				Format(sTeamlock, sizeof(sTeamlock), " (%T)", "Is teamlocked", param, sTeamlock);
 			}
 			
-			new String:sDescription[MAX_UPGRADE_DESCRIPTION_LENGTH];
+			char sDescription[MAX_UPGRADE_DESCRIPTION_LENGTH];
 			GetUpgradeTranslatedName(param, upgrade[UPGR_index], sDescription, sizeof(sDescription));
 			
 			Format(buffer, maxlength, "%s%s", sDescription, sTeamlock);
 		}
 		case TopMenuAction_DrawOption:
 		{
-			decl String:sShortname[MAX_UPGRADE_SHORTNAME_LENGTH];
-			GetTopMenuObjName(topmenu, object_id, sShortname, sizeof(sShortname));
+			char sShortname[MAX_UPGRADE_SHORTNAME_LENGTH];
+			topmenu.GetObjName(object_id, sShortname, sizeof(sShortname));
 			
-			new upgrade[InternalUpgradeInfo];
+			int upgrade[InternalUpgradeInfo];
 			// Don't show invalid upgrades at all in the menu.
 			if(!GetUpgradeByShortname(sShortname[8], upgrade) || !IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled])
 			{
@@ -834,7 +834,7 @@ public TopMenu_HandleHelp(Handle:topmenu, TopMenuAction:action, TopMenuObject:ob
 				return;
 			}
 			
-			new iCurrentLevel = GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index]);
+			int iCurrentLevel = GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index]);
 			
 			// Allow clients to read help about upgrades they no longer have access to, but don't show them, if they never bought it.
 			if(!HasAccessToUpgrade(param, upgrade) && iCurrentLevel <= 0)
@@ -853,40 +853,40 @@ public TopMenu_HandleHelp(Handle:topmenu, TopMenuAction:action, TopMenuObject:ob
 		}
 		case TopMenuAction_SelectOption:
 		{
-			decl String:sShortname[MAX_UPGRADE_SHORTNAME_LENGTH];
-			GetTopMenuObjName(topmenu, object_id, sShortname, sizeof(sShortname));
+			char sShortname[MAX_UPGRADE_SHORTNAME_LENGTH];
+			topmenu.GetObjName(object_id, sShortname, sizeof(sShortname));
 			
-			new upgrade[InternalUpgradeInfo];
+			int upgrade[InternalUpgradeInfo];
 			
 			// Bad upgrade?
 			if(!GetUpgradeByShortname(sShortname[8], upgrade) || !IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled])
 			{
-				DisplayTopMenu(g_hRPGTopMenu, param, TopMenuPosition_LastCategory);
+				g_hRPGTopMenu.Display(param, TopMenuPosition_LastCategory);
 				return;
 			}
 			
-			new String:sTranslatedName[MAX_UPGRADE_NAME_LENGTH], String:sTranslatedDescription[MAX_UPGRADE_DESCRIPTION_LENGTH];
+			char sTranslatedName[MAX_UPGRADE_NAME_LENGTH], sTranslatedDescription[MAX_UPGRADE_DESCRIPTION_LENGTH];
 			GetUpgradeTranslatedName(param, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
 			GetUpgradeTranslatedDescription(param, upgrade[UPGR_index], sTranslatedDescription, sizeof(sTranslatedDescription));
 			
 			Client_PrintToChat(param, false, "{OG}SM:RPG{N} > {G}%s{N}: %s", sTranslatedName, sTranslatedDescription);
 			
-			DisplayTopMenu(g_hRPGTopMenu, param, TopMenuPosition_LastCategory);
+			g_hRPGTopMenu.Display(param, TopMenuPosition_LastCategory);
 		}
 	}
 }
 
-DisplayOtherUpgradesMenu(client, targetClient)
+void DisplayOtherUpgradesMenu(int client, int targetClient)
 {
-	new Handle:hMenu = CreateMenu(Menu_HandleOtherUpgrades);
-	SetMenuExitButton(hMenu, true);
+	Menu hMenu = new Menu(Menu_HandleOtherUpgrades);
+	hMenu.ExitBackButton = true;
 	
-	SetMenuTitle(hMenu, "%N\n%T\n-----\n", targetClient, "Credits", client, GetClientCredits(targetClient));
+	hMenu.SetTitle("%N\n%T\n-----\n", targetClient, "Credits", client, GetClientCredits(targetClient));
 	
-	new iSize = GetUpgradeCount();
-	new upgrade[InternalUpgradeInfo], iCurrentLevel;
-	new String:sTranslatedName[MAX_UPGRADE_NAME_LENGTH], String:sLine[128], String:sIndex[8], String:sMaxlevel[8];
-	for(new i=0;i<iSize;i++)
+	int iSize = GetUpgradeCount();
+	int upgrade[InternalUpgradeInfo], iCurrentLevel;
+	char sTranslatedName[MAX_UPGRADE_NAME_LENGTH], sLine[128], sIndex[8], sMaxlevel[8];
+	for(int i=0;i<iSize;i++)
 	{
 		iCurrentLevel = GetClientPurchasedUpgradeLevel(targetClient, i);
 		GetUpgradeByIndex(i, upgrade);
@@ -896,7 +896,7 @@ DisplayOtherUpgradesMenu(client, targetClient)
 			continue;
 		
 		// Optionally show the maxlevel of the upgrade
-		if (GetConVarBool(g_hCVShowMaxLevelInMenu))
+		if (g_hCVShowMaxLevelInMenu.BoolValue)
 			Format(sMaxlevel, sizeof(sMaxlevel), "/%d", upgrade[UPGR_maxLevel]);
 		else
 			sMaxlevel[0] = '\0';
@@ -908,50 +908,50 @@ DisplayOtherUpgradesMenu(client, targetClient)
 			Format(sLine, sizeof(sLine), "%s Lvl %d MAX", sTranslatedName, iCurrentLevel);
 		else
 			Format(sLine, sizeof(sLine), "%s Lvl %d%s", sTranslatedName, iCurrentLevel, sMaxlevel);
-		AddMenuItem(hMenu, sIndex, sLine, ITEMDRAW_DISABLED);
+		hMenu.AddItem(sIndex, sLine, ITEMDRAW_DISABLED);
 	}
 	
-	DisplayMenu(hMenu, client, MENU_TIME_FOREVER);
+	hMenu.Display(client, MENU_TIME_FOREVER);
 }
 
-public Menu_HandleOtherUpgrades(Handle:menu, MenuAction:action, param1, param2)
+public int Menu_HandleOtherUpgrades(Menu menu, MenuAction action, int param1, int param2)
 {
 	if(action == MenuAction_End)
 	{
-		CloseHandle(menu);
+		delete menu;
 	}
 }
 
 // Helper functions to access those pubvars before they are declared..
-Handle:GetRPGTopMenu()
+TopMenu GetRPGTopMenu()
 {
 	return g_hRPGTopMenu;
 }
 
-TopMenuObject:GetUpgradesCategory()
+TopMenuObject GetUpgradesCategory()
 {
 	return g_TopMenuUpgrades;
 }
 
-TopMenuObject:GetSellCategory()
+TopMenuObject GetSellCategory()
 {
 	return g_TopMenuSell;
 }
 
-TopMenuObject:GetUpgradeSettingsCategory()
+TopMenuObject GetUpgradeSettingsCategory()
 {
 	return g_TopMenuUpgradeSettings;
 }
 
-TopMenuObject:GetHelpCategory()
+TopMenuObject GetHelpCategory()
 {
 	return g_TopMenuHelp;
 }
 
 // Handle the logic of the smrpg_show_upgrades_teamlock convar.
-GetItemDrawFlagsForTeamlock(iLevel, bool:bBuyMenu)
+int GetItemDrawFlagsForTeamlock(int iLevel, bool bBuyMenu)
 {
-	new iShowTeamlock = GetConVarInt(g_hCVShowUpgradesOfOtherTeam);
+	int iShowTeamlock = g_hCVShowUpgradesOfOtherTeam.IntValue;
 	switch(iShowTeamlock)
 	{
 		case SHOW_TEAMLOCK_NONE:
@@ -964,7 +964,7 @@ GetItemDrawFlagsForTeamlock(iLevel, bool:bBuyMenu)
 			if(iLevel > 0)
 			{
 				// Show it, but don't let him buy it.
-				if(bBuyMenu && !GetConVarBool(g_hCVBuyUpgradesOfOtherTeam))
+				if(bBuyMenu && !g_hCVBuyUpgradesOfOtherTeam.BoolValue)
 				{
 					return ITEMDRAW_DISABLED;
 				}
@@ -979,7 +979,7 @@ GetItemDrawFlagsForTeamlock(iLevel, bool:bBuyMenu)
 		case SHOW_TEAMLOCK_ALL:
 		{
 			// Show it, but don't let him buy it.
-			if(bBuyMenu && !GetConVarBool(g_hCVBuyUpgradesOfOtherTeam))
+			if(bBuyMenu && !g_hCVBuyUpgradesOfOtherTeam.BoolValue)
 			{
 				return ITEMDRAW_DISABLED;
 			}

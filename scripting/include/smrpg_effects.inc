@@ -101,7 +101,6 @@ native void SMRPG_SetClientRenderColor(int client, int r=-1, int g=-1, int b=-1,
  * @param g                  The green channel (0-255) or -1 to leave unchanged.
  * @param b                  The blue channel (0-255) or -1 to leave unchanged.
  * @param a                  The alpha channel (0-255) or -1 to leave unchanged.
- * @noreturn
  * @error                    Invalid client index.
  */
 native void SMRPG_SetClientRenderColorFadeTarget(int client, int r=-1, int g=-1, int b=-1, int a=-1);
@@ -115,7 +114,6 @@ native void SMRPG_SetClientRenderColorFadeTarget(int client, int r=-1, int g=-1,
  * @param g                  The step size for the green channel or -1 to leave unchanged.
  * @param b                  The step size for the blue channel or -1 to leave unchanged.
  * @param a                  The step size for the alpha channel or -1 to leave unchanged.
- * @noreturn
  * @error                    Invalid client index.
  */
 native int SMRPG_SetClientRenderColorFadeStepsize(int client, float r=-1.0, float g=-1.0, float b=-1.0, float a=-1.0);

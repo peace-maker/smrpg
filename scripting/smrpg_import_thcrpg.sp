@@ -195,7 +195,7 @@ public Action Cmd_ImportDatabase(int client, int args)
 			hNewDb.Query(SQL_PrintError, sQuery, iUserId);
 		}
 		
-		ReplyToCommand(client, "Imported %d/%d players from thc_rpg database.", i + SQL_GetRowCount(hResult), iCount);
+		ReplyToCommand(client, "Imported %d/%d players from thc_rpg database.", i + hResult.RowCount, iCount);
 		delete hResult;
 	}
 	

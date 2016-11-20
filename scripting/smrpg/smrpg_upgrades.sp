@@ -26,16 +26,16 @@ enum InternalUpgradeInfo
 	Function:UPGR_resetCallback, // callback called, when the upgrade's effect should be removed.
 	Handle:UPGR_plugin, // The plugin which registered the upgrade
 	// Convar handles to track changes and upgrade the right value in the cache
-	Handle:UPGR_enableConvar,
-	Handle:UPGR_maxLevelConvar,
-	Handle:UPGR_startLevelConvar,
-	Handle:UPGR_startCostConvar,
-	Handle:UPGR_incCostConvar,
-	Handle:UPGR_adminFlagConvar,
-	Handle:UPGR_visualsConvar,
-	Handle:UPGR_soundsConvar,
-	Handle:UPGR_botsConvar,
-	Handle:UPGR_teamlockConvar,
+	ConVar:UPGR_enableConvar,
+	ConVar:UPGR_maxLevelConvar,
+	ConVar:UPGR_startLevelConvar,
+	ConVar:UPGR_startCostConvar,
+	ConVar:UPGR_incCostConvar,
+	ConVar:UPGR_adminFlagConvar,
+	ConVar:UPGR_visualsConvar,
+	ConVar:UPGR_soundsConvar,
+	ConVar:UPGR_botsConvar,
+	ConVar:UPGR_teamlockConvar,
 	
 	// Topmenu object ids
 	TopMenuObject:UPGR_topmenuUpgrades,
@@ -48,13 +48,13 @@ enum InternalUpgradeInfo
 	String:UPGR_description[MAX_UPGRADE_DESCRIPTION_LENGTH]
 };
 
-new Handle:g_hUpgrades;
-new Handle:g_hfwdOnUpgradeEffect;
-new Handle:g_hfwdOnUpgradeSettingsChanged;
-new Handle:g_hfwdOnUpgradeRegistered;
-new Handle:g_hfwdOnUpgradeUnregistered;
+ArrayList g_hUpgrades;
+Handle g_hfwdOnUpgradeEffect;
+Handle g_hfwdOnUpgradeSettingsChanged;
+Handle g_hfwdOnUpgradeRegistered;
+Handle g_hfwdOnUpgradeUnregistered;
 
-RegisterUpgradeNatives()
+void RegisterUpgradeNatives()
 {
 	CreateNative("SMRPG_RegisterUpgradeType", Native_RegisterUpgradeType);
 	CreateNative("SMRPG_UnregisterUpgradeType", Native_UnregisterUpgradeType);
@@ -71,7 +71,7 @@ RegisterUpgradeNatives()
 	CreateNative("SMRPG_CheckUpgradeAccess", Native_CheckUpgradeAccess);
 }
 
-RegisterUpgradeForwards()
+void RegisterUpgradeForwards()
 {
 	g_hfwdOnUpgradeEffect = CreateGlobalForward("SMRPG_OnUpgradeEffect", ET_Hook, Param_Cell, Param_String, Param_Cell);
 	g_hfwdOnUpgradeSettingsChanged = CreateGlobalForward("SMRPG_OnUpgradeSettingsChanged", ET_Ignore, Param_String);
@@ -79,86 +79,81 @@ RegisterUpgradeForwards()
 	g_hfwdOnUpgradeUnregistered = CreateGlobalForward("SMRPG_OnUpgradeUnregistered", ET_Ignore, Param_String);
 }
 
-InitUpgrades()
+void InitUpgrades()
 {
-	g_hUpgrades = CreateArray(_:InternalUpgradeInfo);
+	g_hUpgrades = new ArrayList(view_as<int>(InternalUpgradeInfo));
 }
 
-// native SMRPG_RegisterUpgradeType(const String:name[], const String:shortname[], const String:description[], maxlevelbarrier, bool:bDefaultEnable, iDefaultMaxLevel, iDefaultStartCost, iDefaultCostInc, iAdminFlags=0, SMRPG_UpgradeQueryCB:querycb, SMRPG_ActiveQueryCB:activecb);
-public Native_RegisterUpgradeType(Handle:plugin, numParams)
+// native void SMRPG_RegisterUpgradeType(const char[] name, const char[] shortname, const char[] description, int maxlevelbarrier, bool bDefaultEnable, int iDefaultMaxLevel, int iDefaultStartCost, int iDefaultCostInc, int iAdminFlags=0, SMRPG_UpgradeQueryCB querycb, SMRPG_ActiveQueryCB activecb);
+public int Native_RegisterUpgradeType(Handle plugin, int numParams)
 {
-	new len;
+	int len;
 	GetNativeStringLength(1, len);
-	new String:sName[len+1];
+	char[] sName = new char[len+1];
 	GetNativeString(1, sName, len+1);
 	
 	GetNativeStringLength(2, len);
-	new String:sShortName[len+1];
+	char[] sShortName = new char[len+1];
 	GetNativeString(2, sShortName, len+1);
 
 	// There already is an upgrade with that name loaded. Don't load it twice. shortnames have to be unique.
-	new upgrade[InternalUpgradeInfo], bool:bAlreadyLoaded;
+	int upgrade[InternalUpgradeInfo];
+	bool bAlreadyLoaded;
 	if(GetUpgradeByShortname(sShortName, upgrade))
 	{
 		if(IsValidUpgrade(upgrade) && upgrade[UPGR_plugin] != plugin)
 		{
-			new String:sPluginName[32] = "Unloaded";
+			char sPluginName[32] = "Unloaded";
 			GetPluginInfo(upgrade[UPGR_plugin], PlInfo_Name, sPluginName, sizeof(sPluginName));
-			ThrowNativeError(SP_ERROR_NATIVE, "An upgrade with name \"%s\" is already registered by plugin \"%s\".", sShortName, sPluginName);
-			return;
+			return ThrowNativeError(SP_ERROR_NATIVE, "An upgrade with name \"%s\" is already registered by plugin \"%s\".", sShortName, sPluginName);
 		}
 		
 		bAlreadyLoaded = true;
 	}
 	
-	new bool:bWasUnavailable = upgrade[UPGR_unavailable];
+	bool bWasUnavailable = upgrade[UPGR_unavailable];
 	
 	GetNativeStringLength(3, len);
-	new String:sDescription[len+1];
+	char[] sDescription = new char[len+1];
 	GetNativeString(3, sDescription, len+1);
 	
-	new iMaxLevelBarrier = GetNativeCell(4);
-	new bool:bDefaultEnable = bool:GetNativeCell(5);
-	new iDefaultMaxLevel = GetNativeCell(6);
-	new iDefaultStartCost = GetNativeCell(7);
-	new iDefaultCostInc = GetNativeCell(8);
-	new iDefaultAdminFlags = GetNativeCell(9);
-#if SOURCEMOD_V_MAJOR >= 1 && SOURCEMOD_V_MINOR >= 7
-	new Function:queryCallback = GetNativeFunction(10);
-	new Function:activeCallback = GetNativeFunction(11);
-#else
-	new Function:queryCallback = Function:GetNativeCell(10);
-	new Function:activeCallback = Function:GetNativeCell(11);
-#endif
+	int iMaxLevelBarrier = GetNativeCell(4);
+	bool bDefaultEnable = view_as<bool>(GetNativeCell(5));
+	int iDefaultMaxLevel = GetNativeCell(6);
+	int iDefaultStartCost = GetNativeCell(7);
+	int iDefaultCostInc = GetNativeCell(8);
+	int iDefaultAdminFlags = GetNativeCell(9);
+	Function queryCallback = GetNativeFunction(10);
+	Function activeCallback = GetNativeFunction(11);
 	
 	if(!bAlreadyLoaded)
 	{
-		upgrade[UPGR_index] = GetArraySize(g_hUpgrades);
+		upgrade[UPGR_index] = g_hUpgrades.Length;
 		upgrade[UPGR_databaseId] = -1;
 		upgrade[UPGR_databaseLoading] = false;
-		new Handle:hTopMenu = GetRPGTopMenu();
-		if(hTopMenu != INVALID_HANDLE)
+		TopMenu hTopMenu = GetRPGTopMenu();
+		if(hTopMenu != null)
 		{
-			decl String:sBuffer[MAX_UPGRADE_SHORTNAME_LENGTH+20];
+			char sBuffer[MAX_UPGRADE_SHORTNAME_LENGTH+20];
 			if(GetUpgradesCategory() != INVALID_TOPMENUOBJECT)
 			{
 				Format(sBuffer, sizeof(sBuffer), "rpgupgrade_%s", sShortName);
-				upgrade[UPGR_topmenuUpgrades] = AddToTopMenu(hTopMenu, sBuffer, TopMenuObject_Item, TopMenu_HandleUpgrades, GetUpgradesCategory());
+				upgrade[UPGR_topmenuUpgrades] = hTopMenu.AddItem(sBuffer, TopMenu_HandleUpgrades, GetUpgradesCategory());
 			}
 			if(GetSellCategory() != INVALID_TOPMENUOBJECT)
 			{
 				Format(sBuffer, sizeof(sBuffer), "rpgsell_%s", sShortName);
-				upgrade[UPGR_topmenuSell] = AddToTopMenu(hTopMenu, sBuffer, TopMenuObject_Item, TopMenu_HandleSell, GetSellCategory());
+				upgrade[UPGR_topmenuSell] = hTopMenu.AddItem(sBuffer, TopMenu_HandleSell, GetSellCategory());
 			}
 			if(GetUpgradeSettingsCategory() != INVALID_TOPMENUOBJECT)
 			{
 				Format(sBuffer, sizeof(sBuffer), "rpgupgrsettings_%s", sShortName);
-				upgrade[UPGR_topmenuUpgradeSettings] = AddToTopMenu(hTopMenu, sBuffer, TopMenuObject_Item, TopMenu_HandleUpgradeSettings, GetUpgradeSettingsCategory());
+				upgrade[UPGR_topmenuUpgradeSettings] = hTopMenu.AddItem(sBuffer, TopMenu_HandleUpgradeSettings, GetUpgradeSettingsCategory());
 			}
 			if(GetHelpCategory() != INVALID_TOPMENUOBJECT)
 			{
 				Format(sBuffer, sizeof(sBuffer), "rpghelp_%s", sShortName);
-				upgrade[UPGR_topmenuHelp] = AddToTopMenu(hTopMenu, sBuffer, TopMenuObject_Item, TopMenu_HandleHelp, GetHelpCategory());
+				upgrade[UPGR_topmenuHelp] = hTopMenu.AddItem(sBuffer, TopMenu_HandleHelp, GetHelpCategory());
 			}
 		}
 	}
@@ -176,13 +171,13 @@ public Native_RegisterUpgradeType(Handle:plugin, numParams)
 	upgrade[UPGR_translationCallback] = INVALID_FUNCTION;
 	upgrade[UPGR_resetCallback] = INVALID_FUNCTION;
 	upgrade[UPGR_plugin] = plugin;
-	upgrade[UPGR_visualsConvar] = INVALID_HANDLE;
-	upgrade[UPGR_soundsConvar] = INVALID_HANDLE;
+	upgrade[UPGR_visualsConvar] = null;
+	upgrade[UPGR_soundsConvar] = null;
 	strcopy(upgrade[UPGR_name], MAX_UPGRADE_NAME_LENGTH, sName);
 	strcopy(upgrade[UPGR_shortName], MAX_UPGRADE_SHORTNAME_LENGTH, sShortName);
 	strcopy(upgrade[UPGR_description], MAX_UPGRADE_DESCRIPTION_LENGTH, sDescription);
 	
-	decl String:sCvarName[64], String:sCvarDescription[256], String:sValue[16];
+	char sCvarName[64], sCvarDescription[256], sValue[16];
 	
 	// Make sure the subfolder exists.
 	if(!DirExists("cfg/sourcemod/smrpg"))
@@ -196,72 +191,72 @@ public Native_RegisterUpgradeType(Handle:plugin, numParams)
 	// Register convars
 	Format(sCvarName, sizeof(sCvarName), "smrpg_%s_enable", sShortName);
 	Format(sCvarDescription, sizeof(sCvarDescription), "Enables (1) or disables (0) the %s upgrade.", sName);
-	IntToString(_:bDefaultEnable, sValue, sizeof(sValue));
-	new Handle:hCvar = AutoExecConfig_CreateConVar(sCvarName, sValue, sCvarDescription, 0, true, 0.0, true, 1.0);
-	HookConVarChange(hCvar, ConVar_UpgradeChanged);
+	IntToString(view_as<int>(bDefaultEnable), sValue, sizeof(sValue));
+	ConVar hCvar = AutoExecConfig_CreateConVar(sCvarName, sValue, sCvarDescription, 0, true, 0.0, true, 1.0);
+	hCvar.AddChangeHook(ConVar_UpgradeChanged);
 	upgrade[UPGR_enableConvar] = hCvar;
-	upgrade[UPGR_enabled] = GetConVarBool(hCvar);
+	upgrade[UPGR_enabled] = hCvar.BoolValue;
 	
 	// TODO: Handle maxlevel > maxlevelbarrier etc. rpgi.cpp CVARItemMaxLvl!
 	Format(sCvarName, sizeof(sCvarName), "smrpg_%s_maxlevel", sShortName);
 	Format(sCvarDescription, sizeof(sCvarDescription), "%s upgrade maximum level. This is the maximum level players can reach for this upgrade.\nWhen changed, all players who bought a higher level before are refunded with the full upgrade costs and set down to the new maxlevel.", sName);
 	IntToString(iDefaultMaxLevel, sValue, sizeof(sValue));
 	hCvar = AutoExecConfig_CreateConVar(sCvarName, sValue, sCvarDescription, 0, true, 1.0);
-	HookConVarChange(hCvar, ConVar_UpgradeMaxLevelChanged);
+	hCvar.AddChangeHook(ConVar_UpgradeMaxLevelChanged);
 	upgrade[UPGR_maxLevelConvar] = hCvar;
-	upgrade[UPGR_maxLevel] = GetConVarInt(hCvar);
+	upgrade[UPGR_maxLevel] = hCvar.IntValue;
 	
 	Format(sCvarName, sizeof(sCvarName), "smrpg_%s_startlevel", sShortName);
 	Format(sCvarDescription, sizeof(sCvarDescription), "%s upgrade start level. The initial levels players get of this upgrade when they first join the server.", sName);
 	hCvar = AutoExecConfig_CreateConVar(sCvarName, "0", sCvarDescription, 0, true, 0.0);
-	HookConVarChange(hCvar, ConVar_UpgradeChanged);
+	hCvar.AddChangeHook(ConVar_UpgradeChanged);
 	upgrade[UPGR_startLevelConvar] = hCvar;
-	upgrade[UPGR_startLevel] = GetConVarInt(hCvar);
+	upgrade[UPGR_startLevel] = hCvar.IntValue;
 	if (upgrade[UPGR_startLevel] > upgrade[UPGR_maxLevel])
 	{
 		LogError("Upgrade %s smrpg_%s_startlevel convar (%d) is set higher than the maxlevel (%d). Clamping.", sName, sShortName, upgrade[UPGR_startLevel], upgrade[UPGR_maxLevel]);
 		upgrade[UPGR_startLevel] = upgrade[UPGR_maxLevel];
-		SetConVarInt(hCvar, upgrade[UPGR_startLevel]);
+		hCvar.SetInt(upgrade[UPGR_startLevel]);
 	}
 	
 	Format(sCvarName, sizeof(sCvarName), "smrpg_%s_cost", sShortName);
 	Format(sCvarDescription, sizeof(sCvarDescription), "%s upgrade start cost. The initial amount of credits the first level of this upgrade costs.", sName);
 	IntToString(iDefaultStartCost, sValue, sizeof(sValue));
 	hCvar = AutoExecConfig_CreateConVar(sCvarName, sValue, sCvarDescription, 0, true, 0.0);
-	HookConVarChange(hCvar, ConVar_UpgradeChanged);
+	hCvar.AddChangeHook(ConVar_UpgradeChanged);
 	upgrade[UPGR_startCostConvar] = hCvar;
-	upgrade[UPGR_startCost] = GetConVarInt(hCvar);
+	upgrade[UPGR_startCost] = hCvar.IntValue;
 	
 	Format(sCvarName, sizeof(sCvarName), "smrpg_%s_icost", sShortName);
 	Format(sCvarDescription, sizeof(sCvarDescription), "%s upgrade cost increment for each level. The amount of credits added to the costs for each level: Buy upgrade level x -> startcost + x * incrementcost.", sName);
 	IntToString(iDefaultCostInc, sValue, sizeof(sValue));
 	hCvar = AutoExecConfig_CreateConVar(sCvarName, sValue, sCvarDescription, 0, true, 0.0);
-	HookConVarChange(hCvar, ConVar_UpgradeChanged);
+	hCvar.AddChangeHook(ConVar_UpgradeChanged);
 	upgrade[UPGR_incCostConvar] = hCvar;
-	upgrade[UPGR_incCost] = GetConVarInt(hCvar);
+	upgrade[UPGR_incCost] = hCvar.IntValue;
 	
 	Format(sCvarName, sizeof(sCvarName), "smrpg_%s_adminflag", sShortName);
 	Format(sCvarDescription, sizeof(sCvarDescription), "Required admin flag to use this upgrade. Leave blank to allow everyone to use this upgrade. This also checks for a \"smrpg_upgrade_%s\" admin override for permissions.", sShortName);
 	GetAdminFlagStringFromBits(iDefaultAdminFlags, sValue, sizeof(sValue));
 	hCvar = AutoExecConfig_CreateConVar(sCvarName, sValue, sCvarDescription, 0, true, 0.0);
-	HookConVarChange(hCvar, ConVar_UpgradeChanged);
+	hCvar.AddChangeHook(ConVar_UpgradeChanged);
 	upgrade[UPGR_adminFlagConvar] = hCvar;
-	GetConVarString(hCvar, sValue, sizeof(sValue));
+	hCvar.GetString(sValue, sizeof(sValue));
 	upgrade[UPGR_adminFlag] = ReadFlagString(sValue);
 	
 	Format(sCvarName, sizeof(sCvarName), "smrpg_%s_allowbots", sShortName);
 	Format(sCvarDescription, sizeof(sCvarDescription), "Allow bots to use the %s upgrade?", sName);
 	hCvar = AutoExecConfig_CreateConVar(sCvarName, "1", sCvarDescription, 0, true, 0.0, true, 1.0);
-	HookConVarChange(hCvar, ConVar_UpgradeChanged);
+	hCvar.AddChangeHook(ConVar_UpgradeChanged);
 	upgrade[UPGR_botsConvar] = hCvar;
-	upgrade[UPGR_allowBots] = GetConVarBool(hCvar);
+	upgrade[UPGR_allowBots] = hCvar.BoolValue;
 	
 	Format(sCvarName, sizeof(sCvarName), "smrpg_%s_teamlock", sShortName);
 	Format(sCvarDescription, sizeof(sCvarDescription), "Restrict access to the %s upgrade to a team?\nOptions:\n\t0: Disable restriction and allow the upgrade to be used by players in any team.\n\t2: Only allow players of the RED/Terrorist team to use this upgrade.\n\t3: Only allow players of the BLU/Counter-Terrorist team to use this upgrade.", sName);
 	hCvar = AutoExecConfig_CreateConVar(sCvarName, "0", sCvarDescription, 0, true, 0.0, true, 3.0);
-	HookConVarChange(hCvar, ConVar_UpgradeChanged);
+	hCvar.AddChangeHook(ConVar_UpgradeChanged);
 	upgrade[UPGR_teamlockConvar] = hCvar;
-	upgrade[UPGR_teamlock] = GetConVarInt(hCvar);
+	upgrade[UPGR_teamlock] = hCvar.IntValue;
 	
 	AutoExecConfig_ExecuteFile();
 	
@@ -275,10 +270,10 @@ public Native_RegisterUpgradeType(Handle:plugin, numParams)
 	// It's a new upgrade. Insert it.
 	else
 	{
-		PushArrayArray(g_hUpgrades, upgrade[0], _:InternalUpgradeInfo);
+		g_hUpgrades.PushArray(upgrade[0], view_as<int>(InternalUpgradeInfo));
 		
 		// New upgrade! Add it to each connected player's list
-		for(new i=1;i<=MaxClients;i++)
+		for(int i=1;i<=MaxClients;i++)
 		{
 			if(IsClientConnected(i))
 			{
@@ -307,19 +302,20 @@ public Native_RegisterUpgradeType(Handle:plugin, numParams)
 			RequestFrame(RequestFrame_OnFrame, upgrade[UPGR_index]);
 		}
 	}
+	return 0;
 }
 
-// native SMRPG_UnregisterUpgradeType(const String:shortname[]);
-public Native_UnregisterUpgradeType(Handle:plugin, numParams)
+// native void SMRPG_UnregisterUpgradeType(const char[] shortname);
+public int Native_UnregisterUpgradeType(Handle plugin, int numParams)
 {
-	new len;
+	int len;
 	GetNativeStringLength(1, len);
-	new String:sShortName[len+1];
+	char[] sShortName = new char[len+1];
 	GetNativeString(1, sShortName, len+1);
 	
-	new iSize = GetArraySize(g_hUpgrades);
-	new upgrade[InternalUpgradeInfo];
-	for(new i=0;i<iSize;i++)
+	int iSize = g_hUpgrades.Length;
+	int upgrade[InternalUpgradeInfo];
+	for(int i=0;i<iSize;i++)
 	{
 		GetUpgradeByIndex(i, upgrade);
 		
@@ -344,46 +340,43 @@ public Native_UnregisterUpgradeType(Handle:plugin, numParams)
 	ThrowNativeError(SP_ERROR_NATIVE, "No upgrade named \"%s\" loaded.", sShortName);
 }
 
-// native Handle:SMRPG_CreateUpgradeConVar(const String:shortname[], const String:name[], const String:defaultValue[], const String:description[]="", flags=0, bool:hasMin=false, Float:min=0.0, bool:hasMax=false, Float:max=0.0);
-public Native_CreateUpgradeConVar(Handle:plugin, numParams)
+// native ConVar SMRPG_CreateUpgradeConVar(const char[] shortname, const char[] name, const char[] defaultValue, const char[] description="", flags=0, bool hasMin=false, float min=0.0, bool hasMax=false, float max=0.0);
+public int Native_CreateUpgradeConVar(Handle plugin, int numParams)
 {
-	new len;
+	int len;
 	GetNativeStringLength(1, len);
-	new String:sShortName[len+1];
+	char[] sShortName = new char[len+1];
 	GetNativeString(1, sShortName, len+1);
 	
-	new upgrade[InternalUpgradeInfo];
+	int upgrade[InternalUpgradeInfo];
 	if(!GetUpgradeByShortname(sShortName, upgrade) || !IsValidUpgrade(upgrade))
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "No upgrade named \"%s\" loaded.", sShortName);
-		return _:INVALID_HANDLE;
-	}
+		return ThrowNativeError(SP_ERROR_NATIVE, "No upgrade named \"%s\" loaded.", sShortName);
 	
 	GetNativeStringLength(2, len);
-	new String:name[len+1];
+	char[] name = new char[len+1];
 	GetNativeString(2, name, len+1);
 	
 	GetNativeStringLength(3, len);
-	new String:defaultValue[len+1];
+	char[] defaultValue = new char[len+1];
 	GetNativeString(3, defaultValue, len+1);
 	
 	GetNativeStringLength(4, len);
-	new String:description[len+1];
+	char[] description = new char[len+1];
 	GetNativeString(4, description, len+1);
 	
-	new flags = GetNativeCell(5);
-	new bool:hasMin = bool:GetNativeCell(6);
-	new Float:min = Float:GetNativeCell(7);
-	new bool:hasMax = bool:GetNativeCell(8);
-	new Float:max = Float:GetNativeCell(9);
+	int flags = GetNativeCell(5);
+	bool hasMin = view_as<bool>(GetNativeCell(6));
+	float min = view_as<float>(GetNativeCell(7));
+	bool hasMax = view_as<bool>(GetNativeCell(8));
+	float max = view_as<float>(GetNativeCell(9));
 	
-	decl String:sFileName[PLATFORM_MAX_PATH];
+	char sFileName[PLATFORM_MAX_PATH];
 	Format(sFileName, sizeof(sFileName), "smrpg_upgrade_%s", sShortName);
 	AutoExecConfig_SetFile(sFileName, "sourcemod/smrpg");
 	AutoExecConfig_SetCreateFile(true);
 	AutoExecConfig_SetPlugin(plugin);
 	
-	new Handle:hCvar = AutoExecConfig_CreateConVar(name, defaultValue, description, flags, hasMin, min, hasMax, max);
+	ConVar hCvar = AutoExecConfig_CreateConVar(name, defaultValue, description, flags, hasMin, min, hasMax, max);
 	
 	// AutoExecConfig_ExecuteFile(); // No need to call AutoExecConfig again. The file is already in the list.
 	// Just execute the config again, to get the values?
@@ -391,46 +384,43 @@ public Native_CreateUpgradeConVar(Handle:plugin, numParams)
 	
 	//AutoExecConfig_CleanFile();
 	
-	return _:hCvar;
+	return view_as<int>(hCvar);
 }
 
-// native bool:SMRPG_UpgradeExists(const String:shortname[]);
-public Native_UpgradeExists(Handle:plugin, numParams)
+// native bool SMRPG_UpgradeExists(const char[] shortname);
+public int Native_UpgradeExists(Handle plugin, int numParams)
 {
-	new len;
+	int len;
 	GetNativeStringLength(1, len);
-	new String:sShortName[len+1];
+	char[] sShortName = new char[len+1];
 	GetNativeString(1, sShortName, len+1);
 	
-	new upgrade[InternalUpgradeInfo];
+	int upgrade[InternalUpgradeInfo];
 	if(!GetUpgradeByShortname(sShortName, upgrade))
 		return false;
 	
 	return IsValidUpgrade(upgrade);
 }
 
-// native SMRPG_GetUpgradeInfo(const String:shortname[], upgrade[UpgradeInfo]);
-public Native_GetUpgradeInfo(Handle:plugin, numParams)
+// native SMRPG_GetUpgradeInfo(const char[] shortname, upgrade[UpgradeInfo]);
+public int Native_GetUpgradeInfo(Handle plugin, int numParams)
 {
-	new len;
+	int len;
 	GetNativeStringLength(1, len);
-	new String:sShortName[len+1];
+	char[] sShortName = new char[len+1];
 	GetNativeString(1, sShortName, len+1);
 	
-	new upgrade[InternalUpgradeInfo];
+	int upgrade[InternalUpgradeInfo];
 	if(!GetUpgradeByShortname(sShortName, upgrade) || !IsValidUpgrade(upgrade))
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "No upgrade named \"%s\" loaded.", sShortName);
-		return;
-	}
+		return ThrowNativeError(SP_ERROR_NATIVE, "No upgrade named \"%s\" loaded.", sShortName);
 	
 	// Keep this future proof. If the calling plugin wants more information than we got, only return as much as we know.
 	// If it wants less info, only write less.
-	new arraysize = GetNativeCell(3);
-	if(arraysize > _:UpgradeInfo)
-		arraysize = _:UpgradeInfo;
+	int arraysize = GetNativeCell(3);
+	if(arraysize > view_as<int>(UpgradeInfo))
+		arraysize = view_as<int>(UpgradeInfo);
 	
-	new publicUpgrade[UpgradeInfo];
+	int publicUpgrade[UpgradeInfo];
 	publicUpgrade[UI_enabled] = upgrade[UPGR_enabled];
 	publicUpgrade[UI_maxLevelBarrier] = upgrade[UPGR_maxLevelBarrier];
 	publicUpgrade[UI_maxLevel] = upgrade[UPGR_maxLevel];
@@ -444,87 +434,70 @@ public Native_GetUpgradeInfo(Handle:plugin, numParams)
 	publicUpgrade[UI_startLevel] = upgrade[UPGR_startLevel];
 	
 	SetNativeArray(2, publicUpgrade[0], arraysize);
+	return 0;
 }
 
-// native SMRPG_SetUpgradeTranslationCallback(const String:shortname[], SMRPG_TranslateUpgrade:cb);
-public Native_SetUpgradeTranslationCallback(Handle:plugin, numParams)
+// native void SMRPG_SetUpgradeTranslationCallback(const char[] shortname, SMRPG_TranslateUpgrade cb);
+public int Native_SetUpgradeTranslationCallback(Handle plugin, int numParams)
 {
-	new len;
+	int len;
 	GetNativeStringLength(1, len);
-	new String:sShortName[len+1];
+	char[] sShortName = new char[len+1];
 	GetNativeString(1, sShortName, len+1);
 	
-	new upgrade[InternalUpgradeInfo];
+	int upgrade[InternalUpgradeInfo];
 	if(!GetUpgradeByShortname(sShortName, upgrade) || !IsValidUpgrade(upgrade))
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "No upgrade named \"%s\" loaded.", sShortName);
-		return;
-	}
+		return ThrowNativeError(SP_ERROR_NATIVE, "No upgrade named \"%s\" loaded.", sShortName);
 	
 	if(upgrade[UPGR_plugin] != plugin)
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "ResetEffect callback has to be from the same plugin the upgrade was registered in.");
-		return;
-	}
+		return ThrowNativeError(SP_ERROR_NATIVE, "ResetEffect callback has to be from the same plugin the upgrade was registered in.");
 	
-#if SOURCEMOD_V_MAJOR >= 1 && SOURCEMOD_V_MINOR >= 7
 	upgrade[UPGR_translationCallback] = GetNativeFunction(2);
-#else
-	upgrade[UPGR_translationCallback] = Function:GetNativeCell(2);
-#endif
 	
 	SaveUpgradeConfig(upgrade);
+	return 0;
 }
 
-// native SMRPG_SetUpgradeResetCallback(const String:shortname[], SMRPG_ResetEffectCB:cb);
-public Native_SetUpgradeResetCallback(Handle:plugin, numParams)
+// native void SMRPG_SetUpgradeResetCallback(const char[] shortname, SMRPG_ResetEffectCB cb);
+public int Native_SetUpgradeResetCallback(Handle plugin, int numParams)
 {
-	new len;
+	int len;
 	GetNativeStringLength(1, len);
-	new String:sShortName[len+1];
+	char[] sShortName = new char[len+1];
 	GetNativeString(1, sShortName, len+1);
 	
-	new upgrade[InternalUpgradeInfo];
+	int upgrade[InternalUpgradeInfo];
 	if(!GetUpgradeByShortname(sShortName, upgrade) || !IsValidUpgrade(upgrade))
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "No upgrade named \"%s\" loaded.", sShortName);
-		return;
-	}
+		return ThrowNativeError(SP_ERROR_NATIVE, "No upgrade named \"%s\" loaded.", sShortName);
 	
 	if(upgrade[UPGR_plugin] != plugin)
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "Translation callback has to be from the same plugin the upgrade was registered in.");
-		return;
-	}
+		return ThrowNativeError(SP_ERROR_NATIVE, "Translation callback has to be from the same plugin the upgrade was registered in.");
 	
-#if SOURCEMOD_V_MAJOR >= 1 && SOURCEMOD_V_MINOR >= 7
 	upgrade[UPGR_resetCallback] = GetNativeFunction(2);
-#else
-	upgrade[UPGR_resetCallback] = Function:GetNativeCell(2);
-#endif
 	
 	SaveUpgradeConfig(upgrade);
+	return 0;
 }
 
-// native SMRPG_SetUpgradeDefaultCosmeticEffect(const String:shortname[], SMRPG_FX:effect, bool:bDefaultEnable);
-public Native_SetUpgradeDefaultCosmeticEffect(Handle:plugin, numParams)
+// native void SMRPG_SetUpgradeDefaultCosmeticEffect(const char[] shortname, SMRPG_FX effect, bool bDefaultEnable);
+public int Native_SetUpgradeDefaultCosmeticEffect(Handle plugin, int numParams)
 {
-	new len;
+	int len;
 	GetNativeStringLength(1, len);
-	new String:sShortName[len+1];
+	char[] sShortName = new char[len+1];
 	GetNativeString(1, sShortName, len+1);
 	
-	new upgrade[InternalUpgradeInfo];
+	int upgrade[InternalUpgradeInfo];
 	if(!GetUpgradeByShortname(sShortName, upgrade) || !IsValidUpgrade(upgrade))
 	{
 		ThrowNativeError(SP_ERROR_NATIVE, "No upgrade named \"%s\" loaded.", sShortName);
 		return;
 	}
 	
-	new SMRPG_FX:iFX = SMRPG_FX:GetNativeCell(2);
-	new bool:bDefaultEnable = GetNativeCell(3);
+	SMRPG_FX iFX = view_as<SMRPG_FX>(GetNativeCell(2));
+	bool bDefaultEnable = view_as<bool>(GetNativeCell(3));
 	
-	decl String:sCvarName[64], String:sCvarDescription[256];
+	char sCvarName[64], sCvarDescription[256];
 	
 	Format(sCvarName, sizeof(sCvarName), "smrpg_upgrade_%s", sShortName);
 	AutoExecConfig_SetFile(sCvarName, "sourcemod/smrpg");
@@ -537,101 +510,87 @@ public Native_SetUpgradeDefaultCosmeticEffect(Handle:plugin, numParams)
 		{
 			Format(sCvarName, sizeof(sCvarName), "smrpg_%s_visuals", sShortName);
 			Format(sCvarDescription, sizeof(sCvarDescription), "Show the visual effects of upgrade %s by default?", upgrade[UPGR_name]);
-			new Handle:hCvar = AutoExecConfig_CreateConVar(sCvarName, (bDefaultEnable?"1":"0"), sCvarDescription, 0, true, 0.0, true, 1.0);
-			HookConVarChange(hCvar, ConVar_UpgradeChanged);
+			ConVar hCvar = AutoExecConfig_CreateConVar(sCvarName, (bDefaultEnable?"1":"0"), sCvarDescription, 0, true, 0.0, true, 1.0);
+			hCvar.AddChangeHook(ConVar_UpgradeChanged);
 			upgrade[UPGR_visualsConvar] = hCvar;
-			upgrade[UPGR_enableVisuals] = GetConVarBool(hCvar);
+			upgrade[UPGR_enableVisuals] = hCvar.BoolValue;
 		}
 		case SMRPG_FX_Sounds:
 		{
 			Format(sCvarName, sizeof(sCvarName), "smrpg_%s_sounds", sShortName);
 			Format(sCvarDescription, sizeof(sCvarDescription), "Play the sounds of upgrade %s by default?", upgrade[UPGR_name]);
-			new Handle:hCvar = AutoExecConfig_CreateConVar(sCvarName, (bDefaultEnable?"1":"0"), sCvarDescription, 0, true, 0.0, true, 1.0);
-			HookConVarChange(hCvar, ConVar_UpgradeChanged);
+			ConVar hCvar = AutoExecConfig_CreateConVar(sCvarName, (bDefaultEnable?"1":"0"), sCvarDescription, 0, true, 0.0, true, 1.0);
+			hCvar.AddChangeHook(ConVar_UpgradeChanged);
 			upgrade[UPGR_soundsConvar] = hCvar;
-			upgrade[UPGR_enableSounds] = GetConVarBool(hCvar);
+			upgrade[UPGR_enableSounds] = hCvar.BoolValue;
 		}
 	}
 	
 	SaveUpgradeConfig(upgrade);
 }
 
-// native SMRPG_ResetUpgradeEffectOnClient(client, const String:shortname[]);
-public Native_ResetUpgradeEffectOnClient(Handle:plugin, numParams)
+// native SMRPG_ResetUpgradeEffectOnClient(int client, const char[] shortname);
+public int Native_ResetUpgradeEffectOnClient(Handle plugin, int numParams)
 {
-	new client = GetNativeCell(1);
+	int client = GetNativeCell(1);
 	if(client < 0 || client > MaxClients)
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
-		return;
-	}
+		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
 	
-	new len;
+	int len;
 	GetNativeStringLength(2, len);
-	new String:sShortName[len+1];
+	char[] sShortName = new char[len+1];
 	GetNativeString(2, sShortName, len+1);
 	
-	new upgrade[InternalUpgradeInfo];
+	int upgrade[InternalUpgradeInfo];
 	if(!GetUpgradeByShortname(sShortName, upgrade) || !IsValidUpgrade(upgrade))
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "No upgrade named \"%s\" loaded.", sShortName);
-		return;
-	}
+		return ThrowNativeError(SP_ERROR_NATIVE, "No upgrade named \"%s\" loaded.", sShortName);
 	
 	// If there is no reset callback registered, we can't do anything here.
 	if(upgrade[UPGR_resetCallback] == INVALID_FUNCTION)
-		return;
+		return 0;
 	
 	Call_StartFunction(upgrade[UPGR_plugin], upgrade[UPGR_resetCallback]);
 	Call_PushCell(client);
 	Call_Finish();
+	return 0;
 }
 
-// native bool:SMRPG_RunUpgradeEffect(target, const String:shortname[], issuer=-1);
-public Native_RunUpgradeEffect(Handle:plugin, numParams)
+// native bool SMRPG_RunUpgradeEffect(int target, const char[] shortname, int issuer=-1);
+public int Native_RunUpgradeEffect(Handle plugin, int numParams)
 {
-	new target = GetNativeCell(1);
+	int target = GetNativeCell(1);
 	if(target < 0 || target > MaxClients)
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "Invalid target client index %d.", target);
-		return false;
-	}
+		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid target client index %d.", target);
 	
-	new len;
+	int len;
 	GetNativeStringLength(2, len);
-	new String:sShortName[len+1];
+	char[] sShortName = new char[len+1];
 	GetNativeString(2, sShortName, len+1);
 	
 	// Validate the client index of the person starting the effect
-	new issuer = -1;
+	int issuer = -1;
 	if (numParams > 2)
 	{
 		issuer = GetNativeCell(3);
 		if (issuer < -1 || issuer > MaxClients)
-		{
-			ThrowNativeError(SP_ERROR_NATIVE, "Invalid issuer client index %d.", issuer);
-			return false;
-		}
+			return ThrowNativeError(SP_ERROR_NATIVE, "Invalid issuer client index %d.", issuer);
 	}
 	
 	// If there is no explicit different issuer given, the upgrade effect is on the target itself.
 	if (issuer == -1)
 		issuer = target;
 	
-	new upgrade[InternalUpgradeInfo];
+	int upgrade[InternalUpgradeInfo];
 	if(!GetUpgradeByShortname(sShortName, upgrade) || !IsValidUpgrade(upgrade))
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "No upgrade named \"%s\" loaded.", sShortName);
-		return false;
-	}
+		return ThrowNativeError(SP_ERROR_NATIVE, "No upgrade named \"%s\" loaded.", sShortName);
 
 	// Don't allow this client to use the upgrade, if he doesn't have the required admin flag.
 	// Don't inform the other plugins at all.
 	if(!HasAccessToUpgrade(issuer, upgrade))
 	{
 		// Might still allow them to use the effects of the upgrade, if they already got a level for it.
-		new iLevel = GetClientPurchasedUpgradeLevel(issuer, upgrade[UPGR_index]);
-		if(iLevel <= 0 || !GetConVarBool(g_hCVAllowPresentUpgradeUsage))
+		int iLevel = GetClientPurchasedUpgradeLevel(issuer, upgrade[UPGR_index]);
+		if(iLevel <= 0 || !g_hCVAllowPresentUpgradeUsage.BoolValue)
 			return false;
 	}
 	
@@ -641,11 +600,9 @@ public Native_RunUpgradeEffect(Handle:plugin, numParams)
 	
 	// Don't allow bots to use this upgrade at all and don't inform other plugins that this effect would be about to start.
 	if(!upgrade[UPGR_allowBots] && IsFakeClient(issuer))
-	{
 		return false;
-	}
 	
-	new Action:result;
+	Action result;
 	Call_StartForward(g_hfwdOnUpgradeEffect);
 	Call_PushCell(target);
 	Call_PushString(sShortName);
@@ -655,27 +612,21 @@ public Native_RunUpgradeEffect(Handle:plugin, numParams)
 	return result < Plugin_Handled;
 }
 
-// native bool:SMRPG_CheckUpgradeAccess(client, const String:shortname[]);
-public Native_CheckUpgradeAccess(Handle:plugin, numParams)
+// native bool SMRPG_CheckUpgradeAccess(int client, const char[] shortname);
+public int Native_CheckUpgradeAccess(Handle plugin, int numParams)
 {
-	new client = GetNativeCell(1);
+	int client = GetNativeCell(1);
 	if(client < 0 || client > MaxClients)
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
-		return false;
-	}
+		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
 	
-	new len;
+	int len;
 	GetNativeStringLength(2, len);
-	new String:sShortName[len+1];
+	char[] sShortName = new char[len+1];
 	GetNativeString(2, sShortName, len+1);
 	
-	new upgrade[InternalUpgradeInfo];
+	int upgrade[InternalUpgradeInfo];
 	if(!GetUpgradeByShortname(sShortName, upgrade) || !IsValidUpgrade(upgrade))
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "No upgrade named \"%s\" loaded.", sShortName);
-		return false;
-	}
+		return ThrowNativeError(SP_ERROR_NATIVE, "No upgrade named \"%s\" loaded.", sShortName);
 	
 	return HasAccessToUpgrade(client, upgrade);
 }
@@ -685,13 +636,13 @@ public Native_CheckUpgradeAccess(Handle:plugin, numParams)
  */
 // This is called one frame after some upgrade plugin reregistered itself after reload.
 // This way OnLibraryAdded was run completely in the upgrade plugin and all convars and other stuff is initialized correctly.
-public RequestFrame_OnFrame(any:upgradeindex)
+public void RequestFrame_OnFrame(any upgradeindex)
 {
-	new upgrade[InternalUpgradeInfo];
+	int upgrade[InternalUpgradeInfo];
 	GetUpgradeByIndex(upgradeindex, upgrade);
 	
 	// Inform the upgrade plugin, that these players need the effect applied again.
-	for(new i=1;i<=MaxClients;i++)
+	for(int i=1;i<=MaxClients;i++)
 	{
 		if(!IsClientInGame(i))
 			continue;
@@ -710,25 +661,20 @@ public RequestFrame_OnFrame(any:upgradeindex)
 /**
  * Helpers
  */
-stock Handle:GetUpgradeList()
+int GetUpgradeCount()
 {
-	return g_hUpgrades;
+	return g_hUpgrades.Length;
 }
 
-GetUpgradeCount()
+void GetUpgradeByIndex(int iIndex, int upgrade[InternalUpgradeInfo])
 {
-	return GetArraySize(g_hUpgrades);
+	GetArrayArray(g_hUpgrades, iIndex, upgrade[0], view_as<int>(InternalUpgradeInfo));
 }
 
-GetUpgradeByIndex(iIndex, upgrade[InternalUpgradeInfo])
+bool GetUpgradeByShortname(const char[] sShortName, int upgrade[InternalUpgradeInfo])
 {
-	GetArrayArray(g_hUpgrades, iIndex, upgrade[0], _:InternalUpgradeInfo);
-}
-
-bool:GetUpgradeByShortname(const String:sShortName[], upgrade[InternalUpgradeInfo])
-{
-	new iSize = GetArraySize(g_hUpgrades);
-	for(new i=0;i<iSize;i++)
+	int iSize = g_hUpgrades.Length;
+	for(int i=0;i<iSize;i++)
 	{
 		GetUpgradeByIndex(i, upgrade);
 		
@@ -740,10 +686,10 @@ bool:GetUpgradeByShortname(const String:sShortName[], upgrade[InternalUpgradeInf
 	return false;
 }
 
-bool:GetUpgradeByDatabaseId(iDatabaseId, upgrade[InternalUpgradeInfo])
+bool GetUpgradeByDatabaseId(int iDatabaseId, int upgrade[InternalUpgradeInfo])
 {
-	new iSize = GetArraySize(g_hUpgrades);
-	for(new i=0;i<iSize;i++)
+	int iSize = g_hUpgrades.Length;
+	for(int i=0;i<iSize;i++)
 	{
 		GetUpgradeByIndex(i, upgrade);
 		
@@ -755,9 +701,9 @@ bool:GetUpgradeByDatabaseId(iDatabaseId, upgrade[InternalUpgradeInfo])
 	return false;
 }
 
-stock GetUpgradeCost(iItemIndex, iLevel)
+int GetUpgradeCost(int iItemIndex, int iLevel)
 {
-	new upgrade[InternalUpgradeInfo];
+	int upgrade[InternalUpgradeInfo];
 	GetUpgradeByIndex(iItemIndex, upgrade);
 	if(iLevel <= 1)
 		return upgrade[UPGR_startCost];
@@ -765,19 +711,19 @@ stock GetUpgradeCost(iItemIndex, iLevel)
 		return upgrade[UPGR_startCost] + upgrade[UPGR_incCost] * (iLevel-1);
 }
 
-stock GetUpgradeSale(iItemIndex, iLevel)
+int GetUpgradeSale(int iItemIndex, int iLevel)
 {
-	new iCost = GetUpgradeCost(iItemIndex, iLevel);
+	int iCost = GetUpgradeCost(iItemIndex, iLevel);
 	
-	new Float:fSalePercent = GetConVarFloat(g_hCVSalePercent);
+	float fSalePercent = g_hCVSalePercent.FloatValue;
 	if(fSalePercent == 1.0)
 		return iCost;
 	
 	if(iLevel <= 1)
 		return iCost;
 	
-	new iSale = RoundToFloor(float(iCost) * (fSalePercent > 1.0 ? (fSalePercent/100.0) : fSalePercent) + 0.5);
-	new iCreditsInc = GetConVarInt(g_hCVCreditsInc);
+	int iSale = RoundToFloor(float(iCost) * (fSalePercent > 1.0 ? (fSalePercent/100.0) : fSalePercent) + 0.5);
+	int iCreditsInc = g_hCVCreditsInc.IntValue;
 	if(iCreditsInc <= 1)
 		return iSale;
 	else
@@ -789,7 +735,7 @@ stock GetUpgradeSale(iItemIndex, iLevel)
 	return iSale;
 }
 
-stock bool:IsValidUpgrade(upgrade[InternalUpgradeInfo])
+bool IsValidUpgrade(int upgrade[InternalUpgradeInfo])
 {
 	// This plugin is available (again)?
 	if(IsValidPlugin(upgrade[UPGR_plugin]))
@@ -801,27 +747,27 @@ stock bool:IsValidUpgrade(upgrade[InternalUpgradeInfo])
 	return !upgrade[UPGR_unavailable];
 }
 
-stock SaveUpgradeConfig(upgrade[InternalUpgradeInfo])
+void SaveUpgradeConfig(int upgrade[InternalUpgradeInfo])
 {
-	SetArrayArray(g_hUpgrades, upgrade[UPGR_index], upgrade[0], _:InternalUpgradeInfo);
+	g_hUpgrades.SetArray(upgrade[UPGR_index], upgrade[0], view_as<int>(InternalUpgradeInfo));
 }
 
-stock bool:IsUpgradeEffectActive(client, upgrade[InternalUpgradeInfo])
+bool IsUpgradeEffectActive(int client, int upgrade[InternalUpgradeInfo])
 {
 	if(!IsValidUpgrade(upgrade))
 		return false;
 	
-	new bool:bActive;
-	Call_StartFunction(upgrade[UPRG_plugin], upgrade[UPGR_activeCallback]);
+	bool bActive;
+	Call_StartFunction(upgrade[UPGR_plugin], upgrade[UPGR_activeCallback]);
 	Call_PushCell(client);
 	Call_Finish(bActive);
 	
 	return bActive;
 }
 
-stock bool:HasAccessToUpgrade(client, upgrade[InternalUpgradeInfo])
+bool HasAccessToUpgrade(int client, int upgrade[InternalUpgradeInfo])
 {
-	decl String:sFlag[MAX_UPGRADE_SHORTNAME_LENGTH+15];
+	char sFlag[MAX_UPGRADE_SHORTNAME_LENGTH+15];
 	Format(sFlag, sizeof(sFlag), "smrpg_upgrade_%s", upgrade[UPGR_shortName]);
 	
 	// Don't allow this client to use the upgrade, if he doesn't have the required admin flag.
@@ -829,13 +775,13 @@ stock bool:HasAccessToUpgrade(client, upgrade[InternalUpgradeInfo])
 }
 
 // Checks whether a client is in the correct team, if the upgrade is locked to one.
-stock bool:IsClientInLockedTeam(client, upgrade[InternalUpgradeInfo])
+bool IsClientInLockedTeam(int client, int upgrade[InternalUpgradeInfo])
 {
 	// This upgrade isn't locked at all. No restriction.
 	if(upgrade[UPGR_teamlock] <= 1)
 		return true;
 
-	new iTeam = GetClientTeam(client);
+	int iTeam = GetClientTeam(client);
 	// Always grant access to all upgrades, if the player is in spectator mode.
 	if(iTeam <= 1)
 		return true;
@@ -844,9 +790,9 @@ stock bool:IsClientInLockedTeam(client, upgrade[InternalUpgradeInfo])
 	return iTeam == upgrade[UPGR_teamlock];
 }
 
-GetUpgradeTranslatedName(client, iUpgradeIndex, String:name[], maxlen)
+void GetUpgradeTranslatedName(int client, int iUpgradeIndex, char[] name, int maxlen)
 {
-	new upgrade[InternalUpgradeInfo];
+	int upgrade[InternalUpgradeInfo];
 	GetUpgradeByIndex(iUpgradeIndex, upgrade);
 	
 	strcopy(name, maxlen, upgrade[UPGR_name]);
@@ -864,9 +810,9 @@ GetUpgradeTranslatedName(client, iUpgradeIndex, String:name[], maxlen)
 	Call_Finish();
 }
 
-GetUpgradeTranslatedDescription(client, iUpgradeIndex, String:description[], maxlen)
+void GetUpgradeTranslatedDescription(int client, int iUpgradeIndex, char[] description, int maxlen)
 {
-	new upgrade[InternalUpgradeInfo];
+	int upgrade[InternalUpgradeInfo];
 	GetUpgradeByIndex(iUpgradeIndex, upgrade);
 	
 	strcopy(description, maxlen, upgrade[UPGR_description]);
@@ -884,7 +830,7 @@ GetUpgradeTranslatedDescription(client, iUpgradeIndex, String:description[], max
 	Call_Finish();
 }
 
-CallUpgradeRegisteredForward(const String:sShortName[])
+void CallUpgradeRegisteredForward(const char[] sShortName)
 {
 	// Inform other plugins, that this upgrade is loaded.
 	Call_StartForward(g_hfwdOnUpgradeRegistered);
@@ -896,33 +842,33 @@ CallUpgradeRegisteredForward(const String:sShortName[])
  * Convar change callbacks
  */
 // Cache the new config value
-public ConVar_UpgradeChanged(Handle:convar, const String:oldValue[], const String:newValue[])
+public void ConVar_UpgradeChanged(ConVar convar, const char[] oldValue, const char[] newValue)
 {
-	new iSize = GetArraySize(g_hUpgrades);
-	new upgrade[InternalUpgradeInfo];
-	for(new i=0;i<iSize;i++)
+	int iSize = g_hUpgrades.Length;
+	int upgrade[InternalUpgradeInfo];
+	for(int i=0;i<iSize;i++)
 	{
 		GetUpgradeByIndex(i, upgrade);
 		
 		if(upgrade[UPGR_enableConvar] == convar)
 		{
-			upgrade[UPGR_enabled] = GetConVarBool(convar);
+			upgrade[UPGR_enabled] = convar.BoolValue;
 			SaveUpgradeConfig(upgrade);
 			Call_OnUpgradeSettingsChanged(upgrade[UPGR_shortName]);
 			break;
 		}
 		else if(upgrade[UPGR_startLevelConvar] == convar)
 		{
-			upgrade[UPGR_startLevel] = GetConVarInt(convar);
+			upgrade[UPGR_startLevel] = convar.IntValue;
 			if (upgrade[UPGR_startLevel] > upgrade[UPGR_maxLevel])
 			{
 				LogError("Upgrade %s smrpg_%s_startlevel convar (%d) is set higher than the maxlevel (%d). Clamping.", upgrade[UPGR_name], upgrade[UPGR_shortName], upgrade[UPGR_startLevel], upgrade[UPGR_maxLevel]);
 				upgrade[UPGR_startLevel] = upgrade[UPGR_maxLevel];
 				
 				// Reflect the cap in the convar value as well.
-				UnhookConVarChange(convar, ConVar_UpgradeChanged);
-				SetConVarInt(convar, upgrade[UPGR_startLevel]);
-				HookConVarChange(convar, ConVar_UpgradeChanged);
+				convar.RemoveChangeHook(ConVar_UpgradeChanged);
+				convar.SetInt(upgrade[UPGR_startLevel]);
+				convar.AddChangeHook(ConVar_UpgradeChanged);
 			}
 			
 			SaveUpgradeConfig(upgrade);
@@ -931,22 +877,22 @@ public ConVar_UpgradeChanged(Handle:convar, const String:oldValue[], const Strin
 		}
 		else if(upgrade[UPGR_startCostConvar] == convar)
 		{
-			upgrade[UPGR_startCost] = GetConVarInt(convar);
+			upgrade[UPGR_startCost] = convar.IntValue;
 			SaveUpgradeConfig(upgrade);
 			Call_OnUpgradeSettingsChanged(upgrade[UPGR_shortName]);
 			break;
 		}
 		else if(upgrade[UPGR_incCostConvar] == convar)
 		{
-			upgrade[UPGR_incCost] = GetConVarInt(convar);
+			upgrade[UPGR_incCost] = convar.IntValue;
 			SaveUpgradeConfig(upgrade);
 			Call_OnUpgradeSettingsChanged(upgrade[UPGR_shortName]);
 			break;
 		}
 		else if(upgrade[UPGR_adminFlagConvar] == convar)
 		{
-			decl String:sValue[30];
-			GetConVarString(convar, sValue, sizeof(sValue));
+			char sValue[30];
+			convar.GetString(sValue, sizeof(sValue));
 			upgrade[UPGR_adminFlag] = ReadFlagString(sValue);
 			SaveUpgradeConfig(upgrade);
 			Call_OnUpgradeSettingsChanged(upgrade[UPGR_shortName]);
@@ -954,28 +900,28 @@ public ConVar_UpgradeChanged(Handle:convar, const String:oldValue[], const Strin
 		}
 		else if(upgrade[UPGR_visualsConvar] == convar)
 		{
-			upgrade[UPGR_enableVisuals] = GetConVarBool(convar);
+			upgrade[UPGR_enableVisuals] = convar.BoolValue;
 			SaveUpgradeConfig(upgrade);
 			Call_OnUpgradeSettingsChanged(upgrade[UPGR_shortName]);
 			break;
 		}
 		else if(upgrade[UPGR_soundsConvar] == convar)
 		{
-			upgrade[UPGR_enableSounds] = GetConVarBool(convar);
+			upgrade[UPGR_enableSounds] = convar.BoolValue;
 			SaveUpgradeConfig(upgrade);
 			Call_OnUpgradeSettingsChanged(upgrade[UPGR_shortName]);
 			break;
 		}
 		else if(upgrade[UPGR_botsConvar] == convar)
 		{
-			upgrade[UPGR_allowBots] = GetConVarBool(convar);
+			upgrade[UPGR_allowBots] = convar.BoolValue;
 			SaveUpgradeConfig(upgrade);
 			Call_OnUpgradeSettingsChanged(upgrade[UPGR_shortName]);
 			break;
 		}
 		else if(upgrade[UPGR_teamlockConvar] == convar)
 		{
-			upgrade[UPGR_teamlock] = GetConVarInt(convar);
+			upgrade[UPGR_teamlock] = convar.IntValue;
 			// Guarantee to have "0" when disabled.
 			if(upgrade[UPGR_teamlock] == 1)
 				upgrade[UPGR_teamlock] = 0;
@@ -986,11 +932,11 @@ public ConVar_UpgradeChanged(Handle:convar, const String:oldValue[], const Strin
 	}
 }
 
-public ConVar_UpgradeMaxLevelChanged(Handle:convar, const String:oldValue[], const String:newValue[])
+public void ConVar_UpgradeMaxLevelChanged(ConVar convar, const char[] oldValue, const char[] newValue)
 {
-	new iSize = GetArraySize(g_hUpgrades);
-	new upgrade[InternalUpgradeInfo];
-	for(new i;i<iSize;i++)
+	int iSize = g_hUpgrades.Length;
+	int upgrade[InternalUpgradeInfo];
+	for(int i;i<iSize;i++)
 	{
 		GetUpgradeByIndex(i, upgrade);
 		
@@ -998,17 +944,17 @@ public ConVar_UpgradeMaxLevelChanged(Handle:convar, const String:oldValue[], con
 			break;
 	}
 	
-	new iNewMaxLevel = GetConVarInt(convar);
-	new iMaxLevelBarrier = upgrade[UPGR_maxLevelBarrier];
+	int iNewMaxLevel = convar.IntValue;
+	int iMaxLevelBarrier = upgrade[UPGR_maxLevelBarrier];
 	
-	if(iMaxLevelBarrier > 0 && !GetConVarBool(g_hCVIgnoreLevelBarrier) && iNewMaxLevel > iMaxLevelBarrier)
+	if(iMaxLevelBarrier > 0 && !g_hCVIgnoreLevelBarrier.BoolValue && iNewMaxLevel > iMaxLevelBarrier)
 	{
 		iNewMaxLevel = iMaxLevelBarrier;
 		
 		// Reflect the cap in the convar value.
-		UnhookConVarChange(convar, ConVar_UpgradeMaxLevelChanged);
-		SetConVarInt(convar, iNewMaxLevel);
-		HookConVarChange(convar, ConVar_UpgradeMaxLevelChanged);
+		convar.RemoveChangeHook(ConVar_UpgradeMaxLevelChanged);
+		convar.SetInt(iNewMaxLevel);
+		convar.AddChangeHook(ConVar_UpgradeMaxLevelChanged);
 	}
 	
 	upgrade[UPGR_maxLevel] = iNewMaxLevel;
@@ -1016,7 +962,7 @@ public ConVar_UpgradeMaxLevelChanged(Handle:convar, const String:oldValue[], con
 	
 	Call_OnUpgradeSettingsChanged(upgrade[UPGR_shortName]);
 	
-	for(new i=1;i<=MaxClients;i++)
+	for(int i=1;i<=MaxClients;i++)
 	{
 		if(!IsClientInGame(i))
 			continue;
@@ -1029,7 +975,7 @@ public ConVar_UpgradeMaxLevelChanged(Handle:convar, const String:oldValue[], con
 	}
 }
 
-stock Call_OnUpgradeSettingsChanged(const String:sShortname[])
+void Call_OnUpgradeSettingsChanged(const char[] sShortname)
 {
 	Call_StartForward(g_hfwdOnUpgradeSettingsChanged);
 	Call_PushString(sShortname);

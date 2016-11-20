@@ -3,18 +3,18 @@
 #include <smlib>
 
 // Forwards
-new Handle:g_hfwdOnBuyUpgrade;
-new Handle:g_hfwdOnBuyUpgradePost;
-new Handle:g_hfwdOnSellUpgrade;
-new Handle:g_hfwdOnSellUpgradePost;
-new Handle:g_hfwdOnClientLevel;
-new Handle:g_hfwdOnClientLevelPost;
-new Handle:g_hfwdOnClientExperience;
-new Handle:g_hfwdOnClientExperiencePost;
-new Handle:g_hfwdOnClientCredits;
-new Handle:g_hfwdOnClientCreditsPost;
+Handle g_hfwdOnBuyUpgrade;
+Handle g_hfwdOnBuyUpgradePost;
+Handle g_hfwdOnSellUpgrade;
+Handle g_hfwdOnSellUpgradePost;
+Handle g_hfwdOnClientLevel;
+Handle g_hfwdOnClientLevelPost;
+Handle g_hfwdOnClientExperience;
+Handle g_hfwdOnClientExperiencePost;
+Handle g_hfwdOnClientCredits;
+Handle g_hfwdOnClientCreditsPost;
 
-new Handle:g_hfwdOnClientLoaded;
+Handle g_hfwdOnClientLoaded;
 
 enum PlayerUpgradeInfo {
 	PUI_purchasedlevel,
@@ -33,18 +33,18 @@ enum PlayerInfo
 	bool:PLR_showMenuOnLevelup,
 	bool:PLR_fadeOnLevelup,
 	bool:PLR_dataLoadedFromDB,
-	Handle:PLR_upgrades,
+	ArrayList:PLR_upgrades,
 	PLR_lastReset,
 	PLR_lastSeen
 };
 
-new g_iPlayerInfo[MAXPLAYERS+1][PlayerInfo];
-new bool:g_bFirstLoaded[MAXPLAYERS+1];
+int g_iPlayerInfo[MAXPLAYERS+1][PlayerInfo];
+bool g_bFirstLoaded[MAXPLAYERS+1];
 // Bot stats are saved per name, because they don't have a steamid.
 // Remember the name the bot joined with, so we use the same name everytime - even if some other plugin changes the name later.
-new String:g_sOriginalBotName[MAXPLAYERS+1][MAX_NAME_LENGTH];
+char g_sOriginalBotName[MAXPLAYERS+1][MAX_NAME_LENGTH];
 
-RegisterPlayerNatives()
+void RegisterPlayerNatives()
 {
 	CreateNative("SMRPG_GetClientUpgradeLevel", Native_GetClientUpgradeLevel);
 	CreateNative("SMRPG_GetClientPurchasedUpgradeLevel", Native_GetClientPurchasedUpgradeLevel);
@@ -66,65 +66,65 @@ RegisterPlayerNatives()
 	CreateNative("SMRPG_ClientWantsCosmetics", Native_ClientWantsCosmetics);
 }
 
-RegisterPlayerForwards()
+void RegisterPlayerForwards()
 {
-	// forward Action:SMRPG_OnBuyUpgrade(client, const String:shortname[], newlevel);
+	// forward Action SMRPG_OnBuyUpgrade(int client, const char[] shortname, int newlevel);
 	g_hfwdOnBuyUpgrade = CreateGlobalForward("SMRPG_OnBuyUpgrade", ET_Hook, Param_Cell, Param_String, Param_Cell);
-	// forward SMRPG_OnBuyUpgradePost(client, const String:shortname[], newlevel);
+	// forward void SMRPG_OnBuyUpgradePost(int client, const char[] shortname, int newlevel);
 	g_hfwdOnBuyUpgradePost = CreateGlobalForward("SMRPG_OnBuyUpgradePost", ET_Ignore, Param_Cell, Param_String, Param_Cell);
-	// forward Action:SMRPG_OnSellUpgrade(client, const String:shortname[], newlevel);
+	// forward Action SMRPG_OnSellUpgrade(int client, const char[] shortname, int newlevel);
 	g_hfwdOnSellUpgrade = CreateGlobalForward("SMRPG_OnSellUpgrade", ET_Hook, Param_Cell, Param_String, Param_Cell);
-	// forward SMRPG_OnSellUpgradePost(client, const String:shortname[], newlevel);
+	// forward void SMRPG_OnSellUpgradePost(int client, const char[] shortname, int newlevel);
 	g_hfwdOnSellUpgradePost = CreateGlobalForward("SMRPG_OnSellUpgradePost", ET_Ignore, Param_Cell, Param_String, Param_Cell);
 	
-	// forward Action:SMRPG_OnClientLevel(client, oldlevel, newlevel);
+	// forward Action SMRPG_OnClientLevel(int client, int oldlevel, int newlevel);
 	g_hfwdOnClientLevel = CreateGlobalForward("SMRPG_OnClientLevel", ET_Hook, Param_Cell, Param_Cell, Param_Cell);
-	// forward SMRPG_OnClientLevelPost(client, oldlevel, newlevel);
+	// forward void SMRPG_OnClientLevelPost(int client, int oldlevel, int newlevel);
 	g_hfwdOnClientLevelPost = CreateGlobalForward("SMRPG_OnClientLevelPost", ET_Ignore, Param_Cell, Param_Cell, Param_Cell);
-	// forward Action:SMRPG_OnClientExperience(client, oldexp, newexp);
+	// forward Action SMRPG_OnClientExperience(int client, int oldexp, int newexp);
 	g_hfwdOnClientExperience = CreateGlobalForward("SMRPG_OnClientExperience", ET_Hook, Param_Cell, Param_Cell, Param_Cell);
-	// forward SMRPG_OnClientExperiencePost(client, oldexp, newexp);
+	// forward void SMRPG_OnClientExperiencePost(int client, int oldexp, int newexp);
 	g_hfwdOnClientExperiencePost = CreateGlobalForward("SMRPG_OnClientExperiencePost", ET_Ignore, Param_Cell, Param_Cell, Param_Cell);
-	// forward Action:SMRPG_OnClientCredits(client, oldcredits, newcredits);
+	// forward Action SMRPG_OnClientCredits(int client, int oldcredits, int newcredits);
 	g_hfwdOnClientCredits = CreateGlobalForward("SMRPG_OnClientCredits", ET_Hook, Param_Cell, Param_Cell, Param_Cell);
-	// forward SMRPG_OnClientCreditsPost(client, oldcredits, newcredits);
+	// forward void SMRPG_OnClientCreditsPost(int client, int oldcredits, int newcredits);
 	g_hfwdOnClientCreditsPost = CreateGlobalForward("SMRPG_OnClientCreditsPost", ET_Ignore, Param_Cell, Param_Cell, Param_Cell);
 	
-	// forward SMRPG_OnClientLoaded(client);
+	// forward void SMRPG_OnClientLoaded(int client);
 	g_hfwdOnClientLoaded = CreateGlobalForward("SMRPG_OnClientLoaded", ET_Ignore, Param_Cell);
 }
 
 /**
  * Player stats management
  */
-InitPlayer(client, bool:bGetBotName = true)
+void InitPlayer(int client, bool bGetBotName = true)
 {
 	g_bFirstLoaded[client] = true;
 	
 	// See if the player should start at a higher level than 1?
-	new iStartLevel = GetConVarInt(g_hCVLevelStart);
+	int iStartLevel = g_hCVLevelStart.IntValue;
 	if (iStartLevel < 1)
 		iStartLevel = 1;
 	
 	// If the start level is at a higher level than 1, he might get more credits for his level.
-	new iStartCredits = GetConVarInt(g_hCVCreditsStart);
-	if (GetConVarBool(g_hCVLevelStartGiveCredits))
-		iStartCredits += GetConVarInt(g_hCVCreditsInc) * (iStartLevel - 1);
+	int iStartCredits = g_hCVCreditsStart.IntValue;
+	if (g_hCVLevelStartGiveCredits.BoolValue)
+		iStartCredits += g_hCVCreditsInc.IntValue * (iStartLevel - 1);
 	
 	g_iPlayerInfo[client][PLR_level] = iStartLevel;
 	g_iPlayerInfo[client][PLR_experience] = 0;
 	g_iPlayerInfo[client][PLR_credits] = iStartCredits;
 	g_iPlayerInfo[client][PLR_dbId] = -1;
 	g_iPlayerInfo[client][PLR_dataLoadedFromDB] = false;
-	g_iPlayerInfo[client][PLR_showMenuOnLevelup] = GetConVarBool(g_hCVShowMenuOnLevelDefault);
-	g_iPlayerInfo[client][PLR_fadeOnLevelup] = GetConVarBool(g_hCVFadeOnLevelDefault);
+	g_iPlayerInfo[client][PLR_showMenuOnLevelup] = g_hCVShowMenuOnLevelDefault.BoolValue;
+	g_iPlayerInfo[client][PLR_fadeOnLevelup] = g_hCVFadeOnLevelDefault.BoolValue;
 	g_iPlayerInfo[client][PLR_lastReset] = GetTime();
 	g_iPlayerInfo[client][PLR_lastSeen] = GetTime();
 	
-	g_iPlayerInfo[client][PLR_upgrades] = CreateArray(_:PlayerUpgradeInfo);
-	new iNumUpgrades = GetUpgradeCount();
+	g_iPlayerInfo[client][PLR_upgrades] = new ArrayList(view_as<int>(PlayerUpgradeInfo));
+	int iNumUpgrades = GetUpgradeCount();
 	
-	for(new i=0;i<iNumUpgrades;i++)
+	for(int i=0;i<iNumUpgrades;i++)
 	{
 		// start level (default 0) for all upgrades
 		InitPlayerNewUpgrade(client);
@@ -137,55 +137,54 @@ InitPlayer(client, bool:bGetBotName = true)
 	}
 }
 
-AddPlayer(client)
+void AddPlayer(int client)
 {
 	if(!g_hDatabase)
 		return;
 	
-	if(!GetConVarBool(g_hCVEnable))
+	if(!g_hCVEnable.BoolValue)
 		return;
-	
 
-	decl String:sQuery[256];
+	char sQuery[256];
 	if(IsFakeClient(client))
 	{
-		if(!GetConVarBool(g_hCVBotSaveStats))
+		if(!g_hCVBotSaveStats.BoolValue)
 			return;
 		
 		// Lookup bot levels depending on their names.
-		decl String:sNameEscaped[MAX_NAME_LENGTH*2+1];
-		SQL_EscapeString(g_hDatabase, g_sOriginalBotName[client], sNameEscaped, sizeof(sNameEscaped));
+		char sNameEscaped[MAX_NAME_LENGTH*2+1];
+		g_hDatabase.Escape(g_sOriginalBotName[client], sNameEscaped, sizeof(sNameEscaped));
 		Format(sQuery, sizeof(sQuery), "SELECT player_id, level, experience, credits, lastreset, lastseen, showmenu, fadescreen FROM %s WHERE steamid IS NULL AND name = '%s' ORDER BY level DESC LIMIT 1", TBL_PLAYERS, sNameEscaped);
 	}
 	else
 	{
-		new iAccountId = GetSteamAccountID(client);
+		int iAccountId = GetSteamAccountID(client);
 		if(!iAccountId)
 			return;
 		
 		Format(sQuery, sizeof(sQuery), "SELECT player_id, level, experience, credits, lastreset, lastseen, showmenu, fadescreen FROM %s WHERE steamid = %d ORDER BY level DESC LIMIT 1", TBL_PLAYERS, iAccountId);
 	}
 	
-	SQL_TQuery(g_hDatabase, SQL_GetPlayerInfo, sQuery, GetClientUserId(client));
+	g_hDatabase.Query(SQL_GetPlayerInfo, sQuery, GetClientUserId(client));
 }
 
-InsertPlayer(client)
+void InsertPlayer(int client)
 {
-	if(!GetConVarBool(g_hCVEnable) || !GetConVarBool(g_hCVSaveData))
+	if(!g_hCVEnable.BoolValue || !g_hCVSaveData.BoolValue)
 		return;
 	
-	if(IsFakeClient(client) && !GetConVarBool(g_hCVBotSaveStats))
+	if(IsFakeClient(client) && !g_hCVBotSaveStats.BoolValue)
 		return;
 	
-	decl String:sQuery[512];
-	decl String:sName[MAX_NAME_LENGTH], String:sNameEscaped[MAX_NAME_LENGTH*2+1];
+	char sQuery[512];
+	char sName[MAX_NAME_LENGTH], sNameEscaped[MAX_NAME_LENGTH*2+1];
 	GetClientName(client, sName, sizeof(sName));
 	// Make sure to keep the original bot name.
 	if(IsFakeClient(client))
 	{
 		sName = g_sOriginalBotName[client];
 	}
-	SQL_EscapeString(g_hDatabase, sName, sNameEscaped, sizeof(sNameEscaped));
+	g_hDatabase.Escape(sName, sNameEscaped, sizeof(sNameEscaped));
 	
 	// Store the steamid of the player
 	if(!IsFakeClient(client))
@@ -200,18 +199,18 @@ InsertPlayer(client)
 			TBL_PLAYERS, sNameEscaped, GetClientLevel(client), GetClientExperience(client), GetClientCredits(client), ShowMenuOnLevelUp(client), FadeScreenOnLevelUp(client), GetTime(), GetTime());
 	}
 	
-	SQL_TQuery(g_hDatabase, SQL_InsertPlayer, sQuery, GetClientUserId(client));
+	g_hDatabase.Query(SQL_InsertPlayer, sQuery, GetClientUserId(client));
 }
 
-bool:SaveData(client, Transaction:hTransaction=Transaction:INVALID_HANDLE)
+bool SaveData(int client, Transaction hTransaction=null)
 {
-	if(g_hDatabase == INVALID_HANDLE)
+	if(g_hDatabase == null)
 		return false;
 	
-	if(!GetConVarBool(g_hCVEnable) || !GetConVarBool(g_hCVSaveData))
+	if(!g_hCVEnable.BoolValue || !g_hCVSaveData.BoolValue)
 		return false;
 	
-	if(IsFakeClient(client) && !GetConVarBool(g_hCVBotSaveStats))
+	if(IsFakeClient(client) && !g_hCVBotSaveStats.BoolValue)
 		return false;
 	
 	// We're still in the process of loading this client's info from the db. Wait for it..
@@ -224,22 +223,22 @@ bool:SaveData(client, Transaction:hTransaction=Transaction:INVALID_HANDLE)
 		return false;
 	}
 	
-	decl String:sName[MAX_NAME_LENGTH], String:sNameEscaped[MAX_NAME_LENGTH*2+1];
+	char sName[MAX_NAME_LENGTH], sNameEscaped[MAX_NAME_LENGTH*2+1];
 	GetClientName(client, sName, sizeof(sName));
 	// Make sure to keep the original bot name.
 	if(IsFakeClient(client))
 	{
 		sName = g_sOriginalBotName[client];
 	}
-	SQL_EscapeString(g_hDatabase, sName, sNameEscaped, sizeof(sNameEscaped));
+	g_hDatabase.Escape(sName, sNameEscaped, sizeof(sNameEscaped));
 	
-	decl String:sQuery[8192];
+	char sQuery[8192];
 	Format(sQuery, sizeof(sQuery), "UPDATE %s SET name = '%s', level = %d, experience = %d, credits = %d, showmenu = %d, fadescreen = %d, lastseen = %d, lastreset = %d WHERE player_id = %d", TBL_PLAYERS, sNameEscaped, GetClientLevel(client), GetClientExperience(client), GetClientCredits(client), ShowMenuOnLevelUp(client), FadeScreenOnLevelUp(client), GetTime(), g_iPlayerInfo[client][PLR_lastReset], g_iPlayerInfo[client][PLR_dbId]);
 	// Add the query to the transaction instead of running it right away.
-	if(hTransaction != INVALID_HANDLE)
-		SQL_AddQuery(hTransaction, sQuery);
+	if(hTransaction != null)
+		hTransaction.AddQuery(sQuery);
 	else
-		SQL_TQuery(g_hDatabase, SQL_DoNothing, sQuery);
+		g_hDatabase.Query(SQL_DoNothing, sQuery);
 	
 	// Remember when we last saved his stats
 	g_iPlayerInfo[client][PLR_lastSeen] = GetTime();
@@ -250,15 +249,15 @@ bool:SaveData(client, Transaction:hTransaction=Transaction:INVALID_HANDLE)
 	return true;
 }
 
-SavePlayerUpgradeLevels(client, Transaction:hTransaction=Transaction:INVALID_HANDLE)
+void SavePlayerUpgradeLevels(int client, Transaction hTransaction=null)
 {
 	// Save upgrade levels
-	new iSize = GetUpgradeCount();
-	new upgrade[InternalUpgradeInfo], playerupgrade[PlayerUpgradeInfo];
-	new iAdded;
-	decl String:sQuery[8192];
+	int iSize = GetUpgradeCount();
+	int upgrade[InternalUpgradeInfo], playerupgrade[PlayerUpgradeInfo];
+	int iAdded;
+	char sQuery[8192];
 	Format(sQuery, sizeof(sQuery), "REPLACE INTO %s (player_id, upgrade_id, purchasedlevel, selectedlevel, enabled, visuals, sounds) VALUES ", TBL_PLAYERUPGRADES);
-	for(new i=0;i<iSize;i++)
+	for(int i=0;i<iSize;i++)
 	{
 		GetUpgradeByIndex(i, upgrade);
 		
@@ -277,42 +276,42 @@ SavePlayerUpgradeLevels(client, Transaction:hTransaction=Transaction:INVALID_HAN
 	if(iAdded > 0)
 	{
 		// Add the query to the transaction instead of running it right away.
-		if(hTransaction != INVALID_HANDLE)
-			SQL_AddQuery(hTransaction, sQuery);
+		if(hTransaction != null)
+			hTransaction.AddQuery(sQuery);
 		else
-			SQL_TQuery(g_hDatabase, SQL_DoNothing, sQuery);
+			g_hDatabase.Query(SQL_DoNothing, sQuery);
 	}
 }
 
-SaveAllPlayers()
+void SaveAllPlayers()
 {
-	if(g_hDatabase == INVALID_HANDLE)
+	if(g_hDatabase == null)
 		return;
 	
-	if(!GetConVarBool(g_hCVEnable) || !GetConVarBool(g_hCVSaveData))
+	if(!g_hCVEnable.BoolValue || !g_hCVSaveData.BoolValue)
 		return;
 	
 	// Save all players at once instead of firing seperate queries for every player.
 	// This is to optimize sqlite usage.
-	new Transaction:hTransaction = SQL_CreateTransaction();
+	Transaction hTransaction = new Transaction();
 	
-	for(new i=1;i<=MaxClients;i++)
+	for(int i=1;i<=MaxClients;i++)
 	{
 		if(IsClientInGame(i) && IsClientAuthorized(i))
 			SaveData(i, hTransaction);
 	}
 	
-	SQL_ExecuteTransaction(g_hDatabase, hTransaction, _, SQLTxn_LogFailure);
+	g_hDatabase.Execute(hTransaction, _, SQLTxn_LogFailure);
 }
 
-ResetStats(client)
+void ResetStats(int client)
 {
 	DebugMsg("Stats have been reset for player: %N", client);
 	
-	new iSize = GetUpgradeCount();
-	new upgrade[InternalUpgradeInfo], playerupgrade[PlayerUpgradeInfo];
-	new bool:bWasEnabled;
-	for(new i=0;i<iSize;i++)
+	int iSize = GetUpgradeCount();
+	int upgrade[InternalUpgradeInfo], playerupgrade[PlayerUpgradeInfo];
+	bool bWasEnabled;
+	for(int i=0;i<iSize;i++)
 	{
 		GetPlayerUpgradeInfoByIndex(client, i, playerupgrade);
 		// See if this upgrade has been enabled and should be notified to stop the effect.
@@ -333,7 +332,7 @@ ResetStats(client)
 		if(!IsValidUpgrade(upgrade))
 			continue;
 		
-		Call_StartFunction(upgrade[UPGR_plugin], Function:upgrade[UPGR_queryCallback]);
+		Call_StartFunction(upgrade[UPGR_plugin], upgrade[UPGR_queryCallback]);
 		Call_PushCell(client);
 		Call_PushCell(UpgradeQueryType_Sell);
 		Call_Finish();
@@ -341,17 +340,17 @@ ResetStats(client)
 	
 	g_iPlayerInfo[client][PLR_level] = 1;
 	g_iPlayerInfo[client][PLR_experience] = 0;
-	g_iPlayerInfo[client][PLR_credits] = GetConVarInt(g_hCVCreditsStart);
+	g_iPlayerInfo[client][PLR_credits] = g_hCVCreditsStart.IntValue;
 }
 
-RemovePlayer(client, bool:bKeepBotName = false)
+void RemovePlayer(int client, bool bKeepBotName = false)
 {
 	ResetStats(client);
 	ClearHandle(g_iPlayerInfo[client][PLR_upgrades]);
 	g_iPlayerInfo[client][PLR_dbId] = -1;
 	g_iPlayerInfo[client][PLR_dataLoadedFromDB] = false;
-	g_iPlayerInfo[client][PLR_showMenuOnLevelup] = GetConVarBool(g_hCVShowMenuOnLevelDefault);
-	g_iPlayerInfo[client][PLR_fadeOnLevelup] = GetConVarBool(g_hCVFadeOnLevelDefault);
+	g_iPlayerInfo[client][PLR_showMenuOnLevelup] = g_hCVShowMenuOnLevelDefault.BoolValue;
+	g_iPlayerInfo[client][PLR_fadeOnLevelup] = g_hCVFadeOnLevelDefault.BoolValue;
 	g_iPlayerInfo[client][PLR_lastReset] = 0;
 	g_iPlayerInfo[client][PLR_lastSeen] = 0;
 	
@@ -359,11 +358,11 @@ RemovePlayer(client, bool:bKeepBotName = false)
 		g_sOriginalBotName[client][0] = '\0';
 }
 
-NotifyUpgradePluginsOfLevel(client)
+void NotifyUpgradePluginsOfLevel(int client)
 {
-	new iSize = GetUpgradeCount();
-	new upgrade[InternalUpgradeInfo];
-	for(new i=0;i<iSize;i++)
+	int iSize = GetUpgradeCount();
+	int upgrade[InternalUpgradeInfo];
+	for(int i=0;i<iSize;i++)
 	{
 		GetUpgradeByIndex(i, upgrade);
 		
@@ -373,64 +372,64 @@ NotifyUpgradePluginsOfLevel(client)
 		if(GetClientSelectedUpgradeLevel(client, i) <= 0)
 			continue;
 		
-		Call_StartFunction(upgrade[UPGR_plugin], Function:upgrade[UPGR_queryCallback]);
+		Call_StartFunction(upgrade[UPGR_plugin], upgrade[UPGR_queryCallback]);
 		Call_PushCell(client);
 		Call_PushCell(UpgradeQueryType_Buy);
 		Call_Finish();
 	}
 }
 
-IsPlayerDataLoaded(client)
+bool IsPlayerDataLoaded(int client)
 {
 	return g_iPlayerInfo[client][PLR_dataLoadedFromDB];
 }
 
-GetPlayerLastReset(client)
+int GetPlayerLastReset(int client)
 {
 	return g_iPlayerInfo[client][PLR_lastReset];
 }
 
-SetPlayerLastReset(client, time)
+void SetPlayerLastReset(int client, int time)
 {
 	g_iPlayerInfo[client][PLR_lastReset] = time;
 }
 
-GetPlayerLastSeen(client)
+int GetPlayerLastSeen(int client)
 {
 	return g_iPlayerInfo[client][PLR_lastSeen];
 }
 
-GetPlayerUpgradeInfoByIndex(client, index, playerupgrade[PlayerUpgradeInfo])
+void GetPlayerUpgradeInfoByIndex(int client, int index, int playerupgrade[PlayerUpgradeInfo])
 {
-	GetArrayArray(g_iPlayerInfo[client][PLR_upgrades], index, playerupgrade[0], _:PlayerUpgradeInfo);
+	g_iPlayerInfo[client][PLR_upgrades].GetArray(index, playerupgrade[0], view_as<int>(PlayerUpgradeInfo));
 }
 
-SavePlayerUpgradeInfo(client, index, playerupgrade[PlayerUpgradeInfo])
+void SavePlayerUpgradeInfo(int client, int index, int playerupgrade[PlayerUpgradeInfo])
 {
-	SetArrayArray(g_iPlayerInfo[client][PLR_upgrades], index, playerupgrade[0], _:PlayerUpgradeInfo);
+	g_iPlayerInfo[client][PLR_upgrades].SetArray(index, playerupgrade[0], view_as<int>(PlayerUpgradeInfo));
 }
 
 /**
  * Player upgrade info getter
  */
-stock GetClientRPGInfo(client, info[PlayerInfo])
+stock void GetClientRPGInfo(int client, int info[PlayerInfo])
 {
-	Array_Copy(g_iPlayerInfo[client][0], info[0], _:PlayerInfo);
+	Array_Copy(g_iPlayerInfo[client][0], info[0], view_as<int>(PlayerInfo));
 }
 
-stock Handle:GetClientUpgrades(client)
+stock ArrayList GetClientUpgrades(int client)
 {
 	return g_iPlayerInfo[client][PLR_upgrades];
 }
 
-GetClientDatabaseId(client)
+int GetClientDatabaseId(int client)
 {
 	return g_iPlayerInfo[client][PLR_dbId];
 }
 
-GetClientByPlayerID(iPlayerId)
+int GetClientByPlayerID(int iPlayerId)
 {
-	for(new i=1;i<=MaxClients;i++)
+	for(int i=1;i<=MaxClients;i++)
 	{
 		if(IsClientInGame(i) && g_iPlayerInfo[i][PLR_dbId] == iPlayerId)
 			return i;
@@ -438,47 +437,48 @@ GetClientByPlayerID(iPlayerId)
 	return -1;
 }
 
-GetClientSelectedUpgradeLevel(client, iUpgradeIndex)
+int GetClientSelectedUpgradeLevel(int client, int iUpgradeIndex)
 {
-	new playerupgrade[PlayerUpgradeInfo];
+	int playerupgrade[PlayerUpgradeInfo];
 	GetPlayerUpgradeInfoByIndex(client, iUpgradeIndex, playerupgrade);
 	return playerupgrade[PUI_selectedlevel];
 }
 
-GetClientPurchasedUpgradeLevel(client, iUpgradeIndex)
+int GetClientPurchasedUpgradeLevel(int client, int iUpgradeIndex)
 {
-	new playerupgrade[PlayerUpgradeInfo];
+	int playerupgrade[PlayerUpgradeInfo];
 	GetPlayerUpgradeInfoByIndex(client, iUpgradeIndex, playerupgrade);
 	return playerupgrade[PUI_purchasedlevel];
 }
 
-bool:IsClientUpgradeEnabled(client, iUpgradeIndex)
+bool IsClientUpgradeEnabled(int client, int iUpgradeIndex)
 {
-	new playerupgrade[PlayerUpgradeInfo];
+	int playerupgrade[PlayerUpgradeInfo];
 	GetPlayerUpgradeInfoByIndex(client, iUpgradeIndex, playerupgrade);
 	return playerupgrade[PUI_enabled];
 }
 
-InitPlayerNewUpgrade(client)
+void InitPlayerNewUpgrade(int client)
 {
 	// Let the player start this upgrade on its set start level by default.
-	new iIndex = GetArraySize(GetClientUpgrades(client));
-	new upgrade[InternalUpgradeInfo];
+	ArrayList clienUpgrades = GetClientUpgrades(client);
+	int iIndex = clienUpgrades.Length;
+	int upgrade[InternalUpgradeInfo];
 	GetUpgradeByIndex(iIndex, upgrade);
 	
-	new playerupgrade[PlayerUpgradeInfo];
+	int playerupgrade[PlayerUpgradeInfo];
 	playerupgrade[PUI_purchasedlevel] = 0;
 	playerupgrade[PUI_selectedlevel] = 0;
 	playerupgrade[PUI_enabled] = true;
 	playerupgrade[PUI_visuals] = true;
 	playerupgrade[PUI_sounds] = true;
-	PushArrayArray(GetClientUpgrades(client), playerupgrade[0], _:PlayerUpgradeInfo);
+	clienUpgrades.PushArray(playerupgrade[0], view_as<int>(PlayerUpgradeInfo));
 	
 	// Get the money for the start level?
 	// TODO: Make sure to document the OnBuyUpgrade forward being called on clients not ingame yet + test.
 	// (This is can be called OnClientConnected.)
-	new bool:bFree = GetConVarBool(g_hCVUpgradeStartLevelsFree);
-	for (new i=0; i<upgrade[UPGR_startLevel]; i++)
+	bool bFree = g_hCVUpgradeStartLevelsFree.BoolValue;
+	for(int i=0; i<upgrade[UPGR_startLevel]; i++)
 	{
 		if (bFree)
 		{
@@ -493,29 +493,29 @@ InitPlayerNewUpgrade(client)
 	}
 }
 
-ShowMenuOnLevelUp(client)
+bool ShowMenuOnLevelUp(int client)
 {
 	return g_iPlayerInfo[client][PLR_showMenuOnLevelup];
 }
 
-SetShowMenuOnLevelUp(client, bool:show)
+void SetShowMenuOnLevelUp(int client, bool show)
 {
 	g_iPlayerInfo[client][PLR_showMenuOnLevelup] = show;
 }
 
-FadeScreenOnLevelUp(client)
+bool FadeScreenOnLevelUp(int client)
 {
 	return g_iPlayerInfo[client][PLR_fadeOnLevelup];
 }
 
-SetFadeScreenOnLevelUp(client, bool:fade)
+void SetFadeScreenOnLevelUp(int client, bool fade)
 {
 	g_iPlayerInfo[client][PLR_fadeOnLevelup] = fade;
 }
 
-SetClientUpgradeEnabledStatus(client, iUpgradeIndex, bool:bEnabled)
+void SetClientUpgradeEnabledStatus(int client, int iUpgradeIndex, bool bEnabled)
 {
-	new playerupgrade[PlayerUpgradeInfo];
+	int playerupgrade[PlayerUpgradeInfo];
 	GetPlayerUpgradeInfoByIndex(client, iUpgradeIndex, playerupgrade);
 	
 	// Change the enabled state.
@@ -523,7 +523,7 @@ SetClientUpgradeEnabledStatus(client, iUpgradeIndex, bool:bEnabled)
 	SavePlayerUpgradeInfo(client, iUpgradeIndex, playerupgrade);
 	
 	// Notify plugin about it.
-	new upgrade[InternalUpgradeInfo];
+	int upgrade[InternalUpgradeInfo];
 	GetUpgradeByIndex(iUpgradeIndex, upgrade);
 	
 	if(!IsValidUpgrade(upgrade))
@@ -531,7 +531,7 @@ SetClientUpgradeEnabledStatus(client, iUpgradeIndex, bool:bEnabled)
 	
 	if(IsClientInGame(client))
 	{
-		new iLevel = GetClientSelectedUpgradeLevel(client, iUpgradeIndex);
+		int iLevel = GetClientSelectedUpgradeLevel(client, iUpgradeIndex);
 		if (iLevel <= 0)
 			return;
 		
@@ -547,19 +547,19 @@ SetClientUpgradeEnabledStatus(client, iUpgradeIndex, bool:bEnabled)
  * Player upgrade buying/selling
  */
 
-SetClientSelectedUpgradeLevel(client, iUpgradeIndex, iLevel)
+void SetClientSelectedUpgradeLevel(int client, int iUpgradeIndex, int iLevel)
 {
-	new iPurchased = GetClientPurchasedUpgradeLevel(client, iUpgradeIndex);
+	int iPurchased = GetClientPurchasedUpgradeLevel(client, iUpgradeIndex);
 	// Can't select a level he doesn't own yet.
 	if(iPurchased < iLevel)
 		return;
 	
-	new iOldLevel = GetClientSelectedUpgradeLevel(client, iUpgradeIndex);
+	int iOldLevel = GetClientSelectedUpgradeLevel(client, iUpgradeIndex);
 	
 	if(iLevel == iOldLevel)
 		return;
 	
-	new playerupgrade[PlayerUpgradeInfo];
+	int playerupgrade[PlayerUpgradeInfo];
 	GetPlayerUpgradeInfoByIndex(client, iUpgradeIndex, playerupgrade);
 	// Differ for selected and purchased level!
 	playerupgrade[PUI_selectedlevel] = iLevel;
@@ -569,7 +569,7 @@ SetClientSelectedUpgradeLevel(client, iUpgradeIndex, iLevel)
 	if (!playerupgrade[PUI_enabled])
 		return;
 	
-	new upgrade[InternalUpgradeInfo];
+	int upgrade[InternalUpgradeInfo];
 	GetUpgradeByIndex(iUpgradeIndex, upgrade);
 	
 	if(!IsValidUpgrade(upgrade))
@@ -585,29 +585,29 @@ SetClientSelectedUpgradeLevel(client, iUpgradeIndex, iLevel)
 	}
 }
 
-SetClientPurchasedUpgradeLevel(client, iUpgradeIndex, iLevel)
+void SetClientPurchasedUpgradeLevel(int client, int iUpgradeIndex, int iLevel)
 {
-	new playerupgrade[PlayerUpgradeInfo];
+	int playerupgrade[PlayerUpgradeInfo];
 	GetPlayerUpgradeInfoByIndex(client, iUpgradeIndex, playerupgrade);
 	// Differ for selected and purchased level!
 	playerupgrade[PUI_purchasedlevel] = iLevel;
 	SavePlayerUpgradeInfo(client, iUpgradeIndex, playerupgrade);
 	
 	// Only update the selected level, if it's higher than the new limit
-	new iSelectedLevel = GetClientSelectedUpgradeLevel(client, iUpgradeIndex);
+	int iSelectedLevel = GetClientSelectedUpgradeLevel(client, iUpgradeIndex);
 	if(iSelectedLevel > iLevel)
 		SetClientSelectedUpgradeLevel(client, iUpgradeIndex, iLevel);
 }
 
-bool:GiveClientUpgrade(client, iUpgradeIndex)
+bool GiveClientUpgrade(int client, int iUpgradeIndex)
 {
-	new upgrade[InternalUpgradeInfo];
+	int upgrade[InternalUpgradeInfo];
 	GetUpgradeByIndex(iUpgradeIndex, upgrade);
 	
 	if(!IsValidUpgrade(upgrade))
 		return false;
 	
-	new iCurrentLevel = GetClientPurchasedUpgradeLevel(client, iUpgradeIndex);
+	int iCurrentLevel = GetClientPurchasedUpgradeLevel(client, iUpgradeIndex);
 	
 	if(iCurrentLevel >= upgrade[UPGR_maxLevel])
 		return false;
@@ -616,7 +616,7 @@ bool:GiveClientUpgrade(client, iUpgradeIndex)
 	iCurrentLevel++;
 	
 	// See if some plugin doesn't want this player to level up this upgrade
-	new Action:result;
+	Action result;
 	Call_StartForward(g_hfwdOnBuyUpgrade);
 	Call_PushCell(client);
 	Call_PushString(upgrade[UPGR_shortName]);
@@ -641,18 +641,18 @@ bool:GiveClientUpgrade(client, iUpgradeIndex)
 	return true;
 }
 
-bool:BuyClientUpgrade(client, iUpgradeIndex)
+bool BuyClientUpgrade(int client, int iUpgradeIndex)
 {
-	new upgrade[InternalUpgradeInfo];
+	int upgrade[InternalUpgradeInfo];
 	GetUpgradeByIndex(iUpgradeIndex, upgrade);
 	
-	new iCurrentLevel = GetClientPurchasedUpgradeLevel(client, iUpgradeIndex);
+	int iCurrentLevel = GetClientPurchasedUpgradeLevel(client, iUpgradeIndex);
 	
 	// can't get higher than this.
 	if(iCurrentLevel >= upgrade[UPGR_maxLevel])
 		return false;
 	
-	new iCost = GetUpgradeCost(iUpgradeIndex, iCurrentLevel+1);
+	int iCost = GetUpgradeCost(iUpgradeIndex, iCurrentLevel+1);
 	
 	// Not enough credits?
 	if(iCost > g_iPlayerInfo[client][PLR_credits])
@@ -668,15 +668,15 @@ bool:BuyClientUpgrade(client, iUpgradeIndex)
 	return true;
 }
 
-bool:TakeClientUpgrade(client, iUpgradeIndex)
+bool TakeClientUpgrade(int client, int iUpgradeIndex)
 {
-	new upgrade[InternalUpgradeInfo];
+	int upgrade[InternalUpgradeInfo];
 	GetUpgradeByIndex(iUpgradeIndex, upgrade);
 	
 	if(!IsValidUpgrade(upgrade))
 		return false;
 	
-	new iCurrentLevel = GetClientPurchasedUpgradeLevel(client, iUpgradeIndex);
+	int iCurrentLevel = GetClientPurchasedUpgradeLevel(client, iUpgradeIndex);
 	
 	// Can't get negative levels
 	if(iCurrentLevel <= 0)
@@ -686,7 +686,7 @@ bool:TakeClientUpgrade(client, iUpgradeIndex)
 	iCurrentLevel--;
 	
 	// See if some plugin doesn't want this player to level down this upgrade
-	new Action:result;
+	Action result;
 	Call_StartForward(g_hfwdOnSellUpgrade);
 	Call_PushCell(client);
 	Call_PushString(upgrade[UPGR_shortName]);
@@ -709,12 +709,12 @@ bool:TakeClientUpgrade(client, iUpgradeIndex)
 	return true;
 }
 
-bool:SellClientUpgrade(client, iUpgradeIndex)
+bool SellClientUpgrade(int client, int iUpgradeIndex)
 {
-	new upgrade[InternalUpgradeInfo];
+	int upgrade[InternalUpgradeInfo];
 	GetUpgradeByIndex(iUpgradeIndex, upgrade);
 	
-	new iCurrentLevel = GetClientPurchasedUpgradeLevel(client, iUpgradeIndex);
+	int iCurrentLevel = GetClientPurchasedUpgradeLevel(client, iUpgradeIndex);
 	
 	// can't get negative
 	if(iCurrentLevel <= 0)
@@ -731,16 +731,17 @@ bool:SellClientUpgrade(client, iUpgradeIndex)
 }
 
 // Have bots buy upgrades too :)
-BotPickUpgrade(client)
+void BotPickUpgrade(int client)
 {
-	new bool:bUpgradeBought, iCurrentIndex;
+	bool bUpgradeBought;
+	int iCurrentIndex;
 	
-	new iSize = GetUpgradeCount();
-	new upgrade[InternalUpgradeInfo];
+	int iSize = GetUpgradeCount();
+	int upgrade[InternalUpgradeInfo];
 	
-	new Handle:hRandomBuying = CreateArray();
-	for(new i=0;i<iSize;i++)
-		PushArrayCell(hRandomBuying, i);
+	ArrayList hRandomBuying = new ArrayList();
+	for(int i=0;i<iSize;i++)
+		hRandomBuying.Push(i);
 	
 	while(GetClientCredits(client) > 0)
 	{
@@ -748,9 +749,9 @@ BotPickUpgrade(client)
 		Array_Shuffle(hRandomBuying);
 		
 		bUpgradeBought = false;
-		for(new i=0;i<iSize;i++)
+		for(int i=0;i<iSize;i++)
 		{
-			iCurrentIndex = GetArrayCell(hRandomBuying, i);
+			iCurrentIndex = hRandomBuying.Get(i);
 			GetUpgradeByIndex(iCurrentIndex, upgrade);
 			
 			// Valid upgrade the bot can use?
@@ -772,17 +773,17 @@ BotPickUpgrade(client)
 			break; /* Couldn't afford anything */
 	}
 	
-	CloseHandle(hRandomBuying);
+	delete hRandomBuying;
 }
 
 /**
  * Player info accessing functions (getter/setter)
  */
-CheckItemMaxLevels(client)
+void CheckItemMaxLevels(int client)
 {
-	new iSize = GetUpgradeCount();
-	new upgrade[InternalUpgradeInfo], iMaxLevel, iCurrentLevel;
-	for(new i=0;i<iSize;i++)
+	int iSize = GetUpgradeCount();
+	int upgrade[InternalUpgradeInfo], iMaxLevel, iCurrentLevel;
+	for(int i=0;i<iSize;i++)
 	{
 		GetUpgradeByIndex(i, upgrade);
 		iMaxLevel = upgrade[UPGR_maxLevel];
@@ -797,18 +798,18 @@ CheckItemMaxLevels(client)
 	}
 }
 
-GetClientCredits(client)
+int GetClientCredits(int client)
 {
 	return g_iPlayerInfo[client][PLR_credits];
 }
 
-bool:SetClientCredits(client, iCredits)
+bool SetClientCredits(int client, int iCredits)
 {
 	if(iCredits < 0)
 		iCredits = 0;
 	
 	// See if some plugin doesn't want this player to get some credits
-	new Action:result;
+	Action result;
 	Call_StartForward(g_hfwdOnClientCredits);
 	Call_PushCell(client);
 	Call_PushCell(g_iPlayerInfo[client][PLR_credits]);
@@ -819,7 +820,7 @@ bool:SetClientCredits(client, iCredits)
 	if(result > Plugin_Continue)
 		return false;
 	
-	new iOldCredits = g_iPlayerInfo[client][PLR_credits];
+	int iOldCredits = g_iPlayerInfo[client][PLR_credits];
 	g_iPlayerInfo[client][PLR_credits] = iCredits;
 	
 	Call_StartForward(g_hfwdOnClientCreditsPost);
@@ -831,18 +832,18 @@ bool:SetClientCredits(client, iCredits)
 	return true;
 }
 
-GetClientLevel(client)
+int GetClientLevel(int client)
 {
 	return g_iPlayerInfo[client][PLR_level];
 }
 
-bool:SetClientLevel(client, iLevel)
+bool SetClientLevel(int client, int iLevel)
 {
 	if(iLevel < 1)
 		iLevel = 1;
 	
 	// See if some plugin doesn't want this player to get some credits
-	new Action:result;
+	Action result;
 	Call_StartForward(g_hfwdOnClientLevel);
 	Call_PushCell(client);
 	Call_PushCell(g_iPlayerInfo[client][PLR_level]);
@@ -853,7 +854,7 @@ bool:SetClientLevel(client, iLevel)
 	if(result > Plugin_Continue)
 		return false;
 	
-	new iOldLevel = g_iPlayerInfo[client][PLR_level];
+	int iOldLevel = g_iPlayerInfo[client][PLR_level];
 	g_iPlayerInfo[client][PLR_level] = iLevel;
 	
 	Call_StartForward(g_hfwdOnClientLevelPost);
@@ -865,18 +866,18 @@ bool:SetClientLevel(client, iLevel)
 	return true;
 }
 
-GetClientExperience(client)
+int GetClientExperience(int client)
 {
 	return g_iPlayerInfo[client][PLR_experience];
 }
 
-bool:SetClientExperience(client, iExperience)
+bool SetClientExperience(int client, int iExperience)
 {
 	if(iExperience < 0)
 		iExperience = 0;
 	
 	// See if some plugin doesn't want this player to get some credits
-	new Action:result;
+	Action result;
 	Call_StartForward(g_hfwdOnClientExperience);
 	Call_PushCell(client);
 	Call_PushCell(g_iPlayerInfo[client][PLR_experience]);
@@ -887,7 +888,7 @@ bool:SetClientExperience(client, iExperience)
 	if(result > Plugin_Continue)
 		return false;
 	
-	new iOldExperience = g_iPlayerInfo[client][PLR_experience];
+	int iOldExperience = g_iPlayerInfo[client][PLR_experience];
 	g_iPlayerInfo[client][PLR_experience] = iExperience;
 	
 	Call_StartForward(g_hfwdOnClientExperiencePost);
@@ -902,13 +903,13 @@ bool:SetClientExperience(client, iExperience)
 /**
  * SQL Callbacks
  */
-public SQL_GetPlayerInfo(Handle:owner, Handle:hndl, const String:error[], any:userid)
+public void SQL_GetPlayerInfo(Database db, DBResultSet results, const char[] error, any userid)
 {
-	new client = GetClientOfUserId(userid);
+	int client = GetClientOfUserId(userid);
 	if(!client)
 		return;
 	
-	if(hndl == INVALID_HANDLE || strlen(error) > 0)
+	if(results == null)
 	{
 		// TODO: Retry later?
 		LogError("Unable to load player data (%s)", error);
@@ -917,38 +918,38 @@ public SQL_GetPlayerInfo(Handle:owner, Handle:hndl, const String:error[], any:us
 	}
 	
 	// First time this player connects?
-	if(SQL_GetRowCount(hndl) == 0 || !SQL_FetchRow(hndl))
+	if(results.RowCount == 0 || !results.FetchRow())
 	{
 		InsertPlayer(client);
 		return;
 	}
 	
-	g_iPlayerInfo[client][PLR_dbId] = SQL_FetchInt(hndl, 0);
-	g_iPlayerInfo[client][PLR_level] = SQL_FetchInt(hndl, 1);
-	g_iPlayerInfo[client][PLR_experience] = SQL_FetchInt(hndl, 2);
-	g_iPlayerInfo[client][PLR_credits] = SQL_FetchInt(hndl, 3);
-	g_iPlayerInfo[client][PLR_lastReset] = SQL_FetchInt(hndl, 4);
-	g_iPlayerInfo[client][PLR_lastSeen] = SQL_FetchInt(hndl, 5);
-	g_iPlayerInfo[client][PLR_showMenuOnLevelup] = SQL_FetchInt(hndl, 6) == 1;
-	g_iPlayerInfo[client][PLR_fadeOnLevelup] = SQL_FetchInt(hndl, 7) == 1;
+	g_iPlayerInfo[client][PLR_dbId] = results.FetchInt(0);
+	g_iPlayerInfo[client][PLR_level] = results.FetchInt(1);
+	g_iPlayerInfo[client][PLR_experience] = results.FetchInt(2);
+	g_iPlayerInfo[client][PLR_credits] = results.FetchInt(3);
+	g_iPlayerInfo[client][PLR_lastReset] = results.FetchInt(4);
+	g_iPlayerInfo[client][PLR_lastSeen] = results.FetchInt(5);
+	g_iPlayerInfo[client][PLR_showMenuOnLevelup] = results.FetchInt(6) != 0;
+	g_iPlayerInfo[client][PLR_fadeOnLevelup] = results.FetchInt(7) != 0;
 	
 	UpdateClientRank(client);
 	UpdateRankCount();
 	
 	/* Player Upgrades */
-	decl String:sQuery[128];
+	char sQuery[128];
 	Format(sQuery, sizeof(sQuery), "SELECT upgrade_id, purchasedlevel, selectedlevel, enabled, visuals, sounds FROM %s WHERE player_id = %d", TBL_PLAYERUPGRADES, g_iPlayerInfo[client][PLR_dbId]);
-	SQL_TQuery(g_hDatabase, SQL_GetPlayerUpgrades, sQuery, userid);
+	g_hDatabase.Query(SQL_GetPlayerUpgrades, sQuery, userid);
 }
 
-public SQL_GetPlayerUpgrades(Handle:owner, Handle:hndl, const String:error[], any:userid)
+public void SQL_GetPlayerUpgrades(Database db, DBResultSet results, const char[] error, any userid)
 {
 	// player_id, upgrade_id, purchasedlevel, selectedlevel, enabled, visuals, sounds
-	new client = GetClientOfUserId(userid);
+	int client = GetClientOfUserId(userid);
 	if(!client)
 		return;
 	
-	if(hndl == INVALID_HANDLE || strlen(error) > 0)
+	if(results == null)
 	{
 		LogError("Unable to load item data (%s)", error);
 		CallOnClientLoaded(client);
@@ -965,29 +966,29 @@ public SQL_GetPlayerUpgrades(Handle:owner, Handle:hndl, const String:error[], an
 	// TODO: Collect upgrade ids of loaded upgrades and inform them after all levels are loaded in a second loop.
 	g_iPlayerInfo[client][PLR_dataLoadedFromDB] = true;
 	
-	new upgrade[InternalUpgradeInfo], playerupgrade[PlayerUpgradeInfo], iSelectedLevel;
-	while(SQL_MoreRows(hndl))
+	int upgrade[InternalUpgradeInfo], playerupgrade[PlayerUpgradeInfo], iSelectedLevel;
+	while(results.MoreRows)
 	{
-		if(!SQL_FetchRow(hndl))
+		if(!results.FetchRow())
 			continue;
 		
 		// If that upgrade isn't loaded yet, we'll fetch the right level when it's loaded.
-		if(!GetUpgradeByDatabaseId(SQL_FetchInt(hndl, 0), upgrade))
+		if(!GetUpgradeByDatabaseId(results.FetchInt(0), upgrade))
 			continue;
 		
 		// Load |enabled| bool first, then set the upgrade level.
 		// Otherwise the upgrade plugin might be informed,
 		// even if the player has the upgrade disabled.
 		GetPlayerUpgradeInfoByIndex(client, upgrade[UPGR_index], playerupgrade);
-		playerupgrade[PUI_enabled] = SQL_FetchInt(hndl, 3)==1;
-		playerupgrade[PUI_visuals] = SQL_FetchInt(hndl, 4)==1;
-		playerupgrade[PUI_sounds] = SQL_FetchInt(hndl, 5)==1;
+		playerupgrade[PUI_enabled] = results.FetchInt(3)!=0;
+		playerupgrade[PUI_visuals] = results.FetchInt(4)!=0;
+		playerupgrade[PUI_sounds] = results.FetchInt(5)!=0;
 		SavePlayerUpgradeInfo(client, upgrade[UPGR_index], playerupgrade);
 		
-		SetClientPurchasedUpgradeLevel(client, upgrade[UPGR_index], SQL_FetchInt(hndl, 1));
+		SetClientPurchasedUpgradeLevel(client, upgrade[UPGR_index], results.FetchInt(1));
 		
 		// Make sure the database is sane.. People WILL temper with it manually.
-		iSelectedLevel = SQL_FetchInt(hndl, 2);
+		iSelectedLevel = results.FetchInt(2);
 		if(iSelectedLevel > GetClientPurchasedUpgradeLevel(client, upgrade[UPGR_index]))
 			iSelectedLevel = GetClientPurchasedUpgradeLevel(client, upgrade[UPGR_index]);
 		SetClientSelectedUpgradeLevel(client, upgrade[UPGR_index], iSelectedLevel);
@@ -998,20 +999,20 @@ public SQL_GetPlayerUpgrades(Handle:owner, Handle:hndl, const String:error[], an
 	CallOnClientLoaded(client);
 }
 
-public SQL_InsertPlayer(Handle:owner, Handle:hndl, const String:error[], any:userid)
+public void SQL_InsertPlayer(Database db, DBResultSet results, const char[] error, any userid)
 {
-	new client = GetClientOfUserId(userid);
+	int client = GetClientOfUserId(userid);
 	if(!client)
 		return;
 	
-	if(hndl == INVALID_HANDLE || strlen(error) > 0)
+	if(results == null)
 	{
 		LogError("Unable to insert player info (%s)", error);
 		CallOnClientLoaded(client);
 		return;
 	}
 	
-	g_iPlayerInfo[client][PLR_dbId] = SQL_GetInsertId(owner);
+	g_iPlayerInfo[client][PLR_dbId] = results.InsertId;
 	
 	UpdateClientRank(client);
 	UpdateRankCount();
@@ -1031,31 +1032,25 @@ public SQL_InsertPlayer(Handle:owner, Handle:hndl, const String:error[], any:use
  * Natives
  */
 
-// native SMRPG_GetClientUpgradeLevel(client, const String:shortname[]);
-public Native_GetClientUpgradeLevel(Handle:plugin, numParams)
+// native int SMRPG_GetClientUpgradeLevel(int client, const char[] shortname);
+public int Native_GetClientUpgradeLevel(Handle plugin, int numParams)
 {
-	new client = GetNativeCell(1);
+	int client = GetNativeCell(1);
 	if(client < 0 || client > MaxClients)
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
-		return 0;
-	}
+		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
 	
 	// Don't try to lookup anything, if we haven't loaded the client completely yet.
 	if (!IsPlayerDataLoaded(client))
 		return 0;
 	
-	new len;
+	int len;
 	GetNativeStringLength(2, len);
-	new String:sShortName[len+1];
+	char[] sShortName = new char[len+1];
 	GetNativeString(2, sShortName, len+1);
 	
-	new upgrade[InternalUpgradeInfo];
+	int upgrade[InternalUpgradeInfo];
 	if(!GetUpgradeByShortname(sShortName, upgrade) || !IsValidUpgrade(upgrade))
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "No upgrade named \"%s\" loaded.", sShortName);
-		return 0;
-	}
+		return ThrowNativeError(SP_ERROR_NATIVE, "No upgrade named \"%s\" loaded.", sShortName);
 	
 	// Return 0, if the client has it disabled.
 	if(!IsClientUpgradeEnabled(client, upgrade[UPGR_index]))
@@ -1064,345 +1059,272 @@ public Native_GetClientUpgradeLevel(Handle:plugin, numParams)
 	return GetClientSelectedUpgradeLevel(client, upgrade[UPGR_index]);
 }
 
-// native SMRPG_GetClientPurchasedUpgradeLevel(client, const String:shortname[]);
-public Native_GetClientPurchasedUpgradeLevel(Handle:plugin, numParams)
+// native int SMRPG_GetClientPurchasedUpgradeLevel(int client, const char[] shortname);
+public int Native_GetClientPurchasedUpgradeLevel(Handle plugin, int numParams)
 {
-	new client = GetNativeCell(1);
+	int client = GetNativeCell(1);
 	if(client < 0 || client > MaxClients)
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
-		return 0;
-	}
+		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
 	
 	// Don't try to lookup anything, if we haven't loaded the client completely yet.
 	if (!IsPlayerDataLoaded(client))
 		return 0;
 	
-	new len;
+	int len;
 	GetNativeStringLength(2, len);
-	new String:sShortName[len+1];
+	char[] sShortName = new char[len+1];
 	GetNativeString(2, sShortName, len+1);
 	
-	new upgrade[InternalUpgradeInfo];
+	int upgrade[InternalUpgradeInfo];
 	if(!GetUpgradeByShortname(sShortName, upgrade) || !IsValidUpgrade(upgrade))
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "No upgrade named \"%s\" loaded.", sShortName);
-		return 0;
-	}
+		return ThrowNativeError(SP_ERROR_NATIVE, "No upgrade named \"%s\" loaded.", sShortName);
 	
 	return GetClientPurchasedUpgradeLevel(client, upgrade[UPGR_index]);
 }
 
-// native bool:SMRPG_SetClientSelectedUpgradeLevel(client, const String:shortname[], iLevel);
-public Native_SetClientSelectedUpgradeLevel(Handle:plugin, numParams)
+// native bool SMRPG_SetClientSelectedUpgradeLevel(int client, const char[] shortname, int iLevel);
+public int Native_SetClientSelectedUpgradeLevel(Handle plugin, int numParams)
 {
-	new client = GetNativeCell(1);
+	int client = GetNativeCell(1);
 	if(client < 0 || client > MaxClients)
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
-		return false;
-	}
+		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
 	
 	// Don't try to lookup anything, if we haven't loaded the client completely yet.
 	if (!IsPlayerDataLoaded(client))
 		return false;
 	
-	new len;
+	int len;
 	GetNativeStringLength(2, len);
-	new String:sShortName[len+1];
+	char[] sShortName = new char[len+1];
 	GetNativeString(2, sShortName, len+1);
 	
 	// Check if such an upgrade is registered
-	new upgrade[InternalUpgradeInfo];
+	int upgrade[InternalUpgradeInfo];
 	if(!GetUpgradeByShortname(sShortName, upgrade) || !IsValidUpgrade(upgrade))
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "No upgrade named \"%s\" loaded.", sShortName);
-		return false;
-	}
+		return ThrowNativeError(SP_ERROR_NATIVE, "No upgrade named \"%s\" loaded.", sShortName);
 	
-	new iLevel = GetNativeCell(3);
+	int iLevel = GetNativeCell(3);
 	if(iLevel < 0)
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "Invalid level %d.", iLevel);
-		return false;
-	}
+		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid level %d.", iLevel);
 	
-	new iPurchased = GetClientPurchasedUpgradeLevel(client, upgrade[UPGR_index]);
+	int iPurchased = GetClientPurchasedUpgradeLevel(client, upgrade[UPGR_index]);
 	// Can't select a level he doesn't own yet.
 	if(iPurchased < iLevel)
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "Can't select level %d of upgrade \"%s\", which is higher than the purchased level %d.", iLevel, sShortName, iPurchased);
-		return false;
-	}
+		return ThrowNativeError(SP_ERROR_NATIVE, "Can't select level %d of upgrade \"%s\", which is higher than the purchased level %d.", iLevel, sShortName, iPurchased);
 	
 	SetClientSelectedUpgradeLevel(client, upgrade[UPGR_index], iLevel);
 	
-	return true;
+	return 1;
 }
 
-// native bool:SMRPG_ClientBuyUpgrade(client, const String:shortname[]);
-public Native_ClientBuyUpgrade(Handle:plugin, numParams)
+// native bool SMRPG_ClientBuyUpgrade(int client, const char[] shortname);
+public int Native_ClientBuyUpgrade(Handle plugin, int numParams)
 {
-	new client = GetNativeCell(1);
+	int client = GetNativeCell(1);
 	if(client < 0 || client > MaxClients)
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
-		return false;
-	}
+		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
 	
 	// Don't try to lookup anything, if we haven't loaded the client completely yet.
 	if (!IsPlayerDataLoaded(client))
 		return false;
 	
-	new len;
+	int len;
 	GetNativeStringLength(2, len);
-	new String:sShortName[len+1];
+	char[] sShortName = new char[len+1];
 	GetNativeString(2, sShortName, len+1);
 	
 	// Check if such an upgrade is registered
-	new upgrade[InternalUpgradeInfo];
+	int upgrade[InternalUpgradeInfo];
 	if(!GetUpgradeByShortname(sShortName, upgrade) || !IsValidUpgrade(upgrade))
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "No upgrade named \"%s\" loaded.", sShortName);
-		return false;
-	}
+		return ThrowNativeError(SP_ERROR_NATIVE, "No upgrade named \"%s\" loaded.", sShortName);
 	
 	return BuyClientUpgrade(client, upgrade[UPGR_index]);
 }
 
-// native bool:SMRPG_ClientSellUpgrade(client, const String:shortname[]);
-public Native_ClientSellUpgrade(Handle:plugin, numParams)
+// native bool SMRPG_ClientSellUpgrade(int client, const char[] shortname);
+public int Native_ClientSellUpgrade(Handle plugin, int numParams)
 {
-	new client = GetNativeCell(1);
+	int client = GetNativeCell(1);
 	if(client < 0 || client > MaxClients)
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
-		return false;
-	}
+		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
 	
 	// Don't try to lookup anything, if we haven't loaded the client completely yet.
 	if (!IsPlayerDataLoaded(client))
 		return false;
 	
-	new len;
+	int len;
 	GetNativeStringLength(2, len);
-	new String:sShortName[len+1];
+	char[] sShortName = new char[len+1];
 	GetNativeString(2, sShortName, len+1);
 	
-	new upgrade[InternalUpgradeInfo];
+	int upgrade[InternalUpgradeInfo];
 	if(!GetUpgradeByShortname(sShortName, upgrade) || !IsValidUpgrade(upgrade))
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "No upgrade named \"%s\" loaded.", sShortName);
-		return false;
-	}
+		return ThrowNativeError(SP_ERROR_NATIVE, "No upgrade named \"%s\" loaded.", sShortName);
 	
 	return SellClientUpgrade(client, upgrade[UPGR_index]);
 }
 
-// native bool:SMRPG_IsUpgradeActiveOnClient(client const String:shortname[]);
-public Native_IsUpgradeActiveOnClient(Handle:plugin, numParams)
+// native bool SMRPG_IsUpgradeActiveOnClient(int client const char[] shortname);
+public int Native_IsUpgradeActiveOnClient(Handle plugin, int numParams)
 {
-	new client = GetNativeCell(1);
+	int client = GetNativeCell(1);
 	if(client < 0 || client > MaxClients)
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
-		return false;
-	}
+		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
 	
 	// Don't try to lookup anything, if we haven't loaded the client completely yet.
 	if (!IsPlayerDataLoaded(client))
 		return false;
 	
-	new len;
+	int len;
 	GetNativeStringLength(2, len);
-	new String:sShortName[len+1];
+	char[] sShortName = new char[len+1];
 	GetNativeString(2, sShortName, len+1);
 	
-	new upgrade[InternalUpgradeInfo];
+	int upgrade[InternalUpgradeInfo];
 	if(!GetUpgradeByShortname(sShortName, upgrade) || !IsValidUpgrade(upgrade))
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "No upgrade named \"%s\" loaded.", sShortName);
-		return false;
-	}
+		return ThrowNativeError(SP_ERROR_NATIVE, "No upgrade named \"%s\" loaded.", sShortName);
 	
 	// Ask the plugin owning that upgrade, if the effect is currently active on that player
-	new bool:bResult;
-	Call_StartFunction(upgrade[UPGR_plugin], upgrade[UPGR_activeCallback]);
-	Call_PushCell(client);
-	Call_Finish(bResult);
-	
-	return bResult;
+	return IsUpgradeEffectActive(client, upgrade);
 }
 
-// native SMRPG_GetClientLevel(client);
-public Native_GetClientLevel(Handle:plugin, numParams)
+// native int SMRPG_GetClientLevel(int client);
+public int Native_GetClientLevel(Handle plugin, int numParams)
 {
-	new client = GetNativeCell(1);
+	int client = GetNativeCell(1);
 	if(client < 0 || client > MaxClients)
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
-		return -1;
-	}
+		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
 	
 	return GetClientLevel(client);
 }
 
-// native bool:SMRPG_SetClientLevel(client, level);
-public Native_SetClientLevel(Handle:plugin, numParams)
+// native bool SMRPG_SetClientLevel(int client, int level);
+public int Native_SetClientLevel(Handle plugin, int numParams)
 {
-	new client = GetNativeCell(1);
+	int client = GetNativeCell(1);
 	if(client < 0 || client > MaxClients)
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
-		return false;
-	}
+		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
 	
 	// Don't try to lookup anything, if we haven't loaded the client completely yet.
 	if (!IsPlayerDataLoaded(client))
 		return false;
 	
-	new iLevel = GetNativeCell(2);
+	int iLevel = GetNativeCell(2);
 	
 	return SetClientLevel(client, iLevel);
 }
 
-// native SMRPG_GetClientCredits(client);
-public Native_GetClientCredits(Handle:plugin, numParams)
+// native int SMRPG_GetClientCredits(int client);
+public int Native_GetClientCredits(Handle plugin, int numParams)
 {
-	new client = GetNativeCell(1);
+	int client = GetNativeCell(1);
 	if(client < 0 || client > MaxClients)
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
-		return false;
-	}
+		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
 	
 	return GetClientCredits(client);
 }
 
-// native bool:SMRPG_SetClientCredits(client, credits);
-public Native_SetClientCredits(Handle:plugin, numParams)
+// native bool SMRPG_SetClientCredits(int client, int credits);
+public int Native_SetClientCredits(Handle plugin, int numParams)
 {
-	new client = GetNativeCell(1);
+	int client = GetNativeCell(1);
 	if(client < 0 || client > MaxClients)
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
-		return false;
-	}
+		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
 	
 	// Don't try to lookup anything, if we haven't loaded the client completely yet.
 	if (!IsPlayerDataLoaded(client))
 		return false;
 	
-	new iCredits = GetNativeCell(2);
+	int iCredits = GetNativeCell(2);
 	
 	return SetClientCredits(client, iCredits);
 }
 
-// native SMRPG_GetClientExperience(client);
-public Native_GetClientExperience(Handle:plugin, numParams)
+// native int SMRPG_GetClientExperience(int client);
+public int Native_GetClientExperience(Handle plugin, int numParams)
 {
-	new client = GetNativeCell(1);
+	int client = GetNativeCell(1);
 	if(client < 0 || client > MaxClients)
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
-		return false;
-	}
+		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
 	
 	return GetClientExperience(client);
 }
 
-// native bool:SMRPG_SetClientExperience(client, exp);
-public Native_SetClientExperience(Handle:plugin, numParams)
+// native bool SMRPG_SetClientExperience(int client, int exp);
+public int Native_SetClientExperience(Handle plugin, int numParams)
 {
-	new client = GetNativeCell(1);
+	int client = GetNativeCell(1);
 	if(client < 0 || client > MaxClients)
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
-		return false;
-	}
+		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
 	
 	// Don't try to lookup anything, if we haven't loaded the client completely yet.
 	if (!IsPlayerDataLoaded(client))
 		return false;
 	
-	new iExperience = GetNativeCell(2);
+	int iExperience = GetNativeCell(2);
 	
 	return SetClientExperience(client, iExperience);
 }
 
-// native SMRPG_ResetClientStats(client);
-public Native_ResetClientStats(Handle:plugin, numParams)
+// native void SMRPG_ResetClientStats(int client);
+public int Native_ResetClientStats(Handle plugin, int numParams)
 {
-	new client = GetNativeCell(1);
+	int client = GetNativeCell(1);
 	if(client < 0 || client > MaxClients)
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
-		return;
-	}
+		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
 	
 	// Don't try to lookup anything, if we haven't loaded the client completely yet.
 	if (!IsPlayerDataLoaded(client))
-		return;
+		return 0;
 	
 	ResetStats(client);
 	SetPlayerLastReset(client, GetTime());
+	return 0;
 }
 
-// native SMRPG_GetClientLastResetTime(client);
-public Native_GetClientLastResetTime(Handle:plugin, numParams)
+// native int SMRPG_GetClientLastResetTime(int client);
+public int Native_GetClientLastResetTime(Handle plugin, int numParams)
 {
-	new client = GetNativeCell(1);
+	int client = GetNativeCell(1);
 	if(client < 0 || client > MaxClients)
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
-		return 0;
-	}
+		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
 	
 	return GetPlayerLastReset(client);
 }
 
-// native SMRPG_GetClientLastSeenTime(client);
-public Native_GetClientLastSeenTime(Handle:plugin, numParams)
+// native int SMRPG_GetClientLastSeenTime(int client);
+public int Native_GetClientLastSeenTime(Handle plugin, int numParams)
 {
-	new client = GetNativeCell(1);
+	int client = GetNativeCell(1);
 	if(client < 0 || client > MaxClients)
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
-		return 0;
-	}
+		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
 	
 	return GetPlayerLastSeen(client);
 }
 
-// native bool:SMRPG_ClientWantsCosmetics(client, const String:shortname[], SMRPG_FX:effect);
-public Native_ClientWantsCosmetics(Handle:plugin, numParams)
+// native bool SMRPG_ClientWantsCosmetics(int client, const char[] shortname, SMRPG_FX effect);
+public int Native_ClientWantsCosmetics(Handle plugin, int numParams)
 {
-	new client = GetNativeCell(1);
+	int client = GetNativeCell(1);
 	if(client < 0 || client > MaxClients)
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
-		return false;
-	}
+		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
 	
 	// Don't try to lookup anything, if we haven't loaded the client completely yet.
 	if (!IsPlayerDataLoaded(client))
 		return false;
 	
-	new len;
+	int len;
 	GetNativeStringLength(2, len);
-	new String:sShortName[len+1];
+	char[] sShortName = new char[len+1];
 	GetNativeString(2, sShortName, len+1);
 	
-	new upgrade[InternalUpgradeInfo];
+	int upgrade[InternalUpgradeInfo];
 	if(!GetUpgradeByShortname(sShortName, upgrade) || !IsValidUpgrade(upgrade))
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "No upgrade named \"%s\" loaded.", sShortName);
-		return false;
-	}
+		return ThrowNativeError(SP_ERROR_NATIVE, "No upgrade named \"%s\" loaded.", sShortName);
 	
-	new SMRPG_FX:iFX = SMRPG_FX:GetNativeCell(3);
+	SMRPG_FX iFX = view_as<SMRPG_FX>(GetNativeCell(3));
 	
-	new playerupgrade[PlayerUpgradeInfo];
+	int playerupgrade[PlayerUpgradeInfo];
 	GetPlayerUpgradeInfoByIndex(client, upgrade[UPGR_index], playerupgrade);
 	
 	// If the visuals on the upgrade are disabled globally, ignore the clients individual setting.
@@ -1424,7 +1346,7 @@ public Native_ClientWantsCosmetics(Handle:plugin, numParams)
 /**
  * Helpers
  */
-CallOnClientLoaded(client)
+void CallOnClientLoaded(int client)
 {
 	// Only call that forward once per player
 	if(!g_bFirstLoaded[client])
@@ -1438,11 +1360,11 @@ CallOnClientLoaded(client)
 }
 
 // Fisher and Yates shuffling
-stock Array_Shuffle(Handle:array)
+stock void Array_Shuffle(ArrayList array)
 {
-	new iSize = GetArraySize(array);
-	for(new i=iSize-1;i>=1;i--)
+	int iSize = array.Length;
+	for(int i=iSize-1;i>=1;i--)
 	{
-		SwapArrayItems(array, GetRandomInt(0, i), i);
+		array.SwapAt(GetRandomInt(0, i), i);
 	}
 }

@@ -292,7 +292,7 @@ public void Event_OnPlayerDeath(Event event, const char[] error, bool dontBroadc
 		return;
 	
 	char sWeapon[64];
-	GetEventString(event, "weapon", sWeapon, sizeof(sWeapon));
+	event.GetString("weapon", sWeapon, sizeof(sWeapon));
 	
 	int iExp = RoundToCeil(SMRPG_GetClientLevel(victim) * SMRPG_GetWeaponExperience(sWeapon, WeaponExperience_Kill) + SMRPG_GetWeaponExperience(sWeapon, WeaponExperience_Bonus));
 	if(GetEventBool(event, "headshot"))

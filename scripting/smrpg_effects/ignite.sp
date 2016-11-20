@@ -119,7 +119,7 @@ public int Native_IgniteClient(Handle plugin, int numParams)
 		attacker = GetNativeCell(5);
 
 	// Server admin doesn't want the attacker to get credit for the fire damage.
-	if (!GetConVarBool(g_hCVCreditFireAttacker))
+	if (!g_hCVCreditFireAttacker.BoolValue)
 		attacker = -1;
 	
 	if (attacker != -1 && (attacker <= 0 || attacker > MaxClients))

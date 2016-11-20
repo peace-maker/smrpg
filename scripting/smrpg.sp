@@ -9,6 +9,7 @@
 #include <autoexecconfig>
 #include <smrpg_sharedmaterials>
 
+#pragma newdecls required
 #undef REQUIRE_PLUGIN
 #include <adminmenu>
 #include <smrpg_commandlist>
@@ -18,86 +19,80 @@
 
 #define PLUGIN_VERSION "1.0"
 
-new bool:g_bLateLoaded;
-new Handle:g_hPlayerAutoSave;
+bool g_bLateLoaded;
+Handle g_hPlayerAutoSave;
 
-new Handle:g_hfwdOnEnableStatusChanged;
+Handle g_hfwdOnEnableStatusChanged;
 
 // Convars
-new Handle:g_hCVEnable;
-new Handle:g_hCVFFA;
-new Handle:g_hCVBotEnable;
-new Handle:g_hCVBotSaveStats;
-new Handle:g_hCVBotNeedHuman;
-new Handle:g_hCVNeedEnemies;
-new Handle:g_hCVEnemiesNotAFK;
-new Handle:g_hCVDebug;
-new Handle:g_hCVSaveData;
-new Handle:g_hCVSaveInterval;
-new Handle:g_hCVPlayerExpire;
-new Handle:g_hCVAllowSelfReset;
+ConVar g_hCVEnable;
+ConVar g_hCVFFA;
+ConVar g_hCVBotEnable;
+ConVar g_hCVBotSaveStats;
+ConVar g_hCVBotNeedHuman;
+ConVar g_hCVNeedEnemies;
+ConVar g_hCVEnemiesNotAFK;
+ConVar g_hCVDebug;
+ConVar g_hCVSaveData;
+ConVar g_hCVSaveInterval;
+ConVar g_hCVPlayerExpire;
+ConVar g_hCVAllowSelfReset;
 
-new Handle:g_hCVBotMaxlevel;
-new Handle:g_hCVBotMaxlevelReset;
-new Handle:g_hCVPlayerMaxlevel;
-new Handle:g_hCVPlayerMaxlevelReset;
+ConVar g_hCVBotMaxlevel;
+ConVar g_hCVBotMaxlevelReset;
+ConVar g_hCVPlayerMaxlevel;
+ConVar g_hCVPlayerMaxlevelReset;
 
-new Handle:g_hCVBotKillPlayer;
-new Handle:g_hCVPlayerKillBot;
-new Handle:g_hCVBotKillBot;
+ConVar g_hCVBotKillPlayer;
+ConVar g_hCVPlayerKillBot;
+ConVar g_hCVBotKillBot;
 
-new Handle:g_hCVAnnounceNewLvl;
-new Handle:g_hCVAFKTime;
-new Handle:g_hCVSpawnProtect;
+ConVar g_hCVAnnounceNewLvl;
+ConVar g_hCVAFKTime;
+ConVar g_hCVSpawnProtect;
 
-new Handle:g_hCVExpNotice;
-new Handle:g_hCVExpMax;
-new Handle:g_hCVExpStart;
-new Handle:g_hCVExpInc;
+ConVar g_hCVExpNotice;
+ConVar g_hCVExpMax;
+ConVar g_hCVExpStart;
+ConVar g_hCVExpInc;
 
-new Handle:g_hCVExpDamage;
-new Handle:g_hCVExpKill;
-new Handle:g_hCVExpKillBonus;
-new Handle:g_hCVExpKillMax;
+ConVar g_hCVExpDamage;
+ConVar g_hCVExpKill;
+ConVar g_hCVExpKillBonus;
+ConVar g_hCVExpKillMax;
 
-new Handle:g_hCVExpTeamwin;
+ConVar g_hCVExpTeamwin;
 
-new Handle:g_hCVLastExperienceCount;
+ConVar g_hCVLastExperienceCount;
 
-new Handle:g_hCVLevelStart;
-new Handle:g_hCVLevelStartGiveCredits;
-new Handle:g_hCVUpgradeStartLevelsFree;
-new Handle:g_hCVCreditsInc;
-new Handle:g_hCVCreditsStart;
-new Handle:g_hCVSalePercent;
-new Handle:g_hCVIgnoreLevelBarrier;
-new Handle:g_hCVAllowPresentUpgradeUsage;
-new Handle:g_hCVDisableLevelSelection;
-new Handle:g_hCVShowMaxLevelInMenu;
+ConVar g_hCVLevelStart;
+ConVar g_hCVLevelStartGiveCredits;
+ConVar g_hCVUpgradeStartLevelsFree;
+ConVar g_hCVCreditsInc;
+ConVar g_hCVCreditsStart;
+ConVar g_hCVSalePercent;
+ConVar g_hCVIgnoreLevelBarrier;
+ConVar g_hCVAllowPresentUpgradeUsage;
+ConVar g_hCVDisableLevelSelection;
+ConVar g_hCVShowMaxLevelInMenu;
 
 #define SHOW_TEAMLOCK_NONE 0
 #define SHOW_TEAMLOCK_BOUGHT 1
 #define SHOW_TEAMLOCK_ALL 2
-new Handle:g_hCVShowUpgradesOfOtherTeam;
-new Handle:g_hCVBuyUpgradesOfOtherTeam;
-new Handle:g_hCVShowTeamlockNoticeOwnTeam;
+ConVar g_hCVShowUpgradesOfOtherTeam;
+ConVar g_hCVBuyUpgradesOfOtherTeam;
+ConVar g_hCVShowTeamlockNoticeOwnTeam;
 
-new Handle:g_hCVShowUpgradePurchase;
-new Handle:g_hCVShowMenuOnLevelDefault;
-new Handle:g_hCVFadeOnLevelDefault;
+ConVar g_hCVShowUpgradePurchase;
+ConVar g_hCVShowMenuOnLevelDefault;
+ConVar g_hCVFadeOnLevelDefault;
 
-new Handle:g_hCVFadeOnLevelColor;
+ConVar g_hCVFadeOnLevelColor;
 
 // List of default core chat commands available to players, which get registered with the smrpg_commandlist plugin.
-new String:g_sDefaultRPGCommands[][] = {"rpgmenu", "rpgrank", "rpginfo", "rpgtop10", "rpgnext", "rpgsession", "rpghelp", "rpgexp"};
+char g_sDefaultRPGCommands[] = {"rpgmenu", "rpgrank", "rpginfo", "rpgtop10", "rpgnext", "rpgsession", "rpghelp", "rpgexp"};
 
-#define IF_IGNORE_BOTS(%1) if(IsFakeClient(%1) && (!GetConVarBool(g_hCVBotEnable) || (GetConVarBool(g_hCVBotNeedHuman) && Client_GetCount(true, false) == 0)))
-
-// Compatibility hack to suppress compiler errors on sourcemod 1.6
-// SourceMod 1.7 added a Transaction methodmap.
-#if SOURCEMOD_V_MAJOR == 1 && SOURCEMOD_V_MINOR < 7
-#define Transaction Handle
-#endif
+#define IF_IGNORE_BOTS(%1) if(IsFakeClient(%1) && (!g_hCVBotEnable.BoolValue || (g_hCVBotNeedHuman.BoolValue && Client_GetCount(true, false) == 0)))
 
 #include "smrpg/smrpg_upgrades.sp"
 #include "smrpg/smrpg_database.sp"
@@ -108,7 +103,7 @@ new String:g_sDefaultRPGCommands[][] = {"rpgmenu", "rpgrank", "rpginfo", "rpgtop
 #include "smrpg/smrpg_admincommands.sp"
 #include "smrpg/smrpg_adminmenu.sp"
 
-public Plugin:myinfo = 
+public Plugin myinfo = 
 {
 	name = "SM:RPG",
 	author = "Jannik \"Peace-Maker\" Hartung, SeLfkiLL",
@@ -117,7 +112,7 @@ public Plugin:myinfo =
 	url = "http://www.wcfan.de/"
 }
 
-public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
+public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
 	RegPluginLibrary("smrpg");
 	g_bLateLoaded = late;
@@ -133,20 +128,20 @@ public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
 	RegisterDatabaseNatives();
 }
 
-public OnPluginStart()
+public void OnPluginStart()
 {
-	new Handle:hVersion = CreateConVar("smrpg_version", PLUGIN_VERSION, "SM:RPG version", FCVAR_NOTIFY|FCVAR_DONTRECORD);
-	if(hVersion != INVALID_HANDLE)
+	ConVar hVersion = CreateConVar("smrpg_version", PLUGIN_VERSION, "SM:RPG version", FCVAR_NOTIFY|FCVAR_DONTRECORD);
+	if(hVersion != null)
 	{
-		SetConVarString(hVersion, PLUGIN_VERSION);
-		HookConVarChange(hVersion, ConVar_VersionChanged);
+		hVersion.SetString(PLUGIN_VERSION);
+		hVersion.AddChangeHook(ConVar_VersionChanged);
 	}
 	
 	SMRPG_GC_CheckSharedMaterialsAndSounds();
 	
 	AutoExecConfig_SetFile("plugin.smrpg");
 	AutoExecConfig_SetCreateFile(true);
-	AutoExecConfig_SetPlugin(INVALID_HANDLE);
+	AutoExecConfig_SetPlugin(null);
 	
 	g_hCVEnable = AutoExecConfig_CreateConVar("smrpg_enable", "1", "If set to 1, SM:RPG is enabled, if 0, SM:RPG is disabled", 0, true, 0.0, true, 1.0);
 	g_hCVFFA = AutoExecConfig_CreateConVar("smrpg_ffa", "0", "Free-For-All mode to ignore teams and handle teammates as if they're enemies?", 0, true, 0.0, true, 1.0);
@@ -212,12 +207,13 @@ public OnPluginStart()
 	AutoExecConfig_ExecuteFile();
 	//AutoExecConfig_CleanFile();
 	
-	// forward SMRPG_OnEnableStatusChanged(bool:bEnabled);
+	// forward void SMRPG_OnEnableStatusChanged(bool bEnabled);
 	g_hfwdOnEnableStatusChanged = CreateGlobalForward("SMRPG_OnEnableStatusChanged", ET_Ignore, Param_Cell);
 	
-	HookConVarChange(g_hCVEnable, ConVar_EnableChanged);
-	HookConVarChange(g_hCVSaveInterval, ConVar_SaveIntervalChanged);
-	HookConVarChange(g_hCVLastExperienceCount, ConVar_LastExperienceCountChanged);
+	
+	g_hCVEnable.AddChangeHook(ConVar_EnableChanged);
+	g_hCVSaveInterval.AddChangeHook(ConVar_SaveIntervalChanged);
+	g_hCVLastExperienceCount.AddChangeHook(ConVar_LastExperienceCountChanged);
 	
 	RegConsoleCmd("rpgmenu", Cmd_RPGMenu, "Opens the rpg main menu");
 	RegConsoleCmd("rpg", Cmd_RPGMenu, "Opens the rpg main menu");
@@ -251,7 +247,7 @@ public OnPluginStart()
 	
 	if(g_bLateLoaded)
 	{
-		for(new i=1;i<=MaxClients;i++)
+		for(int i=1;i<=MaxClients;i++)
 		{
 			if(!IsClientConnected(i))
 				continue;
@@ -276,8 +272,8 @@ public OnPluginStart()
 		OnLibraryAdded("clientprefs");
 	
 	// See if the menu plugin is already ready
-	new Handle:topmenu;
-	if (LibraryExists("adminmenu") && ((topmenu = GetAdminTopMenu()) != INVALID_HANDLE))
+	TopMenu topmenu;
+	if (LibraryExists("adminmenu") && ((topmenu = GetAdminTopMenu()) != null))
 	{
 		// If so, manually fire the callback
 		OnAdminMenuReady(topmenu);
@@ -287,65 +283,65 @@ public OnPluginStart()
 /**
  * ConVar changes
  */
-public ConVar_VersionChanged(Handle:convar, const String:oldValue[], const String:newValue[])
+public void ConVar_VersionChanged(ConVar convar, const char[] oldValue, const char[] newValue)
 {
 	SetConVarString(convar, PLUGIN_VERSION);
 }
 
-public ConVar_SaveIntervalChanged(Handle:convar, const String:oldValue[], const String:newValue[])
+public void ConVar_SaveIntervalChanged(ConVar convar, const char[] oldValue, const char[] newValue)
 {
 	ClearHandle(g_hPlayerAutoSave);
-	g_hPlayerAutoSave = CreateTimer(GetConVarFloat(g_hCVSaveInterval), Timer_SavePlayers, _, TIMER_REPEAT);
+	g_hPlayerAutoSave = CreateTimer(g_hCVSaveInterval.FloatValue, Timer_SavePlayers, _, TIMER_REPEAT);
 }
 
-public ConVar_EnableChanged(Handle:convar, const String:oldValue[], const String:newValue[])
+public void ConVar_EnableChanged(ConVar convar, const char[] oldValue, const char[] newValue)
 {
 	if(StrEqual(oldValue, newValue, false))
 		return;
 	
 	// Call the forward.
 	Call_StartForward(g_hfwdOnEnableStatusChanged);
-	Call_PushCell(GetConVarBool(convar));
+	Call_PushCell(convar.BoolValue);
 	Call_Finish();
 	
 	// Don't need to do anything, if we're enabled or we don't want to save the stats to the database.
-	if(GetConVarBool(convar) || !GetConVarBool(g_hCVSaveData))
+	if(convar.BoolValue || !g_hCVSaveData.BoolValue)
 		return;
 	
-	UnhookConVarChange(convar, ConVar_EnableChanged);
+	convar.RemoveChangeHook(ConVar_EnableChanged);
 	SetConVarBool(convar, true);
 	SaveAllPlayers();
 	SetConVarBool(convar, false);
-	HookConVarChange(convar, ConVar_EnableChanged);
+	convar.AddChangeHook(ConVar_EnableChanged);
 	PrintToServer("SM:RPG smrpg_enable: SM:RPG data has been saved");
 }
 
 /**
  * Public global forwards
  */
-public OnAllPluginsLoaded()
+public void OnAllPluginsLoaded()
 {
 	RegisterTopMenu();
 	InitMenu();
 }
 
-public OnPluginEnd()
+public void OnPluginEnd()
 {
 	if(LibraryExists("smrpg_commandlist"))
 	{
-		for(new i=0;i<sizeof(g_sDefaultRPGCommands);i++)
+		for(int i=0;i<sizeof(g_sDefaultRPGCommands);i++)
 			SMRPG_UnregisterCommand(g_sDefaultRPGCommands[i]);
 	}
 	
 	// Try to save the stats!
-	if(g_hDatabase != INVALID_HANDLE)
+	if(g_hDatabase != null)
 		SaveAllPlayers();
 }
 
-public OnConfigsExecuted()
+public void OnConfigsExecuted()
 {
-	decl String:sPath[PLATFORM_MAX_PATH];
-	decl String:sError[256];
+	char sPath[PLATFORM_MAX_PATH];
+	char sError[256];
 	
 	BuildPath(Path_SM, sPath, sizeof(sPath), "configs/smrpg/rpgmenu_sorting.txt");
 	
@@ -355,15 +351,15 @@ public OnConfigsExecuted()
 	}
 	
 	ClearHandle(g_hPlayerAutoSave);
-	g_hPlayerAutoSave = CreateTimer(GetConVarFloat(g_hCVSaveInterval), Timer_SavePlayers, _, TIMER_REPEAT);
+	g_hPlayerAutoSave = CreateTimer(g_hCVSaveInterval.FloatValue, Timer_SavePlayers, _, TIMER_REPEAT);
 }
 
-public OnLibraryAdded(const String:name[])
+public void OnLibraryAdded(const char[] name)
 {
 	if(StrEqual(name, "smrpg_commandlist"))
 	{
 		// Register the default rpg commands
-		for(new i=0;i<sizeof(g_sDefaultRPGCommands);i++)
+		for(int i=0;i<sizeof(g_sDefaultRPGCommands);i++)
 			SMRPG_RegisterCommand(g_sDefaultRPGCommands[i], CommandList_DefaultTranslations);
 	}
 	else if(StrEqual(name, "clientprefs"))
@@ -372,16 +368,16 @@ public OnLibraryAdded(const String:name[])
 	}
 }
 
-public OnLibraryRemoved(const String:name[])
+public void OnLibraryRemoved(const char[] name)
 {
 	if (StrEqual(name, "adminmenu"))
 	{
-		g_hTopMenu = INVALID_HANDLE;
+		g_hTopMenu = null;
 		g_TopMenuCategory = INVALID_TOPMENUOBJECT;
 	}
 }
 
-public OnMapStart()
+public void OnMapStart()
 {
 	SMRPG_GC_PrecacheSound("SoundLevelup");
 	
@@ -397,21 +393,21 @@ public OnMapStart()
 	StartSessionMenuUpdater();
 }
 
-public OnMapEnd()
+public void OnMapEnd()
 {
 	SaveAllPlayers();
 }
 
-public OnClientConnected(client)
+public void OnClientConnected(int client)
 {
 	InitPlayer(client);
 }
 
-public OnClientPutInServer(client)
+public void OnClientPutInServer(int client)
 {
 	SDKHook(client, SDKHook_OnTakeDamagePost, Hook_OnTakeDamagePost);
 	
-	if(!GetConVarBool(g_hCVEnable))
+	if(!g_hCVEnable.BoolValue)
 		return;
 	
 	// Call the query callback in all plugins of the upgrades this client owns.
@@ -423,22 +419,22 @@ public OnClientPutInServer(client)
 	Client_PrintToChat(client, false, "%t", "Advertise rpgmenu command");
 }
 
-public OnClientAuthorized(client, const String:auth[])
+public void OnClientAuthorized(int client, const char[] auth)
 {
 	AddPlayer(client);
 }
 
-public OnClientDisconnect(client)
+public void OnClientDisconnect(int client)
 {
 	ResetPlayerMenu(client);
 	ResetAdminMenu(client);
 	
 	// Save stats and upgrade levels both at once or nothing at all.
-	new Transaction:hTransaction = SQL_CreateTransaction();
+	Transaction hTransaction = new Transaction();
 	if (SaveData(client, hTransaction))
-		SQL_ExecuteTransaction(g_hDatabase, hTransaction, _, SQLTxn_LogFailure);
+		g_hDatabase.Execute(hTransaction, _, SQLTxn_LogFailure);
 	else
-		CloseHandle(hTransaction);
+		delete hTransaction;
 	
 	ClearClientRankCache(client);
 	RemovePlayer(client);
@@ -446,7 +442,7 @@ public OnClientDisconnect(client)
 	ResetSpawnProtection(client);
 }
 
-public Action:OnPlayerRunCmd(client, &buttons, &impulse, Float:vel[3], Float:angles[3], &weapon, &subtype, &cmdnum, &tickcount, &seed, mouse[2])
+public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3], float angles[3], int &weapon, int &subtype, int &cmdnum, int &tickcount, int &seed, int mouse[2])
 {
 	if(IsClientInGame(client) && IsPlayerAlive(client))
 	{
@@ -461,16 +457,16 @@ public Action:OnPlayerRunCmd(client, &buttons, &impulse, Float:vel[3], Float:ang
 	return Plugin_Continue;
 }
 
-public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagetype, weapon, const Float:damageForce[3], const Float:damagePosition[3])
+public void Hook_OnTakeDamagePost(int victim, int attacker, int inflictor, float damage, int damagetype, int weapon, const float damageForce[3], const float damagePosition[3])
 {
 	if(attacker <= 0 || attacker > MaxClients || victim <= 0 || victim > MaxClients)
 		return;
 	
-	new iWeapon = inflictor;
+	int iWeapon = inflictor;
 	if(inflictor > 0 && inflictor <= MaxClients)
 		iWeapon = Client_GetActiveWeapon(inflictor);
 	
-	new String:sWeapon[64];
+	char sWeapon[64];
 	if(iWeapon > 0)
 		GetEntityClassname(iWeapon, sWeapon, sizeof(sWeapon));
 	
@@ -481,9 +477,9 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
  * Event handlers
  */
 
-public Event_OnPlayerSpawn(Handle:event, const String:error[], bool:dontBroadcast)
+public void Event_OnPlayerSpawn(Event event, const char[] error, bool dontBroadcast)
 {
-	new client = GetClientOfUserId(GetEventInt(event, "userid"));
+	int client = GetClientOfUserId(event.GetInt("userid"));
 	
 	if(client <= 0)
 		return;
@@ -494,10 +490,10 @@ public Event_OnPlayerSpawn(Handle:event, const String:error[], bool:dontBroadcas
 	g_bPlayerSpawnProtected[client] = true;
 }
  
-public Event_OnPlayerDeath(Handle:event, const String:error[], bool:dontBroadcast)
+public void Event_OnPlayerDeath(Event event, const char[] error, bool dontBroadcast)
 {
-	new attacker = GetClientOfUserId(GetEventInt(event, "attacker"));
-	new victim = GetClientOfUserId(GetEventInt(event, "userid"));
+	int attacker = GetClientOfUserId(event.GetInt("attacker"));
+	int victim = GetClientOfUserId(event.GetInt("userid"));
 	
 	if(victim <= 0)
 		return;
@@ -508,19 +504,19 @@ public Event_OnPlayerDeath(Handle:event, const String:error[], bool:dontBroadcas
 	if(attacker <= 0)
 		return;
 	
-	new String:sWeapon[64];
+	char sWeapon[64];
 	// FIXME: Not all games might have this resource in the player_death event..
-	GetEventString(event, "weapon", sWeapon, sizeof(sWeapon));
+	event.GetString("weapon", sWeapon, sizeof(sWeapon));
 	
 	Stats_PlayerKill(attacker, victim, sWeapon);
 }
 
-public Event_OnRoundEnd(Handle:event, const String:error[], bool:dontBroadcast)
+public void Event_OnRoundEnd(Event event, const char[] error, bool dontBroadcast)
 {
-	Stats_WinningTeam(GetEventInt(event, "winner"));
+	Stats_WinningTeam(event.GetInt("winner"));
 }
 
-public OnClientSayCommand_Post(client, const String:command[], const String:sText[])
+public void OnClientSayCommand_Post(int client, const char[] command, const char[] sText)
 {
 	if(StrEqual(sText, "rpgmenu", false) || StrEqual(sText, "rpg", false))
 		DisplayMainMenu(client);
@@ -532,7 +528,7 @@ public OnClientSayCommand_Post(client, const String:command[], const String:sTex
 		}
 		else
 		{
-			new iTarget = FindTarget(client, sText[8], !GetConVarBool(g_hCVBotEnable), false);
+			int iTarget = FindTarget(client, sText[8], !g_hCVBotEnable.BoolValue, false);
 			if(iTarget == -1)
 				return;
 			PrintRankToChat(iTarget, -1);
@@ -545,10 +541,10 @@ public OnClientSayCommand_Post(client, const String:command[], const String:sTex
 			// See if he's spectating someone and show the upgrades of the target.
 			if(IsClientObserver(client) || !IsPlayerAlive(client))
 			{
-				new Obs_Mode:iObsMode = Client_GetObserverMode(client);
+				Obs_Mode iObsMode = Client_GetObserverMode(client);
 				if(iObsMode == OBS_MODE_IN_EYE || iObsMode == OBS_MODE_CHASE)
 				{
-					new iTarget = Client_GetObserverTarget(client);
+					int iTarget = Client_GetObserverTarget(client);
 					if(iTarget > 0 && iTarget <= MaxClients)
 					{
 						DisplayOtherUpgradesMenu(client, iTarget);
@@ -561,7 +557,7 @@ public OnClientSayCommand_Post(client, const String:command[], const String:sTex
 		}
 		else
 		{
-			new iTarget = FindTarget(client, sText[8], false, false);
+			int iTarget = FindTarget(client, sText[8], false, false);
 			if(iTarget == -1)
 				return;
 			DisplayOtherUpgradesMenu(client, iTarget);
@@ -580,9 +576,9 @@ public OnClientSayCommand_Post(client, const String:command[], const String:sTex
 }
 
 // That player fully disconnected, not just reconnected after a mapchange.
-public Event_OnPlayerDisconnect(Handle:event, const String:error[], bool:dontBroadcast)
+public void Event_OnPlayerDisconnect(Event event, const char[] error, bool dontBroadcast)
 {
-	new client = GetClientOfUserId(GetEventInt(event, "userid"));
+	int client = GetClientOfUserId(event.GetInt("userid"));
 	if(!client)
 		return;
 	
@@ -593,7 +589,7 @@ public Event_OnPlayerDisconnect(Handle:event, const String:error[], bool:dontBro
  * Public command handlers
  */
 
-public Action:Cmd_RPGMenu(client, args)
+public Action Cmd_RPGMenu(int client, int args)
 {
 	if(!client)
 	{
@@ -606,7 +602,7 @@ public Action:Cmd_RPGMenu(client, args)
 	return Plugin_Handled;
 }
 
-public Action:Cmd_RPGRank(client, args)
+public Action Cmd_RPGRank(int client, int args)
 {
 	if(!client)
 	{
@@ -614,7 +610,7 @@ public Action:Cmd_RPGRank(client, args)
 		return Plugin_Handled;
 	}
 	
-	decl String:sText[256];
+	char sText[256];
 	GetCmdArgString(sText, sizeof(sText));
 	TrimString(sText);
 	
@@ -624,7 +620,7 @@ public Action:Cmd_RPGRank(client, args)
 	}
 	else
 	{
-		new iTarget = FindTarget(client, sText, !GetConVarBool(g_hCVBotEnable), false);
+		int iTarget = FindTarget(client, sText, !g_hCVBotEnable.BoolValue, false);
 		if(iTarget == -1)
 			return Plugin_Handled;
 		PrintRankToChat(iTarget, client);
@@ -633,7 +629,7 @@ public Action:Cmd_RPGRank(client, args)
 	return Plugin_Handled;
 }
 
-public Action:Cmd_RPGInfo(client, args)
+public Action Cmd_RPGInfo(int client, int args)
 {
 	if(!client)
 	{
@@ -641,7 +637,7 @@ public Action:Cmd_RPGInfo(client, args)
 		return Plugin_Handled;
 	}
 	
-	decl String:sText[256];
+	char sText[256];
 	GetCmdArgString(sText, sizeof(sText));
 	TrimString(sText);
 	
@@ -650,10 +646,10 @@ public Action:Cmd_RPGInfo(client, args)
 		// See if he's spectating someone and show the upgrades of the target.
 		if(IsClientObserver(client) || !IsPlayerAlive(client))
 		{
-			new Obs_Mode:iObsMode = Client_GetObserverMode(client);
+			Obs_Mode iObsMode = Client_GetObserverMode(client);
 			if(iObsMode == OBS_MODE_IN_EYE || iObsMode == OBS_MODE_CHASE)
 			{
-				new iTarget = Client_GetObserverTarget(client);
+				int iTarget = Client_GetObserverTarget(client);
 				if(iTarget > 0)
 				{
 					DisplayOtherUpgradesMenu(client, iTarget);
@@ -666,7 +662,7 @@ public Action:Cmd_RPGInfo(client, args)
 	}
 	else
 	{
-		new iTarget = FindTarget(client, sText, false, false);
+		int iTarget = FindTarget(client, sText, false, false);
 		if(iTarget == -1)
 			return Plugin_Handled;
 		DisplayOtherUpgradesMenu(client, iTarget);
@@ -675,7 +671,7 @@ public Action:Cmd_RPGInfo(client, args)
 	return Plugin_Handled;
 }
 
-public Action:Cmd_RPGTop10(client, args)
+public Action Cmd_RPGTop10(int client, int args)
 {
 	if(!client)
 	{
@@ -688,7 +684,7 @@ public Action:Cmd_RPGTop10(client, args)
 	return Plugin_Handled;
 }
 
-public Action:Cmd_RPGNext(client, args)
+public Action Cmd_RPGNext(int client, int args)
 {
 	if(!client)
 	{
@@ -701,7 +697,7 @@ public Action:Cmd_RPGNext(client, args)
 	return Plugin_Handled;
 }
 
-public Action:Cmd_RPGSession(client, args)
+public Action Cmd_RPGSession(int client, int args)
 {
 	if(!client)
 	{
@@ -714,7 +710,7 @@ public Action:Cmd_RPGSession(client, args)
 	return Plugin_Handled;
 }
 
-public Action:Cmd_RPGHelp(client, args)
+public Action Cmd_RPGHelp(int client, int args)
 {
 	if(!client)
 	{
@@ -727,7 +723,7 @@ public Action:Cmd_RPGHelp(client, args)
 	return Plugin_Handled;
 }
 
-public Action:Cmd_RPGLatestExperience(client, args)
+public Action Cmd_RPGLatestExperience(int client, int args)
 {
 	if(!client)
 	{
@@ -743,9 +739,9 @@ public Action:Cmd_RPGLatestExperience(client, args)
 /**
  * Timer callbacks
  */
-public Action:Timer_SavePlayers(Handle:timer, any:data)
+public Action Timer_SavePlayers(Handle timer, any data)
 {
-	if(!GetConVarBool(g_hCVEnable) || !GetConVarBool(g_hCVSaveData) || !GetConVarBool(g_hCVSaveInterval))
+	if(!g_hCVEnable.BoolValue || !g_hCVSaveData.BoolValue || !g_hCVSaveInterval.BoolValue)
 		return Plugin_Continue;
 	
 	SaveAllPlayers();
@@ -756,25 +752,25 @@ public Action:Timer_SavePlayers(Handle:timer, any:data)
 /**
  * Natives
  */
-public Native_IsEnabled(Handle:plugin, numParams)
+public int Native_IsEnabled(Handle plugin, int numParams)
 {
-	return GetConVarBool(g_hCVEnable);
+	return g_hCVEnable.BoolValue;
 }
 
-public Native_IgnoreBots(Handle:plugin, numParams)
+public int Native_IgnoreBots(Handle plugin, int numParams)
 {
-	return !GetConVarBool(g_hCVBotEnable);
+	return !g_hCVBotEnable.BoolValue;
 }
 
-public Native_IsFFAEnabled(Handle:plugin, numParams)
+public int Native_IsFFAEnabled(Handle plugin, int numParams)
 {
-	return GetConVarBool(g_hCVFFA);
+	return g_hCVFFA.BoolValue;
 }
 
 /**
  * Translation callback for SM:RPG Command List plugin
  */
-public Action:CommandList_DefaultTranslations(client, const String:command[], CommandTranslationType:type, String:translation[], maxlen)
+public Action CommandList_DefaultTranslations(int client, const char[] command, CommandTranslationType type, char[] translation, int maxlen)
 {
 	if(StrEqual(command, "rpgmenu"))
 	{
@@ -869,7 +865,7 @@ public Action:CommandList_DefaultTranslations(client, const String:command[], Co
 			case CommandTranslationType_Description:
 				Format(translation, maxlen, "%T", "rpgexp desc", client);
 			case CommandTranslationType_Advert:
-				Format(translation, maxlen, "%T", "rpgexp advert", client, GetConVarInt(g_hCVLastExperienceCount));
+				Format(translation, maxlen, "%T", "rpgexp advert", client, g_hCVLastExperienceCount.IntValue);
 		}
 	}
 	return Plugin_Continue;
@@ -878,7 +874,7 @@ public Action:CommandList_DefaultTranslations(client, const String:command[], Co
 /**
  * Clientprefs !settings menu item
  */
-public ClientPrefsMenu_HandleItem(client, CookieMenuAction:action, any:info, String:buffer[], maxlen)
+public void ClientPrefsMenu_HandleItem(int client, CookieMenuAction action, any info, char[] buffer, int maxlen)
 {
 	switch(action)
 	{
@@ -898,32 +894,32 @@ public ClientPrefsMenu_HandleItem(client, CookieMenuAction:action, any:info, Str
  */
 // IsValidHandle() is deprecated, let's do a real check then...
 // By Thraaawn
-stock bool:IsValidPlugin(Handle:hPlugin) {
-	if(hPlugin == INVALID_HANDLE)
+stock bool IsValidPlugin(Handle hPlugin) {
+	if(hPlugin == null)
 		return false;
 
-	new Handle:hIterator = GetPluginIterator();
+	Handle hIterator = GetPluginIterator();
 
-	new bool:bPluginExists = false;
+	bool bPluginExists = false;
 	while(MorePlugins(hIterator)) {
-		new Handle:hLoadedPlugin = ReadPlugin(hIterator);
+		Handle hLoadedPlugin = ReadPlugin(hIterator);
 		if(hLoadedPlugin == hPlugin) {
 			bPluginExists = true;
 			break;
 		}
 	}
 
-	CloseHandle(hIterator);
+	delete hIterator;
 
 	return bPluginExists;
 }
 
-stock DebugMsg(String:format[], any:...)
+stock void DebugMsg(char[] format, any ...)
 {
-	if(!GetConVarBool(g_hCVDebug))
+	if(!g_hCVDebug.BoolValue)
 		return;
 	
-	decl String:sBuffer[192];
+	char sBuffer[192];
 	SetGlobalTransTarget(LANG_SERVER);
 	VFormat(sBuffer, sizeof(sBuffer), format, 2);
 	PrintToServer(sBuffer);
