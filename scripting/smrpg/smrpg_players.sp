@@ -409,6 +409,24 @@ void SavePlayerUpgradeInfo(int client, int index, int playerupgrade[PlayerUpgrad
 	g_iPlayerInfo[client][PLR_upgrades].SetArray(index, playerupgrade[0], view_as<int>(PlayerUpgradeInfo));
 }
 
+// See if this player is a bot and we shouldn't process any info for him.
+bool IgnoreBotPlayer(int client)
+{
+	// Just checking for bots.
+	if(!IsFakeClient(client))
+		return false;
+	
+	// Bot features disabled as a whole.
+	if(!g_hCVBotEnable.BoolValue)
+		return true;
+	
+	// No human players on the server.
+	if(g_hCVBotNeedHuman.BoolValue && Client_GetCount(true, false) == 0)
+		return true;
+	
+	return false;
+}
+
 /**
  * Player upgrade info getter
  */

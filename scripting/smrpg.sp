@@ -92,8 +92,6 @@ ConVar g_hCVFadeOnLevelColor;
 // List of default core chat commands available to players, which get registered with the smrpg_commandlist plugin.
 char g_sDefaultRPGCommands[] = {"rpgmenu", "rpgrank", "rpginfo", "rpgtop10", "rpgnext", "rpgsession", "rpghelp", "rpgexp"};
 
-#define IF_IGNORE_BOTS(%1) if(IsFakeClient(%1) && (!g_hCVBotEnable.BoolValue || (g_hCVBotNeedHuman.BoolValue && Client_GetCount(true, false) == 0)))
-
 #include "smrpg/smrpg_upgrades.sp"
 #include "smrpg/smrpg_database.sp"
 #include "smrpg/smrpg_settings.sp"

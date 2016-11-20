@@ -217,7 +217,7 @@ bool Stats_AddExperience(int client, int &iExperience, const char[] sReason, boo
 	if(iExperience <= 0)
 		return false;
 	
-	IF_IGNORE_BOTS(client)
+	if(IgnoreBotPlayer(client))
 		return false;
 	
 	// Admin commands shouldn't worry about fairness.
