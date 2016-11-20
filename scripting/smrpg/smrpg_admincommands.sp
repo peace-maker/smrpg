@@ -1458,15 +1458,14 @@ public Action Cmd_DBStats(int client, int args)
 /**
  * SQL callbacks
  */
-public void SQL_CheckDeletePlayer(Database db, DBResultSet results, const char[] error, any data)
+public void SQL_CheckDeletePlayer(Database db, DBResultSet results, const char[] error, DataPack data)
 {
-	DataPack dp = view_as<DataPack>(data);
-	dp.Reset();
-	int client = dp.ReadCell();
+	data.Reset();
+	int client = data.ReadCell();
 	char sTarget[64];
-	dp.ReadString(sTarget, sizeof(sTarget));
-	int iTarget = dp.ReadCell();
-	delete dp;
+	data.ReadString(sTarget, sizeof(sTarget));
+	int iTarget = data.ReadCell();
+	delete data;
 	
 	if(results == null)
 	{
@@ -1525,13 +1524,12 @@ public void SQL_CheckDeletePlayer(Database db, DBResultSet results, const char[]
 	
 }
 
-public void SQL_MassDeleteItem(Database db, DBResultSet results, const char[] error, any data)
+public void SQL_MassDeleteItem(Database db, DBResultSet results, const char[] error, DataPack data)
 {
-	DataPack dp = view_as<DataPack>(data);
-	dp.Reset();
-	int client = dp.ReadCell();
-	int iIndex = dp.ReadCell();
-	delete dp;
+	data.Reset();
+	int client = data.ReadCell();
+	int iIndex = data.ReadCell();
+	delete data;
 	
 	int upgrade[InternalUpgradeInfo];
 	GetUpgradeByIndex(iIndex, upgrade);
@@ -1615,17 +1613,16 @@ public void SQL_MassDeleteItem(Database db, DBResultSet results, const char[] er
 	}
 }
 
-public void SQL_PrintPlayerStats(Database db, DBResultSet results, const char[] error, any data)
+public void SQL_PrintPlayerStats(Database db, DBResultSet results, const char[] error, DataPack data)
 {
-	DataPack dp = view_as<DataPack>(data);
-	dp.Reset();
-	int client = GetClientFromSerial(dp.ReadCell());
-	ReplySource source = view_as<ReplySource>(dp.ReadCell());
+	data.Reset();
+	int client = GetClientFromSerial(data.ReadCell());
+	ReplySource source = view_as<ReplySource>(data.ReadCell());
 	
 	if(results == null)
 	{
 		LogError("Error getting player stats in smrpg_db_stats: %s", error);
-		delete dp;
+		delete data;
 		return;
 	}
 
@@ -1643,18 +1640,17 @@ public void SQL_PrintPlayerStats(Database db, DBResultSet results, const char[] 
 	g_hDatabase.Query(SQL_PrintUpgradeStats, sQuery, data);
 }
 
-public void SQL_PrintUpgradeStats(Database db, DBResultSet results, const char[] error, any data)
+public void SQL_PrintUpgradeStats(Database db, DBResultSet results, const char[] error, DataPack data)
 {
-	DataPack dp = view_as<DataPack>(data);
-	dp.Reset();
-	int serial = dp.ReadCell();
+	data.Reset();
+	int serial = data.ReadCell();
 	int client = GetClientFromSerial(serial);
-	ReplySource source = view_as<ReplySource>(dp.ReadCell());
+	ReplySource source = view_as<ReplySource>(data.ReadCell());
 	
 	if(results == null)
 	{
 		LogError("Error getting upgrade names in smrpg_db_stats: %s", error);
-		delete dp;
+		delete data;
 		return;
 	}
 	
@@ -1681,18 +1677,17 @@ public void SQL_PrintUpgradeStats(Database db, DBResultSet results, const char[]
 		Format(sQuery, sizeof(sQuery), "SELECT COUNT(*), AVG(purchasedlevel) FROM %s WHERE upgrade_id = %d AND purchasedlevel > 0", TBL_PLAYERUPGRADES, results.FetchInt(0));
 		g_hDatabase.Query(SQL_PrintUpgradeUsage, sQuery, hPack);
 	}
-	delete dp;
+	delete data;
 }
 
-public void SQL_PrintUpgradeUsage(Database db, DBResultSet results, const char[] error, any data)
+public void SQL_PrintUpgradeUsage(Database db, DBResultSet results, const char[] error, DataPack data)
 {
-	DataPack dp = view_as<DataPack>(data);
-	dp.Reset();
-	int client = GetClientFromSerial(dp.ReadCell());
-	ReplySource source = view_as<ReplySource>(dp.ReadCell());
+	data.Reset();
+	int client = GetClientFromSerial(data.ReadCell());
+	ReplySource source = view_as<ReplySource>(data.ReadCell());
 	char sUpgradeName[MAX_UPGRADE_SHORTNAME_LENGTH];
-	dp.ReadString(sUpgradeName, sizeof(sUpgradeName));
-	delete dp;
+	data.ReadString(sUpgradeName, sizeof(sUpgradeName));
+	delete data;
 	
 	if(results == null)
 	{

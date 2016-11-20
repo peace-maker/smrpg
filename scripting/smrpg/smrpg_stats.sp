@@ -623,14 +623,13 @@ public int Native_GetTop10Players(Handle plugin, int numParams)
 	g_hDatabase.Query(SQL_GetTop10Native, sQuery, hData);
 }
 
-public void SQL_GetTop10Native(Database db, DBResultSet results, const char[] error, any data)
+public void SQL_GetTop10Native(Database db, DBResultSet results, const char[] error, DataPack data)
 {
-	DataPack dp = view_as<DataPack>(data);
-	dp.Reset();
-	Handle hPlugin = view_as<Handle>(dp.ReadCell());
-	Function callback = dp.ReadFunction();
-	int extraData = dp.ReadCell();
-	delete dp;
+	data.Reset();
+	Handle hPlugin = view_as<Handle>(data.ReadCell());
+	Function callback = data.ReadFunction();
+	int extraData = data.ReadCell();
+	delete data;
 	
 	// Don't care if the calling plugin is gone.
 	if(!IsValidPlugin(hPlugin))
