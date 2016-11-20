@@ -8,17 +8,19 @@
 #pragma semicolon 1
 #include <sourcemod>
 #include <sdkhooks>
+
+#pragma newdecls required
 #include <smrpg>
 
 // Change the upgrade's shortname to a descriptive abbrevation
 #define UPGRADE_SHORTNAME "firerate"
 #define PLUGIN_VERSION "1.0"
 
-new Handle:g_hCVIncrease;
+ConVar g_hCVIncrease;
 
-new Float:g_fModifyNextAttack[MAXPLAYERS+1];
+float g_fModifyNextAttack[MAXPLAYERS+1];
 
-public Plugin:myinfo = 
+public Plugin myinfo = 
 {
 	name = "SM:RPG Upgrade > Firerate",
 	author = "Peace-Maker",
@@ -27,27 +29,27 @@ public Plugin:myinfo =
 	url = "http://www.wcfan.de/"
 }
 
-public OnPluginStart()
+public void OnPluginStart()
 {
 	LoadTranslations("smrpg_stock_upgrades.phrases");
 	
-	for(new i=1;i<=MaxClients;i++)
+	for(int i=1;i<=MaxClients;i++)
 		if(IsClientInGame(i))
 			OnClientPutInServer(i);
 }
 
-public OnPluginEnd()
+public void OnPluginEnd()
 {
 	if(SMRPG_UpgradeExists(UPGRADE_SHORTNAME))
 		SMRPG_UnregisterUpgradeType(UPGRADE_SHORTNAME);
 }
 
-public OnAllPluginsLoaded()
+public void OnAllPluginsLoaded()
 {
 	OnLibraryAdded("smrpg");
 }
 
-public OnLibraryAdded(const String:name[])
+public void OnLibraryAdded(const char[] name)
 {
 	// Register this upgrade in SM:RPG
 	if(StrEqual(name, "smrpg"))
@@ -63,13 +65,13 @@ public OnLibraryAdded(const String:name[])
 	}
 }
 
-public OnClientPutInServer(client)
+public void OnClientPutInServer(int client)
 {
 	SDKHook(client, SDKHook_PostThink, Hook_OnPostThink);
 	SDKHook(client, SDKHook_PostThinkPost, Hook_OnPostThinkPost);
 }
 
-public OnClientDisconnect(client)
+public void OnClientDisconnect(int client)
 {
 	g_fModifyNextAttack[client] = 0.0;
 }
@@ -78,24 +80,24 @@ public OnClientDisconnect(client)
  * SM:RPG Upgrade callbacks
  */
 
-public SMRPG_BuySell(client, UpgradeQueryType:type)
+public void SMRPG_BuySell(int client, UpgradeQueryType type)
 {
 	// Here you can apply your effect directly when the client's upgrade level changes.
 	// E.g. adjust the maximal health of the player immediately when he bought the upgrade.
 	// The client doesn't have to be ingame here!
 }
 
-public bool:SMRPG_ActiveQuery(client)
+public bool SMRPG_ActiveQuery(int client)
 {
 	// If this is a passive effect, it's always active, if the player got at least level 1.
 	// If it's an active effect (like a short speed boost) add a check for the effect as well.
-	new upgrade[UpgradeInfo];
+	int upgrade[UpgradeInfo];
 	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
 	return SMRPG_IsEnabled() && upgrade[UI_enabled] && SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME) > 0;
 }
 
 // The core wants to display your upgrade somewhere. Translate it into the clients language!
-public SMRPG_TranslateUpgrade(client, const String:shortname[], TranslationType:type, String:translation[], maxlen)
+public void SMRPG_TranslateUpgrade(int client, const char[] shortname, TranslationType type, char[] translation, int maxlen)
 {
 	// Easy pattern is to use the shortname of your upgrade in the translation file
 	if(type == TranslationType_Name)
@@ -103,15 +105,15 @@ public SMRPG_TranslateUpgrade(client, const String:shortname[], TranslationType:
 	// And "shortname description" as phrase in the translation file for the description.
 	else if(type == TranslationType_Description)
 	{
-		new String:sDescriptionKey[MAX_UPGRADE_SHORTNAME_LENGTH+12] = UPGRADE_SHORTNAME;
+		char sDescriptionKey[MAX_UPGRADE_SHORTNAME_LENGTH+12] = UPGRADE_SHORTNAME;
 		StrCat(sDescriptionKey, sizeof(sDescriptionKey), " description");
 		Format(translation, maxlen, "%T", sDescriptionKey, client);
 	}
 }
 
-public Hook_OnPostThink(client)
+public void Hook_OnPostThink(int client)
 {
-	new iButtons = GetClientButtons(client);
+	int iButtons = GetClientButtons(client);
 	if(iButtons & IN_ATTACK)
 	{
 		// Dead players can't shoot.
@@ -123,7 +125,7 @@ public Hook_OnPostThink(client)
 			return;
 
 		// The upgrade is disabled completely?
-		new upgrade[UpgradeInfo];
+		int upgrade[UpgradeInfo];
 		SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
 		if(!upgrade[UI_enabled])
 			return;
@@ -133,12 +135,12 @@ public Hook_OnPostThink(client)
 			return;
 
 		// Player didn't buy this upgrade yet.
-		new iLevel = SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME);
+		int iLevel = SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME);
 		if(iLevel <= 0)
 			return;
 
 		// Is he holding a weapon?
-		new iWeaponIndex = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
+		int iWeaponIndex = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
 		if (iWeaponIndex == INVALID_ENT_REFERENCE)
 			return;
 		
@@ -164,11 +166,11 @@ public Hook_OnPostThink(client)
 		if(!SMRPG_RunUpgradeEffect(client, UPGRADE_SHORTNAME))
 			return; // Some other plugin doesn't want this effect to run
 		
-		g_fModifyNextAttack[client] = 1.0 / (1.0 + float(iLevel) * GetConVarFloat(g_hCVIncrease));
+		g_fModifyNextAttack[client] = 1.0 / (1.0 + float(iLevel) * g_hCVIncrease.FloatValue);
 	}
 }
 
-public Hook_OnPostThinkPost(client)
+public void Hook_OnPostThinkPost(int client)
 {
 	if(g_fModifyNextAttack[client] <= 0.0)
 		return;
@@ -179,10 +181,10 @@ public Hook_OnPostThinkPost(client)
 		return;
 	}
 	
-	new iWeapon = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
+	int iWeapon = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
 	if (iWeapon != INVALID_ENT_REFERENCE)
 	{
-		new Float:flNextPrimaryAttack = GetEntPropFloat(iWeapon, Prop_Send, "m_flNextPrimaryAttack");
+		float flNextPrimaryAttack = GetEntPropFloat(iWeapon, Prop_Send, "m_flNextPrimaryAttack");
 		
 		flNextPrimaryAttack -= GetGameTime();
 		// Lower the time a bit, so the next bullet can be shot more quickly.

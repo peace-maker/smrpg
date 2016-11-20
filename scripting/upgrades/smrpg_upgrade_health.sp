@@ -1,14 +1,16 @@
 #pragma semicolon 1
 #include <sourcemod>
+
+#pragma newdecls required
 #include <smrpg>
 #include <smrpg_health>
 
 #define PLUGIN_VERSION "1.0"
 #define UPGRADE_SHORTNAME "health"
 
-new Handle:g_hCVMaxIncrease;
+ConVar g_hCVMaxIncrease;
 
-public Plugin:myinfo = 
+public Plugin myinfo = 
 {
 	name = "SM:RPG Upgrade > Health+",
 	author = "Jannik \"Peace-Maker\" Hartung",
@@ -17,31 +19,31 @@ public Plugin:myinfo =
 	url = "http://www.wcfan.de/"
 }
 
-public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
+public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
 	RegPluginLibrary("smrpg_health");
 	CreateNative("SMRPG_Health_GetClientMaxHealthEx", Native_GetMaxHealth);
 }
 
-public OnPluginStart()
+public void OnPluginStart()
 {
 	HookEvent("player_spawn", Event_OnPlayerSpawn);
 	
 	LoadTranslations("smrpg_stock_upgrades.phrases");
 }
 
-public OnPluginEnd()
+public void OnPluginEnd()
 {
 	if(SMRPG_UpgradeExists(UPGRADE_SHORTNAME))
 		SMRPG_UnregisterUpgradeType(UPGRADE_SHORTNAME);
 }
 
-public OnAllPluginsLoaded()
+public void OnAllPluginsLoaded()
 {
 	OnLibraryAdded("smrpg");
 }
 
-public OnLibraryAdded(const String:name[])
+public void OnLibraryAdded(const char[] name)
 {
 	// Register this upgrade in SM:RPG
 	if(StrEqual(name, "smrpg"))
@@ -56,16 +58,16 @@ public OnLibraryAdded(const String:name[])
 /**
  * Event callbacks
  */
-public Event_OnPlayerSpawn(Handle:event, const String:name[], bool:dontBroadcast)
+public void Event_OnPlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 {
-	new client = GetClientOfUserId(GetEventInt(event, "userid"));
+	int client = GetClientOfUserId(event.GetInt("userid"));
 	if(!client)
 		return;
 	
 	if(!SMRPG_IsEnabled())
 		return;
 	
-	new upgrade[UpgradeInfo];
+	int upgrade[UpgradeInfo];
 	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
 	if(!upgrade[UI_enabled])
 		return;
@@ -75,7 +77,7 @@ public Event_OnPlayerSpawn(Handle:event, const String:name[], bool:dontBroadcast
 		return;
 	
 	// Player didn't buy this upgrade yet.
-	new iLevel = SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME);
+	int iLevel = SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME);
 	if(iLevel <= 0)
 		return;
 	
@@ -85,7 +87,7 @@ public Event_OnPlayerSpawn(Handle:event, const String:name[], bool:dontBroadcast
 /**
  * SM:RPG Upgrade callbacks
  */
-public SMRPG_BuySell(client, UpgradeQueryType:type)
+public void SMRPG_BuySell(int client, UpgradeQueryType type)
 {
 	if(!IsClientInGame(client))
 		return;
@@ -94,11 +96,11 @@ public SMRPG_BuySell(client, UpgradeQueryType:type)
 	if(IsFakeClient(client) && SMRPG_IgnoreBots())
 		return;
 	
-	new upgrade[UpgradeInfo];
+	int upgrade[UpgradeInfo];
 	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
 	
-	new iHealth = GetClientHealth(client);
-	new iMaxHealth = GetClientMaxHealth(client);
+	int iHealth = GetClientHealth(client);
+	int iMaxHealth = GetClientMaxHealth(client);
 	
 	switch(type)
 	{
@@ -107,7 +109,7 @@ public SMRPG_BuySell(client, UpgradeQueryType:type)
 			// Client currently had his old maxhealth or more?
 			// Set him to his new higher maxhealth immediately.
 			// Don't touch his health, if he were already damaged.
-			if(iHealth >= (iMaxHealth - GetConVarInt(g_hCVMaxIncrease)))
+			if(iHealth >= (iMaxHealth - g_hCVMaxIncrease.IntValue))
 				SetClientHealth(client, iMaxHealth);
 		}
 		case UpgradeQueryType_Sell:
@@ -120,35 +122,35 @@ public SMRPG_BuySell(client, UpgradeQueryType:type)
 	}
 }
 
-public bool:SMRPG_ActiveQuery(client)
+public bool SMRPG_ActiveQuery(int client)
 {
 	// This is a passive effect, so it's always active, if the player got at least level 1
-	new upgrade[UpgradeInfo];
+	int upgrade[UpgradeInfo];
 	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
 	return SMRPG_IsEnabled() && upgrade[UI_enabled] && SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME) > 0;
 }
 
-public SMRPG_TranslateUpgrade(client, const String:shortname[], TranslationType:type, String:translation[], maxlen)
+public void SMRPG_TranslateUpgrade(int client, const char[] shortname, TranslationType type, char[] translation, int maxlen)
 {
 	if(type == TranslationType_Name)
 		Format(translation, maxlen, "%T", UPGRADE_SHORTNAME, client);
 	else if(type == TranslationType_Description)
 	{
-		new String:sDescriptionKey[MAX_UPGRADE_SHORTNAME_LENGTH+12] = UPGRADE_SHORTNAME;
+		char sDescriptionKey[MAX_UPGRADE_SHORTNAME_LENGTH+12] = UPGRADE_SHORTNAME;
 		StrCat(sDescriptionKey, sizeof(sDescriptionKey), " description");
 		Format(translation, maxlen, "%T", sDescriptionKey, client);
 	}
 }
 
-GetClientMaxHealth(client)
+int GetClientMaxHealth(int client)
 {
 	// Get the default maxhealth for this player/class
-	new iDefaultMaxHealth = GetEntProp(client, Prop_Data, "m_iMaxHealth");
+	int iDefaultMaxHealth = GetEntProp(client, Prop_Data, "m_iMaxHealth");
 	
 	if(!SMRPG_IsEnabled())
 		return iDefaultMaxHealth;
 	
-	new upgrade[UpgradeInfo];
+	int upgrade[UpgradeInfo];
 	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
 	if(!upgrade[UI_enabled])
 		return iDefaultMaxHealth;
@@ -158,15 +160,15 @@ GetClientMaxHealth(client)
 		return iDefaultMaxHealth;
 	
 	// Player didn't buy this upgrade yet.
-	new iLevel = SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME);
+	int iLevel = SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME);
 	if(iLevel <= 0)
 		return iDefaultMaxHealth;
 	
-	return iDefaultMaxHealth + GetConVarInt(g_hCVMaxIncrease) * iLevel;
+	return iDefaultMaxHealth + g_hCVMaxIncrease.IntValue * iLevel;
 }
 
 // Check if the other plugins are ok with setting the health before doing it.
-SetClientHealth(client, health)
+void SetClientHealth(int client, int health)
 {
 	if(!SMRPG_RunUpgradeEffect(client, UPGRADE_SHORTNAME))
 		return; // Some other plugin doesn't want this effect to run
@@ -177,14 +179,11 @@ SetClientHealth(client, health)
 /**
  * Native callbacks
  */
-public Native_GetMaxHealth(Handle:plugin, numParams)
+public int Native_GetMaxHealth(Handle plugin, int numParams)
 {
-	new client = GetNativeCell(1);
+	int client = GetNativeCell(1);
 	if(client < 0 || client > MaxClients)
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
-		return false;
-	}
+		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
 	
 	return GetClientMaxHealth(client);
 }

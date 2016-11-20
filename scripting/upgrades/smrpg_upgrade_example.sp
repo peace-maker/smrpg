@@ -7,15 +7,17 @@
 
 #pragma semicolon 1
 #include <sourcemod>
+
+#pragma newdecls required
 #include <smrpg>
 
 // Change the upgrade's shortname to a descriptive abbrevation
 #define UPGRADE_SHORTNAME "example"
 #define PLUGIN_VERSION "1.0"
 
-new Handle:g_hCVMyConvar;
+ConVar g_hCVMyConvar;
 
-public Plugin:myinfo = 
+public Plugin myinfo = 
 {
 	name = "SM:RPG Upgrade > Example",
 	author = "You",
@@ -24,23 +26,23 @@ public Plugin:myinfo =
 	url = "http://www.wcfan.de/"
 }
 
-public OnPluginStart()
+public void OnPluginStart()
 {
 	LoadTranslations("smrpg_example_upgrade.phrases");
 }
 
-public OnPluginEnd()
+public void OnPluginEnd()
 {
 	if(SMRPG_UpgradeExists(UPGRADE_SHORTNAME))
 		SMRPG_UnregisterUpgradeType(UPGRADE_SHORTNAME);
 }
 
-public OnAllPluginsLoaded()
+public void OnAllPluginsLoaded()
 {
 	OnLibraryAdded("smrpg");
 }
 
-public OnLibraryAdded(const String:name[])
+public void OnLibraryAdded(const char[] name)
 {
 	// Register this upgrade in SM:RPG
 	if(StrEqual(name, "smrpg"))
@@ -67,7 +69,7 @@ public OnLibraryAdded(const String:name[])
 	}
 }
 
-public OnClientDisconnect(client)
+public void OnClientDisconnect(int client)
 {
 	// Don't forget to reset your effect when the client leaves ;)
 	SMRPG_ResetEffect(client);
@@ -77,31 +79,31 @@ public OnClientDisconnect(client)
  * SM:RPG Upgrade callbacks
  */
 
-public SMRPG_BuySell(client, UpgradeQueryType:type)
+public void SMRPG_BuySell(int client, UpgradeQueryType type)
 {
 	// Here you can apply your effect directly when the client's upgrade level changes.
 	// E.g. adjust the maximal health of the player immediately when he bought the upgrade.
 	// The client doesn't have to be ingame here!
 }
 
-public bool:SMRPG_ActiveQuery(client)
+public bool SMRPG_ActiveQuery(int client)
 {
 	// If this is a passive effect, it's always active, if the player got at least level 1.
 	// If it's an active effect (like a short speed boost) add a check for the effect as well.
-	new upgrade[UpgradeInfo];
+	int upgrade[UpgradeInfo];
 	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
 	return SMRPG_IsEnabled() && upgrade[UI_enabled] && SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME) > 0;
 }
 
 // Some plugin wants this effect to end?
-public SMRPG_ResetEffect(client)
+public void SMRPG_ResetEffect(int client)
 {
 	// Stop your temporary effects here.
 }
 
 
 // The core wants to display your upgrade somewhere. Translate it into the clients language!
-public SMRPG_TranslateUpgrade(client, const String:shortname[], TranslationType:type, String:translation[], maxlen)
+public void SMRPG_TranslateUpgrade(int client, const char[] shortname, TranslationType type, char[] translation, int maxlen)
 {
 	// Easy pattern is to use the shortname of your upgrade in the translation file
 	if(type == TranslationType_Name)
@@ -109,7 +111,7 @@ public SMRPG_TranslateUpgrade(client, const String:shortname[], TranslationType:
 	// And "shortname description" as phrase in the translation file for the description.
 	else if(type == TranslationType_Description)
 	{
-		new String:sDescriptionKey[MAX_UPGRADE_SHORTNAME_LENGTH+12] = UPGRADE_SHORTNAME;
+		char sDescriptionKey[MAX_UPGRADE_SHORTNAME_LENGTH+12] = UPGRADE_SHORTNAME;
 		StrCat(sDescriptionKey, sizeof(sDescriptionKey), " description");
 		Format(translation, maxlen, "%T", sDescriptionKey, client);
 	}
@@ -117,7 +119,7 @@ public SMRPG_TranslateUpgrade(client, const String:shortname[], TranslationType:
 
 // Optionally block some other conflicting effect, if i'm currently active.
 /*
-public Action:SMRPG_OnUpgradeEffect(target, const String:shortname[], issuer)
+public Action SMRPG_OnUpgradeEffect(int target, const char[] shortname, int issuer)
 {
 	if(SMRPG_IsUpgradeActiveOnClient(target, UPGRADE_SHORTNAME) && StrEqual(shortname, "other_conflicting_effect"))
 		return Plugin_Handled;
@@ -126,14 +128,14 @@ public Action:SMRPG_OnUpgradeEffect(target, const String:shortname[], issuer)
 */
 
 // This holds the basic checks you should run before applying your effect.
-ApplyMyUpgradeEffect(client)
+void ApplyMyUpgradeEffect(int client)
 {
 	// SM:RPG is disabled?
 	if(!SMRPG_IsEnabled())
 		return;
 	
 	// The upgrade is disabled completely?
-	new upgrade[UpgradeInfo];
+	int upgrade[UpgradeInfo];
 	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
 	if(!upgrade[UI_enabled])
 		return;
@@ -143,7 +145,7 @@ ApplyMyUpgradeEffect(client)
 		return;
 	
 	// Player didn't buy this upgrade yet.
-	new iLevel = SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME);
+	int iLevel = SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME);
 	if(iLevel <= 0)
 		return;
 	

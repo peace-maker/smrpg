@@ -2,20 +2,22 @@
 #include <sourcemod>
 #include <sdktools>
 #include <sdkhooks>
+#include <smlib>
+
+#pragma newdecls required
 #include <smrpg>
 #include <smrpg_effects>
 #include <smrpg_helper>
 #include <smrpg_sharedmaterials>
-#include <smlib>
 
 #define UPGRADE_SHORTNAME "impulse"
 #define PLUGIN_VERSION "1.0"
 
 // Config
-new Handle:g_hCVDefaultSpeedIncrease;
-new Handle:g_hCVDefaultDuration;
+ConVar g_hCVDefaultSpeedIncrease;
+ConVar g_hCVDefaultDuration;
 
-new Handle:g_hWeaponConfig;
+StringMap g_hWeaponConfig;
 
 enum WeaponConfig
 {
@@ -23,9 +25,9 @@ enum WeaponConfig
 	Float:Config_Duration
 };
 
-new g_iImpulseTrailSprites[MAXPLAYERS+1] = {-1,...};
+int g_iImpulseTrailSprites[MAXPLAYERS+1] = {-1,...};
 
-public Plugin:myinfo = 
+public Plugin myinfo = 
 {
 	name = "SM:RPG Upgrade > Impulse",
 	author = "Jannik \"Peace-Maker\" Hartung",
@@ -34,7 +36,7 @@ public Plugin:myinfo =
 	url = "http://www.wcfan.de/"
 }
 
-public OnPluginStart()
+public void OnPluginStart()
 {
 	HookEvent("round_start", Event_OnRoundStart);
 	
@@ -42,28 +44,28 @@ public OnPluginStart()
 	
 	SMRPG_GC_CheckSharedMaterialsAndSounds();
 	
-	g_hWeaponConfig = CreateTrie();
+	g_hWeaponConfig = new StringMap();
 	
 	// Account for late loading
-	for(new i=1;i<=MaxClients;i++)
+	for(int i=1;i<=MaxClients;i++)
 	{
 		if(IsClientInGame(i))
 			OnClientPutInServer(i);
 	}
 }
 
-public OnPluginEnd()
+public void OnPluginEnd()
 {
 	if(SMRPG_UpgradeExists(UPGRADE_SHORTNAME))
 		SMRPG_UnregisterUpgradeType(UPGRADE_SHORTNAME);
 }
 
-public OnAllPluginsLoaded()
+public void OnAllPluginsLoaded()
 {
 	OnLibraryAdded("smrpg");
 }
 
-public OnLibraryAdded(const String:name[])
+public void OnLibraryAdded(const char[] name)
 {
 	// Register this upgrade in SM:RPG
 	if(StrEqual(name, "smrpg"))
@@ -78,7 +80,7 @@ public OnLibraryAdded(const String:name[])
 	}
 }
 
-public OnMapStart()
+public void OnMapStart()
 {
 	SMRPG_GC_PrecacheModel("SpriteRedTrail");
 	
@@ -86,12 +88,12 @@ public OnMapStart()
 		LogError("Can't read config file in configs/smrpg/impulse_weapons.cfg!");
 }
 
-public OnClientPutInServer(client)
+public void OnClientPutInServer(int client)
 {
 	SDKHook(client, SDKHook_OnTakeDamagePost, Hook_OnTakeDamagePost);
 }
 
-public OnClientDisconnect(client)
+public void OnClientDisconnect(int client)
 {
 	SMRPG_ResetEffect(client);
 	if(g_iImpulseTrailSprites[client] != -1 && IsValidEntity(g_iImpulseTrailSprites[client]))
@@ -102,39 +104,39 @@ public OnClientDisconnect(client)
 /**
  * Event callbacks
  */
-public Event_OnRoundStart(Handle:event, const String:name[], bool:dontBroadcast)
+public void Event_OnRoundStart(Event event, const char[] name, bool dontBroadcast)
 {
 	// Reset all invisible entity indexes since the previous round's entities were all deleted on round start.
-	for(new i=1;i<=MaxClients;i++)
+	for(int i=1;i<=MaxClients;i++)
 		g_iImpulseTrailSprites[i] = -1;
 }
 
 /**
  * SM:RPG Upgrade callbacks
  */
-public SMRPG_BuySell(client, UpgradeQueryType:type)
+public void SMRPG_BuySell(int client, UpgradeQueryType type)
 {
 	// Nothing to apply here immediately after someone buys this upgrade.
 }
 
-public bool:SMRPG_ActiveQuery(client)
+public bool SMRPG_ActiveQuery(int client)
 {
 	return SMRPG_IsClientLaggedMovementChanged(client, LMT_Faster, true);
 }
 
 // Some plugin wants this effect to end?
-public SMRPG_ResetEffect(client)
+public void SMRPG_ResetEffect(int client)
 {
 	SMRPG_ResetClientLaggedMovement(client, LMT_Faster);
 }
 
-public SMRPG_TranslateUpgrade(client, const String:shortname[], TranslationType:type, String:translation[], maxlen)
+public void SMRPG_TranslateUpgrade(int client, const char[] shortname, TranslationType type, char[] translation, int maxlen)
 {
 	if(type == TranslationType_Name)
 		Format(translation, maxlen, "%T", UPGRADE_SHORTNAME, client);
 	else if(type == TranslationType_Description)
 	{
-		new String:sDescriptionKey[MAX_UPGRADE_SHORTNAME_LENGTH+12] = UPGRADE_SHORTNAME;
+		char sDescriptionKey[MAX_UPGRADE_SHORTNAME_LENGTH+12] = UPGRADE_SHORTNAME;
 		StrCat(sDescriptionKey, sizeof(sDescriptionKey), " description");
 		Format(translation, maxlen, "%T", sDescriptionKey, client);
 	}
@@ -143,7 +145,7 @@ public SMRPG_TranslateUpgrade(client, const String:shortname[], TranslationType:
 /**
  * SM:RPG Effect Hub callbacks
  */
-public SMRPG_OnClientLaggedMovementReset(client, LaggedMovementType:type)
+public void SMRPG_OnClientLaggedMovementReset(int client, LaggedMovementType type)
 {
 	if(type == LMT_Faster)
 	{
@@ -158,7 +160,7 @@ public SMRPG_OnClientLaggedMovementReset(client, LaggedMovementType:type)
 /**
  * Hook callbacks
  */
-public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagetype, weapon, const Float:damageForce[3], const Float:damagePosition[3])
+public void Hook_OnTakeDamagePost(int victim, int attacker, int inflictor, float damage, int damagetype, int weapon, const float damageForce[3], const float damagePosition[3])
 {
 	if(attacker <= 0 || attacker > MaxClients || victim <= 0 || victim > MaxClients)
 		return;
@@ -166,7 +168,7 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 	if(!SMRPG_IsEnabled())
 		return;
 	
-	new upgrade[UpgradeInfo];
+	int upgrade[UpgradeInfo];
 	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
 	if(!upgrade[UI_enabled])
 		return;
@@ -179,7 +181,7 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 	if(!SMRPG_IsFFAEnabled() && GetClientTeam(attacker) == GetClientTeam(victim))
 		return;
 	
-	new iLevel = SMRPG_GetClientUpgradeLevel(victim, UPGRADE_SHORTNAME);
+	int iLevel = SMRPG_GetClientUpgradeLevel(victim, UPGRADE_SHORTNAME);
 	if(iLevel <= 0)
 		return;
 	
@@ -189,20 +191,20 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 	if(SMRPG_IsClientLaggedMovementChanged(victim, LMT_Faster, true))
 		return; //Player is already faster
 	
-	new iWeapon = inflictor;
+	int iWeapon = inflictor;
 	if(inflictor > 0 && inflictor <= MaxClients)
 		iWeapon = Client_GetActiveWeapon(inflictor);
 	
-	new String:sWeapon[256];
+	char sWeapon[256];
 	if(iWeapon != -1)
 		GetEntityClassname(iWeapon, sWeapon, sizeof(sWeapon));
 	
 	// Upgrade disabled for this weapon?
-	new Float:fSpeedIncreasePercent = GetWeaponSpeedIncrease(sWeapon);
+	float fSpeedIncreasePercent = GetWeaponSpeedIncrease(sWeapon);
 	if (fSpeedIncreasePercent <= 0.0)
 		return;
 	
-	new Float:fSpeedDuration = GetWeaponEffectDuration(sWeapon);
+	float fSpeedDuration = GetWeaponEffectDuration(sWeapon);
 	if (fSpeedDuration <= 0.0)
 		return;
 	
@@ -210,19 +212,19 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 		return; // Some other plugin doesn't want this effect to run
 	
 	/* Set player speed */
-	new Float:fSpeed = 1.0 + float(iLevel) * fSpeedIncreasePercent;
+	float fSpeed = 1.0 + float(iLevel) * fSpeedIncreasePercent;
 	SMRPG_ChangeClientLaggedMovement(victim, fSpeed, fSpeedDuration);
 	
 	// No effect for this game:(
-	new iRedTrailSprite = SMRPG_GC_GetPrecachedIndex("SpriteRedTrail");
+	int iRedTrailSprite = SMRPG_GC_GetPrecachedIndex("SpriteRedTrail");
 	if(iRedTrailSprite == -1)
 		return;
 	
-	decl Float:vOrigin[3];
+	float vOrigin[3];
 	GetClientEyePosition(victim, vOrigin);
 	vOrigin[2] -= 40.0;
 	
-	new iSprite = g_iImpulseTrailSprites[victim];
+	int iSprite = g_iImpulseTrailSprites[victim];
 	if(iSprite == -1)
 	{
 		iSprite = CreateEntityByName("env_sprite");
@@ -230,7 +232,7 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 			return;
 		
 		SetEntityRenderMode(iSprite, RENDER_NONE);
-		TeleportEntity(iSprite, vOrigin, Float:{0.0,0.0,0.0}, NULL_VECTOR);
+		TeleportEntity(iSprite, vOrigin, view_as<float>({0.0,0.0,0.0}), NULL_VECTOR);
 		DispatchSpawn(iSprite);
 		
 		g_iImpulseTrailSprites[victim] = iSprite;
@@ -247,64 +249,65 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 /**
  * Helpers
  */
-bool:LoadWeaponConfig()
+bool LoadWeaponConfig()
 {
-	ClearTrie(g_hWeaponConfig);
+	g_hWeaponConfig.Clear();
 	
-	new String:sPath[PLATFORM_MAX_PATH];
+	char sPath[PLATFORM_MAX_PATH];
 	BuildPath(Path_SM, sPath, sizeof(sPath), "configs/smrpg/impulse_weapons.cfg");
 	
 	if(!FileExists(sPath))
 		return false;
 	
-	new Handle:hKV = CreateKeyValues("ImpulseWeapons");
-	if(!FileToKeyValues(hKV, sPath))
+	KeyValues hKV = new KeyValues("ImpulseWeapons");
+	if(!hKV.ImportFromFile(sPath))
 	{
-		CloseHandle(hKV);
+		delete hKV;
 		return false;
 	}
 	
-	new String:sWeapon[64], config[WeaponConfig];
-	if(KvGotoFirstSubKey(hKV, false))
+	char sWeapon[64];
+	int config[WeaponConfig];
+	if(hKV.GotoFirstSubKey(false))
 	{
 		do
 		{
-			KvGetSectionName(hKV, sWeapon, sizeof(sWeapon));
-			config[Config_SpeedIncrease] = KvGetFloat(hKV, "speed_increase", -1.0);
-			config[Config_Duration] = KvGetFloat(hKV, "duration", -1.0);
+			hKV.GetSectionName(sWeapon, sizeof(sWeapon));
+			config[Config_SpeedIncrease] = hKV.GetFloat("speed_increase", -1.0);
+			config[Config_Duration] = hKV.GetFloat("duration", -1.0);
 			
-			SetTrieArray(g_hWeaponConfig, sWeapon, config[0], _:WeaponConfig);
+			g_hWeaponConfig.SetArray(sWeapon, config[0], view_as<int>(WeaponConfig));
 			
-		} while (KvGotoNextKey(hKV));
+		} while (hKV.GotoNextKey());
 	}
-	CloseHandle(hKV);
+	delete hKV;
 	return true;
 }
 
-Float:GetWeaponSpeedIncrease(const String:sWeapon[])
+float GetWeaponSpeedIncrease(const char[] sWeapon)
 {
 	// See if there is a value for this weapon in the config.
-	new config[WeaponConfig];
-	if (GetTrieArray(g_hWeaponConfig, sWeapon, config[0], _:WeaponConfig))
+	int config[WeaponConfig];
+	if (g_hWeaponConfig.GetArray(sWeapon, config[0], view_as<int>(WeaponConfig)))
 	{
 		if (config[Config_SpeedIncrease] >= 0.0)
 			return config[Config_SpeedIncrease];
 	}
 	
 	// Just use the default value
-	return GetConVarFloat(g_hCVDefaultSpeedIncrease);
+	return g_hCVDefaultSpeedIncrease.FloatValue;
 }
 
-Float:GetWeaponEffectDuration(const String:sWeapon[])
+float GetWeaponEffectDuration(const char[] sWeapon)
 {
 	// See if there is a value for this weapon in the config.
-	new config[WeaponConfig];
-	if (GetTrieArray(g_hWeaponConfig, sWeapon, config[0], _:WeaponConfig))
+	int config[WeaponConfig];
+	if (g_hWeaponConfig.GetArray(sWeapon, config[0], view_as<int>(WeaponConfig)))
 	{
 		if (config[Config_Duration] >= 0.0)
 			return config[Config_Duration];
 	}
 	
 	// Just use the default value
-	return GetConVarFloat(g_hCVDefaultDuration);
+	return g_hCVDefaultDuration.FloatValue;
 }

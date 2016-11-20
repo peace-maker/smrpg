@@ -2,23 +2,25 @@
 #include <sourcemod>
 #include <sdktools>
 #include <sdkhooks>
+#include <smlib>
+
+#pragma newdecls required
 #include <smrpg>
 #include <smrpg_effects>
 #include <smrpg_helper>
 #include <smrpg_sharedmaterials>
-#include <smlib>
 
 #define UPGRADE_SHORTNAME "fpistol"
 #define PLUGIN_VERSION "1.0"
 
-new Handle:g_hCVTimeIncrease;
+ConVar g_hCVTimeIncrease;
 
-new Handle:g_hWeaponSpeeds;
+StringMap g_hWeaponSpeeds;
 
 // See how many freeze sounds we have in the gamedata file.
-new g_iFreezeSoundCount;
+int g_iFreezeSoundCount;
 
-public Plugin:myinfo = 
+public Plugin myinfo = 
 {
 	name = "SM:RPG Upgrade > Frost Pistol",
 	author = "Jannik \"Peace-Maker\" Hartung",
@@ -27,9 +29,9 @@ public Plugin:myinfo =
 	url = "http://www.wcfan.de/"
 }
 
-public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
+public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
-	g_hWeaponSpeeds = CreateTrie();
+	g_hWeaponSpeeds = new StringMap();
 	
 	if(!LoadWeaponConfig())
 	{
@@ -39,32 +41,32 @@ public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
 	return APLRes_Success;
 }
 
-public OnPluginStart()
+public void OnPluginStart()
 {
 	LoadTranslations("smrpg_stock_upgrades.phrases");
 	
 	SMRPG_GC_CheckSharedMaterialsAndSounds();
 
 	// Account for late loading
-	for(new i=1;i<=MaxClients;i++)
+	for(int i=1;i<=MaxClients;i++)
 	{
 		if(IsClientInGame(i))
 			OnClientPutInServer(i);
 	}
 }
 
-public OnPluginEnd()
+public void OnPluginEnd()
 {
 	if(SMRPG_UpgradeExists(UPGRADE_SHORTNAME))
 		SMRPG_UnregisterUpgradeType(UPGRADE_SHORTNAME);
 }
 
-public OnAllPluginsLoaded()
+public void OnAllPluginsLoaded()
 {
 	OnLibraryAdded("smrpg");
 }
 
-public OnLibraryAdded(const String:name[])
+public void OnLibraryAdded(const char[] name)
 {
 	// Register this upgrade in SM:RPG
 	if(StrEqual(name, "smrpg"))
@@ -79,10 +81,10 @@ public OnLibraryAdded(const String:name[])
 	}
 }
 
-public OnMapStart()
+public void OnMapStart()
 {
 	g_iFreezeSoundCount = 0;
-	decl String:sBuffer[64];
+	char sBuffer[64];
 	for(;;g_iFreezeSoundCount++)
 	{
 		Format(sBuffer, sizeof(sBuffer), "SoundFPistolFreeze%d", g_iFreezeSoundCount+1);
@@ -91,18 +93,18 @@ public OnMapStart()
 	}
 }
 
-public OnMapEnd()
+public void OnMapEnd()
 {
 	if(!LoadWeaponConfig())
 		SetFailState("Can't read config file in configs/smrpg/frostpistol_weapons.cfg!");
 }
 
-public OnClientPutInServer(client)
+public void OnClientPutInServer(int client)
 {
 	SDKHook(client, SDKHook_OnTakeDamagePost, Hook_OnTakeDamagePost);
 }
 
-public OnClientDisconnect(client)
+public void OnClientDisconnect(int client)
 {
 	SMRPG_ResetEffect(client);
 }
@@ -110,29 +112,29 @@ public OnClientDisconnect(client)
 /**
  * SM:RPG Upgrade callbacks
  */
-public SMRPG_BuySell(client, UpgradeQueryType:type)
+public void SMRPG_BuySell(int client, UpgradeQueryType type)
 {
 	// Nothing to apply here immediately after someone buys this upgrade.
 }
 
-public bool:SMRPG_ActiveQuery(client)
+public bool SMRPG_ActiveQuery(int client)
 {
 	return SMRPG_IsClientLaggedMovementChanged(client, LMT_Slower, true);
 }
 
 // Some plugin wants this effect to end?
-public SMRPG_ResetEffect(client)
+public void SMRPG_ResetEffect(int client)
 {
 	SMRPG_ResetClientLaggedMovement(client, LMT_Slower);
 }
 
-public SMRPG_TranslateUpgrade(client, const String:shortname[], TranslationType:type, String:translation[], maxlen)
+public void SMRPG_TranslateUpgrade(int client, const char[] shortname, TranslationType type, char[] translation, int maxlen)
 {
 	if(type == TranslationType_Name)
 		Format(translation, maxlen, "%T", UPGRADE_SHORTNAME, client);
 	else if(type == TranslationType_Description)
 	{
-		new String:sDescriptionKey[MAX_UPGRADE_SHORTNAME_LENGTH+12] = UPGRADE_SHORTNAME;
+		char sDescriptionKey[MAX_UPGRADE_SHORTNAME_LENGTH+12] = UPGRADE_SHORTNAME;
 		StrCat(sDescriptionKey, sizeof(sDescriptionKey), " description");
 		Format(translation, maxlen, "%T", sDescriptionKey, client);
 	}
@@ -141,7 +143,7 @@ public SMRPG_TranslateUpgrade(client, const String:shortname[], TranslationType:
 /**
  * SM:RPG Effect Hub callbacks
  */
-public SMRPG_OnClientLaggedMovementReset(client, LaggedMovementType:type)
+public void SMRPG_OnClientLaggedMovementReset(int client, LaggedMovementType type)
 {
 	if(type == LMT_Slower)
 	{
@@ -153,7 +155,7 @@ public SMRPG_OnClientLaggedMovementReset(client, LaggedMovementType:type)
 /**
  * Hook callbacks
  */
-public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagetype, weapon, const Float:damageForce[3], const Float:damagePosition[3])
+public void Hook_OnTakeDamagePost(int victim, int attacker, int inflictor, float damage, int damagetype, int weapon, const float damageForce[3], const float damagePosition[3])
 {
 	if(attacker <= 0 || attacker > MaxClients || victim <= 0 || victim > MaxClients)
 		return;
@@ -161,7 +163,7 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 	if(!SMRPG_IsEnabled())
 		return;
 	
-	new upgrade[UpgradeInfo];
+	int upgrade[UpgradeInfo];
 	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
 	if(!upgrade[UI_enabled])
 		return;
@@ -174,30 +176,30 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 	if(!SMRPG_IsFFAEnabled() && GetClientTeam(attacker) == GetClientTeam(victim))
 		return;
 	
-	new iLevel = SMRPG_GetClientUpgradeLevel(attacker, UPGRADE_SHORTNAME);
+	int iLevel = SMRPG_GetClientUpgradeLevel(attacker, UPGRADE_SHORTNAME);
 	if(iLevel <= 0)
 		return;
 	
-	new iWeapon = inflictor;
+	int iWeapon = inflictor;
 	if(inflictor > 0 && inflictor <= MaxClients)
 		iWeapon = Client_GetActiveWeapon(inflictor);
 	
 	if(iWeapon == -1)
 		return;
 	
-	decl String:sWeapon[256];
+	char sWeapon[256];
 	GetEntityClassname(iWeapon, sWeapon, sizeof(sWeapon));
 	ReplaceString(sWeapon, sizeof(sWeapon), "weapon_", "", false);
 	
-	new Float:fSpeed;
+	float fSpeed;
 	// Don't process weapons, which aren't in the config file.
-	if(!GetTrieValue(g_hWeaponSpeeds, sWeapon, fSpeed))
+	if(!g_hWeaponSpeeds.GetValue(sWeapon, fSpeed))
 		return;
 	
 	if(!SMRPG_RunUpgradeEffect(victim, UPGRADE_SHORTNAME, attacker))
 		return; // Some other plugin doesn't want this effect to run
 	
-	new Float:fTime = float(iLevel) * GetConVarFloat(g_hCVTimeIncrease);
+	float fTime = float(iLevel) * g_hCVTimeIncrease.FloatValue;
 	if(fTime <= 0.0)
 		return; // Silly convar settings?
 
@@ -206,7 +208,7 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 		// Emit some icy sound
 		if(g_iFreezeSoundCount > 0)
 		{
-			decl String:sKey[64];
+			char sKey[64];
 			Format(sKey, sizeof(sKey), "SoundFPistolFreeze%d", GetRandomInt(1, g_iFreezeSoundCount));
 			// Only play it to players who enabled sounds for this upgrade
 			SMRPG_EmitSoundToAllEnabled(UPGRADE_SHORTNAME, SMRPG_GC_GetKeyValue(sKey), victim, SNDCHAN_AUTO, SNDLEVEL_NORMAL, SND_NOFLAGS, 0.8, SNDPITCH_NORMAL, victim);
@@ -224,35 +226,36 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 /**
  * Helpers
  */
-bool:LoadWeaponConfig()
+bool LoadWeaponConfig()
 {
-	ClearTrie(g_hWeaponSpeeds);
+	g_hWeaponSpeeds.Clear();
 	
-	decl String:sPath[PLATFORM_MAX_PATH];
+	char sPath[PLATFORM_MAX_PATH];
 	BuildPath(Path_SM, sPath, sizeof(sPath), "configs/smrpg/frostpistol_weapons.cfg");
 	
 	if(!FileExists(sPath))
 		return false;
 	
-	new Handle:hKV = CreateKeyValues("FrostPistolWeapons");
-	if(!FileToKeyValues(hKV, sPath))
+	KeyValues hKV = new KeyValues("FrostPistolWeapons");
+	if(!hKV.ImportFromFile(sPath))
 	{
-		CloseHandle(hKV);
+		delete hKV;
 		return false;
 	}
 	
-	decl String:sWeapon[64], Float:fSpeed;
-	if(KvGotoFirstSubKey(hKV, false))
+	char sWeapon[64];
+	float fSpeed;
+	if(hKV.GotoFirstSubKey(false))
 	{
 		do
 		{
-			KvGetSectionName(hKV, sWeapon, sizeof(sWeapon));
-			fSpeed = KvGetFloat(hKV, NULL_STRING, 1.0);
+			hKV.GetSectionName(sWeapon, sizeof(sWeapon));
+			fSpeed = hKV.GetFloat(NULL_STRING, 1.0);
 			
-			SetTrieValue(g_hWeaponSpeeds, sWeapon, fSpeed);
+			g_hWeaponSpeeds.SetValue(sWeapon, fSpeed);
 			
-		} while (KvGotoNextKey(hKV, false));
+		} while (hKV.GotoNextKey(false));
 	}
-	CloseHandle(hKV);
+	delete hKV;
 	return true;
 }

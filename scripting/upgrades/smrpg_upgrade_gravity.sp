@@ -7,17 +7,19 @@
 #pragma semicolon 1
 #include <sourcemod>
 #include <sdkhooks>
+
+#pragma newdecls required
 #include <smrpg>
 
 // Change the upgrade's shortname to a descriptive abbrevation
 #define UPGRADE_SHORTNAME "gravity"
 #define PLUGIN_VERSION "1.0"
 
-new Handle:g_hCVPercent;
+ConVar g_hCVPercent;
 
-new MoveType:g_iOldClientMoveType[MAXPLAYERS+1];
+MoveType g_iOldClientMoveType[MAXPLAYERS+1];
 
-public Plugin:myinfo = 
+public Plugin myinfo = 
 {
 	name = "SM:RPG Upgrade > Reduced Gravity",
 	author = "Jannik \"Peace-Maker\" Hartung",
@@ -26,21 +28,21 @@ public Plugin:myinfo =
 	url = "http://www.wcfan.de/"
 }
 
-public OnPluginStart()
+public void OnPluginStart()
 {
 	HookEvent("player_spawn", Event_OnPlayerSpawn);
 	
 	LoadTranslations("smrpg_stock_upgrades.phrases");
 	
 	// Late loading
-	for(new i=1;i<=MaxClients;i++)
+	for(int i=1;i<=MaxClients;i++)
 	{
 		if(IsClientInGame(i))
 			OnClientPutInServer(i);
 	}
 }
 
-public OnPluginEnd()
+public void OnPluginEnd()
 {
 	if(SMRPG_UpgradeExists(UPGRADE_SHORTNAME))
 	{
@@ -51,12 +53,12 @@ public OnPluginEnd()
 	}
 }
 
-public OnAllPluginsLoaded()
+public void OnAllPluginsLoaded()
 {
 	OnLibraryAdded("smrpg");
 }
 
-public OnLibraryAdded(const String:name[])
+public void OnLibraryAdded(const char[] name)
 {
 	// Register this upgrade in SM:RPG
 	if(StrEqual(name, "smrpg"))
@@ -70,12 +72,12 @@ public OnLibraryAdded(const String:name[])
 	}
 }
 
-public OnClientPutInServer(client)
+public void OnClientPutInServer(int client)
 {
 	SDKHook(client, SDKHook_PostThinkPost, Hook_OnClientPostThinkPost);
 }
 
-public OnClientDisconnect(client)
+public void OnClientDisconnect(int client)
 {
 	g_iOldClientMoveType[client] = MOVETYPE_NONE;
 }
@@ -83,9 +85,9 @@ public OnClientDisconnect(client)
 /**
  * SDK Hooks callbacks
  */
-public Hook_OnClientPostThinkPost(client)
+public void Hook_OnClientPostThinkPost(int client)
 {
-	new MoveType:iMoveType = GetEntityMoveType(client);
+	MoveType iMoveType = GetEntityMoveType(client);
 	
 	if(IsClientInGame(client) && IsPlayerAlive(client))
 	{	
@@ -103,9 +105,9 @@ public Hook_OnClientPostThinkPost(client)
 /**
  * Event callbacks
  */
-public Event_OnPlayerSpawn(Handle:event, const String:error[], bool:dontBroadcast)
+public void Event_OnPlayerSpawn(Event event, const char[] error, bool dontBroadcast)
 {
-	new userid = GetEventInt(event, "userid");
+	int userid = event.GetInt("userid");
 	// Set the gravity one frame after the player spawned, 
 	// so we make sure other plugins, which randomly reset 
 	// the gravity to 1.0 at spawn don't overwrite our effect.
@@ -115,9 +117,9 @@ public Event_OnPlayerSpawn(Handle:event, const String:error[], bool:dontBroadcas
 /**
  * RequestFrame callbacks to run one frame later.
  */
-public Frame_OnPlayerSpawnPost(any:userid)
+public void Frame_OnPlayerSpawnPost(any userid)
 {
-	new client = GetClientOfUserId(userid);
+	int client = GetClientOfUserId(userid);
 	if(!client)
 		return;
 
@@ -131,23 +133,23 @@ public Frame_OnPlayerSpawnPost(any:userid)
  * SM:RPG Upgrade callbacks
  */
 
-public SMRPG_BuySell(client, UpgradeQueryType:type)
+public void SMRPG_BuySell(int client, UpgradeQueryType type)
 {
 	if(IsClientInGame(client) && IsPlayerAlive(client) && GetClientTeam(client) > 1)
 		ApplyGravity(client, true);
 }
 
-public bool:SMRPG_ActiveQuery(client)
+public bool SMRPG_ActiveQuery(int client)
 {
 	// If this is a passive effect, it's always active, if the player got at least level 1.
 	// If it's an active effect (like a short speed boost) add a check for the effect as well.
-	new upgrade[UpgradeInfo];
+	int upgrade[UpgradeInfo];
 	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
 	return SMRPG_IsEnabled() && upgrade[UI_enabled] && SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME) > 0;
 }
 
 // The core wants to display your upgrade somewhere. Translate it into the clients language!
-public SMRPG_TranslateUpgrade(client, const String:shortname[], TranslationType:type, String:translation[], maxlen)
+public void SMRPG_TranslateUpgrade(int client, const char[] shortname, TranslationType type, char[] translation, int maxlen)
 {
 	// Easy pattern is to use the shortname of your upgrade in the translation file
 	if(type == TranslationType_Name)
@@ -155,7 +157,7 @@ public SMRPG_TranslateUpgrade(client, const String:shortname[], TranslationType:
 	// And "shortname description" as phrase in the translation file for the description.
 	else if(type == TranslationType_Description)
 	{
-		new String:sDescriptionKey[MAX_UPGRADE_SHORTNAME_LENGTH+12] = UPGRADE_SHORTNAME;
+		char sDescriptionKey[MAX_UPGRADE_SHORTNAME_LENGTH+12] = UPGRADE_SHORTNAME;
 		StrCat(sDescriptionKey, sizeof(sDescriptionKey), " description");
 		Format(translation, maxlen, "%T", sDescriptionKey, client);
 	}
@@ -164,12 +166,12 @@ public SMRPG_TranslateUpgrade(client, const String:shortname[], TranslationType:
 /**
  * SM:RPG callbacks
  */
-public SMRPG_OnEnableStatusChanged(bool:bEnabled)
+public void SMRPG_OnEnableStatusChanged(bool bEnabled)
 {
 	CheckGravity(false);
 }
 
-public SMRPG_OnUpgradeSettingsChanged(const String:shortname[])
+public void SMRPG_OnUpgradeSettingsChanged(const char[] shortname)
 {
 	if(StrEqual(shortname, UPGRADE_SHORTNAME))
 	{
@@ -181,14 +183,14 @@ public SMRPG_OnUpgradeSettingsChanged(const String:shortname[])
 }
 
 // Set the gravity correctly
-ApplyGravity(client, bool:bIgnoreNullLevel = false)
+void ApplyGravity(int client, bool bIgnoreNullLevel = false)
 {
 	// SM:RPG is disabled?
 	if(!SMRPG_IsEnabled())
 		return;
 	
 	// The upgrade is disabled completely?
-	new upgrade[UpgradeInfo];
+	int upgrade[UpgradeInfo];
 	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
 	if(!upgrade[UI_enabled])
 		return;
@@ -198,7 +200,7 @@ ApplyGravity(client, bool:bIgnoreNullLevel = false)
 		return;
 	
 	// Player didn't buy this upgrade yet.
-	new iLevel = SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME);
+	int iLevel = SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME);
 	if(!bIgnoreNullLevel && iLevel <= 0)
 		return;
 	
@@ -208,7 +210,7 @@ ApplyGravity(client, bool:bIgnoreNullLevel = false)
 		return; // Some other plugin doesn't want this effect to run
 	
 	// Reduce the gravity
-	new Float:fGravity = 1.0 - float(iLevel) * GetConVarFloat(g_hCVPercent);
+	float fGravity = 1.0 - float(iLevel) * g_hCVPercent.FloatValue;
 	if(fGravity < 0.1)
 		fGravity = 0.1;
 	
@@ -217,12 +219,12 @@ ApplyGravity(client, bool:bIgnoreNullLevel = false)
 
 // Make sure the gravity is set correctly for all players
 // Also make sure it's reset, when the upgrade is disabled.
-stock CheckGravity(bool:bForceDisable)
+stock void CheckGravity(bool bForceDisable)
 {
-	new upgrade[UpgradeInfo];
+	int upgrade[UpgradeInfo];
 	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
 	
-	for(new i=1;i<=MaxClients;i++)
+	for(int i=1;i<=MaxClients;i++)
 	{
 		if(!IsClientInGame(i))
 			continue;
@@ -235,7 +237,7 @@ stock CheckGravity(bool:bForceDisable)
 				continue;
 			
 			// Player didn't buy this upgrade yet.
-			new iLevel = SMRPG_GetClientUpgradeLevel(i, UPGRADE_SHORTNAME);
+			int iLevel = SMRPG_GetClientUpgradeLevel(i, UPGRADE_SHORTNAME);
 			if(iLevel <= 0)
 				continue;
 			

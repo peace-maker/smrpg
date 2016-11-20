@@ -1,18 +1,20 @@
 #pragma semicolon 1
 #include <sourcemod>
-#include <smrpg>
 #include <sdktools>
+
+#pragma newdecls required
+#include <smrpg>
 
 #define PLUGIN_VERSION "1.0"
 #define UPGRADE_SHORTNAME "ljump"
 
-new Handle:g_hCVIncrease;
-new Handle:g_hCVIncreaseStart;
+ConVar g_hCVIncrease;
+ConVar g_hCVIncreaseStart;
 
-new Float:g_fLJumpPreviousVelocity[MAXPLAYERS+1][3];
-new Float:g_fLJumpPlayerJumped[MAXPLAYERS+1];
+float g_fLJumpPreviousVelocity[MAXPLAYERS+1][3];
+float g_fLJumpPlayerJumped[MAXPLAYERS+1];
 
-public Plugin:myinfo = 
+public Plugin myinfo = 
 {
 	name = "SM:RPG Upgrade > Long Jump",
 	author = "Jannik \"Peace-Maker\" Hartung",
@@ -21,7 +23,7 @@ public Plugin:myinfo =
 	url = "http://www.wcfan.de/"
 }
 
-public OnPluginStart()
+public void OnPluginStart()
 {
 	HookEventEx("player_footstep", Event_OnResetJump);
 	HookEvent("player_spawn", Event_OnResetJump);
@@ -30,18 +32,18 @@ public OnPluginStart()
 	LoadTranslations("smrpg_stock_upgrades.phrases");
 }
 
-public OnPluginEnd()
+public void OnPluginEnd()
 {
 	if(SMRPG_UpgradeExists(UPGRADE_SHORTNAME))
 		SMRPG_UnregisterUpgradeType(UPGRADE_SHORTNAME);
 }
 
-public OnAllPluginsLoaded()
+public void OnAllPluginsLoaded()
 {
 	OnLibraryAdded("smrpg");
 }
 
-public OnLibraryAdded(const String:name[])
+public void OnLibraryAdded(const char[] name)
 {
 	// Register this upgrade in SM:RPG
 	if(StrEqual(name, "smrpg"))
@@ -55,48 +57,48 @@ public OnLibraryAdded(const String:name[])
 }
 
 
-public SMRPG_BuySell(client, UpgradeQueryType:type)
+public void SMRPG_BuySell(int client, UpgradeQueryType type)
 {
 	// Nothing to apply here immediately after someone buys this upgrade.
 }
 
-public bool:SMRPG_ActiveQuery(client)
+public bool SMRPG_ActiveQuery(int client)
 {
-	new upgrade[UpgradeInfo];
+	int upgrade[UpgradeInfo];
 	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
 	return SMRPG_IsEnabled() && upgrade[UI_enabled] && SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME) > 0;
 }
 
-public SMRPG_TranslateUpgrade(client, const String:shortname[], TranslationType:type, String:translation[], maxlen)
+public void SMRPG_TranslateUpgrade(int client, const char[] shortname, TranslationType type, char[] translation, int maxlen)
 {
 	if(type == TranslationType_Name)
 		Format(translation, maxlen, "%T", UPGRADE_SHORTNAME, client);
 	else if(type == TranslationType_Description)
 	{
-		new String:sDescriptionKey[MAX_UPGRADE_SHORTNAME_LENGTH+12] = UPGRADE_SHORTNAME;
+		char sDescriptionKey[MAX_UPGRADE_SHORTNAME_LENGTH+12] = UPGRADE_SHORTNAME;
 		StrCat(sDescriptionKey, sizeof(sDescriptionKey), " description");
 		Format(translation, maxlen, "%T", sDescriptionKey, client);
 	}
 }
 
-public OnClientDisconnect(client)
+public void OnClientDisconnect(int client)
 {
 	g_fLJumpPlayerJumped[client] = -1.0;
 }
 
-public Action:OnPlayerRunCmd(client, &buttons, &impulse, Float:vel[3], Float:angles[3], &weapon, &subtype, &cmdnum, &tickcount, &seed, mouse[2])
+public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3], float angles[3], int &weapon, int &subtype, int &cmdnum, int &tickcount, int &seed, int mouse[2])
 {
-	static s_iLastButtons[MAXPLAYERS+1] = {0,...};
+	static int s_iLastButtons[MAXPLAYERS+1] = {0,...};
 	if(!IsClientInGame(client) || !IsPlayerAlive(client))
 		return Plugin_Continue;
 	
 	// Make sure to reset the time when the player stops. Maybe he didn't took a step so player_footstep wasn't fired yet.
-	decl Float:vVelocity[3];
+	float vVelocity[3];
 	GetEntPropVector(client, Prop_Data, "m_vecVelocity", vVelocity);
 	if(vVelocity[0] == 0.0 && vVelocity[1] == 0.0 && vVelocity[2] == 0.0)
 		g_fLJumpPlayerJumped[client] = -1.0;
 	
-	new bool:bFirstJump = g_fLJumpPlayerJumped[client] < 0.0;
+	bool bFirstJump = g_fLJumpPlayerJumped[client] < 0.0;
 	
 	// Player started to press space - or what ever is bound to jump..
 	if(buttons & IN_JUMP && !(s_iLastButtons[client] & IN_JUMP))
@@ -122,9 +124,9 @@ public Action:OnPlayerRunCmd(client, &buttons, &impulse, Float:vel[3], Float:ang
 	return Plugin_Continue;
 }
 
-public Event_OnResetJump(Handle:event, const String:error[], bool:dontBroadcast)
+public void Event_OnResetJump(Event event, const char[] error, bool dontBroadcast)
 {
-	new client = GetClientOfUserId(GetEventInt(event, "userid"));
+	int client = GetClientOfUserId(event.GetInt("userid"));
 	if(!client)
 		return;
 	
@@ -134,12 +136,12 @@ public Event_OnResetJump(Handle:event, const String:error[], bool:dontBroadcast)
 		g_fLJumpPlayerJumped[client] = -1.0;
 }
 
-LJump_HasJumped(client, Float:vVelocity[3], bool:bFirstJump)
+void LJump_HasJumped(int client, float vVelocity[3], bool bFirstJump)
 {
 	if(!SMRPG_IsEnabled())
 		return;
 	
-	new upgrade[UpgradeInfo];
+	int upgrade[UpgradeInfo];
 	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
 	if(!upgrade[UI_enabled])
 		return;
@@ -149,21 +151,21 @@ LJump_HasJumped(client, Float:vVelocity[3], bool:bFirstJump)
 		return;
 	
 	// Player didn't buy this upgrade yet.
-	new iLevel = SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME);
+	int iLevel = SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME);
 	if(iLevel <= 0)
 		return;
 	
 	if(!SMRPG_RunUpgradeEffect(client, UPGRADE_SHORTNAME))
 		return; // Some other plugin doesn't want this effect to run
 	
-	new Float:fMultiplicator;
+	float fMultiplicator;
 	// The first jump receives a bigger boost to get away from dangerous places quickly.
 	if(bFirstJump)
-		fMultiplicator = GetConVarFloat(g_hCVIncreaseStart);
+		fMultiplicator = g_hCVIncreaseStart.FloatValue;
 	else
-		fMultiplicator = GetConVarFloat(g_hCVIncrease);
+		fMultiplicator = g_hCVIncrease.FloatValue;
 	
-	new Float:fIncrease = fMultiplicator * float(iLevel) + 1.0;
+	float fIncrease = fMultiplicator * float(iLevel) + 1.0;
 	vVelocity[0] *= fIncrease;
 	vVelocity[1] *= fIncrease;
 	

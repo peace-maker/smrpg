@@ -1,19 +1,21 @@
 #pragma semicolon 1
 #include <sourcemod>
 #include <sdkhooks>
-#include <smrpg>
 #include <smlib>
+
+//#pragma newdecls required
+#include <smrpg>
 
 #define UPGRADE_SHORTNAME "stealth"
 
 #define PLUGIN_VERSION "1.0"
 
-new Handle:g_hCVMinimumAlpha;
+ConVar g_hCVMinimumAlpha;
 
 // CS:GO only convar to enable alpha changes on players.
-new Handle:g_hCVIgnoreImmunity;
+ConVar g_hCVIgnoreImmunity;
 
-public Plugin:myinfo = 
+public Plugin myinfo = 
 {
 	name = "SM:RPG Upgrade > Stealth",
 	author = "Jannik \"Peace-Maker\" Hartung",
@@ -22,7 +24,7 @@ public Plugin:myinfo =
 	url = "http://www.wcfan.de/"
 }
 
-public OnPluginStart()
+public void OnPluginStart()
 {
 	HookEvent("player_spawn", Event_OnPlayerSpawn);
 	
@@ -33,33 +35,33 @@ public OnPluginStart()
 	if(GetEngineVersion() == Engine_CSGO)
 	{
 		g_hCVIgnoreImmunity = FindConVar("sv_disable_immunity_alpha");
-		if(g_hCVIgnoreImmunity != INVALID_HANDLE)
+		if(g_hCVIgnoreImmunity != null)
 		{
 			SetConVarBool(g_hCVIgnoreImmunity, true);
-			HookConVarChange(g_hCVIgnoreImmunity, ConVar_OnDisableImmunityAlphaChanged);
+			g_hCVIgnoreImmunity.AddChangeHook(ConVar_OnDisableImmunityAlphaChanged);
 		}
 	}
 
 	// Late loading
-	for(new i=1;i<=MaxClients;i++)
+	for(int i=1;i<=MaxClients;i++)
 	{
 		if(IsClientInGame(i))
 			OnClientPutInServer(i);
 	}
 }
 
-public OnPluginEnd()
+public void OnPluginEnd()
 {
 	if(SMRPG_UpgradeExists(UPGRADE_SHORTNAME))
 		SMRPG_UnregisterUpgradeType(UPGRADE_SHORTNAME);
 }
 
-public OnAllPluginsLoaded()
+public void OnAllPluginsLoaded()
 {
 	OnLibraryAdded("smrpg");
 }
 
-public OnLibraryAdded(const String:name[])
+public void OnLibraryAdded(const char[] name)
 {
 	// Register this upgrade in SM:RPG
 	if(StrEqual(name, "smrpg"))
@@ -70,13 +72,13 @@ public OnLibraryAdded(const String:name[])
 	}
 }
 
-public OnMapStart()
+public void OnMapStart()
 {
 	// Just to make sure there's nothing else messing with this effect.
 	CreateTimer(5.0, Timer_SetVisibilities, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 }
 
-public OnClientPutInServer(client)
+public void OnClientPutInServer(int client)
 {
 	SDKHook(client, SDKHook_WeaponDropPost, Hook_OnWeaponDropPost);
 }
@@ -84,83 +86,83 @@ public OnClientPutInServer(client)
 /**
  * ConVar change hook callbacks (CS:GO only)
  */
-public ConVar_OnDisableImmunityAlphaChanged(Handle:convar, const String:oldValue[], const String:newValue[])
+public void ConVar_OnDisableImmunityAlphaChanged(ConVar convar, const char[] oldValue, const char[] newValue)
 {
-	if(!GetConVarBool(convar))
+	if(!convar.BoolValue)
 	{
 		// Ignore this convar, if this upgrade is disabled.
 		if(!SMRPG_IsEnabled())
 			return;
 	
-		new upgrade[UpgradeInfo];
+		int upgrade[UpgradeInfo];
 		SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
 		if(!upgrade[UI_enabled])
 			return;
 		
-		SetConVarBool(convar, true);
+		convar.SetBool(true);
 		PrintToServer("SM:RPG Stealth Upgrade > Forcing sv_disable_immunity_alpha to 1.");
 	}
 }
 
 // CS:GO only: force sv_disable_immunity_alpha to 1 when enabling smrpg.
-public SMRPG_OnEnableStatusChanged(bool:bEnabled)
+public void SMRPG_OnEnableStatusChanged(bool bEnabled)
 {
 	if(!bEnabled)
 		return;
 	
 	// CS:GO only
-	if(g_hCVIgnoreImmunity == INVALID_HANDLE)
+	if(g_hCVIgnoreImmunity == null)
 		return;
 
 	// Upgrade enabled too?
-	new upgrade[UpgradeInfo];
+	int upgrade[UpgradeInfo];
 	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
 	if(!upgrade[UI_enabled])
 		return;
 	
 	// alpha change was ignored. OBEY!
-	if(!GetConVarBool(g_hCVIgnoreImmunity))
+	if(!g_hCVIgnoreImmunity.BoolValue)
 	{
-		SetConVarBool(g_hCVIgnoreImmunity, true);
+		g_hCVIgnoreImmunity.SetBool(true);
 		PrintToServer("SM:RPG Stealth Upgrade > Forcing sv_disable_immunity_alpha to 1.");
 	}
 }
 
 // CS:GO only: force sv_disable_immunity_alpha to 1 when enabling this upgrade.
-public SMRPG_OnUpgradeSettingsChanged(const String:shortname[])
+public void SMRPG_OnUpgradeSettingsChanged(const char[] shortname)
 {
 	// CS:GO only
-	if(g_hCVIgnoreImmunity == INVALID_HANDLE)
+	if(g_hCVIgnoreImmunity == null)
 		return;
 
 	// Settings of some other upgrade changed? Boring..
 	if(!StrEqual(shortname, UPGRADE_SHORTNAME))
 		return;
 
-	new upgrade[UpgradeInfo];
+	int upgrade[UpgradeInfo];
 	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
 	if(!upgrade[UI_enabled])
 		return;
 
-	if(!GetConVarBool(g_hCVIgnoreImmunity))
+	if(!g_hCVIgnoreImmunity.BoolValue)
 	{
-		SetConVarBool(g_hCVIgnoreImmunity, true);
+		g_hCVIgnoreImmunity.SetBool(true);
 	}
 }
 
 /**
  * Event callbacks
  */
-public Event_OnPlayerSpawn(Handle:event, const String:name[], bool:dontBroadcast)
+public void Event_OnPlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 {
-	new client = GetClientOfUserId(GetEventInt(event, "userid"));
+	int client = GetClientOfUserId(event.GetInt("userid"));
 	if(!client)
 		return;
 	
 	if(!SMRPG_IsEnabled())
 		return;
 	
-	new upgrade[UpgradeInfo];
+	int upgrade[UpgradeInfo];
 	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
 	if(!upgrade[UI_enabled])
 		return;
@@ -175,7 +177,7 @@ public Event_OnPlayerSpawn(Handle:event, const String:name[], bool:dontBroadcast
 /**
  * SDK Hooks callbacks
  */
-public Hook_OnWeaponDropPost(client, weapon)
+public void Hook_OnWeaponDropPost(int client, int weapon)
 {
 	if(weapon == INVALID_ENT_REFERENCE || !IsValidEntity(weapon))
 		return;
@@ -183,7 +185,7 @@ public Hook_OnWeaponDropPost(client, weapon)
 	if(!SMRPG_IsEnabled())
 		return;
 	
-	new upgrade[UpgradeInfo];
+	int upgrade[UpgradeInfo];
 	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
 	if(!upgrade[UI_enabled])
 		return;
@@ -196,7 +198,7 @@ public Hook_OnWeaponDropPost(client, weapon)
 /**
  * SM:RPG Upgrade callbacks
  */
-public SMRPG_BuySell(client, UpgradeQueryType:type)
+public void SMRPG_BuySell(int client, UpgradeQueryType type)
 {
 	if(!IsClientInGame(client))
 		return;
@@ -208,21 +210,21 @@ public SMRPG_BuySell(client, UpgradeQueryType:type)
 	SetClientVisibility(client);
 }
 
-public bool:SMRPG_ActiveQuery(client)
+public bool SMRPG_ActiveQuery(int client)
 {
 	// This is a passive effect, so it's always active, if the player got at least level 1
-	new upgrade[UpgradeInfo];
+	int upgrade[UpgradeInfo];
 	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
 	return SMRPG_IsEnabled() && upgrade[UI_enabled] && SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME) > 0;
 }
 
-public SMRPG_TranslateUpgrade(client, const String:shortname[], TranslationType:type, String:translation[], maxlen)
+public void SMRPG_TranslateUpgrade(int client, const char[] shortname, TranslationType type, char[] translation, int maxlen)
 {
 	if(type == TranslationType_Name)
 		Format(translation, maxlen, "%T", UPGRADE_SHORTNAME, client);
 	else if(type == TranslationType_Description)
 	{
-		new String:sDescriptionKey[MAX_UPGRADE_SHORTNAME_LENGTH+12] = UPGRADE_SHORTNAME;
+		char sDescriptionKey[MAX_UPGRADE_SHORTNAME_LENGTH+12] = UPGRADE_SHORTNAME;
 		StrCat(sDescriptionKey, sizeof(sDescriptionKey), " description");
 		Format(translation, maxlen, "%T", sDescriptionKey, client);
 	}
@@ -231,7 +233,7 @@ public SMRPG_TranslateUpgrade(client, const String:shortname[], TranslationType:
 /**
  * Timer callbacks
  */
-public Action:Timer_SetVisibilities(Handle:timer, any:data)
+public Action Timer_SetVisibilities(Handle timer, any data)
 {
 	SetVisibilities();
 	
@@ -241,20 +243,20 @@ public Action:Timer_SetVisibilities(Handle:timer, any:data)
 /**
  * Helper functions
  */
-SetVisibilities()
+void SetVisibilities()
 {
 	if(!SMRPG_IsEnabled())
 		return;
 	
-	new upgrade[UpgradeInfo];
+	int upgrade[UpgradeInfo];
 	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
 	if(!upgrade[UI_enabled])
 		return;
 	
-	new bool:bIgnoreBots = SMRPG_IgnoreBots();
+	bool bIgnoreBots = SMRPG_IgnoreBots();
 	
-	new iLevel;
-	for(new i=1;i<=MaxClients;i++)
+	int iLevel;
+	for(int i=1;i<=MaxClients;i++)
 	{
 		if(!IsClientInGame(i))
 			continue;
@@ -272,26 +274,26 @@ SetVisibilities()
 	}
 }
 
-SetClientVisibility(client)
+void SetClientVisibility(int client)
 {
 	if(!SMRPG_RunUpgradeEffect(client, UPGRADE_SHORTNAME))
 		return; // Some other plugin doesn't want this effect to run
 	
-	new iLevel = SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME);
+	int iLevel = SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME);
 	
-	new upgrade[UpgradeInfo];
+	int upgrade[UpgradeInfo];
 	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
 	
 	// Keep the minimum alpha in byte range
-	new iMinimumAlpha = GetConVarInt(g_hCVMinimumAlpha);
+	int iMinimumAlpha = g_hCVMinimumAlpha.IntValue;
 	if (iMinimumAlpha < 0 || iMinimumAlpha > 255)
 		iMinimumAlpha = 120;
 	
 	// Each step brings the player's visibility more towards the minimum alpha.
-	new iStepSize = (255 - iMinimumAlpha) / upgrade[UI_maxLevel];
+	int iStepSize = (255 - iMinimumAlpha) / upgrade[UI_maxLevel];
 	
 	// Render the player more invisible each level
-	new iAlpha = 255 - iLevel * iStepSize;
+	int iAlpha = 255 - iLevel * iStepSize;
 	// Avoid rounding problems with the stepsize.
 	if (iAlpha < 0)
 		iAlpha = 0; // TODO: RENDER_NONE?
@@ -300,7 +302,7 @@ SetClientVisibility(client)
 	Entity_SetRenderColor(client, -1, -1, -1, iAlpha);
 	
 	// Render his weapons opaque too.
-	new iWeapon = -1, iIndex;
+	int iWeapon = -1, iIndex;
 	while((iWeapon = Client_GetNextWeapon(client, iIndex)) != -1)
 	{
 		SetEntityRenderMode(iWeapon, RENDER_TRANSCOLOR);
@@ -308,7 +310,7 @@ SetClientVisibility(client)
 	}
 	
 	// Take care of any props attachted to him like hats.
-	decl String:sBuffer[64];
+	char sBuffer[64];
 	LOOP_CHILDREN(client, child)
 	{
 		if(GetEntityClassname(child, sBuffer, sizeof(sBuffer))

@@ -1,23 +1,25 @@
 #pragma semicolon 1
 #include <sourcemod>
 #include <sdkhooks>
-#include <smrpg>
 #include <smlib/clients>
+
+#pragma newdecls required
+#include <smrpg>
 
 #define UPGRADE_SHORTNAME "damage"
 #define PLUGIN_VERSION "1.0"
 
-new Handle:g_hCVDefaultPercent;
-new Handle:g_hCVDefaultMaxDamage;
+ConVar g_hCVDefaultPercent;
+ConVar g_hCVDefaultMaxDamage;
 
 enum WeaponConfig {
 	Float:Weapon_DamageInc,
 	Float:Weapon_MaxIncrease
 };
 
-new Handle:g_hWeaponDamage;
+StringMap g_hWeaponDamage;
 
-public Plugin:myinfo = 
+public Plugin myinfo = 
 {
 	name = "SM:RPG Upgrade > Damage+",
 	author = "Jannik \"Peace-Maker\" Hartung",
@@ -26,32 +28,32 @@ public Plugin:myinfo =
 	url = "http://www.wcfan.de/"
 }
 
-public OnPluginStart()
+public void OnPluginStart()
 {
 	LoadTranslations("smrpg_stock_upgrades.phrases");
 	
-	g_hWeaponDamage = CreateTrie();
+	g_hWeaponDamage = new StringMap();
 
 	// Account for late loading
-	for(new i=1;i<=MaxClients;i++)
+	for(int i=1;i<=MaxClients;i++)
 	{
 		if(IsClientInGame(i))
 			OnClientPutInServer(i);
 	}
 }
 
-public OnPluginEnd()
+public void OnPluginEnd()
 {
 	if(SMRPG_UpgradeExists(UPGRADE_SHORTNAME))
 		SMRPG_UnregisterUpgradeType(UPGRADE_SHORTNAME);
 }
 
-public OnAllPluginsLoaded()
+public void OnAllPluginsLoaded()
 {
 	OnLibraryAdded("smrpg");
 }
 
-public OnLibraryAdded(const String:name[])
+public void OnLibraryAdded(const char[] name)
 {
 	// Register this upgrade in SM:RPG
 	if(StrEqual(name, "smrpg"))
@@ -63,12 +65,12 @@ public OnLibraryAdded(const String:name[])
 	}
 }
 
-public OnClientPutInServer(client)
+public void OnClientPutInServer(int client)
 {
 	SDKHook(client, SDKHook_OnTakeDamage, Hook_OnTakeDamage);
 }
 
-public OnMapStart()
+public void OnMapStart()
 {
 	if(!LoadWeaponConfig())
 		SetFailState("Can't read config file in configs/smrpg/damage_weapons.cfg!");
@@ -77,25 +79,25 @@ public OnMapStart()
 /**
  * SM:RPG Upgrade callbacks
  */
-public SMRPG_BuySell(client, UpgradeQueryType:type)
+public void SMRPG_BuySell(int client, UpgradeQueryType type)
 {
 	// Nothing to apply here immediately after someone buys this upgrade.
 }
 
-public bool:SMRPG_ActiveQuery(client)
+public bool SMRPG_ActiveQuery(int client)
 {
-	new upgrade[UpgradeInfo];
+	int upgrade[UpgradeInfo];
 	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
 	return SMRPG_IsEnabled() && upgrade[UI_enabled] && SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME) > 0;
 }
 
-public SMRPG_TranslateUpgrade(client, const String:shortname[], TranslationType:type, String:translation[], maxlen)
+public void SMRPG_TranslateUpgrade(int client, const char[] shortname, TranslationType type, char[] translation, int maxlen)
 {
 	if(type == TranslationType_Name)
 		Format(translation, maxlen, "%T", UPGRADE_SHORTNAME, client);
 	else if(type == TranslationType_Description)
 	{
-		new String:sDescriptionKey[MAX_UPGRADE_SHORTNAME_LENGTH+12] = UPGRADE_SHORTNAME;
+		char sDescriptionKey[MAX_UPGRADE_SHORTNAME_LENGTH+12] = UPGRADE_SHORTNAME;
 		StrCat(sDescriptionKey, sizeof(sDescriptionKey), " description");
 		Format(translation, maxlen, "%T", sDescriptionKey, client);
 	}
@@ -104,7 +106,7 @@ public SMRPG_TranslateUpgrade(client, const String:shortname[], TranslationType:
 /**
  * Hook callbacks
  */
-public Action:Hook_OnTakeDamage(victim, &attacker, &inflictor, &Float:damage, &damagetype, &weapon, Float:damageForce[3], Float:damagePosition[3], damagecustom)
+public Action Hook_OnTakeDamage(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &weapon, float damageForce[3], float damagePosition[3], int damagecustom)
 {
 	if(attacker <= 0 || attacker > MaxClients || victim <= 0 || victim > MaxClients)
 		return Plugin_Continue;
@@ -112,7 +114,7 @@ public Action:Hook_OnTakeDamage(victim, &attacker, &inflictor, &Float:damage, &d
 	if(!SMRPG_IsEnabled())
 		return Plugin_Continue;
 	
-	new upgrade[UpgradeInfo];
+	int upgrade[UpgradeInfo];
 	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
 	if(!upgrade[UI_enabled])
 		return Plugin_Continue;
@@ -125,21 +127,21 @@ public Action:Hook_OnTakeDamage(victim, &attacker, &inflictor, &Float:damage, &d
 	if(!SMRPG_IsFFAEnabled() && GetClientTeam(attacker) == GetClientTeam(victim))
 		return Plugin_Continue;
 	
-	new iLevel = SMRPG_GetClientUpgradeLevel(attacker, UPGRADE_SHORTNAME);
+	int iLevel = SMRPG_GetClientUpgradeLevel(attacker, UPGRADE_SHORTNAME);
 	if(iLevel <= 0)
 		return Plugin_Continue;
 	
-	new iWeapon = inflictor;
+	int iWeapon = inflictor;
 	if(inflictor > 0 && inflictor <= MaxClients)
 		iWeapon = Client_GetActiveWeapon(inflictor);
 	
 	if(iWeapon == -1)
 		return Plugin_Continue;
 	
-	decl String:sWeapon[256];
+	char sWeapon[256];
 	GetEntityClassname(iWeapon, sWeapon, sizeof(sWeapon));
 	
-	new Float:fDmgIncreasePercent = GetWeaponDamageIncreasePercent(sWeapon);
+	float fDmgIncreasePercent = GetWeaponDamageIncreasePercent(sWeapon);
 	if (fDmgIncreasePercent <= 0.0)
 		return Plugin_Continue;
 	
@@ -147,10 +149,10 @@ public Action:Hook_OnTakeDamage(victim, &attacker, &inflictor, &Float:damage, &d
 		return Plugin_Continue; // Some other plugin doesn't want this effect to run
 	
 	// Increase the damage
-	new Float:fDmgInc = damage * fDmgIncreasePercent * float(iLevel);
+	float fDmgInc = damage * fDmgIncreasePercent * float(iLevel);
 	
 	// Cap it at the upper limit
-	new Float:fMaxDmg = GetWeaponMaxAdditionalDamage(sWeapon);
+	float fMaxDmg = GetWeaponMaxAdditionalDamage(sWeapon);
 	if(fMaxDmg > 0.0 && fDmgInc > fMaxDmg)
 		fDmgInc = fMaxDmg;
 	
@@ -161,65 +163,65 @@ public Action:Hook_OnTakeDamage(victim, &attacker, &inflictor, &Float:damage, &d
 /**
  * Helpers
  */
-bool:LoadWeaponConfig()
+bool LoadWeaponConfig()
 {
-	ClearTrie(g_hWeaponDamage);
+	g_hWeaponDamage.Clear();
 	
-	decl String:sPath[PLATFORM_MAX_PATH];
+	char sPath[PLATFORM_MAX_PATH];
 	BuildPath(Path_SM, sPath, sizeof(sPath), "configs/smrpg/damage_weapons.cfg");
 	
 	if(!FileExists(sPath))
 		return false;
 	
-	new Handle:hKV = CreateKeyValues("DamageWeapons");
-	if(!FileToKeyValues(hKV, sPath))
+	KeyValues hKV = new KeyValues("DamageWeapons");
+	if(!hKV.ImportFromFile(sPath))
 	{
-		CloseHandle(hKV);
+		delete hKV;
 		return false;
 	}
 	
-	decl String:sWeapon[64];
-	if(KvGotoFirstSubKey(hKV, false))
+	char sWeapon[64];
+	if(hKV.GotoFirstSubKey(false))
 	{
-		new eInfo[WeaponConfig];
+		int eInfo[WeaponConfig];
 		do
 		{
-			KvGetSectionName(hKV, sWeapon, sizeof(sWeapon));
+			hKV.GetSectionName(sWeapon, sizeof(sWeapon));
 			
-			eInfo[Weapon_DamageInc] = KvGetFloat(hKV, "dmg_increase", -1.0);
-			eInfo[Weapon_MaxIncrease] = KvGetFloat(hKV, "max_additional_dmg", -1.0);
+			eInfo[Weapon_DamageInc] = hKV.GetFloat("dmg_increase", -1.0);
+			eInfo[Weapon_MaxIncrease] = hKV.GetFloat("max_additional_dmg", -1.0);
 			
-			SetTrieArray(g_hWeaponDamage, sWeapon, eInfo[0], _:WeaponConfig);
+			g_hWeaponDamage.SetArray(sWeapon, eInfo[0], view_as<int>(WeaponConfig));
 			
-		} while (KvGotoNextKey(hKV));
+		} while (hKV.GotoNextKey());
 	}
 	
-	CloseHandle(hKV);
+	delete hKV;
 	return true;
 }
 
-Float:GetWeaponDamageIncreasePercent(const String:sWeapon[])
+float GetWeaponDamageIncreasePercent(const char[] sWeapon)
 {
-	new eInfo[WeaponConfig];
-	if (GetTrieArray(g_hWeaponDamage, sWeapon, eInfo[0], _:WeaponConfig))
+	int eInfo[WeaponConfig];
+	if (g_hWeaponDamage.GetArray(sWeapon, eInfo[0], view_as<int>(WeaponConfig)))
 	{
 		if (eInfo[Weapon_DamageInc] >= 0.0)
 			return eInfo[Weapon_DamageInc];
 	}
 	
 	// Just use the default value
-	return GetConVarFloat(g_hCVDefaultPercent);
+	return g_hCVDefaultPercent.FloatValue;
 }
 
-Float:GetWeaponMaxAdditionalDamage(const String:sWeapon[])
+float GetWeaponMaxAdditionalDamage(const char[] sWeapon)
 {
-	new eInfo[WeaponConfig];
-	if (GetTrieArray(g_hWeaponDamage, sWeapon, eInfo[0], _:WeaponConfig))
+	int eInfo[WeaponConfig];
+	if (g_hWeaponDamage.GetArray(sWeapon, eInfo[0], view_as<int>(WeaponConfig)))
 	{
 		if (eInfo[Weapon_MaxIncrease] >= 0.0)
 			return eInfo[Weapon_MaxIncrease];
 	}
 	
 	// Just use the default value
-	return GetConVarFloat(g_hCVDefaultMaxDamage);
+	return g_hCVDefaultMaxDamage.FloatValue;
 }
