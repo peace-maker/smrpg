@@ -356,7 +356,8 @@ public Native_ResetAllPlayers(Handle:plugin, numParams)
 				// Keep the original bot names intact, to avoid saving renamed bots.
 				RemovePlayer(i, true);
 				InitPlayer(i, false);
-				InsertPlayer(i);
+				if (IsClientAuthorized(i))
+					InsertPlayer(i);
 			}
 		}
 	}
