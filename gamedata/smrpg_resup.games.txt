@@ -8,7 +8,8 @@
 			{
 				"library"	"server"
 				"windows"	"\x55\x8B\xEC\x51\x83\x7D\x0C\x00\x53\x8B\xD9\x7F\x2A\x8B"
-				"linux"		"@_ZN17CBaseCombatWeapon15GiveReserveAmmoE14AmmoPosition_tibP20CBaseCombatCharacter"
+				// _ZN17CBaseCombatWeapon15GiveReserveAmmoE14AmmoPosition_tibP20CBaseCombatCharacter
+				"linux"		"\x55\x89\xE5\x83\xEC\x38\x8B\x55\x10\x89\x5D\xF4\x89\x75\xF8\x8B\x5D\x08"
 			}
 		}
 	}
