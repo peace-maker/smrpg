@@ -38,6 +38,11 @@ if [ ! -d "package" ]; then
 	mkdir package/plugins/upgrades
 fi
 
+cp -R configs/ package/
+cp -R gamedata/ package/
+cp -R scripting/ package/
+cp -R translations/ package/
+
 # compile the plugins
 cd build/addons/sourcemod/scripting/
 chmod +x spcomp
@@ -62,11 +67,6 @@ do
 done
 
 # put the files into a nice archive
-cp -R configs/ package/
-cp -R gamedata/ package/
-cp -R scripting/ package/
-cp -R translations/ package/
-
 GITREVCOUNT=$(git rev-list --count HEAD)
 ARCHIVE=smrpg-rev$GITREVCOUNT.tar.gz
 cd $PACKAGEDIR
