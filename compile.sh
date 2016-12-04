@@ -68,6 +68,9 @@ done
 
 # put the files into a nice archive
 cd $PACKAGEDIR
+# get the correct revision count
+# https://github.com/travis-ci/travis-ci/issues/3412
+git fetch --unshallow
 GITREVCOUNT=$(git rev-list --count HEAD)
 ARCHIVE=smrpg-rev$GITREVCOUNT.tar.gz
 tar -zcvf ../$ARCHIVE *
