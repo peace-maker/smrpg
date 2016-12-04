@@ -20,12 +20,29 @@ When an upgrade registers itself at the core, it'll automatically be added to th
 
 Server admins can install a new upgrade simply by loading the upgrade plugin.
 
+# Installation
+* Download the [latest build](http://build.wcfan.de/smrpg/1.8/)
+* Upload the plugins as well as the configs, gamedata and translations folders to your gameserver.
+  * Only upload the plugins/upgrades you want to use. See below for an explanation of each plugin's purpose.
+* (Optional) Install [DHooks](https://forums.alliedmods.net/showthread.php?t=180114) for the Speed+ upgrade.
+* Add a "smrpg" section to your databases.cfg. Both mysql and sqlite are supported.
+
+```
+	"smrpg"
+	{
+		"driver"			"sqlite"
+		"database"			"smrpg"
+	}
+```
+* Start your server. The core config files are generated in [mod]/cfg/sourcemod/ and the config files for the single upgrades in [mod]/cfg/sourcemod/smrpg.
+* Next to the above generated config files there are additional config files in [mod]/addons/sourcemod/configs/smrpg.
+
 # Compile requirements
 * [smlib git master](https://github.com/bcserv/smlib)
 * [AutoExecConfig](https://github.com/Impact123/AutoExecConfig)
 * (optional) [DHooks](https://forums.alliedmods.net/showthread.php?t=180114) for Speed+ upgrade
 
-# Installation
+# Compile instructions
 * Compile the core smrpg plugin (see Compile requirements)
   * Files in the scripting/smrpg and scripting/smrpg_effects folders are included in the respective plugins smrpg.sp and smrpg_effects.sp and mustn't be compiled on their own.
 * If there is a seperate experience module for your game (currently only cstrike), compile and upload that too.
@@ -40,18 +57,6 @@ Server admins can install a new upgrade simply by loading the upgrade plugin.
   * smrpg_antisuicide - Punish players who commit suicide during a fight by taking some experience.
   * smrpg_disablexp - Admin option to temporarily disable experience for individual players.
 * Compile all the upgrades you want to use
-* Upload the .smx files as well as the configs, gamedata and translations to your gameserver
-* Add a "smrpg" section to your databases.cfg. Both mysql and sqlite are supported.
-
-```
-	"smrpg"
-	{
-		"driver"			"sqlite"
-		"database"			"smrpg"
-	}
-```
-* Start your server. The core config files are generated in [mod]/cfg/sourcemod/ and the config files for the single upgrades in [mod]/cfg/sourcemod/smrpg.
-* Next to the above generated config files there are additional config files in [mod]/addons/sourcemod/configs/smrpg.
 
 # API
 Developers can easily add new upgrades using the extensive API provided by the core.
