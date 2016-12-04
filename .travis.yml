@@ -1,7 +1,6 @@
 language: c
 
 env:
-    - SMVERSION=1.7
     - SMVERSION=1.8
     - SMVERSION=1.9
 
