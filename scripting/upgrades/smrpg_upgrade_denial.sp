@@ -2,8 +2,10 @@
 #include <sourcemod>
 #include <sdktools>
 #include <sdkhooks>
-#include <smrpg>
 #include <smlib>
+
+#pragma newdecls required
+#include <smrpg>
 
 #define UPGRADE_SHORTNAME "denial"
 #define PLUGIN_VERSION "1.0"
@@ -285,7 +287,7 @@ bool Denial_IsWeaponRestricted(const char[] sWeapon)
 	char sRestrictedWeapons[1024];
 	g_hCVDenialRestrict.GetString(sRestrictedWeapons, sizeof(sRestrictedWeapons));
 	
-	new iPos = StrContains(sWeapon, "weapon_");
+	int iPos = StrContains(sWeapon, "weapon_");
 	if(iPos != -1)
 		iPos += 7; // skip "weapon_" too.
 	else
