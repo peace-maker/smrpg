@@ -67,9 +67,9 @@ do
 done
 
 # put the files into a nice archive
+cd $PACKAGEDIR
 GITREVCOUNT=$(git rev-list --count HEAD)
 ARCHIVE=smrpg-rev$GITREVCOUNT.tar.gz
-cd $PACKAGEDIR
 tar -zcvf ../$ARCHIVE *
 cd ..
 
