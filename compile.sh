@@ -77,6 +77,7 @@ tar -zcvf ../$ARCHIVE *
 cd ..
 
 # upload package
-if [ ! -z "$DROPURL" ]; then
+# TODO: put into seperate deploy script
+if [ ! -z "$DROPURL" ] && [ "$TRAVIS_PULL_REQUEST" == "false" ]; then
 	curl -F "sm=$SMVERSION" -F "key=$UPLOADKEY" -F "drop=@$ARCHIVE" $DROPURL
 fi
