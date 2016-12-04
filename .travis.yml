@@ -1,0 +1,19 @@
+language: c
+
+env:
+    - SMVERSION=1.7
+    - SMVERSION=1.8
+    - SMVERSION=1.9
+
+matrix:
+    fast_finish: true
+
+before_install:
+    - sudo apt-get update
+    - sudo apt-get install gcc-multilib lib32stdc++6 lib32z1 lynx
+
+script:
+    - ./compile.sh
+
+notifications:
+    email: false
