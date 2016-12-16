@@ -34,7 +34,7 @@ Server admins can install a new upgrade simply by loading the upgrade plugin.
 		"database"			"smrpg"
 	}
 ```
-* Start your server. The core config files are generated in [mod]/cfg/sourcemod/ and the config files for the single upgrades in [mod]/cfg/sourcemod/smrpg.
+* Start your server. The core config files are generated in [mod]/cfg/sourcemod/ and the config files for the single upgrades in [mod]/cfg/sourcemod/smrpg. See the Wiki for [a description of convars](https://github.com/peace-maker/smrpg/wiki/ConVar-list).
 * Next to the above generated config files there are additional config files in [mod]/addons/sourcemod/configs/smrpg.
 
 # Compile requirements
@@ -47,15 +47,16 @@ Server admins can install a new upgrade simply by loading the upgrade plugin.
   * Files in the scripting/smrpg and scripting/smrpg_effects folders are included in the respective plugins smrpg.sp and smrpg_effects.sp and mustn't be compiled on their own.
 * If there is a seperate experience module for your game (currently only cstrike), compile and upload that too.
 * Compile all optional features if you want them.
-  * smrpg_resetstats - Automatically reset the stats on different conditions and display next reset date in chat.
-  * smrpg_commandlist - Teach players about different available rpg related chat commands.
-  * smrpg_effects - Central library to apply similar upgrade effects. Required by some upgrades!
-  * smrpg_keyhint_info - Display rpg stats and more info permanently on the screen.
-  * smrpg_chatxpstats - Display infos in chat about gained experience for a kill or during the whole last life.
-  * smrpg_gifting - Allow players to give other players rpg credits as a gift.
-  * smrpg_turbomode - Increase the experience and credits rate for one map, but don't save the stats. For fun events.
   * smrpg_antisuicide - Punish players who commit suicide during a fight by taking some experience.
+  * smrpg_chattags - Add RPG level and/or rank in front of chat messages.
+  * smrpg_chatxpstats - Display infos in chat about gained experience for a kill or during the whole last life.
+  * smrpg_commandlist - Teach players about different available rpg related chat commands.
   * smrpg_disablexp - Admin option to temporarily disable experience for individual players.
+  * smrpg_effects - Central library to apply similar upgrade effects. Required by some upgrades!
+  * smrpg_gifting - Allow players to give other players rpg credits as a gift.
+  * smrpg_keyhint_info - Display rpg stats and more info permanently on the screen.
+  * smrpg_resetstats - Automatically reset the stats on different conditions and display next reset date in chat.
+  * smrpg_turbomode - Increase the experience and credits rate for one map, but don't save the stats. For fun events.
 * Compile all the upgrades you want to use
 
 # API
