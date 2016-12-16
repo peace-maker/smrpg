@@ -1,0 +1,20 @@
+"Phrases"
+{
+	"Level Chat Tag"
+	{
+		// 1: Current RPG level of the player.
+		"#format"		"{1:d}"
+		// Uses ColorVariables for color codes.
+		// https://forums.alliedmods.net/showthread.php?t=267743
+		"en"			"{olive}[LVL {1}] "
+	}
+	
+	"Rank Chat Tag"
+	{
+		// 1: Current RPG rank of the player.
+		"#format"		"{1:d}"
+		// Uses ColorVariables for color codes.
+		// https://forums.alliedmods.net/showthread.php?t=267743
+		"en"			"{purple}[Rank {1}] "
+	}
+}

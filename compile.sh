@@ -27,6 +27,15 @@ if [ ! -d "build" ]; then
 	hg clone https://bitbucket.org/Drifter321/dhooks2
 	cp dhooks2/sourcemod/scripting/include/dhooks.inc addons/sourcemod/scripting/include/
 
+	git clone https://github.com/Drixevel/Chat-Processor.git
+	cp Chat-Processor/scripting/include/chat-processor.inc addons/sourcemod/scripting/include/
+	
+	git clone https://bitbucket.org/minimoney1/simple-chat-processor.git
+	cp simple-chat-processor/scripting/include/scp.inc addons/sourcemod/scripting/include/
+	
+	git clone https://github.com/KissLick/ColorVariables.git
+	cp ColorVariables/addons/sourcemod/scripting/includes/colorvariables.inc addons/sourcemod/scripting/include/
+	
 	cd ..
 fi
 	
@@ -50,10 +59,19 @@ chmod +x spcomp
 # compile base plugins
 for f in *.sp
 do
-	echo -e "\nCompiling $f..."
-	smxfile="`echo $f | sed -e 's/\.sp$/\.smx/'`"
-	./spcomp $f -o$PACKAGEDIR/plugins/$smxfile -E
+	if [ "$f" != "smrpg_chattags.sp" ]; then
+		echo -e "\nCompiling $f..."
+		smxfile="`echo $f | sed -e 's/\.sp$/\.smx/'`"
+		./spcomp $f -o$PACKAGEDIR/plugins/$smxfile -E
+	fi
 done
+
+# compile both versions of chattags for both chat processors..
+echo -e "\nCompiling smrpg_chattags.sp for Chat Processor..."
+./spcomp smrpg_chattags.sp -o$PACKAGEDIR/plugins/smrpg_chattags_cp.smx -E
+
+echo -e "\nCompiling smrpg_chattags.sp for Simple Chat Processor..."
+./spcomp smrpg_chattags.sp -o$PACKAGEDIR/plugins/smrpg_chattags_scp.smx -E USE_SIMPLE_PROCESSOR=
 
 # compile all upgrades
 for f in upgrades/*.sp
