@@ -41,6 +41,7 @@ Server admins can install a new upgrade simply by loading the upgrade plugin.
 * [smlib git master](https://github.com/bcserv/smlib)
 * [AutoExecConfig](https://github.com/Impact123/AutoExecConfig)
 * (optional) [DHooks](https://forums.alliedmods.net/showthread.php?t=180114) for Speed+ upgrade
+* (optional) [Chat Processor](https://forums.alliedmods.net/showthread.php?t=286913) *OR* [Simple Chat Processor](https://forums.alliedmods.net/showthread.php?t=198501) and [ColorVariables](https://forums.alliedmods.net/showthread.php?t=267743) for the Chat Tags module
 
 # Compile instructions
 * Compile the core smrpg plugin (see Compile requirements)
