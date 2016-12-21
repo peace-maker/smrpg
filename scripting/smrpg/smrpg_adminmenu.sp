@@ -2,12 +2,12 @@
 #include <sourcemod>
 #include <adminmenu>
 
-new TopMenuObject:g_TopMenuCategory;
-new Handle:g_hTopMenu;
+TopMenuObject g_TopMenuCategory;
+TopMenu g_hTopMenu;
 
-new g_iCurrentMenuTarget[MAXPLAYERS+1] = {-1,...};
-new g_iCurrentUpgradeTarget[MAXPLAYERS+1] = {-1,...};
-new g_iCurrentPage[MAXPLAYERS+1];
+int g_iCurrentMenuTarget[MAXPLAYERS+1] = {-1,...};
+int g_iCurrentUpgradeTarget[MAXPLAYERS+1] = {-1,...};
+int g_iCurrentPage[MAXPLAYERS+1];
 
 enum ChangeUpgradeProperty {
 	ChangeProp_None = 0,
@@ -17,17 +17,18 @@ enum ChangeUpgradeProperty {
 	ChangeProp_Icost
 };
 
-new ChangeUpgradeProperty:g_iClientChangesProperty[MAXPLAYERS+1];
+ChangeUpgradeProperty g_iClientChangesProperty[MAXPLAYERS+1];
 
-public OnAdminMenuCreated(Handle:topmenu)
+public void OnAdminMenuCreated(Handle topmenu)
 {
-	if(topmenu == g_hTopMenu && g_TopMenuCategory)
+	TopMenu adminTopmenu = TopMenu.FromHandle(topmenu);
+	if(adminTopmenu == g_hTopMenu && g_TopMenuCategory)
 		return;
 	
-	g_TopMenuCategory = AddToTopMenu(topmenu, "SM:RPG", TopMenuObject_Category, TopMenu_AdminCategoryHandler, INVALID_TOPMENUOBJECT, "smrpg_adminmenu", ADMFLAG_CONFIG);
+	g_TopMenuCategory = adminTopmenu.AddCategory("SM:RPG", TopMenu_AdminCategoryHandler, "smrpg_adminmenu", ADMFLAG_CONFIG);
 }
 
-public TopMenu_AdminCategoryHandler(Handle:topmenu, TopMenuAction:action, TopMenuObject:object_id, param, String:buffer[], maxlength)
+public void TopMenu_AdminCategoryHandler(TopMenu topmenu, TopMenuAction action, TopMenuObject object_id, int param, char[] buffer, int maxlength)
 {
 	if (action == TopMenuAction_DisplayTitle)
 	{
@@ -39,8 +40,9 @@ public TopMenu_AdminCategoryHandler(Handle:topmenu, TopMenuAction:action, TopMen
 	}
 }
 
-public OnAdminMenuReady(Handle:topmenu)
+public void OnAdminMenuReady(Handle topmenu)
 {
+	TopMenu adminMenu = TopMenu.FromHandle(topmenu);
 	// Try to add the category first
 	if(g_TopMenuCategory == INVALID_TOPMENUOBJECT)
 		OnAdminMenuCreated(topmenu);
@@ -48,16 +50,16 @@ public OnAdminMenuReady(Handle:topmenu)
 	if(g_TopMenuCategory == INVALID_TOPMENUOBJECT)
 		return;
 	
-	if(g_hTopMenu == topmenu)
+	if(g_hTopMenu == adminMenu)
 		return;
 	
-	g_hTopMenu = topmenu;
+	g_hTopMenu = adminMenu;
 	
-	AddToTopMenu(topmenu, "Manage players", TopMenuObject_Item, TopMenu_AdminHandlePlayers, g_TopMenuCategory, "smrpg_players_menu", ADMFLAG_CONFIG);
-	AddToTopMenu(topmenu, "Manage upgrades", TopMenuObject_Item, TopMenu_AdminHandleUpgrades, g_TopMenuCategory, "smrpg_upgrades_menu", ADMFLAG_CONFIG);
+	adminMenu.AddItem("Manage players", TopMenu_AdminHandlePlayers, g_TopMenuCategory, "smrpg_players_menu", ADMFLAG_CONFIG);
+	adminMenu.AddItem("Manage upgrades", TopMenu_AdminHandleUpgrades, g_TopMenuCategory, "smrpg_upgrades_menu", ADMFLAG_CONFIG);
 }
 
-public TopMenu_AdminHandlePlayers(Handle:topmenu, TopMenuAction:action, TopMenuObject:object_id, param, String:buffer[], maxlength)
+public void TopMenu_AdminHandlePlayers(TopMenu topmenu, TopMenuAction action, TopMenuObject object_id, int param, char[] buffer, int maxlength)
 {
 	if (action == TopMenuAction_DisplayOption)
 	{
@@ -69,32 +71,32 @@ public TopMenu_AdminHandlePlayers(Handle:topmenu, TopMenuAction:action, TopMenuO
 	}
 }
 
-bool:ShowRPGAdminMenu(client)
+bool ShowRPGAdminMenu(int client)
 {
-	if (g_hTopMenu == INVALID_HANDLE || g_TopMenuCategory == INVALID_TOPMENUOBJECT)
+	if (g_hTopMenu == null || g_TopMenuCategory == INVALID_TOPMENUOBJECT)
 		return false;
 	
-	DisplayTopMenuCategory(g_hTopMenu, g_TopMenuCategory, client);
+	g_hTopMenu.DisplayCategory(g_TopMenuCategory, client);
 	return true;
 }
 
-ShowPlayerListMenu(client)
+void ShowPlayerListMenu(int client)
 {
-	new Handle:hMenu = CreateMenu(Menu_HandlePlayerList);
-	SetMenuTitle(hMenu, "Select player:");
-	SetMenuExitBackButton(hMenu, true);
+	Menu hMenu = new Menu(Menu_HandlePlayerList);
+	hMenu.SetTitle("Select player:");
+	hMenu.ExitBackButton = true;
 	
 	// Add all players
 	AddTargetsToMenu2(hMenu, 0, 0);
 	
-	DisplayMenu(hMenu, client, MENU_TIME_FOREVER);
+	hMenu.Display(client, MENU_TIME_FOREVER);
 }
 
-public Menu_HandlePlayerList(Handle:menu, MenuAction:action, param1, param2)
+public int Menu_HandlePlayerList(Menu menu, MenuAction action, int param1, int param2)
 {
 	if(action == MenuAction_End)
 	{
-		CloseHandle(menu);
+		delete menu;
 	}
 	else if(action == MenuAction_Cancel && param2 == MenuCancel_ExitBack)
 	{
@@ -102,11 +104,11 @@ public Menu_HandlePlayerList(Handle:menu, MenuAction:action, param1, param2)
 	}
 	else if(action == MenuAction_Select)
 	{
-		decl String:sUserId[16];
-		GetMenuItem(menu, param2, sUserId, sizeof(sUserId));
-		new userid = StringToInt(sUserId);
+		char sUserId[16];
+		menu.GetItem(param2, sUserId, sizeof(sUserId));
+		int userid = StringToInt(sUserId);
 		
-		new iTarget = GetClientOfUserId(userid);
+		int iTarget = GetClientOfUserId(userid);
 		// Player no longer available?
 		if(!iTarget)
 		{
@@ -119,40 +121,40 @@ public Menu_HandlePlayerList(Handle:menu, MenuAction:action, param1, param2)
 	}
 }
 
-ShowPlayerDetailMenu(client)
+void ShowPlayerDetailMenu(int client)
 {
-	new iTarget = g_iCurrentMenuTarget[client];
+	int iTarget = g_iCurrentMenuTarget[client];
 	
-	new Handle:hMenu = CreateMenu(Menu_HandlePlayerDetails);
-	SetMenuTitle(hMenu, "SM:RPG Player Details > %N", iTarget);
-	SetMenuExitBackButton(hMenu, true);
+	Menu hMenu = new Menu(Menu_HandlePlayerDetails);
+	hMenu.SetTitle("SM:RPG Player Details > %N", iTarget);
+	hMenu.ExitBackButton = true;
 	
-	AddMenuItem(hMenu, "stats", "Manage RPG stats");
-	AddMenuItem(hMenu, "upgrades", "Manage upgrades");
+	hMenu.AddItem("stats", "Manage RPG stats");
+	hMenu.AddItem("upgrades", "Manage upgrades");
 	if(CheckCommandAccess(client, "smrpg_resetstats", ADMFLAG_ROOT))
-		AddMenuItem(hMenu, "reset", "Reset player");
-	AddMenuItem(hMenu, "", "", ITEMDRAW_DISABLED|ITEMDRAW_SPACER);
-	decl String:sBuffer[256];
+		hMenu.AddItem("reset", "Reset player");
+	hMenu.AddItem("", "", ITEMDRAW_DISABLED|ITEMDRAW_SPACER);
+	char sBuffer[256];
 	Format(sBuffer, sizeof(sBuffer), "%T", "Level", client, GetClientLevel(iTarget));
-	AddMenuItem(hMenu, "", sBuffer, ITEMDRAW_DISABLED);
+	hMenu.AddItem("", sBuffer, ITEMDRAW_DISABLED);
 	Format(sBuffer, sizeof(sBuffer), "%T", "Experience short", client, GetClientExperience(iTarget), Stats_LvlToExp(GetClientLevel(iTarget)));
-	AddMenuItem(hMenu, "", sBuffer, ITEMDRAW_DISABLED);
+	hMenu.AddItem("", sBuffer, ITEMDRAW_DISABLED);
 	Format(sBuffer, sizeof(sBuffer), "%T", "Credits", client, GetClientCredits(iTarget));
-	AddMenuItem(hMenu, "", sBuffer, ITEMDRAW_DISABLED);
+	hMenu.AddItem("", sBuffer, ITEMDRAW_DISABLED);
 	Format(sBuffer, sizeof(sBuffer), "%T", "Rank", client, GetClientRank(iTarget), GetRankCount());
-	AddMenuItem(hMenu, "", sBuffer, ITEMDRAW_DISABLED);
+	hMenu.AddItem("", sBuffer, ITEMDRAW_DISABLED);
 	FormatTime(sBuffer, sizeof(sBuffer), "%c", GetPlayerLastReset(iTarget));
 	Format(sBuffer, sizeof(sBuffer), "%T", "Last reset", client, sBuffer);
-	AddMenuItem(hMenu, "", sBuffer, ITEMDRAW_DISABLED);
+	hMenu.AddItem("", sBuffer, ITEMDRAW_DISABLED);
 	
-	DisplayMenu(hMenu, client, MENU_TIME_FOREVER);
+	hMenu.Display(client, MENU_TIME_FOREVER);
 }
 
-public Menu_HandlePlayerDetails(Handle:menu, MenuAction:action, param1, param2)
+public int Menu_HandlePlayerDetails(Menu menu, MenuAction action, int param1, int param2)
 {
 	if(action == MenuAction_End)
 	{
-		CloseHandle(menu);
+		delete menu;
 	}
 	else if(action == MenuAction_Cancel)
 	{
@@ -162,8 +164,8 @@ public Menu_HandlePlayerDetails(Handle:menu, MenuAction:action, param1, param2)
 	}
 	else if(action == MenuAction_Select)
 	{
-		decl String:sInfo[32];
-		GetMenuItem(menu, param2, sInfo, sizeof(sInfo));
+		char sInfo[32];
+		menu.GetItem(param2, sInfo, sizeof(sInfo));
 		
 		if(StrEqual(sInfo, "stats"))
 		{
@@ -175,21 +177,21 @@ public Menu_HandlePlayerDetails(Handle:menu, MenuAction:action, param1, param2)
 		}
 		else if(StrEqual(sInfo, "reset"))
 		{
-			new Handle:hMenu = CreateMenu(Menu_HandlePlayerResetConfirm, MENU_ACTIONS_DEFAULT|MenuAction_DisplayItem);
-			SetMenuExitBackButton(hMenu, true);
-			SetMenuTitle(hMenu, "Do you really want to reset the stats and upgrades of %N?", g_iCurrentMenuTarget[param1]);
-			AddMenuItem(hMenu, "yes", "Yes");
-			AddMenuItem(hMenu, "no", "No");
-			DisplayMenu(hMenu, param1, MENU_TIME_FOREVER);
+			Menu hMenu = new Menu(Menu_HandlePlayerResetConfirm, MENU_ACTIONS_DEFAULT|MenuAction_DisplayItem);
+			hMenu.ExitBackButton = true;
+			hMenu.SetTitle("Do you really want to reset the stats and upgrades of %N?", g_iCurrentMenuTarget[param1]);
+			hMenu.AddItem("yes", "Yes");
+			hMenu.AddItem("no", "No");
+			hMenu.Display(param1, MENU_TIME_FOREVER);
 		}
 	}
 }
 
-public Menu_HandlePlayerResetConfirm(Handle:menu, MenuAction:action, param1, param2)
+public int Menu_HandlePlayerResetConfirm(Menu menu, MenuAction action, int param1, int param2)
 {
 	if(action == MenuAction_End)
 	{
-		CloseHandle(menu);
+		delete menu;
 	}
 	else if(action == MenuAction_Cancel)
 	{
@@ -200,8 +202,8 @@ public Menu_HandlePlayerResetConfirm(Handle:menu, MenuAction:action, param1, par
 	}
 	else if(action == MenuAction_Select)
 	{
-		decl String:sInfo[32];
-		GetMenuItem(menu, param2, sInfo, sizeof(sInfo));
+		char sInfo[32];
+		menu.GetItem(param2, sInfo, sizeof(sInfo));
 		
 		if(StrEqual(sInfo, "no") || !CheckCommandAccess(param1, "smrpg_resetstats", ADMFLAG_ROOT))
 		{
@@ -218,11 +220,11 @@ public Menu_HandlePlayerResetConfirm(Handle:menu, MenuAction:action, param1, par
 	else if(action == MenuAction_DisplayItem)
 	{
 		/* Get the display string, we'll use it as a translation phrase */
-		decl String:sDisplay[64];
-		GetMenuItem(menu, param2, "", 0, _, sDisplay, sizeof(sDisplay));
+		char sDisplay[64];
+		menu.GetItem(param2, "", 0, _, sDisplay, sizeof(sDisplay));
 
 		/* Translate the string to the client's language */
-		decl String:sBuffer[255];
+		char sBuffer[255];
 		Format(sBuffer, sizeof(sBuffer), "%T", sDisplay, param1);
 
 		/* Override the text */
@@ -231,27 +233,27 @@ public Menu_HandlePlayerResetConfirm(Handle:menu, MenuAction:action, param1, par
 	return 0;
 }
 
-ShowPlayerStatsManageMenu(client)
+void ShowPlayerStatsManageMenu(int client)
 {
-	new Handle:hMenu = CreateMenu(Menu_HandlePlayerStats);
-	SetMenuExitBackButton(hMenu, true);
-	SetMenuTitle(hMenu, "Manage RPG stats > %N", g_iCurrentMenuTarget[client]);
+	Menu hMenu = new Menu(Menu_HandlePlayerStats);
+	hMenu.ExitBackButton = true;
+	hMenu.SetTitle("Manage RPG stats > %N", g_iCurrentMenuTarget[client]);
 	
 	if(CheckCommandAccess(client, "smrpg_setcredits", ADMFLAG_ROOT))
-		AddMenuItem(hMenu, "credits", "Change credits");
+		hMenu.AddItem("credits", "Change credits");
 	if(CheckCommandAccess(client, "smrpg_setexp", ADMFLAG_ROOT))
-		AddMenuItem(hMenu, "experience", "Change experience");
+		hMenu.AddItem("experience", "Change experience");
 	if(CheckCommandAccess(client, "smrpg_setlvl", ADMFLAG_ROOT))
-		AddMenuItem(hMenu, "level", "Change level");
+		hMenu.AddItem("level", "Change level");
 	
-	DisplayMenu(hMenu, client, MENU_TIME_FOREVER);
+	hMenu.Display(client, MENU_TIME_FOREVER);
 }
 
-public Menu_HandlePlayerStats(Handle:menu, MenuAction:action, param1, param2)
+public int Menu_HandlePlayerStats(Menu menu, MenuAction action, int param1, int param2)
 {
 	if(action == MenuAction_End)
 	{
-		CloseHandle(menu);
+		delete menu;
 	}
 	else if(action == MenuAction_Cancel)
 	{
@@ -262,8 +264,8 @@ public Menu_HandlePlayerStats(Handle:menu, MenuAction:action, param1, param2)
 	}
 	else if(action == MenuAction_Select)
 	{
-		decl String:sInfo[32];
-		GetMenuItem(menu, param2, sInfo, sizeof(sInfo));
+		char sInfo[32];
+		menu.GetItem(param2, sInfo, sizeof(sInfo));
 		
 		if(StrEqual(sInfo, "credits"))
 		{
@@ -280,27 +282,27 @@ public Menu_HandlePlayerStats(Handle:menu, MenuAction:action, param1, param2)
 	}
 }
 
-ShowPlayerCreditsManageMenu(client)
+void ShowPlayerCreditsManageMenu(int client)
 {
-	new Handle:hMenu = CreateMenu(Menu_HandlePlayerChangeCredits);
-	SetMenuExitBackButton(hMenu, true);
-	SetMenuTitle(hMenu, "Change Credits > %N\nCredits: %d", g_iCurrentMenuTarget[client], GetClientCredits(g_iCurrentMenuTarget[client]));
+	Menu hMenu = new Menu(Menu_HandlePlayerChangeCredits);
+	hMenu.ExitBackButton = true;
+	hMenu.SetTitle("Change Credits > %N\nCredits: %d", g_iCurrentMenuTarget[client], GetClientCredits(g_iCurrentMenuTarget[client]));
 	
-	AddMenuItem(hMenu, "100", "+100");
-	AddMenuItem(hMenu, "10", "+10");
-	AddMenuItem(hMenu, "1", "+1");
-	AddMenuItem(hMenu, "-1", "-1");
-	AddMenuItem(hMenu, "-10", "-10");
-	AddMenuItem(hMenu, "-100", "-100");
+	hMenu.AddItem("100", "+100");
+	hMenu.AddItem("10", "+10");
+	hMenu.AddItem("1", "+1");
+	hMenu.AddItem("-1", "-1");
+	hMenu.AddItem("-10", "-10");
+	hMenu.AddItem("-100", "-100");
 	
-	DisplayMenu(hMenu, client, MENU_TIME_FOREVER);
+	hMenu.Display(client, MENU_TIME_FOREVER);
 }
 
-public Menu_HandlePlayerChangeCredits(Handle:menu, MenuAction:action, param1, param2)
+public int Menu_HandlePlayerChangeCredits(Menu menu, MenuAction action, int param1, int param2)
 {
 	if(action == MenuAction_End)
 	{
-		CloseHandle(menu);
+		delete menu;
 	}
 	else if(action == MenuAction_Cancel)
 	{
@@ -311,12 +313,12 @@ public Menu_HandlePlayerChangeCredits(Handle:menu, MenuAction:action, param1, pa
 	}
 	else if(action == MenuAction_Select)
 	{
-		decl String:sInfo[32];
-		GetMenuItem(menu, param2, sInfo, sizeof(sInfo));
+		char sInfo[32];
+		menu.GetItem(param2, sInfo, sizeof(sInfo));
 		
-		new iAmount = StringToInt(sInfo);
+		int iAmount = StringToInt(sInfo);
 		
-		new iOldCredits = GetClientCredits(g_iCurrentMenuTarget[param1]);
+		int iOldCredits = GetClientCredits(g_iCurrentMenuTarget[param1]);
 		
 		SetClientCredits(g_iCurrentMenuTarget[param1], iOldCredits + iAmount);
 		
@@ -325,27 +327,27 @@ public Menu_HandlePlayerChangeCredits(Handle:menu, MenuAction:action, param1, pa
 	}
 }
 
-ShowPlayerExperienceManageMenu(client)
+void ShowPlayerExperienceManageMenu(int client)
 {
-	new Handle:hMenu = CreateMenu(Menu_HandlePlayerChangeExperience);
-	SetMenuExitBackButton(hMenu, true);
-	SetMenuTitle(hMenu, "Change Experience > %N\nExperience: %d", g_iCurrentMenuTarget[client], GetClientExperience(g_iCurrentMenuTarget[client]));
+	Menu hMenu = new Menu(Menu_HandlePlayerChangeExperience);
+	hMenu.ExitBackButton = true;
+	hMenu.SetTitle("Change Experience > %N\nExperience: %d", g_iCurrentMenuTarget[client], GetClientExperience(g_iCurrentMenuTarget[client]));
 	
-	AddMenuItem(hMenu, "1000", "+1000");
-	AddMenuItem(hMenu, "100", "+100");
-	AddMenuItem(hMenu, "10", "+10");
-	AddMenuItem(hMenu, "-10", "-10");
-	AddMenuItem(hMenu, "-100", "-100");
-	AddMenuItem(hMenu, "-1000", "-1000");
+	hMenu.AddItem("1000", "+1000");
+	hMenu.AddItem("100", "+100");
+	hMenu.AddItem("10", "+10");
+	hMenu.AddItem("-10", "-10");
+	hMenu.AddItem("-100", "-100");
+	hMenu.AddItem("-1000", "-1000");
 	
-	DisplayMenu(hMenu, client, MENU_TIME_FOREVER);
+	hMenu.Display(client, MENU_TIME_FOREVER);
 }
 
-public Menu_HandlePlayerChangeExperience(Handle:menu, MenuAction:action, param1, param2)
+public int Menu_HandlePlayerChangeExperience(Menu menu, MenuAction action, int param1, int param2)
 {
 	if(action == MenuAction_End)
 	{
-		CloseHandle(menu);
+		delete menu;
 	}
 	else if(action == MenuAction_Cancel)
 	{
@@ -356,15 +358,15 @@ public Menu_HandlePlayerChangeExperience(Handle:menu, MenuAction:action, param1,
 	}
 	else if(action == MenuAction_Select)
 	{
-		decl String:sInfo[32];
-		GetMenuItem(menu, param2, sInfo, sizeof(sInfo));
+		char sInfo[32];
+		menu.GetItem(param2, sInfo, sizeof(sInfo));
 		
-		new iAmount = StringToInt(sInfo);
+		int iAmount = StringToInt(sInfo);
 	
-		new iOldLevel = GetClientLevel(g_iCurrentMenuTarget[param1]);
-		new iOldExperience = GetClientExperience(g_iCurrentMenuTarget[param1]);
+		int iOldLevel = GetClientLevel(g_iCurrentMenuTarget[param1]);
+		int iOldExperience = GetClientExperience(g_iCurrentMenuTarget[param1]);
 		
-		new bool:bSuccess;
+		bool bSuccess;
 		// If we're adding experience, add it properly and level up if necassary.
 		if(iAmount > 0)
 			bSuccess = Stats_AddExperience(g_iCurrentMenuTarget[param1], iAmount, ExperienceReason_Admin, false, -1, true);
@@ -379,27 +381,27 @@ public Menu_HandlePlayerChangeExperience(Handle:menu, MenuAction:action, param1,
 	}
 }
 
-ShowPlayerLevelManageMenu(client)
+void ShowPlayerLevelManageMenu(int client)
 {
-	new Handle:hMenu = CreateMenu(Menu_HandlePlayerChangeLevel);
-	SetMenuExitBackButton(hMenu, true);
-	SetMenuTitle(hMenu, "Change Level > %N\nLevel: %d", g_iCurrentMenuTarget[client], GetClientLevel(g_iCurrentMenuTarget[client]));
+	Menu hMenu = new Menu(Menu_HandlePlayerChangeLevel);
+	hMenu.ExitBackButton = true;
+	hMenu.SetTitle("Change Level > %N\nLevel: %d", g_iCurrentMenuTarget[client], GetClientLevel(g_iCurrentMenuTarget[client]));
 	
-	AddMenuItem(hMenu, "10", "+10");
-	AddMenuItem(hMenu, "5", "+5");
-	AddMenuItem(hMenu, "1", "+1");
-	AddMenuItem(hMenu, "-1", "-1");
-	AddMenuItem(hMenu, "-5", "-5");
-	AddMenuItem(hMenu, "-10", "-10");
+	hMenu.AddItem("10", "+10");
+	hMenu.AddItem("5", "+5");
+	hMenu.AddItem("1", "+1");
+	hMenu.AddItem("-1", "-1");
+	hMenu.AddItem("-5", "-5");
+	hMenu.AddItem("-10", "-10");
 	
-	DisplayMenu(hMenu, client, MENU_TIME_FOREVER);
+	hMenu.Display(client, MENU_TIME_FOREVER);
 }
 
-public Menu_HandlePlayerChangeLevel(Handle:menu, MenuAction:action, param1, param2)
+public int Menu_HandlePlayerChangeLevel(Menu menu, MenuAction action, int param1, int param2)
 {
 	if(action == MenuAction_End)
 	{
-		CloseHandle(menu);
+		delete menu;
 	}
 	else if(action == MenuAction_Cancel)
 	{
@@ -410,11 +412,11 @@ public Menu_HandlePlayerChangeLevel(Handle:menu, MenuAction:action, param1, para
 	}
 	else if(action == MenuAction_Select)
 	{
-		decl String:sInfo[32];
-		GetMenuItem(menu, param2, sInfo, sizeof(sInfo));
+		char sInfo[32];
+		menu.GetItem(param2, sInfo, sizeof(sInfo));
 		
-		new iAmount = StringToInt(sInfo);
-		new iOldLevel = GetClientLevel(g_iCurrentMenuTarget[param1]);
+		int iAmount = StringToInt(sInfo);
+		int iOldLevel = GetClientLevel(g_iCurrentMenuTarget[param1]);
 	
 		// Do a proper level up
 		if(iAmount > 0)
@@ -427,7 +429,7 @@ public Menu_HandlePlayerChangeLevel(Handle:menu, MenuAction:action, param1, para
 			SetClientLevel(g_iCurrentMenuTarget[param1], GetClientLevel(g_iCurrentMenuTarget[param1])+iAmount);
 			SetClientExperience(g_iCurrentMenuTarget[param1], 0);
 			
-			if(GetConVarBool(g_hCVAnnounceNewLvl))
+			if(g_hCVAnnounceNewLvl.BoolValue)
 				PrintToChatAll("%t", "new_lvl1", g_iCurrentMenuTarget[param1], GetClientLevel(g_iCurrentMenuTarget[param1]));
 		}
 		
@@ -436,24 +438,24 @@ public Menu_HandlePlayerChangeLevel(Handle:menu, MenuAction:action, param1, para
 	}
 }
 
-ShowPlayerUpgradeManageMenu(client)
+void ShowPlayerUpgradeManageMenu(int client)
 {
-	new Handle:hMenu = CreateMenu(Menu_HandlePlayerUpgradeSelect);
-	SetMenuExitBackButton(hMenu, true);
-	SetMenuTitle(hMenu, "Manage player upgrades > %N", g_iCurrentMenuTarget[client]);
+	Menu hMenu = new Menu(Menu_HandlePlayerUpgradeSelect);
+	hMenu.ExitBackButton = true;
+	hMenu.SetTitle("Manage player upgrades > %N", g_iCurrentMenuTarget[client]);
 	
-	new iTarget = g_iCurrentMenuTarget[client];
+	int iTarget = g_iCurrentMenuTarget[client];
 	
 	if(CheckCommandAccess(client, "smrpg_giveall", ADMFLAG_ROOT))
 	{
-		AddMenuItem(hMenu, "give_all", "Give all upgrades at no costs");
-		AddMenuItem(hMenu, "", "", ITEMDRAW_SPACER);
+		hMenu.AddItem("give_all", "Give all upgrades at no costs");
+		hMenu.AddItem("", "", ITEMDRAW_SPACER);
 	}
 	
-	new iSize = GetUpgradeCount();
-	new upgrade[InternalUpgradeInfo], iCurrentLevel;
-	new String:sTranslatedName[MAX_UPGRADE_NAME_LENGTH], String:sLine[128], String:sIndex[8], String:sPermissions[30], String:sTeamlock[32];
-	for(new i=0;i<iSize;i++)
+	int iSize = GetUpgradeCount();
+	int upgrade[InternalUpgradeInfo], iCurrentLevel;
+	char sTranslatedName[MAX_UPGRADE_NAME_LENGTH], sLine[128], sIndex[8], sPermissions[30], sTeamlock[32];
+	for(int i=0;i<iSize;i++)
 	{
 		iCurrentLevel = GetClientPurchasedUpgradeLevel(iTarget, i);
 		GetUpgradeByIndex(i, upgrade);
@@ -498,20 +500,20 @@ ShowPlayerUpgradeManageMenu(client)
 			Format(sLine, sizeof(sLine), "%s Lvl %d/%d%s%s", sTranslatedName, iCurrentLevel, upgrade[UPGR_maxLevel], sPermissions, sTeamlock);
 		}
 		
-		AddMenuItem(hMenu, sIndex, sLine);
+		hMenu.AddItem(sIndex, sLine);
 	}
 	
 	if(g_iCurrentPage[client] > 0)
-		DisplayMenuAtItem(hMenu, client, g_iCurrentPage[client], MENU_TIME_FOREVER);
+		hMenu.DisplayAt(client, g_iCurrentPage[client], MENU_TIME_FOREVER);
 	else
-		DisplayMenu(hMenu, client, MENU_TIME_FOREVER);
+		hMenu.Display(client, MENU_TIME_FOREVER);
 }
 
-public Menu_HandlePlayerUpgradeSelect(Handle:menu, MenuAction:action, param1, param2)
+public int Menu_HandlePlayerUpgradeSelect(Menu menu, MenuAction action, int param1, int param2)
 {
 	if(action == MenuAction_End)
 	{
-		CloseHandle(menu);
+		delete menu;
 	}
 	else if(action == MenuAction_Cancel)
 	{
@@ -523,33 +525,33 @@ public Menu_HandlePlayerUpgradeSelect(Handle:menu, MenuAction:action, param1, pa
 	}
 	else if(action == MenuAction_Select)
 	{
-		decl String:sInfo[32];
-		GetMenuItem(menu, param2, sInfo, sizeof(sInfo));
+		char sInfo[32];
+		menu.GetItem(param2, sInfo, sizeof(sInfo));
 		
 		g_iCurrentPage[param1] = GetMenuSelectionPosition();
 		if(StrEqual(sInfo, "give_all") && CheckCommandAccess(param1, "smrpg_giveall", ADMFLAG_ROOT))
 		{
-			new Handle:hMenu = CreateMenu(Menu_HandlePlayerGiveAllConfirm, MENU_ACTIONS_DEFAULT|MenuAction_DisplayItem);
-			SetMenuExitBackButton(hMenu, true);
-			SetMenuTitle(hMenu, "Do you really want to set all upgrades to the maximal level for %N?", g_iCurrentMenuTarget[param1]);
-			AddMenuItem(hMenu, "yes", "Yes");
-			AddMenuItem(hMenu, "no", "No");
-			DisplayMenu(hMenu, param1, MENU_TIME_FOREVER);
+			Menu hMenu = new Menu(Menu_HandlePlayerGiveAllConfirm, MENU_ACTIONS_DEFAULT|MenuAction_DisplayItem);
+			hMenu.ExitBackButton = true;
+			hMenu.SetTitle("Do you really want to set all upgrades to the maximal level for %N?", g_iCurrentMenuTarget[param1]);
+			hMenu.AddItem("yes", "Yes");
+			hMenu.AddItem("no", "No");
+			hMenu.Display(param1, MENU_TIME_FOREVER);
 			return;
 		}
 		
-		new iItemIndex = StringToInt(sInfo);
+		int iItemIndex = StringToInt(sInfo);
 		
 		g_iCurrentUpgradeTarget[param1] = iItemIndex;
 		ShowPlayerUpgradeLevelMenu(param1);
 	}
 }
 
-public Menu_HandlePlayerGiveAllConfirm(Handle:menu, MenuAction:action, param1, param2)
+public int Menu_HandlePlayerGiveAllConfirm(Menu menu, MenuAction action, int param1, int param2)
 {
 	if(action == MenuAction_End)
 	{
-		CloseHandle(menu);
+		delete menu;
 	}
 	else if(action == MenuAction_Cancel)
 	{
@@ -563,8 +565,8 @@ public Menu_HandlePlayerGiveAllConfirm(Handle:menu, MenuAction:action, param1, p
 	}
 	else if(action == MenuAction_Select)
 	{
-		decl String:sInfo[32];
-		GetMenuItem(menu, param2, sInfo, sizeof(sInfo));
+		char sInfo[32];
+		menu.GetItem(param2, sInfo, sizeof(sInfo));
 		
 		if(StrEqual(sInfo, "no") || !CheckCommandAccess(param1, "smrpg_giveall", ADMFLAG_ROOT))
 		{
@@ -572,9 +574,9 @@ public Menu_HandlePlayerGiveAllConfirm(Handle:menu, MenuAction:action, param1, p
 			return 0;
 		}
 		
-		new iSize = GetUpgradeCount();
-		new upgrade[InternalUpgradeInfo];
-		for(new i=0;i<iSize;i++)
+		int iSize = GetUpgradeCount();
+		int upgrade[InternalUpgradeInfo];
+		for(int i=0;i<iSize;i++)
 		{
 			GetUpgradeByIndex(i, upgrade);
 			if(!IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled])
@@ -592,11 +594,11 @@ public Menu_HandlePlayerGiveAllConfirm(Handle:menu, MenuAction:action, param1, p
 	else if(action == MenuAction_DisplayItem)
 	{
 		/* Get the display string, we'll use it as a translation phrase */
-		decl String:sDisplay[64];
-		GetMenuItem(menu, param2, "", 0, _, sDisplay, sizeof(sDisplay));
+		char sDisplay[64];
+		menu.GetItem(param2, "", 0, _, sDisplay, sizeof(sDisplay));
 
 		/* Translate the string to the client's language */
-		decl String:sBuffer[255];
+		char sBuffer[255];
 		Format(sBuffer, sizeof(sBuffer), "%T", sDisplay, param1);
 
 		/* Override the text */
@@ -605,10 +607,10 @@ public Menu_HandlePlayerGiveAllConfirm(Handle:menu, MenuAction:action, param1, p
 	return 0;
 }
 
-ShowPlayerUpgradeLevelMenu(client)
+void ShowPlayerUpgradeLevelMenu(int client)
 {
-	new iItemIndex = g_iCurrentUpgradeTarget[client];
-	new upgrade[InternalUpgradeInfo];
+	int iItemIndex = g_iCurrentUpgradeTarget[client];
+	int upgrade[InternalUpgradeInfo];
 	GetUpgradeByIndex(iItemIndex, upgrade);
 	
 	// Bad upgrade?
@@ -619,34 +621,34 @@ ShowPlayerUpgradeLevelMenu(client)
 		return;
 	}
 	
-	new String:sTranslatedName[MAX_UPGRADE_NAME_LENGTH];
+	char sTranslatedName[MAX_UPGRADE_NAME_LENGTH];
 	GetUpgradeTranslatedName(client, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
 	
-	new Handle:hMenu = CreateMenu(Menu_HandlePlayerUpgradeLevelChange);
-	SetMenuExitBackButton(hMenu, true);
-	SetMenuTitle(hMenu, "Change %N's upgrade level\n%s: %d/%d", g_iCurrentMenuTarget[client], sTranslatedName, GetClientPurchasedUpgradeLevel(g_iCurrentMenuTarget[client], iItemIndex), upgrade[UPGR_maxLevel]);
+	Menu hMenu = new Menu(Menu_HandlePlayerUpgradeLevelChange);
+	hMenu.ExitBackButton = true;
+	hMenu.SetTitle("Change %N's upgrade level\n%s: %d/%d", g_iCurrentMenuTarget[client], sTranslatedName, GetClientPurchasedUpgradeLevel(g_iCurrentMenuTarget[client], iItemIndex), upgrade[UPGR_maxLevel]);
 	
 	if(CheckCommandAccess(client, "smrpg_setupgradelvl", ADMFLAG_ROOT))
-		AddMenuItem(hMenu, "reset", "Reset upgrade to 0 with full refund\n");
+		hMenu.AddItem("reset", "Reset upgrade to 0 with full refund\n");
 	if(CheckCommandAccess(client, "smrpg_giveupgrade", ADMFLAG_ROOT))
-		AddMenuItem(hMenu, "give", "Give level at no costs");
+		hMenu.AddItem("give", "Give level at no costs");
 	if(CheckCommandAccess(client, "smrpg_buyupgrade", ADMFLAG_ROOT))
-		AddMenuItem(hMenu, "buy", "Force to buy level\n");
+		hMenu.AddItem("buy", "Force to buy level\n");
 	if(CheckCommandAccess(client, "smrpg_takeupgrade", ADMFLAG_ROOT))
-		AddMenuItem(hMenu, "take", "Take level with full refund");
+		hMenu.AddItem("take", "Take level with full refund");
 	if(CheckCommandAccess(client, "smrpg_sellupgrade", ADMFLAG_ROOT))
-		AddMenuItem(hMenu, "sell", "Force to sell level");
+		hMenu.AddItem("sell", "Force to sell level");
 	if(CheckCommandAccess(client, "smrpg_setupgradelvl", ADMFLAG_ROOT))
-		AddMenuItem(hMenu, "max", "Set to maximal level at no costs");
+		hMenu.AddItem("max", "Set to maximal level at no costs");
 	
-	DisplayMenu(hMenu, client, MENU_TIME_FOREVER);
+	hMenu.Display(client, MENU_TIME_FOREVER);
 }
 
-public Menu_HandlePlayerUpgradeLevelChange(Handle:menu, MenuAction:action, param1, param2)
+public int Menu_HandlePlayerUpgradeLevelChange(Menu menu, MenuAction action, int param1, int param2)
 {
 	if(action == MenuAction_End)
 	{
-		CloseHandle(menu);
+		delete menu;
 	}
 	else if(action == MenuAction_Cancel)
 	{
@@ -661,11 +663,11 @@ public Menu_HandlePlayerUpgradeLevelChange(Handle:menu, MenuAction:action, param
 	}
 	else if(action == MenuAction_Select)
 	{
-		decl String:sInfo[32];
-		GetMenuItem(menu, param2, sInfo, sizeof(sInfo));
+		char sInfo[32];
+		menu.GetItem(param2, sInfo, sizeof(sInfo));
 		
-		new upgrade[InternalUpgradeInfo];
-		new iItemIndex = g_iCurrentUpgradeTarget[param1];
+		int upgrade[InternalUpgradeInfo];
+		int iItemIndex = g_iCurrentUpgradeTarget[param1];
 		GetUpgradeByIndex(iItemIndex, upgrade);
 		
 		// Bad upgrade?
@@ -676,12 +678,12 @@ public Menu_HandlePlayerUpgradeLevelChange(Handle:menu, MenuAction:action, param
 			return;
 		}
 		
-		new iTarget = g_iCurrentMenuTarget[param1];
-		new iOldLevel = GetClientPurchasedUpgradeLevel(iTarget, iItemIndex);
+		int iTarget = g_iCurrentMenuTarget[param1];
+		int iOldLevel = GetClientPurchasedUpgradeLevel(iTarget, iItemIndex);
 		
 		if(StrEqual(sInfo, "reset"))
 		{
-			new iCreditsReturned;
+			int iCreditsReturned;
 			while(TakeClientUpgrade(iTarget, iItemIndex))
 			{
 				// Full refund
@@ -703,7 +705,7 @@ public Menu_HandlePlayerUpgradeLevelChange(Handle:menu, MenuAction:action, param
 		{
 			if(iOldLevel < upgrade[UPGR_maxLevel])
 			{
-				new iCost = GetUpgradeCost(iItemIndex, iOldLevel+1);
+				int iCost = GetUpgradeCost(iItemIndex, iOldLevel+1);
 				if(iCost > GetClientCredits(iTarget))
 				{
 					Client_PrintToChat(param1, false, "{OG}SM:RPG{N} > {G}%N doesn't have enough credits to purchase %s (%d/%d)", iTarget, upgrade[UPGR_name], GetClientCredits(iTarget), iCost);
@@ -722,7 +724,7 @@ public Menu_HandlePlayerUpgradeLevelChange(Handle:menu, MenuAction:action, param
 				if(TakeClientUpgrade(iTarget, iItemIndex))
 				{
 					// Full refund
-					new iCosts = GetUpgradeCost(iItemIndex, GetClientPurchasedUpgradeLevel(iTarget, iItemIndex)+1);
+					int iCosts = GetUpgradeCost(iItemIndex, GetClientPurchasedUpgradeLevel(iTarget, iItemIndex)+1);
 					SetClientCredits(iTarget, GetClientCredits(iTarget) + iCosts);
 					LogAction(param1, iTarget, "%L took one level of upgrade %s from %L with full refund of the costs. Upgrade level changed from %d to %d and player got %d credits.", param1, upgrade[UPGR_name], iTarget, iOldLevel, GetClientPurchasedUpgradeLevel(iTarget, iItemIndex), iCosts);
 				}
@@ -749,9 +751,9 @@ public Menu_HandlePlayerUpgradeLevelChange(Handle:menu, MenuAction:action, param
 }
 
 // client disconnected. Reset all open admin menus so we don't try to change stuff on a different user out of a sudden.
-ResetAdminMenu(client)
+void ResetAdminMenu(int client)
 {
-	for(new i=1;i<=MaxClients;i++)
+	for(int i=1;i<=MaxClients;i++)
 	{
 		if(g_iCurrentMenuTarget[i] == client && client != i)
 		{
@@ -762,7 +764,7 @@ ResetAdminMenu(client)
 }
 
 
-public TopMenu_AdminHandleUpgrades(Handle:topmenu, TopMenuAction:action, TopMenuObject:object_id, param, String:buffer[], maxlength)
+public void TopMenu_AdminHandleUpgrades(TopMenu topmenu, TopMenuAction action, TopMenuObject object_id, int param, char[] buffer, int maxlength)
 {
 	if (action == TopMenuAction_DisplayOption)
 	{
@@ -774,16 +776,16 @@ public TopMenu_AdminHandleUpgrades(Handle:topmenu, TopMenuAction:action, TopMenu
 	}
 }
 
-ShowUpgradeListMenu(client)
+void ShowUpgradeListMenu(int client)
 {
-	new Handle:hMenu = CreateMenu(Menu_HandleSelectUpgrade);
-	SetMenuExitBackButton(hMenu, true);
-	SetMenuTitle(hMenu, "SM:RPG > Manage upgrades");
+	Menu hMenu = new Menu(Menu_HandleSelectUpgrade);
+	hMenu.ExitBackButton = true;
+	hMenu.SetTitle("SM:RPG > Manage upgrades");
 	
-	new iSize = GetUpgradeCount();
-	new upgrade[InternalUpgradeInfo];
-	new String:sTranslatedName[MAX_UPGRADE_NAME_LENGTH], String:sIndex[8];
-	for(new i=0;i<iSize;i++)
+	int iSize = GetUpgradeCount();
+	int upgrade[InternalUpgradeInfo];
+	char sTranslatedName[MAX_UPGRADE_NAME_LENGTH], sIndex[8];
+	for(int i=0;i<iSize;i++)
 	{
 		GetUpgradeByIndex(i, upgrade);
 		
@@ -794,20 +796,20 @@ ShowUpgradeListMenu(client)
 		GetUpgradeTranslatedName(client, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
 		
 		IntToString(i, sIndex, sizeof(sIndex));
-		AddMenuItem(hMenu, sIndex, sTranslatedName);
+		hMenu.AddItem(sIndex, sTranslatedName);
 	}
 	
 	if(g_iCurrentPage[client] > 0)
-		DisplayMenuAtItem(hMenu, client, g_iCurrentPage[client], MENU_TIME_FOREVER);
+		hMenu.DisplayAt(client, g_iCurrentPage[client], MENU_TIME_FOREVER);
 	else
-		DisplayMenu(hMenu, client, MENU_TIME_FOREVER);
+		hMenu.Display(client, MENU_TIME_FOREVER);
 }
 
-public Menu_HandleSelectUpgrade(Handle:menu, MenuAction:action, param1, param2)
+public int Menu_HandleSelectUpgrade(Menu menu, MenuAction action, int param1, int param2)
 {
 	if(action == MenuAction_End)
 	{
-		CloseHandle(menu);
+		delete menu;
 	}
 	else if(action == MenuAction_Cancel)
 	{
@@ -818,10 +820,10 @@ public Menu_HandleSelectUpgrade(Handle:menu, MenuAction:action, param1, param2)
 	}
 	else if(action == MenuAction_Select)
 	{
-		decl String:sInfo[32];
-		GetMenuItem(menu, param2, sInfo, sizeof(sInfo));
+		char sInfo[32];
+		menu.GetItem(param2, sInfo, sizeof(sInfo));
 		
-		new iItemIndex = StringToInt(sInfo);
+		int iItemIndex = StringToInt(sInfo);
 		
 		g_iCurrentPage[param1] = GetMenuSelectionPosition();
 		g_iCurrentUpgradeTarget[param1] = iItemIndex;
@@ -829,10 +831,10 @@ public Menu_HandleSelectUpgrade(Handle:menu, MenuAction:action, param1, param2)
 	}
 }
 
-ShowUpgradeManageMenu(client)
+void ShowUpgradeManageMenu(int client)
 {
-	new upgrade[InternalUpgradeInfo];
-	new iItemIndex = g_iCurrentUpgradeTarget[client];
+	int upgrade[InternalUpgradeInfo];
+	int iItemIndex = g_iCurrentUpgradeTarget[client];
 	GetUpgradeByIndex(iItemIndex, upgrade);
 	
 	// Bad upgrade?
@@ -843,63 +845,63 @@ ShowUpgradeManageMenu(client)
 		return;
 	}
 	
-	new String:sTranslatedName[MAX_UPGRADE_NAME_LENGTH];
+	char sTranslatedName[MAX_UPGRADE_NAME_LENGTH];
 	GetUpgradeTranslatedName(client, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
 	
-	new Handle:hMenu = CreateMenu(Menu_HandleUpgradeDetails);
-	SetMenuExitBackButton(hMenu, true);
-	SetMenuTitle(hMenu, "Manage upgrade > %s\nShort name: %s", sTranslatedName, upgrade[UPGR_shortName]);
+	Menu hMenu = new Menu(Menu_HandleUpgradeDetails);
+	hMenu.ExitBackButton = true;
+	hMenu.SetTitle("Manage upgrade > %s\nShort name: %s", sTranslatedName, upgrade[UPGR_shortName]);
 	
-	decl String:sBuffer[256];
+	char sBuffer[256];
 	if(upgrade[UPGR_enabled])
 		Format(sBuffer, sizeof(sBuffer), "Disable upgrade");
 	else
 		Format(sBuffer, sizeof(sBuffer), "Enable upgrade");
-	AddMenuItem(hMenu, "enable", sBuffer);
+	hMenu.AddItem("enable", sBuffer);
 	
-	if(!GetConVarBool(g_hCVIgnoreLevelBarrier))
+	if(!g_hCVIgnoreLevelBarrier.BoolValue)
 	{
 		Format(sBuffer, sizeof(sBuffer), "Maxlevel barrier: %d", upgrade[UPGR_maxLevelBarrier]);
-		AddMenuItem(hMenu, "", sBuffer, ITEMDRAW_DISABLED);
+		hMenu.AddItem("", sBuffer, ITEMDRAW_DISABLED);
 	}
 	
 	Format(sBuffer, sizeof(sBuffer), "Maxlevel: %d", upgrade[UPGR_maxLevel]);
-	AddMenuItem(hMenu, "maxlevel", sBuffer);
+	hMenu.AddItem("maxlevel", sBuffer);
 	
 	Format(sBuffer, sizeof(sBuffer), "Cost: %d", upgrade[UPGR_startCost]);
-	AddMenuItem(hMenu, "cost", sBuffer);
+	hMenu.AddItem("cost", sBuffer);
 	
 	Format(sBuffer, sizeof(sBuffer), "Increase Cost: %d", upgrade[UPGR_incCost]);
-	AddMenuItem(hMenu, "icost", sBuffer);
+	hMenu.AddItem("icost", sBuffer);
 	
-	new String:sTeamlock[128] = "None";
+	char sTeamlock[128] = "None";
 	if(upgrade[UPGR_teamlock] >= 1 && upgrade[UPGR_teamlock] < GetTeamCount())
 	{
 		GetTeamName(upgrade[UPGR_teamlock], sTeamlock, sizeof(sTeamlock));
 	}
 	Format(sBuffer, sizeof(sBuffer), "Teamlock: %s", sTeamlock);
-	AddMenuItem(hMenu, "teamlock", sBuffer);
+	hMenu.AddItem("teamlock", sBuffer);
 	
-	if(upgrade[UPGR_visualsConvar] != INVALID_HANDLE)
+	if(upgrade[UPGR_visualsConvar] != null)
 	{
 		Format(sBuffer, sizeof(sBuffer), "Visual effects: %T", upgrade[UPGR_enableVisuals]?"On":"Off", client);
-		AddMenuItem(hMenu, "visuals", sBuffer);
+		hMenu.AddItem("visuals", sBuffer);
 	}
 	
-	if(upgrade[UPGR_soundsConvar] != INVALID_HANDLE)
+	if(upgrade[UPGR_soundsConvar] != null)
 	{
 		Format(sBuffer, sizeof(sBuffer), "Sound effects: %T", upgrade[UPGR_enableSounds]?"On":"Off", client);
-		AddMenuItem(hMenu, "sounds", sBuffer);
+		hMenu.AddItem("sounds", sBuffer);
 	}
 	
-	DisplayMenu(hMenu, client, MENU_TIME_FOREVER);
+	hMenu.Display(client, MENU_TIME_FOREVER);
 }
 
-public Menu_HandleUpgradeDetails(Handle:menu, MenuAction:action, param1, param2)
+public int Menu_HandleUpgradeDetails(Menu menu, MenuAction action, int param1, int param2)
 {
 	if(action == MenuAction_End)
 	{
-		CloseHandle(menu);
+		delete menu;
 	}
 	else if(action == MenuAction_Cancel)
 	{
@@ -911,7 +913,7 @@ public Menu_HandleUpgradeDetails(Handle:menu, MenuAction:action, param1, param2)
 	}
 	else if(action == MenuAction_Select)
 	{
-		new upgrade[InternalUpgradeInfo];
+		int upgrade[InternalUpgradeInfo];
 		GetUpgradeByIndex(g_iCurrentUpgradeTarget[param1], upgrade);
 	
 		// Bad upgrade?
@@ -922,19 +924,19 @@ public Menu_HandleUpgradeDetails(Handle:menu, MenuAction:action, param1, param2)
 			return;
 		}
 		
-		decl String:sInfo[32];
-		GetMenuItem(menu, param2, sInfo, sizeof(sInfo));
+		char sInfo[32];
+		menu.GetItem(param2, sInfo, sizeof(sInfo));
 		
 		if(StrEqual(sInfo, "enable"))
 		{
 			if(upgrade[UPGR_enabled])
 			{
-				SetConVarBool(upgrade[UPGR_enableConvar], false);
+				upgrade[UPGR_enableConvar].SetBool(false);
 				LogAction(param1, -1, "%L disabled upgrade %s temporarily.", param1, upgrade[UPGR_name]);
 			}
 			else
 			{
-				SetConVarBool(upgrade[UPGR_enableConvar], true);
+				upgrade[UPGR_enableConvar].SetBool(true);
 				LogAction(param1, -1, "%L enabled upgrade %s temporarily.", param1, upgrade[UPGR_name]);
 			}
 			ShowUpgradeManageMenu(param1);
@@ -953,7 +955,7 @@ public Menu_HandleUpgradeDetails(Handle:menu, MenuAction:action, param1, param2)
 		}
 		else if(StrEqual(sInfo, "teamlock"))
 		{
-			new iTeamlock = upgrade[UPGR_teamlock];
+			int iTeamlock = upgrade[UPGR_teamlock];
 			iTeamlock++;
 			if(iTeamlock <= 1)
 				iTeamlock = 2; // Skip the spectator team..
@@ -961,11 +963,11 @@ public Menu_HandleUpgradeDetails(Handle:menu, MenuAction:action, param1, param2)
 				iTeamlock = 0; // Toggle in a ring.
 			
 			// Get the correct name for the log.
-			new String:sTeam[128] = "None";
+			char sTeam[128] = "None";
 			if(iTeamlock > 1)
 				GetTeamName(iTeamlock, sTeam, sizeof(sTeam));
 			
-			SetConVarInt(upgrade[UPGR_teamlockConvar], iTeamlock);
+			upgrade[UPGR_teamlockConvar].SetInt(iTeamlock);
 			LogAction(param1, -1, "%L toggled the teamlock on upgrade %s temporarily to restrict to team \"%s\".", param1, upgrade[UPGR_name], sTeam);
 			ShowUpgradeManageMenu(param1);
 		}
@@ -973,12 +975,12 @@ public Menu_HandleUpgradeDetails(Handle:menu, MenuAction:action, param1, param2)
 		{
 			if(upgrade[UPGR_enableVisuals])
 			{
-				SetConVarBool(upgrade[UPGR_visualsConvar], false);
+				upgrade[UPGR_visualsConvar].SetBool(false);
 				LogAction(param1, -1, "%L disabled upgrade %s's visual effects temporarily.", param1, upgrade[UPGR_name]);
 			}
 			else
 			{
-				SetConVarBool(upgrade[UPGR_visualsConvar], true);
+				upgrade[UPGR_visualsConvar].SetBool(true);
 				LogAction(param1, -1, "%L enabled upgrade %s's visual effects temporarily.", param1, upgrade[UPGR_name]);
 			}
 			ShowUpgradeManageMenu(param1);
@@ -987,12 +989,12 @@ public Menu_HandleUpgradeDetails(Handle:menu, MenuAction:action, param1, param2)
 		{
 			if(upgrade[UPGR_enableSounds])
 			{
-				SetConVarBool(upgrade[UPGR_soundsConvar], false);
+				upgrade[UPGR_soundsConvar].SetBool(false);
 				LogAction(param1, -1, "%L disabled upgrade %s's sound effects temporarily.", param1, upgrade[UPGR_name]);
 			}
 			else
 			{
-				SetConVarBool(upgrade[UPGR_soundsConvar], true);
+				upgrade[UPGR_soundsConvar].SetBool(true);
 				LogAction(param1, -1, "%L enabled upgrade %s's sound effects temporarily.", param1, upgrade[UPGR_name]);
 			}
 			ShowUpgradeManageMenu(param1);
@@ -1000,10 +1002,10 @@ public Menu_HandleUpgradeDetails(Handle:menu, MenuAction:action, param1, param2)
 	}
 }
 
-ShowUpgradePropertyChangeMenu(client, ChangeUpgradeProperty:property)
+void ShowUpgradePropertyChangeMenu(int client, ChangeUpgradeProperty prop)
 {
-	new upgrade[InternalUpgradeInfo];
-	new iItemIndex = g_iCurrentUpgradeTarget[client];
+	int upgrade[InternalUpgradeInfo];
+	int iItemIndex = g_iCurrentUpgradeTarget[client];
 	GetUpgradeByIndex(iItemIndex, upgrade);
 	
 	// Bad upgrade?
@@ -1015,15 +1017,15 @@ ShowUpgradePropertyChangeMenu(client, ChangeUpgradeProperty:property)
 		return;
 	}
 	
-	new String:sTranslatedName[MAX_UPGRADE_NAME_LENGTH];
+	char sTranslatedName[MAX_UPGRADE_NAME_LENGTH];
 	GetUpgradeTranslatedName(client, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
 	
-	new Handle:hMenu = CreateMenu(Menu_HandlePropertyChange);
-	SetMenuExitBackButton(hMenu, true);
+	Menu hMenu = new Menu(Menu_HandlePropertyChange);
+	hMenu.ExitBackButton = true;
 	
-	decl String:sBuffer[512];
+	char sBuffer[512];
 	Format(sBuffer, sizeof(sBuffer), "Manage upgrade > %s\nShort name: %s\n", sTranslatedName, upgrade[UPGR_shortName]);
-	switch(property)
+	switch(prop)
 	{
 		case ChangeProp_Maxlevel:
 		{
@@ -1039,25 +1041,25 @@ ShowUpgradePropertyChangeMenu(client, ChangeUpgradeProperty:property)
 		}
 	}
 	
-	SetMenuTitle(hMenu, sBuffer);
+	hMenu.SetTitle(sBuffer);
 	
-	AddMenuItem(hMenu, "10", "+10");
-	AddMenuItem(hMenu, "5", "+5");
-	AddMenuItem(hMenu, "1", "+1");
-	AddMenuItem(hMenu, "-1", "-1");
-	AddMenuItem(hMenu, "-5", "-5");
-	AddMenuItem(hMenu, "-10", "-10");
+	hMenu.AddItem("10", "+10");
+	hMenu.AddItem("5", "+5");
+	hMenu.AddItem("1", "+1");
+	hMenu.AddItem("-1", "-1");
+	hMenu.AddItem("-5", "-5");
+	hMenu.AddItem("-10", "-10");
 	
-	DisplayMenu(hMenu, client, MENU_TIME_FOREVER);
+	hMenu.Display(client, MENU_TIME_FOREVER);
 	
-	g_iClientChangesProperty[client] = property;
+	g_iClientChangesProperty[client] = prop;
 }
 
-public Menu_HandlePropertyChange(Handle:menu, MenuAction:action, param1, param2)
+public int Menu_HandlePropertyChange(Menu menu, MenuAction action, int param1, int param2)
 {
 	if(action == MenuAction_End)
 	{
-		CloseHandle(menu);
+		delete menu;
 	}
 	else if(action == MenuAction_Cancel)
 	{
@@ -1072,7 +1074,7 @@ public Menu_HandlePropertyChange(Handle:menu, MenuAction:action, param1, param2)
 	}
 	else if(action == MenuAction_Select)
 	{
-		new upgrade[InternalUpgradeInfo];
+		int upgrade[InternalUpgradeInfo];
 		GetUpgradeByIndex(g_iCurrentUpgradeTarget[param1], upgrade);
 	
 		// Bad upgrade?
@@ -1084,37 +1086,37 @@ public Menu_HandlePropertyChange(Handle:menu, MenuAction:action, param1, param2)
 			return;
 		}
 		
-		decl String:sInfo[32];
-		GetMenuItem(menu, param2, sInfo, sizeof(sInfo));
+		char sInfo[32];
+		menu.GetItem(param2, sInfo, sizeof(sInfo));
 		
-		new iChange = StringToInt(sInfo);
+		int iChange = StringToInt(sInfo);
 		switch(g_iClientChangesProperty[param1])
 		{
 			case ChangeProp_Maxlevel:
 			{
-				new iValue = upgrade[UPGR_maxLevel] + iChange;
-				new iMaxLevelBarrier = upgrade[UPGR_maxLevelBarrier];
-				if(iValue > 0 && (iMaxLevelBarrier <= 0 || iValue <= iMaxLevelBarrier || GetConVarBool(g_hCVIgnoreLevelBarrier)))
+				int iValue = upgrade[UPGR_maxLevel] + iChange;
+				int iMaxLevelBarrier = upgrade[UPGR_maxLevelBarrier];
+				if(iValue > 0 && (iMaxLevelBarrier <= 0 || iValue <= iMaxLevelBarrier || g_hCVIgnoreLevelBarrier.BoolValue))
 				{
-					SetConVarInt(upgrade[UPGR_maxLevelConvar], iValue);
+					upgrade[UPGR_maxLevelConvar].SetInt(iValue);
 					LogAction(param1, -1, "%L changed maxlevel of upgrade %s temporarily from %d to %d.", param1, upgrade[UPGR_name], upgrade[UPGR_maxLevel], iValue);
 				}
 			}
 			case ChangeProp_Cost:
 			{
-				new iValue = upgrade[UPGR_startCost] + iChange;
+				int iValue = upgrade[UPGR_startCost] + iChange;
 				if(iValue >= 0)
 				{
-					SetConVarInt(upgrade[UPGR_startCostConvar], iValue);
+					upgrade[UPGR_startCostConvar].SetInt(iValue);
 					LogAction(param1, -1, "%L changed start costs of upgrade %s temporarily from %d to %d.", param1, upgrade[UPGR_name], upgrade[UPGR_startCost], iValue);
 				}
 			}
 			case ChangeProp_Icost:
 			{
-				new iValue = upgrade[UPGR_incCost] + iChange;
+				int iValue = upgrade[UPGR_incCost] + iChange;
 				if(iValue > 0)
 				{
-					SetConVarInt(upgrade[UPGR_incCostConvar], iValue);
+					upgrade[UPGR_incCostConvar].SetInt(iValue);
 					LogAction(param1, -1, "%L changed increasing costs of upgrade %s temporarily from %d to %d.", param1, upgrade[UPGR_name], upgrade[UPGR_incCost], iValue);
 				}
 			}

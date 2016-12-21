@@ -3,6 +3,8 @@
 #include <sdktools>
 #include <sdkhooks>
 #include <smlib>
+
+#pragma newdecls required
 #include <smrpg_effects>
 #include <smrpg_sharedmaterials>
 
@@ -11,14 +13,14 @@
 
 #define PLUGIN_VERSION "1.0"
 
-new Handle:g_hCVCreditFireAttacker;
+ConVar g_hCVCreditFireAttacker;
 
 #include "smrpg_effects/rendercolor.sp"
 #include "smrpg_effects/freeze.sp"
 #include "smrpg_effects/ignite.sp"
 #include "smrpg_effects/laggedmovement.sp"
 
-public Plugin:myinfo = 
+public Plugin myinfo = 
 {
 	name = "SM:RPG > Effect Hub",
 	author = "Peace-Maker",
@@ -27,7 +29,7 @@ public Plugin:myinfo =
 	url = "http://www.wcfan.de/"
 }
 
-public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
+public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
 	RegPluginLibrary("smrpg_effects");
 	RegisterFreezeNatives();
@@ -38,7 +40,7 @@ public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
 	return APLRes_Success;
 }
 
-public OnPluginStart()
+public void OnPluginStart()
 {
 	SMRPG_GC_CheckSharedMaterialsAndSounds();
 	
@@ -53,25 +55,25 @@ public OnPluginStart()
 	AutoExecConfig(true, "plugin.smrpg_effects");
 
 	// Account for late loading
-	for(new i=1;i<=MaxClients;i++)
+	for(int i=1;i<=MaxClients;i++)
 	{
 		if(IsClientInGame(i))
 			OnClientPutInServer(i);
 	}
 }
 
-public OnMapStart()
+public void OnMapStart()
 {
 	PrecacheFreezeSounds();
 }
 
-public OnClientPutInServer(client)
+public void OnClientPutInServer(int client)
 {
 	SDKHook(client, SDKHook_OnTakeDamage, Hook_OnTakeDamage);
 	ResetRenderColorClient(client);
 }
 
-public OnClientDisconnect(client)
+public void OnClientDisconnect(int client)
 {
 	ResetRenderColorClient(client);
 	ResetFreezeClient(client);
@@ -82,9 +84,9 @@ public OnClientDisconnect(client)
 /**
  * Event callbacks
  */
-public Event_OnPlayerSpawn(Handle:event, const String:error[], bool:dontBroadcast)
+public void Event_OnPlayerSpawn(Event event, const char[] error, bool dontBroadcast)
 {
-	new client = GetClientOfUserId(GetEventInt(event, "userid"));
+	int client = GetClientOfUserId(event.GetInt("userid"));
 	if(!client)
 		return;
 
@@ -94,9 +96,9 @@ public Event_OnPlayerSpawn(Handle:event, const String:error[], bool:dontBroadcas
 	ResetLaggedMovementClient(client);
 }
 
-public Event_OnPlayerDeath(Handle:event, const String:error[], bool:dontBroadcast)
+public void Event_OnPlayerDeath(Event event, const char[] error, bool dontBroadcast)
 {
-	new client = GetClientOfUserId(GetEventInt(event, "userid"));
+	int client = GetClientOfUserId(event.GetInt("userid"));
 	if(!client)
 		return;
 
@@ -108,10 +110,10 @@ public Event_OnPlayerDeath(Handle:event, const String:error[], bool:dontBroadcas
 /**
  * Hook callbacks
  */
-public Action:Hook_OnTakeDamage(victim, &attacker, &inflictor, &Float:damage, &damagetype, &weapon, Float:damageForce[3], Float:damagePosition[3], damagecustom)
+public Action Hook_OnTakeDamage(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &weapon, float damageForce[3], float damagePosition[3], int damagecustom)
 {
-	new Action:iRetFreeze = Freeze_OnTakeDamage(victim, attacker, inflictor, damage);
-	new Action:iRetIgnite = Ignite_OnTakeDamage(victim, attacker, inflictor, damage, damagetype);
+	Action iRetFreeze = Freeze_OnTakeDamage(victim, attacker, inflictor, damage);
+	Action iRetIgnite = Ignite_OnTakeDamage(victim, attacker, inflictor, damage, damagetype);
 	return iRetFreeze > iRetIgnite ? iRetFreeze : iRetIgnite;
 }
 
@@ -120,22 +122,22 @@ public Action:Hook_OnTakeDamage(victim, &attacker, &inflictor, &Float:damage, &d
  */
 // IsValidHandle() is deprecated, let's do a real check then...
 // By Thraaawn
-stock bool:IsValidPlugin(Handle:hPlugin) {
-	if(hPlugin == INVALID_HANDLE)
+stock bool IsValidPlugin(Handle hPlugin) {
+	if(hPlugin == null)
 		return false;
 
-	new Handle:hIterator = GetPluginIterator();
+	Handle hIterator = GetPluginIterator();
 
-	new bool:bPluginExists = false;
+	bool bPluginExists = false;
 	while(MorePlugins(hIterator)) {
-		new Handle:hLoadedPlugin = ReadPlugin(hIterator);
+		Handle hLoadedPlugin = ReadPlugin(hIterator);
 		if(hLoadedPlugin == hPlugin) {
 			bPluginExists = true;
 			break;
 		}
 	}
 
-	CloseHandle(hIterator);
+	delete hIterator;
 
 	return bPluginExists;
 }

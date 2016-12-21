@@ -9,20 +9,22 @@
  */
 #pragma semicolon 1
 #include <sourcemod>
-#include <smrpg>
 #include <sdkhooks>
 #include <smlib>
+
+//#pragma newdecls required
+#include <smrpg>
 
 #define UPGRADE_SHORTNAME "clipsize"
 #define PLUGIN_VERSION "1.0"
 
-new g_iGameMaxClip1[2048];
-new bool:g_bWeaponReloadOnFull[2048];
-new Handle:g_hWeaponTrie;
+int g_iGameMaxClip1[2048];
+bool g_bWeaponReloadOnFull[2048];
+StringMap g_hWeaponTrie;
 
-new bool:g_bLateLoaded;
+bool g_bLateLoaded;
 
-public Plugin:myinfo = 
+public Plugin myinfo = 
 {
 	name = "SM:RPG Upgrade > Increase Clipsize",
 	author = "Peace-Maker",
@@ -31,9 +33,9 @@ public Plugin:myinfo =
 	url = "http://www.wcfan.de/"
 }
 
-public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
+public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
-	g_hWeaponTrie = CreateTrie();
+	g_hWeaponTrie = new StringMap();
 	g_bLateLoaded = late;
 	
 	if(!LoadWeaponAmmoConfig())
@@ -44,24 +46,24 @@ public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
 	return APLRes_Success;
 }
 
-public OnPluginStart()
+public void OnPluginStart()
 {
 	LoadTranslations("smrpg_stock_upgrades.phrases");
 	HookEvent("player_spawn", Event_OnPlayerSpawn);
 	
 	if(g_bLateLoaded)
 	{
-		for(new i=1;i<=MaxClients;i++)
+		for(int i=1;i<=MaxClients;i++)
 		{
 			if(IsClientInGame(i))
 				OnClientPutInServer(i);
 		}
 		
-		new iEntities = GetMaxEntities();
-		decl String:sClassname[64], iClipIncrease;
-		for(new i=MaxClients+1;i<=iEntities;i++)
+		int iEntities = GetMaxEntities();
+		char sClassname[64], iClipIncrease;
+		for(int i=MaxClients+1;i<=iEntities;i++)
 		{
-			if(IsValidEntity(i) && GetEntityClassname(i, sClassname, sizeof(sClassname)) && GetTrieValue(g_hWeaponTrie, sClassname, iClipIncrease))
+			if(IsValidEntity(i) && GetEntityClassname(i, sClassname, sizeof(sClassname)) && g_hWeaponTrie.GetValue(sClassname, iClipIncrease))
 			{
 				SDKHook(i, SDKHook_Reload, Hook_OnReload);
 				SDKHook(i, SDKHook_ReloadPost, Hook_OnReloadPost);
@@ -71,18 +73,18 @@ public OnPluginStart()
 	}
 }
 
-public OnPluginEnd()
+public void OnPluginEnd()
 {
 	if(SMRPG_UpgradeExists(UPGRADE_SHORTNAME))
 		SMRPG_UnregisterUpgradeType(UPGRADE_SHORTNAME);
 }
 
-public OnAllPluginsLoaded()
+public void OnAllPluginsLoaded()
 {
 	OnLibraryAdded("smrpg");
 }
 
-public OnLibraryAdded(const String:name[])
+public void OnLibraryAdded(const char[] name)
 {
 	// Register this upgrade in SM:RPG
 	if(StrEqual(name, "smrpg"))
@@ -92,17 +94,17 @@ public OnLibraryAdded(const String:name[])
 	}
 }
 
-public OnEntityCreated(entity, const String:classname[])
+public void OnEntityCreated(int entity, const char[] classname)
 {
 	if(entity >= 2048)
 		return;
 	
-	new iClipIncrease;
-	if(GetTrieValue(g_hWeaponTrie, classname, iClipIncrease))
+	int iClipIncrease;
+	if(g_hWeaponTrie.GetValue(classname, iClipIncrease))
 		SDKHook(entity, SDKHook_SpawnPost, Hook_OnSpawnPost);
 }
 
-public OnEntityDestroyed(entity)
+public void OnEntityDestroyed(int entity)
 {
 	if(entity > 0 && entity < 2048)
 	{
@@ -111,13 +113,13 @@ public OnEntityDestroyed(entity)
 	}
 }
 
-public OnClientPutInServer(client)
+public void OnClientPutInServer(int client)
 {
 	SDKHook(client, SDKHook_WeaponEquipPost, Hook_OnWeaponEquipPost);
 	SDKHook(client, SDKHook_WeaponDropPost, Hook_OnWeaponDropPost);
 }
 
-public OnMapEnd()
+public void OnMapEnd()
 {
 	if(!LoadWeaponAmmoConfig())
 		SetFailState("Can't read config file in configs/smrpg/clipsize_weapons.cfg!");
@@ -126,22 +128,22 @@ public OnMapEnd()
 /**
  * SM:RPG Upgrade callbacks
  */
-public SMRPG_BuySell(client, UpgradeQueryType:type)
+public void SMRPG_BuySell(int client, UpgradeQueryType type)
 {
 	if(!client || !IsClientInGame(client))
 		return;
 	
-	new iClipIncrease, iNewMaxClip, iClip1, iAmmoCount;
-	decl String:sWeapon[64];
+	int iClipIncrease, iNewMaxClip, iClip1, iAmmoCount;
+	char sWeapon[64];
 	
-	new iLevel = SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME);
+	int iLevel = SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME);
 	LOOP_CLIENTWEAPONS(client, iWeapon, i)
 	{
 		if(g_iGameMaxClip1[iWeapon] <= 0)
 			continue;
 		
 		GetEntityClassname(iWeapon, sWeapon, sizeof(sWeapon));
-		if(!GetTrieValue(g_hWeaponTrie, sWeapon, iClipIncrease))
+		if(!g_hWeaponTrie.GetValue(sWeapon, iClipIncrease))
 			continue;
 		
 		iNewMaxClip = g_iGameMaxClip1[iWeapon]+iClipIncrease*iLevel;
@@ -154,7 +156,7 @@ public SMRPG_BuySell(client, UpgradeQueryType:type)
 		{
 			case UpgradeQueryType_Buy:
 			{
-				new iIncrease = iNewMaxClip - iClip1;
+				int iIncrease = iNewMaxClip - iClip1;
 				
 				// Make sure we set the clip to the new size right away as a visual effect, if the player currently has a full clip.
 				if(iClip1 == (iNewMaxClip-iClipIncrease))
@@ -180,21 +182,21 @@ public SMRPG_BuySell(client, UpgradeQueryType:type)
 	}
 }
 
-public bool:SMRPG_ActiveQuery(client)
+public bool SMRPG_ActiveQuery(int client)
 {
 	// This is a passive effect, so it's always active, if the player got at least level 1
-	new upgrade[UpgradeInfo];
+	int upgrade[UpgradeInfo];
 	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
 	return SMRPG_IsEnabled() && upgrade[UI_enabled] && SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME) > 0;
 }
 
-public SMRPG_TranslateUpgrade(client, const String:shortname[], TranslationType:type, String:translation[], maxlen)
+public void SMRPG_TranslateUpgrade(int client, const char[] shortname, TranslationType type, char[] translation, int maxlen)
 {
 	if(type == TranslationType_Name)
 		Format(translation, maxlen, "%T", UPGRADE_SHORTNAME, client);
 	else if(type == TranslationType_Description)
 	{
-		new String:sDescriptionKey[MAX_UPGRADE_SHORTNAME_LENGTH+12] = UPGRADE_SHORTNAME;
+		char sDescriptionKey[MAX_UPGRADE_SHORTNAME_LENGTH+12] = UPGRADE_SHORTNAME;
 		StrCat(sDescriptionKey, sizeof(sDescriptionKey), " description");
 		Format(translation, maxlen, "%T", sDescriptionKey, client);
 	}
@@ -204,14 +206,14 @@ public SMRPG_TranslateUpgrade(client, const String:shortname[], TranslationType:
  * SDKHook callbacks
  */
 
-public Hook_OnSpawnPost(entity)
+public void Hook_OnSpawnPost(int entity)
 {
 	RequestFrame(Frame_GetGameMaxClip1, EntIndexToEntRef(entity));
 	SDKHook(entity, SDKHook_Reload, Hook_OnReload);
 	SDKHook(entity, SDKHook_ReloadPost, Hook_OnReloadPost);
 }
 
-public Hook_OnWeaponDropPost(client, weapon)
+public void Hook_OnWeaponDropPost(int client, int weapon)
 {
 	if(client <= 0 || weapon < 0)
 		return;
@@ -222,7 +224,7 @@ public Hook_OnWeaponDropPost(client, weapon)
 	if(!SMRPG_IsEnabled())
 		return;
 	
-	new upgrade[UpgradeInfo];
+	int upgrade[UpgradeInfo];
 	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
 	if(!upgrade[UI_enabled])
 		return;
@@ -230,12 +232,12 @@ public Hook_OnWeaponDropPost(client, weapon)
 	// Restore the original game's default maxclip1, if the weapon currently has more ammo loaded.
 	// So other players don't get the same upgrade as the previous owner of the weapon.
 	// TODO: DO WE WANT THAT? CONFIG OPTION?
-	new iClip1 = Weapon_GetPrimaryClip(weapon);
+	int iClip1 = Weapon_GetPrimaryClip(weapon);
 	if(iClip1 > g_iGameMaxClip1[weapon])
 	{
 		Weapon_SetPrimaryClip(weapon, g_iGameMaxClip1[weapon]);
 		// Also give the player the extra ammo back, so he doesn't lose ammo when dropping the gun and picking it up again.
-		new iPrimaryAmmo;
+		int iPrimaryAmmo;
 		Client_GetWeaponPlayerAmmoEx(client, weapon, iPrimaryAmmo);
 		Client_SetWeaponPlayerAmmoEx(client, weapon, iPrimaryAmmo + (iClip1 - g_iGameMaxClip1[weapon]));
 	}
@@ -243,7 +245,7 @@ public Hook_OnWeaponDropPost(client, weapon)
 	return;
 }
 
-public Hook_OnWeaponEquipPost(client, weapon)
+public void Hook_OnWeaponEquipPost(int client, int weapon)
 {
 	if(!client || !IsClientInGame(client) || weapon < 0)
 		return;
@@ -255,27 +257,27 @@ public Hook_OnWeaponEquipPost(client, weapon)
 	if(!IsUpgradeActive(client))
 		return;
 	
-	new iClip1 = Weapon_GetPrimaryClip(weapon);
+	int iClip1 = Weapon_GetPrimaryClip(weapon);
 	if(iClip1 == g_iGameMaxClip1[weapon])
 		CreateTimer(0.1, Timer_SetEquipAmmo, EntIndexToEntRef(weapon), TIMER_FLAG_NO_MAPCHANGE);
 }
 
-public Action:Hook_OnReload(weapon)
+public Action Hook_OnReload(int weapon)
 {
-	new client = Weapon_GetOwner(weapon);
+	int client = Weapon_GetOwner(weapon);
 	if(client <= 0)
 		return Plugin_Continue;
 	
-	new iClipIncrease;
-	decl String:sWeapon[64];
+	int iClipIncrease;
+	char sWeapon[64];
 	GetEntityClassname(weapon, sWeapon, sizeof(sWeapon));
-	if(!GetTrieValue(g_hWeaponTrie, sWeapon, iClipIncrease))
+	if(!g_hWeaponTrie.GetValue(sWeapon, iClipIncrease))
 		return Plugin_Continue;
 	
 	if(!SMRPG_IsEnabled())
 		return Plugin_Continue;
 	
-	new upgrade[UpgradeInfo];
+	int upgrade[UpgradeInfo];
 	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
 	if(!upgrade[UI_enabled])
 		return Plugin_Continue;
@@ -284,7 +286,7 @@ public Action:Hook_OnReload(weapon)
 	if(IsFakeClient(client) && SMRPG_IgnoreBots())
 		return Plugin_Continue;
 	
-	new iLevel = SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME);
+	int iLevel = SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME);
 	if(iLevel <= 0)
 		return Plugin_Continue;
 	
@@ -293,10 +295,10 @@ public Action:Hook_OnReload(weapon)
 	
 	iClipIncrease *= iLevel;
 	
-	new iNewMaxClip = g_iGameMaxClip1[weapon]+iClipIncrease;
+	int iNewMaxClip = g_iGameMaxClip1[weapon]+iClipIncrease;
 	
 	// Don't reload if we're at the new virtual max clipsize!
-	new iClip1 = Weapon_GetPrimaryClip(weapon);
+	int iClip1 = Weapon_GetPrimaryClip(weapon);
 	if(iClip1 == iNewMaxClip)
 		return Plugin_Handled;
 	
@@ -311,7 +313,7 @@ public Action:Hook_OnReload(weapon)
 	return Plugin_Continue;
 }
 
-public Hook_OnReloadPost(weapon, bool:bSuccessful)
+public void Hook_OnReloadPost(int weapon, bool bSuccessful)
 {
 	// Readd the bullet we removed previously, so we trick the game into reloading a full weapon ;)
 	if(g_bWeaponReloadOnFull[weapon])
@@ -323,14 +325,14 @@ public Hook_OnReloadPost(weapon, bool:bSuccessful)
 	if(!bSuccessful)
 		return;
 	
-	new client = Weapon_GetOwner(weapon);
+	int client = Weapon_GetOwner(weapon);
 	if(client <= 0)
 		return;
 	
 	if(!SMRPG_IsEnabled())
 		return;
 	
-	new upgrade[UpgradeInfo];
+	int upgrade[UpgradeInfo];
 	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
 	if(!upgrade[UI_enabled])
 		return;
@@ -339,26 +341,26 @@ public Hook_OnReloadPost(weapon, bool:bSuccessful)
 	if(IsFakeClient(client) && SMRPG_IgnoreBots())
 		return;
 	
-	new iLevel = SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME);
+	int iLevel = SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME);
 	if(iLevel <= 0)
 		return;
 	
 	if(!SMRPG_RunUpgradeEffect(client, UPGRADE_SHORTNAME))
 		return; // Some other plugin doesn't want this effect to run
 	
-	new Handle:hPack = CreateDataPack();
-	WritePackCell(hPack, EntIndexToEntRef(weapon));
-	WritePackCell(hPack, Weapon_GetPrimaryClip(weapon));
+	DataPack hPack = new DataPack();
+	hPack.WriteCell(EntIndexToEntRef(weapon));
+	hPack.WriteCell(Weapon_GetPrimaryClip(weapon));
 	CreateTimer(0.1, Timer_CheckReloadFinish, hPack, TIMER_FLAG_NO_MAPCHANGE|TIMER_REPEAT|TIMER_DATA_HNDL_CLOSE);
 }
 
 /**
  * Event callbacks
  */
-public Event_OnPlayerSpawn(Handle:event, const String:name[], bool:dontBroadcast)
+public void Event_OnPlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 {
-	new userid = GetEventInt(event, "userid");
-	new client = GetClientOfUserId(userid);
+	int userid = event.GetInt("userid");
+	int client = GetClientOfUserId(userid);
 	if(!client)
 		return;
 	
@@ -371,7 +373,7 @@ public Event_OnPlayerSpawn(Handle:event, const String:name[], bool:dontBroadcast
 /**
  * RequestFrame callbacks
  */
-public Frame_GetGameMaxClip1(any:entity)
+public void Frame_GetGameMaxClip1(any entity)
 {
 	entity = EntRefToEntIndex(entity);
 	if(entity == INVALID_ENT_REFERENCE)
@@ -381,7 +383,7 @@ public Frame_GetGameMaxClip1(any:entity)
 	
 	// If this weapon already has an owner right after it spawned it was probably bought.
 	// Weapons are equipped before spawning them when buying them.
-	new client = Weapon_GetOwner(entity);
+	int client = Weapon_GetOwner(entity);
 	if(client > 0)
 		Hook_OnWeaponEquipPost(client, entity);
 }
@@ -389,29 +391,29 @@ public Frame_GetGameMaxClip1(any:entity)
 /**
  * Timer callbacks
  */
-public Action:Timer_SetEquipAmmo(Handle:timer, any:weapon)
+public Action Timer_SetEquipAmmo(Handle timer, any weapon)
 {
 	weapon = EntRefToEntIndex(weapon);
 	if(weapon == INVALID_ENT_REFERENCE)
 		return Plugin_Stop;
 	
-	new client = Weapon_GetOwner(weapon);
+	int client = Weapon_GetOwner(weapon);
 	if(client <= 0)
 		return Plugin_Stop;
 	
-	new iClipIncrease;
-	decl String:sWeapon[64];
+	int iClipIncrease;
+	char sWeapon[64];
 	GetEntityClassname(weapon, sWeapon, sizeof(sWeapon));
-	if(!GetTrieValue(g_hWeaponTrie, sWeapon, iClipIncrease))
+	if(!g_hWeaponTrie.GetValue(sWeapon, iClipIncrease))
 		return Plugin_Stop;
 	
-	new iLevel = SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME);
+	int iLevel = SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME);
 	if(iLevel <= 0)
 		return Plugin_Stop;
 	
 	iClipIncrease *= iLevel;
 	
-	new iAmmoCount;
+	int iAmmoCount;
 	Client_GetWeaponPlayerAmmoEx(client, weapon, iAmmoCount);
 	if(iAmmoCount < iClipIncrease)
 		iClipIncrease = iAmmoCount;
@@ -421,11 +423,11 @@ public Action:Timer_SetEquipAmmo(Handle:timer, any:weapon)
 	return Plugin_Stop;
 }
 
-public Action:Timer_CheckReloadFinish(Handle:timer, any:data)
+public Action Timer_CheckReloadFinish(Handle timer, DataPack data)
 {
-	ResetPack(data);
-	new weapon = EntRefToEntIndex(ReadPackCell(data));
-	new iPreReloadClip1 = ReadPackCell(data);
+	data.Reset();
+	int weapon = EntRefToEntIndex(data.ReadCell());
+	int iPreReloadClip1 = data.ReadCell();
 	
 	if(!IsValidEntity(weapon))
 		return Plugin_Stop;
@@ -434,7 +436,7 @@ public Action:Timer_CheckReloadFinish(Handle:timer, any:data)
 	if(Weapon_IsReloading(weapon))
 		return Plugin_Continue;
 	
-	new client = Weapon_GetOwner(weapon);
+	int client = Weapon_GetOwner(weapon);
 	if(client <= 0)
 		return Plugin_Stop;
 	
@@ -442,7 +444,7 @@ public Action:Timer_CheckReloadFinish(Handle:timer, any:data)
 	if(Client_GetActiveWeapon(client) != weapon)
 		return Plugin_Stop;
 	
-	new iClip1 = Weapon_GetPrimaryClip(weapon);
+	int iClip1 = Weapon_GetPrimaryClip(weapon);
 	// Support for learning new maxclip value for late-loading.
 	if(g_iGameMaxClip1[weapon] == 0)
 		g_iGameMaxClip1[weapon] = iClip1;
@@ -456,24 +458,24 @@ public Action:Timer_CheckReloadFinish(Handle:timer, any:data)
 		return Plugin_Stop;
 	
 	// Get the weapon's clip increase from the config file
-	new iClipIncrease;
-	decl String:sWeapon[64];
+	int iClipIncrease;
+	char sWeapon[64];
 	GetEntityClassname(weapon, sWeapon, sizeof(sWeapon));
-	if(!GetTrieValue(g_hWeaponTrie, sWeapon, iClipIncrease))
+	if(!g_hWeaponTrie.GetValue(sWeapon, iClipIncrease))
 		return Plugin_Continue;
 	
-	new iLevel = SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME);
+	int iLevel = SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME);
 	if(iLevel <= 0)
 		return Plugin_Continue;
 	
 	iClipIncrease *= iLevel;
 	
-	new iNewMaxClip = g_iGameMaxClip1[weapon]+iClipIncrease;
+	int iNewMaxClip = g_iGameMaxClip1[weapon]+iClipIncrease;
 	
 	// How many bullets do we need to add to match the new virtual max clipsize?
-	new iIncrease = iNewMaxClip - iClip1;
+	int iIncrease = iNewMaxClip - iClip1;
 	
-	new iAmmoCount;
+	int iAmmoCount;
 	Client_GetWeaponPlayerAmmoEx(client, weapon, iAmmoCount);
 	// Player doesn't have enough ammo for a whole reload, see how much we can add
 	if(iAmmoCount < iIncrease)
@@ -489,23 +491,23 @@ public Action:Timer_CheckReloadFinish(Handle:timer, any:data)
 }
 
 // Make sure the correct ammo is set after the player respawned
-public Action:Timer_SetWeaponsClips(Handle:timer, any:userid)
+public Action Timer_SetWeaponsClips(Handle timer, any userid)
 {
-	new client = GetClientOfUserId(userid);
+	int client = GetClientOfUserId(userid);
 	if(!client)
 		return Plugin_Stop;
 	
-	new iClipIncrease, iNewMaxClip, iClip1, iAmmoCount;
-	decl String:sWeapon[64];
+	int iClipIncrease, iNewMaxClip, iClip1, iAmmoCount;
+	char sWeapon[64];
 	
-	new iLevel = SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME);
+	int iLevel = SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME);
 	LOOP_CLIENTWEAPONS(client, iWeapon, i)
 	{
 		if(g_iGameMaxClip1[iWeapon] <= 0)
 			continue;
 		
 		GetEntityClassname(iWeapon, sWeapon, sizeof(sWeapon));
-		if(!GetTrieValue(g_hWeaponTrie, sWeapon, iClipIncrease))
+		if(!g_hWeaponTrie.GetValue(sWeapon, iClipIncrease))
 			continue;
 		
 		iClipIncrease *= iLevel;
@@ -518,7 +520,7 @@ public Action:Timer_SetWeaponsClips(Handle:timer, any:userid)
 			iAmmoCount = 0;
 			Client_GetWeaponPlayerAmmoEx(client, iWeapon, iAmmoCount);
 			
-			new iIncrease = iNewMaxClip - iClip1;
+			int iIncrease = iNewMaxClip - iClip1;
 			// Player doesn't have enough ammo for a whole reload, see how much we can add
 			if(iAmmoCount < iIncrease)
 				iIncrease = iAmmoCount;
@@ -534,45 +536,45 @@ public Action:Timer_SetWeaponsClips(Handle:timer, any:userid)
 /**
  * Helpers
  */
-bool:LoadWeaponAmmoConfig()
+bool LoadWeaponAmmoConfig()
 {
-	ClearTrie(g_hWeaponTrie);
+	g_hWeaponTrie.Clear();
 	
-	decl String:sPath[PLATFORM_MAX_PATH];
+	char sPath[PLATFORM_MAX_PATH];
 	BuildPath(Path_SM, sPath, sizeof(sPath), "configs/smrpg/clipsize_weapons.cfg");
 	
 	if(!FileExists(sPath))
 		return false;
 	
-	new Handle:hKV = CreateKeyValues("ClipsizeWeapons");
-	if(!FileToKeyValues(hKV, sPath))
+	KeyValues hKV = new KeyValues("ClipsizeWeapons");
+	if(!hKV.ImportFromFile(sPath))
 	{
-		CloseHandle(hKV);
+		delete hKV;
 		return false;
 	}
 	
-	decl String:sWeapon[64], iClipIncrease;
-	if(KvGotoFirstSubKey(hKV, false))
+	char sWeapon[64], iClipIncrease;
+	if(hKV.GotoFirstSubKey(false))
 	{
 		do
 		{
-			KvGetSectionName(hKV, sWeapon, sizeof(sWeapon));
-			iClipIncrease = KvGetNum(hKV, NULL_STRING, 0);
+			hKV.GetSectionName(sWeapon, sizeof(sWeapon));
+			iClipIncrease = hKV.GetNum(NULL_STRING, 0);
 			
-			SetTrieValue(g_hWeaponTrie, sWeapon, iClipIncrease);
+			g_hWeaponTrie.SetValue(sWeapon, iClipIncrease);
 			
-		} while (KvGotoNextKey(hKV, false));
+		} while (hKV.GotoNextKey(false));
 	}
-	CloseHandle(hKV);
+	delete hKV;
 	return true;
 }
 
-bool:IsUpgradeActive(client)
+bool IsUpgradeActive(int client)
 {
 	if(!SMRPG_IsEnabled())
 		return false;
 	
-	new upgrade[UpgradeInfo];
+	int upgrade[UpgradeInfo];
 	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
 	if(!upgrade[UI_enabled])
 		return false;
@@ -581,7 +583,7 @@ bool:IsUpgradeActive(client)
 	if(IsFakeClient(client) && SMRPG_IgnoreBots())
 		return false;
 	
-	new iLevel = SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME);
+	int iLevel = SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME);
 	if(iLevel <= 0)
 		return false;
 	

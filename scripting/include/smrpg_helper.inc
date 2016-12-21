@@ -33,25 +33,25 @@
  * @param dir           Sound direction.
  * @param updatePos     Unknown (updates positions?)
  * @param soundtime     Alternate time to play sound for.
- * @noreturn
  * @error Invalid client index.
  */
-stock SMRPG_EmitSoundToAllEnabled(const String:shortname[], 
-				 const String:sample[],
-				 entity = SOUND_FROM_PLAYER,
-				 channel = SNDCHAN_AUTO,
-				 level = SNDLEVEL_NORMAL,
-				 flags = SND_NOFLAGS,
-				 Float:volume = SNDVOL_NORMAL,
-				 pitch = SNDPITCH_NORMAL,
-				 speakerentity = -1,
-				 const Float:origin[3] = NULL_VECTOR,
-				 const Float:dir[3] = NULL_VECTOR,
-				 bool:updatePos = true,
-				 Float:soundtime = 0.0)
+stock void SMRPG_EmitSoundToAllEnabled(const char[] shortname, 
+				 const char[] sample,
+				 int entity = SOUND_FROM_PLAYER,
+				 int channel = SNDCHAN_AUTO,
+				 int level = SNDLEVEL_NORMAL,
+				 int flags = SND_NOFLAGS,
+				 float volume = SNDVOL_NORMAL,
+				 int pitch = SNDPITCH_NORMAL,
+				 int speakerentity = -1,
+				 const float origin[3] = NULL_VECTOR,
+				 const float dir[3] = NULL_VECTOR,
+				 bool updatePos = true,
+				 float soundtime = 0.0)
 {
-	new iClients[MaxClients], iNumClients;
-	for(new i=1;i<=MaxClients;i++)
+	int[] iClients = new int[MaxClients];
+	int iNumClients;
+	for(int i=1;i<=MaxClients;i++)
 	{
 		if(IsClientInGame(i) && SMRPG_ClientWantsCosmetics(i, shortname, SMRPG_FX_Sounds))
 			iClients[iNumClients++] = i;
@@ -69,12 +69,12 @@ stock SMRPG_EmitSoundToAllEnabled(const String:shortname[],
  *
  * @param shortname Shortname of the upgrade.
  * @param delay     Delay in seconds to send the TE.
- * @noreturn
  */
-stock SMRPG_TE_SendToAllEnabled(const String:shortname[], Float:delay=0.0)
+stock void SMRPG_TE_SendToAllEnabled(const char[] shortname, float delay=0.0)
 {
-	new iClients[MaxClients], iNumClients;
-	for (new i=1; i<=MaxClients; i++)
+	int[] iClients = new int[MaxClients];
+	int iNumClients;
+	for (int i=1; i<=MaxClients; i++)
 	{
 		if (IsClientInGame(i) && SMRPG_ClientWantsCosmetics(i, shortname, SMRPG_FX_Visuals))
 		{

@@ -13,20 +13,17 @@
  * @param maxlen	The maximum length of the buffer.
  * @return True if the setting existed and was retrieved, false otherwise.
  */
-native bool:SMRPG_GetSetting(const String:sKey[], String:sValue[], maxlen);
+native bool SMRPG_GetSetting(const char[] sKey, char[] sValue, int maxlen);
 
 /**
  * Set a setting variable in the smrpg "settings" table.
  *
  * @param sKey		The name of the setting.
  * @param sValue	The new value of the setting.
- * @noreturn
  */
-native SMRPG_SetSetting(const String:sKey[], String:sValue[]);
+native void SMRPG_SetSetting(const char[] sKey, char[] sValue);
 
 /**
  * Called when the settings were loaded from the database.
- *
- * @noreturn
  */
-forward SMRPG_OnSettingsLoaded();
+forward void SMRPG_OnSettingsLoaded();

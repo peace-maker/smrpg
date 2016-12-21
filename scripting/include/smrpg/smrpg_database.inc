@@ -14,12 +14,10 @@
  * @param bHardReset	Delete all player related information from the database? This will remove all settings the player might have set too.
  * @return True if the stats were reset, false otherwise (database connection problems or smrpg_save_data disabled).
  */
-native bool:SMRPG_ResetAllPlayers(const String:sReason[], bool:bHardReset=false);
+native bool SMRPG_ResetAllPlayers(const char[] sReason, bool bHardReset=false);
 
 /**
  * Flushes the current stats of all players from the cache into the database, making them persistent.
  * This obeys the settings for smrpg_enable and smrpg_save_data.
- *
- * @noreturn
  */
-native SMRPG_FlushDatabase();
+native void SMRPG_FlushDatabase();

@@ -5,10 +5,10 @@
 // Allow to refetch the rank every 20 seconds.
 #define RANK_CACHE_UPDATE_INTERVAL 20
 
-new g_iCachedRank[MAXPLAYERS+1] = {-1,...};
-new g_iNextCacheUpdate[MAXPLAYERS+1];
-new g_iCachedRankCount = 0;
-new g_iNextCacheCountUpdate;
+int g_iCachedRank[MAXPLAYERS+1] = {-1,...};
+int g_iNextCacheUpdate[MAXPLAYERS+1];
+int g_iCachedRankCount = 0;
+int g_iNextCacheCountUpdate;
 
 enum SessionStats {
 	SS_JoinTime,
@@ -19,14 +19,14 @@ enum SessionStats {
 	bool:SS_WantsAutoUpdate,
 	bool:SS_WantsMenuOpen,
 	bool:SS_OKToClose,
-	Handle:SS_LastExperience
+	ArrayList:SS_LastExperience
 };
 
-new g_iPlayerSessionStartStats[MAXPLAYERS+1][SessionStats];
-new bool:g_bBackToStatsMenu[MAXPLAYERS+1];
+int g_iPlayerSessionStartStats[MAXPLAYERS+1][SessionStats];
+bool g_bBackToStatsMenu[MAXPLAYERS+1];
 
-new Handle:g_hfwdOnAddExperience;
-new Handle:g_hfwdOnAddExperiencePost;
+Handle g_hfwdOnAddExperience;
+Handle g_hfwdOnAddExperiencePost;
 
 // AFK Handling
 enum AFKInfo {
@@ -35,11 +35,11 @@ enum AFKInfo {
 	AFK_spawnTime,
 	AFK_deathTime
 }
-new g_PlayerAFKInfo[MAXPLAYERS+1][AFKInfo];
-new bool:g_bPlayerSpawnProtected[MAXPLAYERS+1];
+int g_PlayerAFKInfo[MAXPLAYERS+1][AFKInfo];
+bool g_bPlayerSpawnProtected[MAXPLAYERS+1];
 
 // Individual weapon experience settings
-new Handle:g_hWeaponExperience;
+StringMap g_hWeaponExperience;
 
 enum WeaponExperienceContainer {
 	Float:WXP_Damage,
@@ -47,56 +47,56 @@ enum WeaponExperienceContainer {
 	Float:WXP_Bonus
 };
 
-RegisterStatsNatives()
+void RegisterStatsNatives()
 {
-	// native bool:SMRPG_AddClientExperience(client, exp, const String:reason[], bool:bHideNotice, other=-1, SMRPG_ExpTranslationCb:callback=SMRPG_ExpTranslationCb:INVALID_FUNCTION);
+	// native bool SMRPG_AddClientExperience(int client, int exp, const char[] reason, bool bHideNotice, int other=-1, SMRPG_ExpTranslationCb callback=INVALID_FUNCTION);
 	CreateNative("SMRPG_AddClientExperience", Native_AddClientExperience);
-	// native SMRPG_LevelToExperience(iLevel);
+	// native int SMRPG_LevelToExperience(int iLevel);
 	CreateNative("SMRPG_LevelToExperience", Native_LevelToExperience);
-	// native SMRPG_GetClientRank(client);
+	// native int SMRPG_GetClientRank(int client);
 	CreateNative("SMRPG_GetClientRank", Native_GetClientRank);
-	// native SMRPG_GetRankCount();
+	// native int SMRPG_GetRankCount();
 	CreateNative("SMRPG_GetRankCount", Native_GetRankCount);
 	
-	// native SMRPG_GetTop10Players(SQLTCallback:callback, any:data=0);
+	// native void SMRPG_GetTop10Players(SQLQueryCallback callback, any data=0);
 	CreateNative("SMRPG_GetTop10Players", Native_GetTop10Players);
 	
-	// native bool:SMRPG_IsClientAFK(client);
+	// native bool SMRPG_IsClientAFK(int client);
 	CreateNative("SMRPG_IsClientAFK", Native_IsClientAFK);
-	// native bool:SMRPG_IsClientSpawnProtected(client);
+	// native bool SMRPG_IsClientSpawnProtected(int client);
 	CreateNative("SMRPG_IsClientSpawnProtected", Native_IsClientSpawnProtected);
 	
-	// native Float:SMRPG_GetWeaponExperience(const String:sWeapon[], WeaponExperienceType:type);
+	// native float SMRPG_GetWeaponExperience(const char[] sWeapon, WeaponExperienceType type);
 	CreateNative("SMRPG_GetWeaponExperience", Native_GetWeaponExperience);
 }
 
-RegisterStatsForwards()
+void RegisterStatsForwards()
 {
-	// forward Action:SMRPG_OnAddExperience(client, const String:reason[], &iExperience, other);
+	// forward Action SMRPG_OnAddExperience(int client, const char[] reason, int &iExperience, int other);
 	g_hfwdOnAddExperience = CreateGlobalForward("SMRPG_OnAddExperience", ET_Hook, Param_Cell, Param_String, Param_CellByRef, Param_Cell);
-	// forward SMRPG_OnAddExperiencePost(client, const String:reason[], iExperience, other);
+	// forward void SMRPG_OnAddExperiencePost(int client, const char[] reason, int iExperience, int other);
 	g_hfwdOnAddExperiencePost = CreateGlobalForward("SMRPG_OnAddExperiencePost", ET_Ignore, Param_Cell, Param_String, Param_Cell, Param_Cell);
 }
 
 /* Calculate the experience needed for this level */
-Stats_LvlToExp(iLevel)
+int Stats_LvlToExp(int iLevel)
 {
-	new iExp;
+	int iExp;
 	
 	if(iLevel <= 1)
-		iExp = GetConVarInt(g_hCVExpStart);
+		iExp = g_hCVExpStart.IntValue;
 	else
-		iExp = iLevel * GetConVarInt(g_hCVExpInc) + GetConVarInt(g_hCVExpStart);
+		iExp = iLevel * g_hCVExpInc.IntValue + g_hCVExpStart.IntValue;
 	
-	return iExp > GetConVarInt(g_hCVExpMax) ? GetConVarInt(g_hCVExpMax) : iExp;
+	return iExp > g_hCVExpMax.IntValue ? g_hCVExpMax.IntValue : iExp;
 }
 
 /* Calculate how many levels to increase by current level and experience */
-Stats_CalcLvlInc(iLevel, iExp)
+int Stats_CalcLvlInc(int iLevel, int iExp)
 {
-	new iLevelIncrease;
+	int iLevelIncrease;
 	
-	new iExpRequired = Stats_LvlToExp(iLevel);
+	int iExpRequired = Stats_LvlToExp(iLevel);
 	while(iExp >= iExpRequired)
 	{
 		iLevelIncrease++;
@@ -107,24 +107,25 @@ Stats_CalcLvlInc(iLevel, iExp)
 	return iLevelIncrease;
 }
 
-Stats_PlayerNewLevel(client, iLevelIncrease)
+void Stats_PlayerNewLevel(int client, int iLevelIncrease)
 {
-	new iMaxLevel, bool:bMaxLevelReset;
+	int iMaxLevel;
+	bool bMaxLevelReset;
 	if(IsFakeClient(client))
 	{
-		iMaxLevel = GetConVarInt(g_hCVBotMaxlevel);
-		bMaxLevelReset = GetConVarBool(g_hCVBotMaxlevelReset);
+		iMaxLevel = g_hCVBotMaxlevel.IntValue;
+		bMaxLevelReset = g_hCVBotMaxlevelReset.BoolValue;
 	}
 	else
 	{
-		iMaxLevel = GetConVarInt(g_hCVPlayerMaxlevel);
-		bMaxLevelReset = GetConVarBool(g_hCVPlayerMaxlevelReset);
+		iMaxLevel = g_hCVPlayerMaxlevel.IntValue;
+		bMaxLevelReset = g_hCVPlayerMaxlevelReset.BoolValue;
 	}
 	
 	// Check if the player reached the maxlevel
 	if(iMaxLevel > 0)
 	{
-		new iNewLevel = GetClientLevel(client) + iLevelIncrease;
+		int iNewLevel = GetClientLevel(client) + iLevelIncrease;
 		// Player surpassed the maxlevel?
 		if(iNewLevel > iMaxLevel)
 		{
@@ -150,8 +151,8 @@ Stats_PlayerNewLevel(client, iLevelIncrease)
 		return;
 	
 	// Make sure to keep the experience he gained in addition to the needed exp for the levels.
-	new iExperience = GetClientExperience(client);
-	for(new i=0;i<iLevelIncrease;i++)
+	int iExperience = GetClientExperience(client);
+	for(int i=0;i<iLevelIncrease;i++)
 	{
 		iExperience -= Stats_LvlToExp(GetClientLevel(client)+i);
 	}
@@ -163,7 +164,7 @@ Stats_PlayerNewLevel(client, iLevelIncrease)
 	SetClientExperience(client, iExperience);
 	
 	SetClientLevel(client, GetClientLevel(client)+iLevelIncrease);
-	SetClientCredits(client, GetClientCredits(client) + iLevelIncrease * GetConVarInt(g_hCVCreditsInc));
+	SetClientCredits(client, GetClientCredits(client) + iLevelIncrease * g_hCVCreditsInc.IntValue);
 	
 	DebugMsg("%N is now level %d (%d level increase(s))", client, GetClientLevel(client), iLevelIncrease);
 	
@@ -176,18 +177,18 @@ Stats_PlayerNewLevel(client, iLevelIncrease)
 	
 	if(FadeScreenOnLevelUp(client))
 	{
-		new String:sColor[16], String:sBuffers[4][4];
+		char sColor[16], sBuffers[4][4];
 		// Keep the default color if there is invalid input in the convar.
-		new iColor[] = {255, 215, 0, 40};
+		int iColor[] = {255, 215, 0, 40};
 		// Parse the "r g b a" convar string of the screen fading color.
-		GetConVarString(g_hCVFadeOnLevelColor, sColor, sizeof(sColor));
-		new iNum = ExplodeString(sColor, " ", sBuffers, 4, 4);
-		for(new i=0;i<iNum;i++)
+		g_hCVFadeOnLevelColor.GetString(sColor, sizeof(sColor));
+		int iNum = ExplodeString(sColor, " ", sBuffers, 4, 4);
+		for(int i=0;i<iNum;i++)
 			iColor[i] = StringToInt(sBuffers[i]);
 		Client_ScreenFade(client, 255, FFADE_OUT|FFADE_PURGE, 255, iColor[0], iColor[1], iColor[2], iColor[3]);
 	}
 	
-	if(GetConVarBool(g_hCVAnnounceNewLvl))
+	if(g_hCVAnnounceNewLvl.BoolValue)
 		Client_PrintToChatAll(false, "%t", "Client level changed", client, GetClientLevel(client));
 	
 	if(!IsFakeClient(client))
@@ -204,26 +205,26 @@ Stats_PlayerNewLevel(client, iLevelIncrease)
 			Client_PrintToChat(client, false, "%t", "You have new credits", GetClientCredits(client));
 		}
 	}
-	else if(GetConVarBool(g_hCVBotEnable))
+	else if(g_hCVBotEnable.BoolValue)
 	{
 		BotPickUpgrade(client);
 	}
 }
 
-bool:Stats_AddExperience(client, &iExperience, const String:sReason[], bool:bHideNotice, other, bool:bIgnoreChecks=false)
+bool Stats_AddExperience(int client, int &iExperience, const char[] sReason, bool bHideNotice, int other, bool bIgnoreChecks=false)
 {
 	// Nothing to add?
 	if(iExperience <= 0)
 		return false;
 	
-	IF_IGNORE_BOTS(client)
+	if(IgnoreBotPlayer(client))
 		return false;
 	
 	// Admin commands shouldn't worry about fairness.
 	if (!bIgnoreChecks)
 	{
-		new bool:bBotEnable = GetConVarBool(g_hCVBotEnable);
-		if(GetConVarBool(g_hCVNeedEnemies))
+		bool bBotEnable = g_hCVBotEnable.BoolValue;
+		if(g_hCVNeedEnemies.BoolValue)
 		{
 			// No enemies in the opposite team?
 			if(!Team_HaveAllPlayers(bBotEnable))
@@ -231,13 +232,14 @@ bool:Stats_AddExperience(client, &iExperience, const String:sReason[], bool:bHid
 		}
 		
 		// All players in the opposite team are AFK?
-		if(GetConVarBool(g_hCVEnemiesNotAFK))
+		if(g_hCVEnemiesNotAFK.BoolValue)
 		{
-			new iMyTeam = GetClientTeam(client);
+			int iMyTeam = GetClientTeam(client);
 			if(iMyTeam > 1)
 			{
-				new bool:bAllAFK, iTeam;
-				for(new i=1;i<=MaxClients;i++)
+				bool bAllAFK;
+				int iTeam;
+				for(int i=1;i<=MaxClients;i++)
 				{
 					if(IsClientInGame(i))
 					{
@@ -270,11 +272,11 @@ bool:Stats_AddExperience(client, &iExperience, const String:sReason[], bool:bHid
 	}
 	
 	// Don't give the players any more exp when they already reached the maxlevel.
-	new iMaxlevel;
+	int iMaxlevel;
 	if(IsFakeClient(client))
-		iMaxlevel = GetConVarInt(g_hCVBotMaxlevel);
+		iMaxlevel = g_hCVBotMaxlevel.IntValue;
 	else
-		iMaxlevel = GetConVarInt(g_hCVPlayerMaxlevel);
+		iMaxlevel = g_hCVPlayerMaxlevel.IntValue;
 	
 	if(iMaxlevel > 0 && GetClientLevel(client) >= iMaxlevel)
 		return false;
@@ -282,21 +284,21 @@ bool:Stats_AddExperience(client, &iExperience, const String:sReason[], bool:bHid
 	// Handle experience with bots
 	if(other > 0 && other <= MaxClients && IsClientInGame(other))
 	{
-		new bool:bClientBot = IsFakeClient(client);
-		new bool:bOtherBot = IsFakeClient(other);
+		bool bClientBot = IsFakeClient(client);
+		bool bOtherBot = IsFakeClient(other);
 		if(bClientBot && bOtherBot)
 		{
-			if(!GetConVarBool(g_hCVBotKillBot))
+			if(!g_hCVBotKillBot.BoolValue)
 				return false;
 		}
 		else if(bClientBot && !bOtherBot)
 		{
-			if(!GetConVarBool(g_hCVBotKillPlayer))
+			if(!g_hCVBotKillPlayer.BoolValue)
 				return false;
 		}
 		else if(!bClientBot && bOtherBot)
 		{
-			if(!GetConVarBool(g_hCVPlayerKillBot))
+			if(!g_hCVPlayerKillBot.BoolValue)
 				return false;
 		}
 	}
@@ -307,22 +309,22 @@ bool:Stats_AddExperience(client, &iExperience, const String:sReason[], bool:bHid
 	
 	SetClientExperience(client, GetClientExperience(client) + iExperience);
 	
-	new iExpRequired = Stats_LvlToExp(GetClientLevel(client));
+	int iExpRequired = Stats_LvlToExp(GetClientLevel(client));
 	
 	if(GetClientExperience(client) >= iExpRequired)
 		Stats_PlayerNewLevel(client, Stats_CalcLvlInc(GetClientLevel(client), GetClientExperience(client)));
 	
 	Stats_CallOnExperiencePostForward(client, sReason, iExperience, other);
 	
-	if(!bHideNotice && GetConVarBool(g_hCVExpNotice))
+	if(!bHideNotice && g_hCVExpNotice.BoolValue)
 		PrintHintText(client, "%t", "Experience Gained Hintbox", iExperience, GetClientExperience(client), Stats_LvlToExp(GetClientLevel(client)));
 	
 	return true;
 }
 
-Stats_PlayerDamage(attacker, victim, Float:fDamage, const String:sWeapon[])
+void Stats_PlayerDamage(int attacker, int victim, float fDamage, const char[] sWeapon)
 {
-	if(!GetConVarBool(g_hCVEnable))
+	if(!g_hCVEnable.BoolValue)
 		return;
 	
 	// Don't give the attacker any exp when his victim was afk.
@@ -334,17 +336,17 @@ Stats_PlayerDamage(attacker, victim, Float:fDamage, const String:sWeapon[])
 		return;
 	
 	// Ignore teamattack if not FFA
-	if(!GetConVarBool(g_hCVFFA) && GetClientTeam(attacker) == GetClientTeam(victim))
+	if(!g_hCVFFA.BoolValue && GetClientTeam(attacker) == GetClientTeam(victim))
 		return;
 	
-	new iExp = RoundToCeil(fDamage * GetWeaponExperience(sWeapon, WeaponExperience_Damage));
+	int iExp = RoundToCeil(fDamage * GetWeaponExperience(sWeapon, WeaponExperience_Damage));
 	
 	SMRPG_AddClientExperience(attacker, iExp, ExperienceReason_PlayerHurt, true, victim);
 }
 
-Stats_PlayerKill(attacker, victim, const String:sWeapon[])
+void Stats_PlayerKill(int attacker, int victim, const char[] sWeapon)
 {
-	if(!GetConVarBool(g_hCVEnable))
+	if(!g_hCVEnable.BoolValue)
 		return;
 	
 	// Don't give the attacker any exp when his victim was afk.
@@ -356,11 +358,11 @@ Stats_PlayerKill(attacker, victim, const String:sWeapon[])
 		return;
 	
 	// Ignore teamattack if not FFA
-	if(!GetConVarBool(g_hCVFFA) && GetClientTeam(attacker) == GetClientTeam(victim))
+	if(!g_hCVFFA.BoolValue && GetClientTeam(attacker) == GetClientTeam(victim))
 		return;
 	
-	new iExp = RoundToCeil(GetClientLevel(victim) * GetWeaponExperience(sWeapon, WeaponExperience_Kill) + GetWeaponExperience(sWeapon, WeaponExperience_Bonus));
-	new iExpMax = GetConVarInt(g_hCVExpKillMax);
+	int iExp = RoundToCeil(GetClientLevel(victim) * GetWeaponExperience(sWeapon, WeaponExperience_Kill) + GetWeaponExperience(sWeapon, WeaponExperience_Bonus));
+	int iExpMax = g_hCVExpKillMax.IntValue;
 	// Limit the possible experience to this.
 	if(iExpMax > 0 && iExp > iExpMax)
 		iExp = iExpMax;
@@ -368,12 +370,12 @@ Stats_PlayerKill(attacker, victim, const String:sWeapon[])
 	SMRPG_AddClientExperience(attacker, iExp, ExperienceReason_PlayerKill, false, victim);
 }
 
-Stats_WinningTeam(iTeam)
+void Stats_WinningTeam(int iTeam)
 {
-	if(!GetConVarBool(g_hCVEnable))
+	if(!g_hCVEnable.BoolValue)
 		return;
 	
-	new Float:fTeamRatio;
+	float fTeamRatio;
 	if(iTeam == 2)
 		fTeamRatio = SMRPG_TeamRatio(3);
 	else if(iTeam == 3)
@@ -381,21 +383,21 @@ Stats_WinningTeam(iTeam)
 	else
 		return;
 	
-	new iExperience;
-	for(new i=1;i<=MaxClients;i++)
+	int iExperience;
+	for(int i=1;i<=MaxClients;i++)
 	{
 		if(IsClientInGame(i) && GetClientTeam(i) == iTeam)
 		{
-			iExperience = RoundToCeil(float(Stats_LvlToExp(GetClientLevel(i))) * GetConVarFloat(g_hCVExpTeamwin) * fTeamRatio);
+			iExperience = RoundToCeil(float(Stats_LvlToExp(GetClientLevel(i))) * g_hCVExpTeamwin.FloatValue * fTeamRatio);
 			SMRPG_AddClientExperience(i, iExperience, ExperienceReason_RoundEnd, false, -1);
 		}
 	}
 }
 
-// forward Action:SMRPG_OnAddExperience(client, const String:reason[], &iExperience, other);
-Action:Stats_CallOnExperienceForward(client, const String:sReason[], &iExperience, other)
+// forward Action SMRPG_OnAddExperience(int client, const char[] reason, int &iExperience, int other);
+Action Stats_CallOnExperienceForward(int client, const char[] sReason, int &iExperience, int other)
 {
-	new Action:result;
+	Action result;
 	Call_StartForward(g_hfwdOnAddExperience);
 	Call_PushCell(client);
 	Call_PushString(sReason);
@@ -405,8 +407,8 @@ Action:Stats_CallOnExperienceForward(client, const String:sReason[], &iExperienc
 	return result;
 }
 
-// forward SMRPG_OnAddExperiencePost(client, const String:reason[], iExperience, other);
-Stats_CallOnExperiencePostForward(client, const String:sReason[], iExperience, other)
+// forward void SMRPG_OnAddExperiencePost(int client, const char[] reason, int iExperience, int other);
+void Stats_CallOnExperiencePostForward(int client, const char[] sReason, int iExperience, int other)
 {
 	Call_StartForward(g_hfwdOnAddExperiencePost);
 	Call_PushCell(client);
@@ -417,15 +419,15 @@ Stats_CallOnExperiencePostForward(client, const String:sReason[], iExperience, o
 }
 
 // AFK Handling
-StartAFKChecker()
+void StartAFKChecker()
 {
 	CreateTimer(0.5, Timer_CheckAFKPlayers, _, TIMER_FLAG_NO_MAPCHANGE|TIMER_REPEAT);
 }
 
-public Action:Timer_CheckAFKPlayers(Handle:timer)
+public Action Timer_CheckAFKPlayers(Handle timer)
 {
-	new Float:fOrigin[3], Float:fLastPosition[3];
-	for(new i=1;i<=MaxClients;i++)
+	float fOrigin[3], fLastPosition[3];
+	for(int i=1;i<=MaxClients;i++)
 	{
 		if(IsClientInGame(i) && IsPlayerAlive(i) && GetClientTeam(i) > 1)
 		{
@@ -434,7 +436,7 @@ public Action:Timer_CheckAFKPlayers(Handle:timer)
 			// See if the player just spawned..
 			if(g_PlayerAFKInfo[i][AFK_spawnTime] > 0)
 			{
-				new iDifference = GetTime() - g_PlayerAFKInfo[i][AFK_spawnTime];
+				int iDifference = GetTime() - g_PlayerAFKInfo[i][AFK_spawnTime];
 				// The player spawned 2 seconds ago. He's now ready to be checked for being afk again.
 				if(iDifference > 2)
 				{
@@ -472,12 +474,12 @@ public Action:Timer_CheckAFKPlayers(Handle:timer)
 	return Plugin_Continue;
 }
 
-bool:IsClientAFK(client)
+bool IsClientAFK(int client)
 {
 	if(g_PlayerAFKInfo[client][AFK_startTime] == 0)
 		return false;
 	
-	new iAFKTime = GetConVarInt(g_hCVAFKTime);
+	int iAFKTime = g_hCVAFKTime.IntValue;
 	if(iAFKTime <= 0)
 		return false;
 	
@@ -486,23 +488,23 @@ bool:IsClientAFK(client)
 	return false;
 }
 
-ResetAFKPlayer(client)
+void ResetAFKPlayer(int client)
 {
 	g_PlayerAFKInfo[client][AFK_startTime] = 0;
 	g_PlayerAFKInfo[client][AFK_spawnTime] = 0;
 	g_PlayerAFKInfo[client][AFK_deathTime] = 0;
-	Array_Copy(g_PlayerAFKInfo[client][AFK_lastPosition], Float:{0.0,0.0,0.0}, 3);
+	Array_Copy(g_PlayerAFKInfo[client][AFK_lastPosition], view_as<float>({0.0,0.0,0.0}), 3);
 }
 
 // Spawn Protection handling
-bool:IsClientSpawnProtected(client)
+bool IsClientSpawnProtected(int client)
 {
-	if(!GetConVarBool(g_hCVSpawnProtect))
+	if(!g_hCVSpawnProtect.BoolValue)
 		return false;
 	return g_bPlayerSpawnProtected[client];
 }
 
-ResetSpawnProtection(client)
+void ResetSpawnProtection(int client)
 {
 	g_bPlayerSpawnProtected[client] = false;
 }
@@ -510,43 +512,39 @@ ResetSpawnProtection(client)
 /**
  * Native Callbacks
  */
-// native bool:SMRPG_AddClientExperience(client, &exp, const String:reason[], bool:bHideNotice, other=-1, SMRPG_ExpTranslationCb:callback=SMRPG_ExpTranslationCb:INVALID_FUNCTION);
-public Native_AddClientExperience(Handle:plugin, numParams)
+// native bool SMRPG_AddClientExperience(int client, int &exp, const char[] reason, bool bHideNotice, int other=-1, SMRPG_ExpTranslationCb callback=INVALID_FUNCTION);
+public int Native_AddClientExperience(Handle plugin, int numParams)
 {
-	new client = GetNativeCell(1);
+	int client = GetNativeCell(1);
 	if(client < 0 || client > MaxClients)
 	{
 		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
 		return false;
 	}
 	
-	new iExperience = GetNativeCellRef(2);
-	new iLen;
+	int iExperience = GetNativeCellRef(2);
+	int iLen;
 	GetNativeStringLength(3, iLen);
-	new String:sReason[iLen+1];
+	char[] sReason = new char[iLen+1];
 	GetNativeString(3, sReason, iLen+1);
 	
-	new bool:bHideNotice = bool:GetNativeCell(4);
-	new other = GetNativeCell(5);
-#if SOURCEMOD_V_MAJOR >= 1 && SOURCEMOD_V_MINOR >= 7
-	new Function:translationCallback = GetNativeFunction(6);
-#else
-	new Function:translationCallback = Function:GetNativeCell(6);
-#endif
+	bool bHideNotice = view_as<bool>(GetNativeCell(4));
+	int other = GetNativeCell(5);
+	Function translationCallback = GetNativeFunction(6);
 	
-	new iOriginalExperience = iExperience;
+	int iOriginalExperience = iExperience;
 	// TODO: Expose bIgnoreChecks parameter.
-	new bool:bAdded = Stats_AddExperience(client, iExperience, sReason, bHideNotice, other);
+	bool bAdded = Stats_AddExperience(client, iExperience, sReason, bHideNotice, other);
 	if(iOriginalExperience != iExperience)
 		SetNativeCellRef(2, iExperience);
 	
 	if(bAdded && !IsFakeClient(client))
 	{
-		new String:sTranslatedReason[256];
+		char sTranslatedReason[256];
 		strcopy(sTranslatedReason, sizeof(sTranslatedReason), sReason);
 		if(translationCallback != INVALID_FUNCTION)
 		{
-			// functag SMRPG_ExpTranslationCb(client, const String:reason[], iExperience, other, String:buffer[], maxlen);
+			// functag SMRPG_ExpTranslationCb(client, const char[] reason, iExperience, other, char[] buffer, maxlen);
 			Call_StartFunction(plugin, translationCallback);
 			Call_PushCell(client);
 			Call_PushString(sReason);
@@ -572,87 +570,66 @@ public Native_AddClientExperience(Handle:plugin, numParams)
 	return bAdded;
 }
 
-public Native_LevelToExperience(Handle:plugin, numParams)
+public int Native_LevelToExperience(Handle plugin, int numParams)
 {
-	new iLevel = GetNativeCell(1);
+	int iLevel = GetNativeCell(1);
 	return Stats_LvlToExp(iLevel);
 }
 
-public Native_GetClientRank(Handle:plugin, numParams)
+public int Native_GetClientRank(Handle plugin, int numParams)
 {
-	new client = GetNativeCell(1);
+	int client = GetNativeCell(1);
 	if(client < 0 || client > MaxClients)
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
-		return false;
-	}
+		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
 	
 	return GetClientRank(client);
 }
 
-public Native_GetRankCount(Handle:plugin, numParams)
+public int Native_GetRankCount(Handle plugin, int numParams)
 {
 	return GetRankCount();
 }
 
-public Native_IsClientAFK(Handle:plugin, numParams)
+public int Native_IsClientAFK(Handle plugin, int numParams)
 {
-	new client = GetNativeCell(1);
+	int client = GetNativeCell(1);
 	if(client < 0 || client > MaxClients)
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
-		return false;
-	}
+		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
 	
 	return IsClientAFK(client);
 }
 
-public Native_IsClientSpawnProtected(Handle:plugin, numParams)
+public int Native_IsClientSpawnProtected(Handle plugin, int numParams)
 {
-	new client = GetNativeCell(1);
+	int client = GetNativeCell(1);
 	if(client < 0 || client > MaxClients)
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
-		return false;
-	}
+		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d.", client);
 	
 	return IsClientSpawnProtected(client);
 }
 
-public Native_GetTop10Players(Handle:plugin, numParams)
+public int Native_GetTop10Players(Handle plugin, int numParams)
 {
-#if SOURCEMOD_V_MAJOR >= 1 && SOURCEMOD_V_MINOR >= 7
-	new Function:callback = GetNativeFunction(1);
-#else
-	new Function:callback = Function:GetNativeCell(1);
-#endif
-	new data = GetNativeCell(2);
+	Function callback = GetNativeFunction(1);
+	int data = GetNativeCell(2);
 	
-	new Handle:hData = CreateDataPack();
-	WritePackCell(hData, _:plugin);
-#if SOURCEMOD_V_MAJOR >= 1 && SOURCEMOD_V_MINOR >= 7
-	WritePackFunction(hData, callback);
-#else
-	WritePackCell(hData, _:callback);
-#endif
-	WritePackCell(hData, data);
+	DataPack hData = new DataPack();
+	hData.WriteCell(view_as<int>(plugin));
+	hData.WriteFunction(callback);
+	hData.WriteCell(data);
 	
-	decl String:sQuery[128];
+	char sQuery[128];
 	Format(sQuery, sizeof(sQuery), "SELECT name, level, experience, credits FROM %s ORDER BY level DESC, experience DESC LIMIT 10", TBL_PLAYERS);
-	SQL_TQuery(g_hDatabase, SQL_GetTop10Native, sQuery, hData);
+	g_hDatabase.Query(SQL_GetTop10Native, sQuery, hData);
 }
 
-public SQL_GetTop10Native(Handle:owner, Handle:hndl, const String:error[], any:data)
+public void SQL_GetTop10Native(Database db, DBResultSet results, const char[] error, DataPack data)
 {
-	ResetPack(data);
-	new Handle:hPlugin = Handle:ReadPackCell(data);
-#if SOURCEMOD_V_MAJOR >= 1 && SOURCEMOD_V_MINOR >= 7
-	new Function:callback = ReadPackFunction(data);
-#else
-	new Function:callback = Function:ReadPackCell(data);
-#endif
-	new extraData = ReadPackCell(data);
-	CloseHandle(data);
+	data.Reset();
+	Handle hPlugin = view_as<Handle>(data.ReadCell());
+	Function callback = data.ReadFunction();
+	int extraData = data.ReadCell();
+	delete data;
 	
 	// Don't care if the calling plugin is gone.
 	if(!IsValidPlugin(hPlugin))
@@ -660,24 +637,24 @@ public SQL_GetTop10Native(Handle:owner, Handle:hndl, const String:error[], any:d
 	
 	Call_StartFunction(hPlugin, callback);
 	Call_PushCell(INVALID_HANDLE);
-	Call_PushCell(hndl);
+	Call_PushCell(results);
 	Call_PushString(error);
 	Call_PushCell(extraData);
 	Call_Finish();
 }
 
-// native Float:SMRPG_GetWeaponExperience(const String:sWeapon[], WeaponExperienceType:type);
-public Native_GetWeaponExperience(Handle:plugin, numParams)
+// native float SMRPG_GetWeaponExperience(const char[] sWeapon, WeaponExperienceType type);
+public int Native_GetWeaponExperience(Handle plugin, int numParams)
 {
-	new String:sWeapon[64], WeaponExperienceType:type;
+	char sWeapon[64];
 	GetNativeString(1, sWeapon, sizeof(sWeapon));
-	type = WeaponExperienceType:GetNativeCell(2);
+	WeaponExperienceType type = view_as<WeaponExperienceType>(GetNativeCell(2));
 	
-	return _:GetWeaponExperience(sWeapon, type);
+	return view_as<int>(GetWeaponExperience(sWeapon, type));
 }
 
 // rpgsession handling
-InitPlayerSessionStartStats(client)
+void InitPlayerSessionStartStats(int client)
 {
 	g_iPlayerSessionStartStats[client][SS_JoinTime] = GetTime();
 	g_iPlayerSessionStartStats[client][SS_JoinLevel] = GetClientLevel(client);
@@ -688,13 +665,13 @@ InitPlayerSessionStartStats(client)
 	g_iPlayerSessionStartStats[client][SS_WantsMenuOpen] = false;
 	g_iPlayerSessionStartStats[client][SS_OKToClose] = false;
 	
-	new Handle:hLastExperience = CreateArray(ByteCountToCells(256));
-	ResizeArray(hLastExperience, GetConVarInt(g_hCVLastExperienceCount));
-	SetArrayString(hLastExperience, 0, "");
+	ArrayList hLastExperience = new ArrayList(ByteCountToCells(256));
+	hLastExperience.Resize(g_hCVLastExperienceCount.IntValue);
+	hLastExperience.SetString(0, "");
 	g_iPlayerSessionStartStats[client][SS_LastExperience] = hLastExperience;
 }
 
-ResetPlayerSessionStats(client)
+void ResetPlayerSessionStats(int client)
 {
 	g_iPlayerSessionStartStats[client][SS_JoinTime] = 0;
 	g_iPlayerSessionStartStats[client][SS_JoinLevel] = 0;
@@ -708,43 +685,43 @@ ResetPlayerSessionStats(client)
 }
 
 // Use our own forward to initialize the session info :)
-public SMRPG_OnClientLoaded(client)
+public void SMRPG_OnClientLoaded(int client)
 {
 	// Only set it once and leave it that way until he really disconnects.
 	if(g_iPlayerSessionStartStats[client][SS_JoinTime] == 0)
 		InitPlayerSessionStartStats(client);
 }
 
-InsertSessionExperienceString(client, const String:sExperience[])
+void InsertSessionExperienceString(int client, const char[] sExperience)
 {
-	new Handle:hLastExperience = g_iPlayerSessionStartStats[client][SS_LastExperience];
+	ArrayList hLastExperience = g_iPlayerSessionStartStats[client][SS_LastExperience];
 	// Not loaded yet..
-	if(hLastExperience == INVALID_HANDLE)
+	if(hLastExperience == null)
 		return;
 	
 	// Insert the string at the start of the array!
-	ShiftArrayUp(hLastExperience, 0);
-	SetArrayString(hLastExperience, 0, sExperience);
+	hLastExperience.ShiftUp(0);
+	hLastExperience.SetString(0, sExperience);
 }
 
-public ConVar_LastExperienceCountChanged(Handle:convar, const String:oldValue[], const String:newValue[])
+public void ConVar_LastExperienceCountChanged(ConVar convar, const char[] oldValue, const char[] newValue)
 {
 	// Apply the new size immediately.
-	for(new i=1;i<=MaxClients;i++)
+	for(int i=1;i<=MaxClients;i++)
 	{
 		if(g_iPlayerSessionStartStats[i][SS_JoinTime] > 0)
-			ResizeArray(g_iPlayerSessionStartStats[i][SS_LastExperience], GetConVarInt(convar));
+			g_iPlayerSessionStartStats[i][SS_LastExperience].Resize(convar.IntValue);
 	}
 }
 
-StartSessionMenuUpdater()
+void StartSessionMenuUpdater()
 {
 	CreateTimer(1.0, Timer_UpdateSessionMenus, _, TIMER_FLAG_NO_MAPCHANGE|TIMER_REPEAT);
 }
 
-public Action:Timer_UpdateSessionMenus(Handle:timer)
+public Action Timer_UpdateSessionMenus(Handle timer)
 {
-	for(new i=1;i<=MaxClients;i++)
+	for(int i=1;i<=MaxClients;i++)
 	{
 		// Refresh the contents of the menu here.
 		if(IsClientInGame(i) && !IsFakeClient(i) && g_iPlayerSessionStartStats[i][SS_WantsMenuOpen] && g_iPlayerSessionStartStats[i][SS_WantsAutoUpdate])
@@ -754,62 +731,62 @@ public Action:Timer_UpdateSessionMenus(Handle:timer)
 	return Plugin_Continue;
 }
 
-DisplaySessionStatsMenu(client)
+void DisplaySessionStatsMenu(int client)
 {
-	new Handle:hPanel = CreatePanel();
+	Panel hPanel = new Panel();
 	
-	decl String:sBuffer[128];
+	char sBuffer[128];
 	Format(sBuffer, sizeof(sBuffer), "%T", "Stats", client);
-	DrawPanelItem(hPanel, sBuffer);
+	hPanel.DrawItem(sBuffer);
 	
 	Format(sBuffer, sizeof(sBuffer), "  %T", "Level", client, GetClientLevel(client));
-	DrawPanelText(hPanel, sBuffer);
+	hPanel.DrawText(sBuffer);
 	Format(sBuffer, sizeof(sBuffer), "  %T", "Experience short", client, GetClientExperience(client), Stats_LvlToExp(GetClientLevel(client)));
-	DrawPanelText(hPanel, sBuffer);
+	hPanel.DrawText(sBuffer);
 	Format(sBuffer, sizeof(sBuffer), "  %T", "Credits", client, GetClientCredits(client));
-	DrawPanelText(hPanel, sBuffer);
+	hPanel.DrawText(sBuffer);
 	Format(sBuffer, sizeof(sBuffer), "  %T", "Rank", client, GetClientRank(client), GetRankCount());
-	DrawPanelText(hPanel, sBuffer);
+	hPanel.DrawText(sBuffer);
 	
 	Format(sBuffer, sizeof(sBuffer), "%T", "Session", client);
-	DrawPanelItem(hPanel, sBuffer);
+	hPanel.DrawItem(sBuffer);
 	
 	SecondsToString(sBuffer, sizeof(sBuffer), GetTime()-g_iPlayerSessionStartStats[client][SS_JoinTime], false);
 	Format(sBuffer, sizeof(sBuffer), "  %T", "Playtime", client, sBuffer);
-	DrawPanelText(hPanel, sBuffer);
+	hPanel.DrawText(sBuffer);
 	
-	new iChangedLevels = GetClientLevel(client) - g_iPlayerSessionStartStats[client][SS_JoinLevel];
+	int iChangedLevels = GetClientLevel(client) - g_iPlayerSessionStartStats[client][SS_JoinLevel];
 	Format(sBuffer, sizeof(sBuffer), "  %T: %s%d", "Changed level", client, iChangedLevels>0?"+":"", iChangedLevels);
-	DrawPanelText(hPanel, sBuffer);
+	hPanel.DrawText(sBuffer);
 	
 	// Need to calculate the total earned experience.
-	new iEarnedExperience = GetClientExperience(client) - g_iPlayerSessionStartStats[client][SS_JoinExperience];
-	for(new i=0;i<iChangedLevels;i++)
+	int iEarnedExperience = GetClientExperience(client) - g_iPlayerSessionStartStats[client][SS_JoinExperience];
+	for(int i=0;i<iChangedLevels;i++)
 	{
 		iEarnedExperience += Stats_LvlToExp(g_iPlayerSessionStartStats[client][SS_JoinLevel]+i);
 	}
 	
 	Format(sBuffer, sizeof(sBuffer), "  %T: %s%d", "Changed experience", client, iEarnedExperience>0?"+":"", iEarnedExperience);
-	DrawPanelText(hPanel, sBuffer);
+	hPanel.DrawText(sBuffer);
 	
-	new iBuffer = GetClientCredits(client) - g_iPlayerSessionStartStats[client][SS_JoinCredits];
+	int iBuffer = GetClientCredits(client) - g_iPlayerSessionStartStats[client][SS_JoinCredits];
 	Format(sBuffer, sizeof(sBuffer), "  %T: %s%d", "Changed credits", client, iBuffer>0?"+":"", iBuffer);
-	DrawPanelText(hPanel, sBuffer);
+	hPanel.DrawText(sBuffer);
 	
 	if(g_iPlayerSessionStartStats[client][SS_JoinRank] != -1)
 	{
 		iBuffer = g_iPlayerSessionStartStats[client][SS_JoinRank] - GetClientRank(client);
 		Format(sBuffer, sizeof(sBuffer), "  %T: %s%d", "Changed rank", client, iBuffer>0?"+":"", iBuffer);
-		DrawPanelText(hPanel, sBuffer);
+		hPanel.DrawText(sBuffer);
 	}
 	
-	DrawPanelItem(hPanel, "", ITEMDRAW_SPACER);
+	hPanel.DrawItem("", ITEMDRAW_SPACER);
 	
 	Format(sBuffer, sizeof(sBuffer), "%T: %T", "Auto refresh panel", client, (g_iPlayerSessionStartStats[client][SS_WantsAutoUpdate]?"Yes":"No"), client);
-	DrawPanelItem(hPanel, sBuffer);
+	hPanel.DrawItem(sBuffer);
 	
 	Format(sBuffer, sizeof(sBuffer), "%T", "Last Experience", client);
-	DrawPanelItem(hPanel, sBuffer);
+	hPanel.DrawItem(sBuffer);
 	
 	// The old menu is closed when we open the new one.
 	// The logic here is like this:
@@ -821,11 +798,11 @@ DisplaySessionStatsMenu(client)
 		g_iPlayerSessionStartStats[client][SS_OKToClose] = true;
 	g_iPlayerSessionStartStats[client][SS_WantsMenuOpen] = true;
 	
-	SendPanelToClient(hPanel, client, Panel_HandleSessionMenu, MENU_TIME_FOREVER);
-	CloseHandle(hPanel);
+	hPanel.Send(client, Panel_HandleSessionMenu, MENU_TIME_FOREVER);
+	delete hPanel;
 }
 
-public Panel_HandleSessionMenu(Handle:menu, MenuAction:action, param1, param2)
+public int Panel_HandleSessionMenu(Menu menu, MenuAction action, int param1, int param2)
 {
 	if(action == MenuAction_Select)
 	{
@@ -853,44 +830,44 @@ public Panel_HandleSessionMenu(Handle:menu, MenuAction:action, param1, param2)
 	}
 }
 
-DisplaySessionLastExperienceMenu(client, bool:bBackToStatsMenu)
+void DisplaySessionLastExperienceMenu(int client, bool bBackToStatsMenu)
 {
-	new Handle:hLastExperience = g_iPlayerSessionStartStats[client][SS_LastExperience];
+	ArrayList hLastExperience = g_iPlayerSessionStartStats[client][SS_LastExperience];
 	// Player not loaded yet.
-	if(hLastExperience == INVALID_HANDLE)
+	if(hLastExperience == null)
 		return;
 
 	// Remember what the back button in the menu should do.
 	g_bBackToStatsMenu[client] = bBackToStatsMenu;
 	
-	new Handle:hMenu = CreateMenu(Menu_HandleLastExperience);
-	SetMenuTitle(hMenu, "%t: %N", "Last Experience", client);
-	SetMenuExitBackButton(hMenu, true);
+	Menu hMenu = new Menu(Menu_HandleLastExperience);
+	hMenu.SetTitle("%t: %N", "Last Experience", client);
+	hMenu.ExitBackButton = true;
 	
-	new iSize = GetArraySize(hLastExperience);
-	decl String:sBuffer[256];
-	for(new i=0;i<iSize;i++)
+	int iSize = hLastExperience.Length;
+	char sBuffer[256];
+	for(int i=0;i<iSize;i++)
 	{
-		if(GetArrayString(hLastExperience, i, sBuffer, sizeof(sBuffer)) <= 0)
+		if(hLastExperience.GetString(i, sBuffer, sizeof(sBuffer)) <= 0)
 			break;
 		
-		AddMenuItem(hMenu, "", sBuffer, ITEMDRAW_DISABLED);
+		hMenu.AddItem("", sBuffer, ITEMDRAW_DISABLED);
 	}
 	
 	if(GetMenuItemCount(hMenu) == 0)
 	{
 		Format(sBuffer, sizeof(sBuffer), "%T", "Nothing to display", client);
-		AddMenuItem(hMenu, "", sBuffer, ITEMDRAW_DISABLED);
+		hMenu.AddItem("", sBuffer, ITEMDRAW_DISABLED);
 	}
 	
-	DisplayMenu(hMenu, client, MENU_TIME_FOREVER);
+	hMenu.Display(client, MENU_TIME_FOREVER);
 }
 
-public Menu_HandleLastExperience(Handle:menu, MenuAction:action, param1, param2)
+public int Menu_HandleLastExperience(Menu menu, MenuAction action, int param1, int param2)
 {
 	if(action == MenuAction_End)
 	{
-		CloseHandle(menu);
+		delete menu;
 	}
 	else if(action == MenuAction_Cancel && param2 == MenuCancel_ExitBack)
 	{
@@ -905,18 +882,18 @@ public Menu_HandleLastExperience(Handle:menu, MenuAction:action, param1, param2)
 	CRPG_RankManager
 	////////////////////////////////////// */
 
-UpdateClientRank(client)
+void UpdateClientRank(int client)
 {
 	if(!g_hDatabase)
 		return;
 	
-	decl String:sQuery[128];
+	char sQuery[128];
 	Format(sQuery, sizeof(sQuery), "SELECT COUNT(*) FROM %s WHERE level > %d OR (level = %d AND experience > %d)", TBL_PLAYERS, GetClientLevel(client), GetClientLevel(client), GetClientExperience(client));
-	SQL_TQuery(g_hDatabase, SQL_GetClientRank, sQuery, GetClientUserId(client));
+	g_hDatabase.Query(SQL_GetClientRank, sQuery, GetClientUserId(client));
 	g_iNextCacheUpdate[client] = GetTime() + RANK_CACHE_UPDATE_INTERVAL;
 }
 
-GetClientRank(client)
+int GetClientRank(int client)
 {
 	if(IsFakeClient(client))
 		return -1;
@@ -927,46 +904,46 @@ GetClientRank(client)
 	return g_iCachedRank[client];
 }
 
-ClearClientRankCache(client)
+void ClearClientRankCache(int client)
 {
 	g_iCachedRank[client] = -1;
 	g_iNextCacheUpdate[client] = 0;
 }
 
-public SQL_GetClientRank(Handle:owner, Handle:hndl, const String:error[], any:userid)
+public void SQL_GetClientRank(Database db, DBResultSet results, const char[] error, any userid)
 {
-	new client = GetClientOfUserId(userid);
+	int client = GetClientOfUserId(userid);
 	if(!client)
 		return;
 	
-	if(hndl == INVALID_HANDLE || strlen(error) > 0)
+	if(results == null)
 	{
 		LogError("Unable to get player rank (%s)", error);
 		return;
 	}
 	
-	if(!SQL_FetchRow(hndl))
+	if(!results.FetchRow())
 		return;
 	
-	g_iCachedRank[client] = SQL_FetchInt(hndl, 0) + 1; // +1 since the query returns the count, not the rank
+	g_iCachedRank[client] = results.FetchInt(0) + 1; // +1 since the query returns the count, not the rank
 	
 	// Save the first time we fetch the rank for him.
 	if(g_iPlayerSessionStartStats[client][SS_JoinRank] == -1)
 		g_iPlayerSessionStartStats[client][SS_JoinRank] = g_iCachedRank[client];
 }
 
-UpdateRankCount()
+void UpdateRankCount()
 {
 	if(!g_hDatabase)
 		return;
 	
-	decl String:sQuery[128];
+	char sQuery[128];
 	Format(sQuery, sizeof(sQuery), "SELECT COUNT(*) FROM %s", TBL_PLAYERS);
-	SQL_TQuery(g_hDatabase, SQL_GetRankCount, sQuery);
+	g_hDatabase.Query(SQL_GetRankCount, sQuery);
 	g_iNextCacheCountUpdate = GetTime() + RANK_CACHE_UPDATE_INTERVAL;
 }
 
-GetRankCount()
+int GetRankCount()
 {
 	// Only update the cache, if we actually used it for a while.
 	if(g_iNextCacheCountUpdate < GetTime())
@@ -978,21 +955,21 @@ GetRankCount()
 	return 0;
 }
 
-public SQL_GetRankCount(Handle:owner, Handle:hndl, const String:error[], any:data)
+public void SQL_GetRankCount(Database db, DBResultSet results, const char[] error, any data)
 {
-	if(hndl == INVALID_HANDLE || strlen(error) > 0)
+	if(results == null)
 	{
 		LogError("Unable to get player rank count (%s)", error);
 		return;
 	}
 	
-	if(!SQL_FetchRow(hndl))
+	if(!results.FetchRow())
 		return;
 	
-	g_iCachedRankCount = SQL_FetchInt(hndl, 0);
+	g_iCachedRankCount = results.FetchInt(0);
 	
-	new info[PlayerInfo];
-	for(new i=1;i<=MaxClients;i++)
+	int info[PlayerInfo];
+	for(int i=1;i<=MaxClients;i++)
 	{
 		if(IsClientInGame(i) && !IsFakeClient(i))
 		{
@@ -1003,7 +980,7 @@ public SQL_GetRankCount(Handle:owner, Handle:hndl, const String:error[], any:dat
 	}
 }
 
-PrintRankToChat(client, sendto)
+void PrintRankToChat(int client, int sendto)
 {
 	if(sendto == -1)
 		Client_PrintToChatAll(false, "%t", "rpgrank", client, GetClientLevel(client), GetClientRank(client), GetRankCount(), GetClientExperience(client), Stats_LvlToExp(GetClientLevel(client)), GetClientCredits(client));
@@ -1011,64 +988,64 @@ PrintRankToChat(client, sendto)
 		Client_PrintToChat(sendto, false, "%t", "rpgrank", client, GetClientLevel(client), GetClientRank(client), GetRankCount(), GetClientExperience(client), Stats_LvlToExp(GetClientLevel(client)), GetClientCredits(client));
 }
 
-stock DisplayTop10Menu(client)
+stock void DisplayTop10Menu(int client)
 {
 	if(!g_hDatabase)
 		return; // TODO: Print message about database problems.
 
-	decl String:sQuery[128];
+	char sQuery[128];
 	Format(sQuery, sizeof(sQuery), "SELECT name, level, experience, credits FROM %s ORDER BY level DESC, experience DESC LIMIT 10", TBL_PLAYERS);
-	SQL_TQuery(g_hDatabase, SQL_GetTop10, sQuery, GetClientUserId(client));
+	g_hDatabase.Query(SQL_GetTop10, sQuery, GetClientUserId(client));
 }
 
-public SQL_GetTop10(Handle:owner, Handle:hndl, const String:error[], any:userid)
+public void SQL_GetTop10(Database db, DBResultSet results, const char[] error, any userid)
 {
-	new client = GetClientOfUserId(userid);
+	int client = GetClientOfUserId(userid);
 	if(!client)
 		return;
 	
-	if(hndl == INVALID_HANDLE || strlen(error) > 0)
+	if(results == null)
 	{
 		LogError("Unable to get player top10 (%s)", error);
 		return;
 	}
 	
-	decl String:sBuffer[128];
+	char sBuffer[128];
 	Format(sBuffer, sizeof(sBuffer), "%T\n-----\n", "Top 10 Players", client);
 	
-	new Handle:hPanel = CreatePanel();
-	SetPanelTitle(hPanel, sBuffer);
+	Panel hPanel = new Panel();
+	hPanel.SetTitle(sBuffer);
 	
-	new iIndex = 1;
-	while(SQL_MoreRows(hndl))
+	int iIndex = 1;
+	while(results.MoreRows)
 	{
-		if(!SQL_FetchRow(hndl))
+		if(!results.FetchRow())
 			continue;
 		
-		SQL_FetchString(hndl, 0, sBuffer, sizeof(sBuffer));
-		Format(sBuffer, sizeof(sBuffer), "%d. %s Lvl: %d Exp: %d Cr: %d", iIndex++, sBuffer, SQL_FetchInt(hndl, 1), SQL_FetchInt(hndl, 2), SQL_FetchInt(hndl, 3));
-		DrawPanelText(hPanel, sBuffer);
+		results.FetchString(0, sBuffer, sizeof(sBuffer));
+		Format(sBuffer, sizeof(sBuffer), "%d. %s Lvl: %d Exp: %d Cr: %d", iIndex++, sBuffer, results.FetchInt(1), results.FetchInt(2), results.FetchInt(3));
+		hPanel.DrawText(sBuffer);
 	}
 	
 	// Let the panel close on any number
-	SetPanelKeys(hPanel, 255);
+	hPanel.SetKeys(255);
 	
-	SendPanelToClient(hPanel, client, Panel_DoNothing, MENU_TIME_FOREVER);
-	CloseHandle(hPanel);
+	hPanel.Send(client, Panel_DoNothing, MENU_TIME_FOREVER);
+	delete hPanel;
 }
 
-public Panel_DoNothing(Handle:menu, MenuAction:action, param1, param2)
+public int Panel_DoNothing(Menu menu, MenuAction action, int param1, int param2)
 {
 }
 
-DisplayNextPlayersInRanking(client)
+void DisplayNextPlayersInRanking(int client)
 {
 	if(!g_hDatabase)
 		return; // TODO: Print message about database problems.
 	
-	decl String:sQuery[512];
+	char sQuery[512];
 	Format(sQuery, sizeof(sQuery), "SELECT player_id, name, level, experience, credits, (SELECT COUNT(*) FROM %s ps WHERE p.level < ps.level OR (p.level = ps.level AND p.experience < ps.experience))+1 AS rank FROM %s p WHERE level > %d OR (level = %d AND experience >= %d) ORDER BY level ASC, experience ASC LIMIT 20", TBL_PLAYERS, TBL_PLAYERS, GetClientLevel(client), GetClientLevel(client), GetClientExperience(client));
-	SQL_TQuery(g_hDatabase, SQL_GetNext10, sQuery, GetClientUserId(client));
+	g_hDatabase.Query(SQL_GetNext10, sQuery, GetClientUserId(client));
 }
 
 #define ENUM_STRUCTS_SUCK_SIZE 5+(MAX_NAME_LENGTH+3/4)
@@ -1081,45 +1058,45 @@ enum NextPlayersSorting {
 	String:NP_name[MAX_NAME_LENGTH]
 };
 
-public SQL_GetNext10(Handle:owner, Handle:hndl, const String:error[], any:userid)
+public void SQL_GetNext10(Database db, DBResultSet results, const char[] error, any userid)
 {
-	new client = GetClientOfUserId(userid);
+	int client = GetClientOfUserId(userid);
 	if(!client)
 		return;
 	
-	if(hndl == INVALID_HANDLE || strlen(error) > 0)
+	if(results == null)
 	{
 		LogError("Unable to get the next 20 players in front of the current rank of a player (%s)", error);
 		return;
 	}
 	
-	decl String:sBuffer[128];
+	char sBuffer[128];
 	Format(sBuffer, sizeof(sBuffer), "%T\n-----\n", "Next ranked players", client);
 	
-	new iNextCache[20][ENUM_STRUCTS_SUCK_SIZE], iCount;
+	int iNextCache[20][ENUM_STRUCTS_SUCK_SIZE], iCount;
 	
-	new Handle:hPanel = CreatePanel();
-	SetPanelTitle(hPanel, sBuffer);
+	Panel hPanel = new Panel();
+	hPanel.SetTitle(sBuffer);
 	
-	while(SQL_MoreRows(hndl))
+	while(results.MoreRows)
 	{
-		if(!SQL_FetchRow(hndl))
+		if(!results.FetchRow())
 			continue;
 		
-		SQL_FetchString(hndl, 1, iNextCache[iCount][NP_name], MAX_NAME_LENGTH);
-		iNextCache[iCount][NP_DBID] = SQL_FetchInt(hndl, 0);
-		iNextCache[iCount][NP_level] = SQL_FetchInt(hndl, 2);
-		iNextCache[iCount][NP_exp] = SQL_FetchInt(hndl, 3);
-		iNextCache[iCount][NP_credits] = SQL_FetchInt(hndl, 4);
-		iNextCache[iCount][NP_rank] = SQL_FetchInt(hndl, 5);
+		results.FetchString(1, iNextCache[iCount][NP_name], MAX_NAME_LENGTH);
+		iNextCache[iCount][NP_DBID] = results.FetchInt(0);
+		iNextCache[iCount][NP_level] = results.FetchInt(2);
+		iNextCache[iCount][NP_exp] = results.FetchInt(3);
+		iNextCache[iCount][NP_credits] = results.FetchInt(4);
+		iNextCache[iCount][NP_rank] = results.FetchInt(5);
 		iCount++;
 	}
 	
 	// TODO: Account for currently ingame players that got above us in the ranking and aren't in the db yet, so they aren't in the result set of the query.
 	
 	// See if some players are currently connected and possibly have newer stats in the cache than stored in the db
-	new iLocalPlayer;
-	for(new i=0;i<iCount;i++)
+	int iLocalPlayer;
+	for(int i=0;i<iCount;i++)
 	{
 		iLocalPlayer = GetClientByPlayerID(iNextCache[i][NP_DBID]);
 		if(iLocalPlayer == -1)
@@ -1133,33 +1110,33 @@ public SQL_GetNext10(Handle:owner, Handle:hndl, const String:error[], any:userid
 	SortCustom2D(iNextCache, iCount, Sort2D_NextPlayers);
 	
 	// Save the next rank as reference if the list is reordered with current data below
-	new iLastRank = iNextCache[0][NP_rank];
+	int iLastRank = iNextCache[0][NP_rank];
 	// Fix rank if ordering changed!
-	for(new i=0;i<iCount;i++)
+	for(int i=0;i<iCount;i++)
 	{
 		iNextCache[i][NP_rank] = iLastRank--;
 	}
 	
-	new iNeeded = iCount > 10 ? 10 : iCount;
-	for(new i=0;i<iCount&&iNeeded>0;i++)
+	int iNeeded = iCount > 10 ? 10 : iCount;
+	for(int i=0;i<iCount&&iNeeded>0;i++)
 	{
 		if(iNextCache[i][NP_level] < GetClientLevel(client) || (iNextCache[i][NP_level] == GetClientLevel(client) && iNextCache[i][NP_exp] < GetClientExperience(client)))
 			continue;
 		
 		Format(sBuffer, sizeof(sBuffer), "%d. %s Lvl: %d Exp: %d Cr: %d", iNextCache[i][NP_rank], iNextCache[i][NP_name], iNextCache[i][NP_level], iNextCache[i][NP_exp], iNextCache[i][NP_credits]);
-		DrawPanelText(hPanel, sBuffer);
+		hPanel.DrawText(sBuffer);
 		iNeeded--;
 	}
 	
 	// Let the panel close on any number
-	SetPanelKeys(hPanel, 255);
+	hPanel.SetKeys(255);
 	
-	SendPanelToClient(hPanel, client, Panel_DoNothing, MENU_TIME_FOREVER);
-	CloseHandle(hPanel);
+	hPanel.Send(client, Panel_DoNothing, MENU_TIME_FOREVER);
+	delete hPanel;
 }
 
 // Sort players ascending by level and experience
-public Sort2D_NextPlayers(elem1[], elem2[], const array[][], Handle:hndl)
+public int Sort2D_NextPlayers(int[] elem1, int[] elem2, const int[][] array, Handle hndl)
 {
 	if(elem1[NP_level] > elem2[NP_level])
 		return 1;
@@ -1173,88 +1150,89 @@ public Sort2D_NextPlayers(elem1[], elem2[], const array[][], Handle:hndl)
 /**
  * Extra experience per weapon parsing
  */
-InitWeaponExperienceConfig()
+void InitWeaponExperienceConfig()
 {
-	g_hWeaponExperience = CreateTrie();
+	g_hWeaponExperience = new StringMap();
 }
 
-bool:ReadWeaponExperienceConfig()
+bool ReadWeaponExperienceConfig()
 {
 	// Clear all the previous configs first.
-	ClearTrie(g_hWeaponExperience);
+	g_hWeaponExperience.Clear();
 	
-	decl String:sPath[PLATFORM_MAX_PATH];
+	char sPath[PLATFORM_MAX_PATH];
 	BuildPath(Path_SM, sPath, sizeof(sPath), "configs/smrpg/weapon_experience.cfg");
 	
 	if(!FileExists(sPath))
 		return false;
 	
-	new Handle:hKV = CreateKeyValues("SMRPGWeaponExperience");
-	if(!FileToKeyValues(hKV, sPath))
+	KeyValues hKV = CreateKeyValues("SMRPGWeaponExperience");
+	if(!hKV.ImportFromFile(sPath))
 	{
-		CloseHandle(hKV);
+		delete hKV;
 		return false;
 	}
 	
-	if(!KvGotoFirstSubKey(hKV))
+	if(!hKV.GotoFirstSubKey())
 	{
-		CloseHandle(hKV);
+		delete hKV;
 		return false;
 	}
 	
-	new String:sWeapon[64], iWeaponExperience[WeaponExperienceContainer];
+	char sWeapon[64];
+	int iWeaponExperience[WeaponExperienceContainer];
 	do {
-		KvGetSectionName(hKV, sWeapon, sizeof(sWeapon));
+		hKV.GetSectionName(sWeapon, sizeof(sWeapon));
 		RemovePrefixFromString("weapon_", sWeapon, sWeapon, sizeof(sWeapon));
 	
-		iWeaponExperience[WXP_Damage] = KvGetFloat(hKV, "exp_damage", -1.0);
-		iWeaponExperience[WXP_Kill] = KvGetFloat(hKV, "exp_kill", -1.0);
-		iWeaponExperience[WXP_Bonus] = KvGetFloat(hKV, "exp_bonus", -1.0);
+		iWeaponExperience[WXP_Damage] = hKV.GetFloat("exp_damage", -1.0);
+		iWeaponExperience[WXP_Kill] = hKV.GetFloat("exp_kill", -1.0);
+		iWeaponExperience[WXP_Bonus] = hKV.GetFloat("exp_bonus", -1.0);
 		
-		SetTrieArray(g_hWeaponExperience, sWeapon, iWeaponExperience[0], _:WeaponExperienceContainer);
+		g_hWeaponExperience.SetArray(sWeapon, iWeaponExperience[0], view_as<int>(WeaponExperienceContainer));
 		
-	} while(KvGotoNextKey(hKV));
+	} while(hKV.GotoNextKey());
 	
-	CloseHandle(hKV);
+	delete hKV;
 	return true;
 }
 
-Float:GetWeaponExperience(const String:sWeapon[], WeaponExperienceType:type)
+float GetWeaponExperience(const char[] sWeapon, WeaponExperienceType type)
 {
-	new iWeaponExperience[WeaponExperienceContainer];
+	int iWeaponExperience[WeaponExperienceContainer];
 	iWeaponExperience[WXP_Damage] = -1.0;
 	iWeaponExperience[WXP_Kill] = -1.0;
 	iWeaponExperience[WXP_Bonus] = -1.0;
 	
-	new String:sBuffer[64];
+	char sBuffer[64];
 	RemovePrefixFromString("weapon_", sWeapon, sBuffer, sizeof(sBuffer));
 	// We default back to the convar values, if this fails.
-	GetTrieArray(g_hWeaponExperience, sBuffer, iWeaponExperience[0], _:WeaponExperienceContainer);
+	g_hWeaponExperience.GetArray(sBuffer, iWeaponExperience[0], view_as<int>(WeaponExperienceContainer));
 	
 	// Fall back to default convar values, if unset or invalid.
 	if(iWeaponExperience[WXP_Damage] < 0.0)
-		iWeaponExperience[WXP_Damage] = GetConVarFloat(g_hCVExpDamage);
+		iWeaponExperience[WXP_Damage] = g_hCVExpDamage.FloatValue;
 	if(iWeaponExperience[WXP_Kill] < 0.0)
-		iWeaponExperience[WXP_Kill] = GetConVarFloat(g_hCVExpKill);
+		iWeaponExperience[WXP_Kill] = g_hCVExpKill.FloatValue;
 	if(iWeaponExperience[WXP_Bonus] < 0.0)
-		iWeaponExperience[WXP_Bonus] = GetConVarFloat(g_hCVExpKillBonus);
+		iWeaponExperience[WXP_Bonus] = g_hCVExpKillBonus.FloatValue;
 	
-	return Float:iWeaponExperience[type];
+	return view_as<float>(iWeaponExperience[type]);
 }
 
 /**
  * Helper functions
  */
 // Taken from SourceBans 2's sb_bans :)
-SecondsToString(String:sBuffer[], iLength, iSecs, bool:bTextual = true)
+void SecondsToString(char[] sBuffer, int iLength, int iSecs, bool bTextual = true)
 {
 	if(bTextual)
 	{
-		decl String:sDesc[6][8] = {"mo",              "wk",             "d",          "hr",    "min", "sec"};
-		new  iCount, iDiv[6]    = {60 * 60 * 24 * 30, 60 * 60 * 24 * 7, 60 * 60 * 24, 60 * 60, 60,    1};
+		char sDesc[6][8] = {"mo",              "wk",             "d",          "hr",    "min", "sec"};
+		int  iCount, iDiv[6]    = {60 * 60 * 24 * 30, 60 * 60 * 24 * 7, 60 * 60 * 24, 60 * 60, 60,    1};
 		sBuffer[0]              = '\0';
 		
-		for(new i = 0; i < sizeof(iDiv); i++)
+		for(int i = 0; i < sizeof(iDiv); i++)
 		{
 			if((iCount = iSecs / iDiv[i]) > 0)
 			{
@@ -1266,9 +1244,9 @@ SecondsToString(String:sBuffer[], iLength, iSecs, bool:bTextual = true)
 	}
 	else
 	{
-		new iHours = iSecs  / 60 / 60;
+		int iHours = iSecs  / 60 / 60;
 		iSecs     -= iHours * 60 * 60;
-		new iMins  = iSecs  / 60;
+		int iMins  = iSecs  / 60;
 		iSecs     %= 60;
 		Format(sBuffer, iLength, "%02i:%02i:%02i", iHours, iMins, iSecs);
 	}
@@ -1276,9 +1254,9 @@ SecondsToString(String:sBuffer[], iLength, iSecs, bool:bTextual = true)
 
 // This removes a prefix from a string including anything before the prefix.
 // This is useful for TF2's tfweapon_ prefix vs. default weapon_ prefix in other sourcegames.
-stock RemovePrefixFromString(const String:sPrefix[], const String:sInput[], String:sOutput[], maxlen)
+stock void RemovePrefixFromString(const char[] sPrefix, const char[] sInput, char[] sOutput, int maxlen)
 {
-	new iPos = StrContains(sInput, sPrefix, false);
+	int iPos = StrContains(sInput, sPrefix, false);
 	// The prefix isn't in the string, just copy the whole string.
 	if(iPos == -1)
 		iPos = 0;
@@ -1287,7 +1265,7 @@ stock RemovePrefixFromString(const String:sPrefix[], const String:sInput[], Stri
 		iPos += strlen(sPrefix);
 	
 	// Support for inputstring == outputstring?
-	new String:sBuffer[maxlen+1];
+	char[] sBuffer = new char[maxlen+1];
 	strcopy(sBuffer, maxlen, sInput[iPos]);
 	
 	strcopy(sOutput, maxlen, sBuffer);

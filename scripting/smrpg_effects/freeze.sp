@@ -3,41 +3,41 @@
  * Handles freezing of players.
  */
 
-new Handle:g_hfwdOnClientFreeze;
-new Handle:g_hfwdOnClientFrozen;
-new Handle:g_hfwdOnClientUnfrozen;
+Handle g_hfwdOnClientFreeze;
+Handle g_hfwdOnClientFrozen;
+Handle g_hfwdOnClientUnfrozen;
 
-new g_iFreezeSoundCount;
-new g_iLimitDmgSoundCount;
-new Handle:g_hUnfreeze[MAXPLAYERS+1];
-new Handle:g_hFreezePlugin[MAXPLAYERS+1];
-new Float:g_fLimitDamage[MAXPLAYERS+1];
-new String:g_sUpgradeName[MAXPLAYERS+1][MAX_UPGRADE_SHORTNAME_LENGTH];
+int g_iFreezeSoundCount;
+int g_iLimitDmgSoundCount;
+Handle g_hUnfreeze[MAXPLAYERS+1];
+Handle g_hFreezePlugin[MAXPLAYERS+1];
+float g_fLimitDamage[MAXPLAYERS+1];
+char g_sUpgradeName[MAXPLAYERS+1][MAX_UPGRADE_SHORTNAME_LENGTH];
 
 /**
  * Setup helpers
  */
-RegisterFreezeNatives()
+void RegisterFreezeNatives()
 {
 	CreateNative("SMRPG_FreezeClient", Native_FreezeClient);
 	CreateNative("SMRPG_UnfreezeClient", Native_UnfreezeClient);
 	CreateNative("SMRPG_IsClientFrozen", Native_IsClientFrozen);
 }
 
-RegisterFreezeForwards()
+void RegisterFreezeForwards()
 {
-	// forward Action:SMRPG_OnClientFreeze(client, &Float:fTime);
+	// forward Action SMRPG_OnClientFreeze(int client, float &fTime);
 	g_hfwdOnClientFreeze = CreateGlobalForward("SMRPG_OnClientFreeze", ET_Hook, Param_Cell, Param_FloatByRef);
-	// forward SMRPG_OnClientFrozen(client, Float:fTime);
+	// forward void SMRPG_OnClientFrozen(client, float fTime);
 	g_hfwdOnClientFrozen = CreateGlobalForward("SMRPG_OnClientFrozen", ET_Ignore, Param_Cell, Param_Float);
-	// forward SMRPG_OnClientUnfrozen(client);
+	// forward void SMRPG_OnClientUnfrozen(client);
 	g_hfwdOnClientUnfrozen = CreateGlobalForward("SMRPG_OnClientUnfrozen", ET_Ignore, Param_Cell);
 }
 
-PrecacheFreezeSounds()
+void PrecacheFreezeSounds()
 {
 	g_iFreezeSoundCount = 0;
-	decl String:sKey[64];
+	char sKey[64];
 	for(;;g_iFreezeSoundCount++)
 	{
 		Format(sKey, sizeof(sKey), "SoundIceStabFreeze%d", g_iFreezeSoundCount+1);
@@ -54,9 +54,9 @@ PrecacheFreezeSounds()
 	}
 }
 
-ResetFreezeClient(client)
+void ResetFreezeClient(int client)
 {
-	if(g_hFreezePlugin[client] != INVALID_HANDLE && IsClientInGame(client))
+	if(g_hFreezePlugin[client] != null && IsClientInGame(client))
 		UnfreezeClient(client);
 	ResetClientFreezeState(client);
 	ClearHandle(g_hUnfreeze[client]);
@@ -65,13 +65,13 @@ ResetFreezeClient(client)
 /**
  * Timer callbacks
  */
-public Action:Timer_Unfreeze(Handle:timer, any:userid)
+public Action Timer_Unfreeze(Handle timer, any userid)
 {
-	new client = GetClientOfUserId(userid);
+	int client = GetClientOfUserId(userid);
 	if(!client)
 		return Plugin_Stop;
 	
-	g_hUnfreeze[client] = INVALID_HANDLE;
+	g_hUnfreeze[client] = null;
 	UnfreezeClient(client);
 	
 	return Plugin_Stop;
@@ -81,10 +81,10 @@ public Action:Timer_Unfreeze(Handle:timer, any:userid)
  * Hook callbacks
  */
 // Reduce the damage when a player is frozen.
-Action:Freeze_OnTakeDamage(victim, &attacker, &inflictor, &Float:damage)
+Action Freeze_OnTakeDamage(int victim, int &attacker, int &inflictor, float &damage)
 {
 	// This player isn't frozen. Ignore.
-	if(g_hUnfreeze[victim] == INVALID_HANDLE)
+	if(g_hUnfreeze[victim] == null)
 		return Plugin_Continue;
 	
 	// Limit disabled?
@@ -92,7 +92,7 @@ Action:Freeze_OnTakeDamage(victim, &attacker, &inflictor, &Float:damage)
 		return Plugin_Continue;
 	
 	// TODO: Add config option to exclude weapons from limitation.
-	/*new iWeapon = inflictor;
+	/*int iWeapon = inflictor;
 	if(inflictor > 0 && inflictor <= MaxClients)
 		iWeapon = Client_GetActiveWeapon(inflictor);
 	
@@ -110,7 +110,7 @@ Action:Freeze_OnTakeDamage(victim, &attacker, &inflictor, &Float:damage)
 	
 	if(g_iLimitDmgSoundCount > 0)
 	{
-		new String:sKey[64];
+		char sKey[64];
 		Format(sKey, sizeof(sKey), "SoundIceStabLimitDmg%d", Math_GetRandomInt(1, g_iLimitDmgSoundCount));
 		SMRPG_EmitSoundToAllEnabled(g_sUpgradeName[victim], SMRPG_GC_GetKeyValue(sKey), victim, SNDCHAN_AUTO, SNDLEVEL_NORMAL, SND_NOFLAGS, SNDVOL_NORMAL, SNDPITCH_NORMAL, victim);
 	}
@@ -121,42 +121,36 @@ Action:Freeze_OnTakeDamage(victim, &attacker, &inflictor, &Float:damage)
 /**
  * Native handlers
  */
-// native bool:SMRPG_FreezeClient(client, Float:fTime, Float:fDamageLimit, const String:sUpgradeName[], bool:bPlaySound=true, bool:bFadeColor=true, bool:bResetVelocity=false);
-public Native_FreezeClient(Handle:plugin, numParams)
+// native bool SMRPG_FreezeClient(int client, float fTime, float fDamageLimit, const char[] sUpgradeName, bool bPlaySound=true, bool bFadeColor=true, bool bResetVelocity=false);
+public int Native_FreezeClient(Handle plugin, int numParams)
 {
-	new client = GetNativeCell(1);
+	int client = GetNativeCell(1);
 	
 	if(client <= 0 || client > MaxClients)
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d", client);
-		return false;
-	}
+		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d", client);
 	
-	new Float:fFreezeTime = Float:GetNativeCell(2);
-	new Float:fLimitDamage = Float:GetNativeCell(3);
-	new iLen;
+	float fFreezeTime = view_as<float>(GetNativeCell(2));
+	float fLimitDamage = view_as<float>(GetNativeCell(3));
+	int iLen;
 	GetNativeStringLength(4, iLen);
-	new String:sUpgradeName[iLen+1];
+	char[] sUpgradeName = new char[iLen+1];
 	GetNativeString(4, sUpgradeName, iLen+1);
-	new bool:bPlaySound = GetNativeCell(5);
-	new bool:bFadeColor = GetNativeCell(6);
-	new bool:bResetVelocity = GetNativeCell(7);
+	bool bPlaySound = GetNativeCell(5);
+	bool bFadeColor = GetNativeCell(6);
+	bool bResetVelocity = GetNativeCell(7);
 	
-	new Action:ret;
+	Action ret;
 	Call_StartForward(g_hfwdOnClientFreeze);
 	Call_PushCell(client);
 	Call_PushFloatRef(fFreezeTime);
 	Call_Finish(ret);
 	
 	if(ret >= Plugin_Handled)
-		return false;
+		return 0;
 	
 	// Are you insane?
 	if(fFreezeTime < 0.0)
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "Invalid freeze time %f.", fFreezeTime);
-		return false;
-	}
+		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid freeze time %f.", fFreezeTime);
 	
 	// Save the upgrade shortname for damage limiting later.
 	strcopy(g_sUpgradeName[client], MAX_UPGRADE_SHORTNAME_LENGTH, sUpgradeName);
@@ -171,13 +165,13 @@ public Native_FreezeClient(Handle:plugin, numParams)
 	// Reset the velocity, if we are told to.
 	if(bResetVelocity)
 	{
-		new Float:fStop[3];
+		float fStop[3];
 		Entity_SetAbsVelocity(client, fStop);
 	}
 	
 	if(bPlaySound && g_iFreezeSoundCount > 0)
 	{
-		new String:sKey[64];
+		char sKey[64];
 		Format(sKey, sizeof(sKey), "SoundIceStabFreeze%d", Math_GetRandomInt(1, g_iFreezeSoundCount));
 		SMRPG_EmitSoundToAllEnabled(sUpgradeName, SMRPG_GC_GetKeyValue(sKey), client, SNDCHAN_AUTO, SNDLEVEL_NORMAL, SND_NOFLAGS, SNDVOL_NORMAL, SNDPITCH_NORMAL, client);
 	}
@@ -186,8 +180,8 @@ public Native_FreezeClient(Handle:plugin, numParams)
 	{
 		Help_SetClientRenderColorFadeTarget(plugin, client, 255, 255, 255, -1);
 		// Fade as long as the player is frozen.
-		new Float:fTickrate = 1.0 / GetTickInterval();
-		new Float:fStepsize = 255.0 / (fTickrate * fFreezeTime);
+		float fTickrate = 1.0 / GetTickInterval();
+		float fStepsize = 255.0 / (fTickrate * fFreezeTime);
 		SMRPG_SetClientRenderColorFadeStepsize(client, fStepsize, fStepsize);
 		Help_SetClientRenderColor(plugin, client, 0, 0, 255, -1);
 	}
@@ -204,44 +198,36 @@ public Native_FreezeClient(Handle:plugin, numParams)
 	return true;
 }
 
-// native SMRPG_UnfreezeClient(client);
-public Native_UnfreezeClient(Handle:plugin, numParams)
+// native void SMRPG_UnfreezeClient(int client);
+public int Native_UnfreezeClient(Handle plugin, int numParams)
 {
-	new client = GetNativeCell(1);
+	int client = GetNativeCell(1);
 	
 	if(client <= 0 || client > MaxClients)
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d", client);
-		return;
-	}
+		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d", client);
 	
 	if(!g_hUnfreeze[client])
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "Client is not frozen.");
-		return;
-	}
+		return ThrowNativeError(SP_ERROR_NATIVE, "Client is not frozen.");
 	
 	ResetFreezeClient(client);
+	return 0;
 }
 
-// native bool:SMRPG_IsClientFrozen(client);
-public Native_IsClientFrozen(Handle:plugin, numParams)
+// native bool SMRPG_IsClientFrozen(int client);
+public int Native_IsClientFrozen(Handle plugin, int numParams)
 {
-	new client = GetNativeCell(1);
+	int client = GetNativeCell(1);
 	
 	if(client <= 0 || client > MaxClients)
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d", client);
-		return false;
-	}
+		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d", client);
 	
-	return g_hUnfreeze[client] != INVALID_HANDLE;
+	return g_hUnfreeze[client] != null;
 }
 
 /**
  * Helpers
  */
-UnfreezeClient(client)
+void UnfreezeClient(int client)
 {
 	if(GetEntityMoveType(client) == MOVETYPE_NONE)
 		SetEntityMoveType(client, MOVETYPE_WALK);
@@ -254,9 +240,9 @@ UnfreezeClient(client)
 }
 
 // Client doesn't have to be ingame for this one.
-ResetClientFreezeState(client)
+void ResetClientFreezeState(int client)
 {
-	g_hFreezePlugin[client] = INVALID_HANDLE;
+	g_hFreezePlugin[client] = null;
 	g_fLimitDamage[client] = 0.0;
 	g_sUpgradeName[client][0] = 0;
 }

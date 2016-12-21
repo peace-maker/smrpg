@@ -3,6 +3,8 @@
 #include <sdktools>
 #include <sdkhooks>
 #include <smlib>
+
+//#pragma newdecls required
 #include <smrpg>
 
 #define UPGRADE_SHORTNAME "grenaderesup"
@@ -25,15 +27,15 @@ enum PlayerGrenade {
 	PG_ammo
 }
 
-new bool:g_bLateLoaded;
-new Handle:g_hGrenadeConfig;
+bool g_bLateLoaded;
+ArrayList g_hGrenadeConfig;
 
-new Float:g_fDefaultDelay = 40.0;
-new Float:g_fDefaultDecrease = 4.0;
+float g_fDefaultDelay = 40.0;
+float g_fDefaultDecrease = 4.0;
 
-new Handle:g_PlayerGrenades[MAXPLAYERS+1];
+ArrayList g_PlayerGrenades[MAXPLAYERS+1];
 
-public Plugin:myinfo = 
+public Plugin myinfo = 
 {
 	name = "SM:RPG Upgrade > Grenade Resupply",
 	author = "Jannik \"Peace-Maker\" Hartung",
@@ -42,9 +44,9 @@ public Plugin:myinfo =
 	url = "http://www.wcfan.de/"
 }
 
-public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
+public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
-	new EngineVersion:engine = GetEngineVersion();
+	EngineVersion engine = GetEngineVersion();
 	if(engine != Engine_CSS && engine != Engine_CSGO)
 	{
 		Format(error, err_max, "This plugin is for use in Counter-Strike games only. Bad engine version %d.", engine);
@@ -54,34 +56,34 @@ public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
 	return APLRes_Success;
 }
 
-public OnPluginStart()
+public void OnPluginStart()
 {
 	LoadTranslations("smrpg_stock_upgrades.phrases");
-	g_hGrenadeConfig = CreateArray(_:GrenadeEntry);
+	g_hGrenadeConfig = new ArrayList(view_as<int>(GrenadeEntry));
 	
 	HookEvent("player_spawn", Event_OnPlayerSpawn);
 	HookEvent("player_death", Event_OnPlayerDeath);
 	HookEvent("weapon_fire", Event_OnWeaponFire);
 	
-	for(new i=1;i<=MaxClients;i++)
+	for(int i=1;i<=MaxClients;i++)
 	{
 		if(IsClientInGame(i))
 			OnClientPutInServer(i);
 	}
 }
 
-public OnPluginEnd()
+public void OnPluginEnd()
 {
 	if(SMRPG_UpgradeExists(UPGRADE_SHORTNAME))
 		SMRPG_UnregisterUpgradeType(UPGRADE_SHORTNAME);
 }
 
-public OnAllPluginsLoaded()
+public void OnAllPluginsLoaded()
 {
 	OnLibraryAdded("smrpg");
 }
 
-public OnLibraryAdded(const String:name[])
+public void OnLibraryAdded(const char[] name)
 {
 	// Register this upgrade in SM:RPG
 	if(StrEqual(name, "smrpg"))
@@ -91,7 +93,7 @@ public OnLibraryAdded(const String:name[])
 	}
 }
 
-public OnMapStart()
+public void OnMapStart()
 {
 	if(!LoadResupplyDelayConfig())
 		SetFailState("Can't find or parse the config file in configs/smrpg/grenade_resupply_delay.cfg");
@@ -99,8 +101,9 @@ public OnMapStart()
 	// Handle lateloading and setup our data structures to include grenades players might already own.
 	if(g_bLateLoaded)
 	{
-		new String:sClassname[GRENADE_CLASSNAME_LENGTH], grenadeEntry[GrenadeEntry];
-		for(new i=1;i<=MaxClients;i++)
+		char sClassname[GRENADE_CLASSNAME_LENGTH];
+		int grenadeEntry[GrenadeEntry];
+		for(int i=1;i<=MaxClients;i++)
 		{
 			if(IsClientInGame(i))
 			{
@@ -119,12 +122,12 @@ public OnMapStart()
 	}
 }
 
-public OnClientPutInServer(client)
+public void OnClientPutInServer(int client)
 {
 	SDKHook(client, SDKHook_WeaponEquipPost, Hook_OnWeaponEquipPost);
 }
 
-public OnClientDisconnect(client)
+public void OnClientDisconnect(int client)
 {
 	ResetResupplyTimers(client, true);
 }
@@ -132,9 +135,9 @@ public OnClientDisconnect(client)
 /**
  * Event callbacks
  */
-public Event_OnPlayerSpawn(Handle:event, const String:name[], bool:dontBroadcast)
+public void Event_OnPlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 {
-	new client = GetClientOfUserId(GetEventInt(event, "userid"));
+	int client = GetClientOfUserId(event.GetInt("userid"));
 	if(!client)
 		return;
 	
@@ -143,25 +146,25 @@ public Event_OnPlayerSpawn(Handle:event, const String:name[], bool:dontBroadcast
 	// Maybe put this into the denial upgrade?
 }
 
-public Event_OnPlayerDeath(Handle:event, const String:name[], bool:dontBroadcast)
+public void Event_OnPlayerDeath(Event event, const char[] name, bool dontBroadcast)
 {
-	new client = GetClientOfUserId(GetEventInt(event, "userid"));
+	int client = GetClientOfUserId(event.GetInt("userid"));
 	if(!client)
 		return;
 	
 	ResetResupplyTimers(client, true);
 }
 
-public Event_OnWeaponFire(Handle:event, const String:name[], bool:dontBroadcast)
+public void Event_OnWeaponFire(Event event, const char[] name, bool dontBroadcast)
 {
-	new client = GetClientOfUserId(GetEventInt(event, "userid"));
+	int client = GetClientOfUserId(event.GetInt("userid"));
 	if(!client)
 		return;
 	
-	new String:sWeapon[64];
-	GetEventString(event, "weapon", sWeapon, sizeof(sWeapon));
+	char sWeapon[64];
+	event.GetString("weapon", sWeapon, sizeof(sWeapon));
 	
-	new grenadeEntry[GrenadeEntry];
+	int grenadeEntry[GrenadeEntry];
 	if(!GetGrenadeEntryByName(sWeapon, grenadeEntry))
 		return;
 	
@@ -171,26 +174,26 @@ public Event_OnWeaponFire(Handle:event, const String:name[], bool:dontBroadcast)
 /**
  * SM:RPG Upgrade callbacks
  */
-public SMRPG_BuySell(client, UpgradeQueryType:type)
+public void SMRPG_BuySell(int client, UpgradeQueryType type)
 {
 	// Nothing to apply here immediately after someone buys this upgrade.
 }
 
-public bool:SMRPG_ActiveQuery(client)
+public bool SMRPG_ActiveQuery(int client)
 {
 	// This is a passive effect, so it's always active, if the player got at least level 1
-	new upgrade[UpgradeInfo];
+	int upgrade[UpgradeInfo];
 	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
 	return SMRPG_IsEnabled() && upgrade[UI_enabled] && SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME) > 0;
 }
 
-public SMRPG_TranslateUpgrade(client, const String:shortname[], TranslationType:type, String:translation[], maxlen)
+public void SMRPG_TranslateUpgrade(int client, const char[] shortname, TranslationType type, char[] translation, int maxlen)
 {
 	if(type == TranslationType_Name)
 		Format(translation, maxlen, "%T", UPGRADE_SHORTNAME, client);
 	else if(type == TranslationType_Description)
 	{
-		new String:sDescriptionKey[MAX_UPGRADE_SHORTNAME_LENGTH+12] = UPGRADE_SHORTNAME;
+		char sDescriptionKey[MAX_UPGRADE_SHORTNAME_LENGTH+12] = UPGRADE_SHORTNAME;
 		StrCat(sDescriptionKey, sizeof(sDescriptionKey), " description");
 		Format(translation, maxlen, "%T", sDescriptionKey, client);
 	}
@@ -199,7 +202,7 @@ public SMRPG_TranslateUpgrade(client, const String:shortname[], TranslationType:
 /**
  * SDK Hooks callbacks
  */
-public Hook_OnWeaponEquipPost(client, weapon)
+public void Hook_OnWeaponEquipPost(int client, int weapon)
 {
 	if(client <= 0 || client > MaxClients || !IsClientInGame(client))
 		return;
@@ -207,20 +210,20 @@ public Hook_OnWeaponEquipPost(client, weapon)
 	if(weapon <= 0 || !IsValidEntity(weapon))
 		return;
 	
-	decl String:sClassname[64];
+	char sClassname[64];
 	GetEntityClassname(weapon, sClassname, sizeof(sClassname));
 	
-	new grenadeEntry[GrenadeEntry];
+	int grenadeEntry[GrenadeEntry];
 	if(!GetGrenadeEntryByName(sClassname, grenadeEntry))
 		return;
 	
 	// See if we got the ammo type yet.
 	CheckGrenadeAmmoType(weapon, grenadeEntry);
 	
-	new playerGrenade[PlayerGrenade];
+	int playerGrenade[PlayerGrenade];
 	GetPlayerGrenadeByIndex(client, grenadeEntry[GE_index], playerGrenade);
 	
-	new iPrimaryAmmo = GetClientAmmoOfType(client, grenadeEntry[GE_ammoType]);
+	int iPrimaryAmmo = GetClientAmmoOfType(client, grenadeEntry[GE_ammoType]);
 	
 	// Remember the maximum amount of grenades of this type the player ever owned.
 	// So we can keep regenerating nades until we are at that maximum again.
@@ -244,22 +247,22 @@ public Hook_OnWeaponEquipPost(client, weapon)
 /**
  * Timer callbacks
  */
-public Action:Timer_ResupplyPlayer(Handle:timer, Handle:data)
+public Action Timer_ResupplyPlayer(Handle timer, DataPack data)
 {
-	ResetPack(data);
-	new userid = ReadPackCell(data);
-	new iEntryIndex = ReadPackCell(data);
+	data.Reset();
+	int userid = data.ReadCell();
+	int iEntryIndex = data.ReadCell();
 	
-	new grenadeEntry[GrenadeEntry];
+	int grenadeEntry[GrenadeEntry];
 	GetGrenadeEntryByIndex(iEntryIndex, grenadeEntry);
 	
-	new client = GetClientOfUserId(userid);
+	int client = GetClientOfUserId(userid);
 	if(!client)
 		return Plugin_Handled;
 	
-	new playerGrenade[PlayerGrenade];
+	int playerGrenade[PlayerGrenade];
 	GetPlayerGrenadeByIndex(client, iEntryIndex, playerGrenade);
-	playerGrenade[PG_timer] = INVALID_HANDLE;
+	playerGrenade[PG_timer] = null;
 	SavePlayerGrenadeByIndex(client, iEntryIndex, playerGrenade);
 	
 	if(!IsPlayerAlive(client))
@@ -267,7 +270,7 @@ public Action:Timer_ResupplyPlayer(Handle:timer, Handle:data)
 	
 	// The player already picked up enough grenades by himself?
 	// Don't give more!
-	new iPrimaryAmmo = GetClientAmmoOfType(client, grenadeEntry[GE_ammoType]);
+	int iPrimaryAmmo = GetClientAmmoOfType(client, grenadeEntry[GE_ammoType]);
 	if(iPrimaryAmmo >= playerGrenade[PG_ammo])
 		return Plugin_Handled;
 	
@@ -288,13 +291,13 @@ public Action:Timer_ResupplyPlayer(Handle:timer, Handle:data)
  * Helpers
  */
 
-StartGrenadeResupplyTimer(client, grenadeEntry[GrenadeEntry])
+void StartGrenadeResupplyTimer(int client, int grenadeEntry[GrenadeEntry])
 {
 	// SMRPG and upgrade enabled?
 	if(!SMRPG_IsEnabled())
 		return;
 	
-	new upgrade[UpgradeInfo];
+	int upgrade[UpgradeInfo];
 	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
 	if(!upgrade[UI_enabled])
 		return;
@@ -304,7 +307,7 @@ StartGrenadeResupplyTimer(client, grenadeEntry[GrenadeEntry])
 		return;
 	
 	// Player didn't buy this upgrade yet.
-	new iLevel = SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME);
+	int iLevel = SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME);
 	if(iLevel <= 0)
 		return;
 	
@@ -312,7 +315,7 @@ StartGrenadeResupplyTimer(client, grenadeEntry[GrenadeEntry])
 		return; // Some other plugin doesn't want this effect to run
 	
 	// Calculate the time until we give back the grenade.
-	new Float:fTime = GetGrenadeBaseDelay(grenadeEntry) - GetGrenadeDelayDecrease(grenadeEntry) * (iLevel-1);
+	float fTime = GetGrenadeBaseDelay(grenadeEntry) - GetGrenadeDelayDecrease(grenadeEntry) * (iLevel-1);
 	if(fTime <= 0.0)
 		fTime = 0.1;
 	
@@ -320,105 +323,105 @@ StartGrenadeResupplyTimer(client, grenadeEntry[GrenadeEntry])
 	if(fTime < grenadeEntry[GE_minDelay])
 		fTime = grenadeEntry[GE_minDelay];
 	
-	new playerGrenade[PlayerGrenade];
+	int playerGrenade[PlayerGrenade];
 	GetPlayerGrenadeByIndex(client, grenadeEntry[GE_index], playerGrenade);
 	
 	// This player didn't throw a grenade of this type previously.
-	if(playerGrenade[PG_timer] == INVALID_HANDLE)
+	if(playerGrenade[PG_timer] == null)
 	{
 		// Handle case of lateloading or not catching the equip of this grenade.
 		if(playerGrenade[PG_ammo] < 1)
 			playerGrenade[PG_ammo] = 1;
-		new Handle:hPack;
+		DataPack hPack;
 		playerGrenade[PG_timer] = CreateDataTimer(fTime, Timer_ResupplyPlayer, hPack, TIMER_FLAG_NO_MAPCHANGE);
-		WritePackCell(hPack, GetClientUserId(client));
-		WritePackCell(hPack, grenadeEntry[GE_index]);
+		hPack.WriteCell(GetClientUserId(client));
+		hPack.WriteCell(grenadeEntry[GE_index]);
 		
 		SavePlayerGrenadeByIndex(client, grenadeEntry[GE_index], playerGrenade);
 	}
 }
 
 // Load the config file and clear the cache.
-bool:LoadResupplyDelayConfig()
+bool LoadResupplyDelayConfig()
 {
-	ClearArray(g_hGrenadeConfig);
+	g_hGrenadeConfig.Clear();
 	
-	for(new i=1;i<=MaxClients;i++)
+	for(int i=1;i<=MaxClients;i++)
 	{
 		if(!g_PlayerGrenades[i])
-			g_PlayerGrenades[i] = CreateArray(_:PlayerGrenade);
+			g_PlayerGrenades[i] = new ArrayList(view_as<int>(PlayerGrenade));
 		else
-			ClearArray(g_PlayerGrenades[i]);
+			g_PlayerGrenades[i].Clear();
 	}
 	
-	decl String:sPath[PLATFORM_MAX_PATH];
+	char sPath[PLATFORM_MAX_PATH];
 	BuildPath(Path_SM, sPath, sizeof(sPath), "configs/smrpg/grenade_resupply_delay.cfg");
 	
 	if(!FileExists(sPath))
 		return false;
 	
-	new Handle:hKV = CreateKeyValues("GrenadeResupply");
+	KeyValues hKV = new KeyValues("GrenadeResupply");
 	if(!hKV)
 		return false;
 	
-	if(!FileToKeyValues(hKV, sPath))
+	if(!hKV.ImportFromFile(sPath))
 	{
-		CloseHandle(hKV);
+		delete hKV;
 		return false;
 	}
 	
-	if(!KvGotoFirstSubKey(hKV))
+	if(!hKV.GotoFirstSubKey())
 	{
-		CloseHandle(hKV);
+		delete hKV;
 		return false;
 	}
 	
-	new playerGrenade[PlayerGrenade];
+	int playerGrenade[PlayerGrenade];
 	
-	decl String:sBuffer[GRENADE_CLASSNAME_LENGTH];
+	char sBuffer[GRENADE_CLASSNAME_LENGTH];
 	do
 	{
-		KvGetSectionName(hKV, sBuffer, sizeof(sBuffer));
+		hKV.GetSectionName(sBuffer, sizeof(sBuffer));
 		
 		if(StrEqual(sBuffer, "#default", false))
 		{
-			g_fDefaultDelay = KvGetFloat(hKV, "resupply_base_delay", 40.0);
-			g_fDefaultDecrease = KvGetFloat(hKV, "resupply_delay_decrease", 4.0);
+			g_fDefaultDelay = hKV.GetFloat("resupply_base_delay", 40.0);
+			g_fDefaultDecrease = hKV.GetFloat("resupply_delay_decrease", 4.0);
 			continue;
 		}
 		
-		new grenadeEntry[GrenadeEntry];
+		int grenadeEntry[GrenadeEntry];
 		strcopy(grenadeEntry[GE_classname], GRENADE_CLASSNAME_LENGTH, sBuffer);
 		grenadeEntry[GE_ammoType] = -1;
-		grenadeEntry[GE_baseDelay] = KvGetFloat(hKV, "resupply_base_delay", -1.0);
-		grenadeEntry[GE_minDelay] = KvGetFloat(hKV, "resupply_minimum_delay", 0.0);
-		grenadeEntry[GE_decrease] = KvGetFloat(hKV, "resupply_delay_decrease", -1.0);
+		grenadeEntry[GE_baseDelay] = hKV.GetFloat("resupply_base_delay", -1.0);
+		grenadeEntry[GE_minDelay] = hKV.GetFloat("resupply_minimum_delay", 0.0);
+		grenadeEntry[GE_decrease] = hKV.GetFloat("resupply_delay_decrease", -1.0);
 		
 		grenadeEntry[GE_index] = GetArraySize(g_hGrenadeConfig);
-		PushArrayArray(g_hGrenadeConfig, grenadeEntry[0], _:GrenadeEntry);
+		g_hGrenadeConfig.PushArray(grenadeEntry[0], view_as<int>(GrenadeEntry));
 		
-		for(new i=1;i<=MaxClients;i++)
+		for(int i=1;i<=MaxClients;i++)
 		{
-			PushArrayArray(g_PlayerGrenades[i], playerGrenade[0], _:PlayerGrenade);
+			g_PlayerGrenades[i].PushArray(playerGrenade[0], view_as<int>(PlayerGrenade));
 		}
-	} while(KvGotoNextKey(hKV));
+	} while(hKV.GotoNextKey());
 	
-	CloseHandle(hKV);
+	delete hKV;
 	return true;
 }
 
 /**
  * Datastructure accessor helpers
  */
-GetGrenadeEntryByIndex(iIndex, grenadeEntry[GrenadeEntry])
+void GetGrenadeEntryByIndex(int iIndex, int grenadeEntry[GrenadeEntry])
 {
-	GetArrayArray(g_hGrenadeConfig, iIndex, grenadeEntry[0], _:GrenadeEntry);
+	g_hGrenadeConfig.GetArray(iIndex, grenadeEntry[0], view_as<int>(GrenadeEntry));
 }
 
-bool:GetGrenadeEntryByName(const String:sClassname[], grenadeEntry[GrenadeEntry])
+bool GetGrenadeEntryByName(const char[] sClassname, int grenadeEntry[GrenadeEntry])
 {
-	new iSize = GetArraySize(g_hGrenadeConfig);
-	for(new i=0;i<iSize;i++)
+	int iSize = GetArraySize(g_hGrenadeConfig);
+	for(int i=0;i<iSize;i++)
 	{
 		GetGrenadeEntryByIndex(i, grenadeEntry);
 		if(StrContains(grenadeEntry[GE_classname], sClassname, false) != -1)
@@ -427,24 +430,24 @@ bool:GetGrenadeEntryByName(const String:sClassname[], grenadeEntry[GrenadeEntry]
 	return false;
 }
 
-GetPlayerGrenadeByIndex(client, iEntryIndex, playerGrenade[PlayerGrenade])
+void GetPlayerGrenadeByIndex(int client, int iEntryIndex, int playerGrenade[PlayerGrenade])
 {
-	GetArrayArray(g_PlayerGrenades[client], iEntryIndex, playerGrenade[0], _:PlayerGrenade);
+	g_PlayerGrenades[client].GetArray(iEntryIndex, playerGrenade[0], view_as<int>(PlayerGrenade));
 }
 
-SavePlayerGrenadeByIndex(client, iEntryIndex, playerGrenade[PlayerGrenade])
+void SavePlayerGrenadeByIndex(int client, int iEntryIndex, int playerGrenade[PlayerGrenade])
 {
-	SetArrayArray(g_PlayerGrenades[client], iEntryIndex, playerGrenade[0], _:PlayerGrenade);
+	g_PlayerGrenades[client].SetArray(iEntryIndex, playerGrenade[0], view_as<int>(PlayerGrenade));
 }
 
-Float:GetGrenadeBaseDelay(grenadeEntry[GrenadeEntry])
+float GetGrenadeBaseDelay(int grenadeEntry[GrenadeEntry])
 {
 	if(grenadeEntry[GE_baseDelay] < 0.0)
 		return g_fDefaultDelay;
 	return grenadeEntry[GE_baseDelay];
 }
 
-Float:GetGrenadeDelayDecrease(grenadeEntry[GrenadeEntry])
+float GetGrenadeDelayDecrease(int grenadeEntry[GrenadeEntry])
 {
 	if(grenadeEntry[GE_decrease] < 0.0)
 		return g_fDefaultDecrease;
@@ -452,25 +455,25 @@ Float:GetGrenadeDelayDecrease(grenadeEntry[GrenadeEntry])
 }
 
 // Cache the ammo type of the grenade.
-CheckGrenadeAmmoType(entity, grenadeEntry[GrenadeEntry])
+void CheckGrenadeAmmoType(int entity, int grenadeEntry[GrenadeEntry])
 {
 	if(grenadeEntry[GE_ammoType] >= 0)
 		return;
 	
 	grenadeEntry[GE_ammoType] = Weapon_GetPrimaryAmmoType(entity);
-	SetArrayArray(g_hGrenadeConfig, grenadeEntry[GE_index], grenadeEntry[0], _:GrenadeEntry);
+	g_hGrenadeConfig.SetArray(grenadeEntry[GE_index], grenadeEntry[0], view_as<int>(GrenadeEntry));
 }
 
-GetClientAmmoOfType(client, iAmmoType)
+int GetClientAmmoOfType(int client, int iAmmoType)
 {
 	return GetEntProp(client, Prop_Data, "m_iAmmo", 4, iAmmoType);
 }
 
-ResetResupplyTimers(client, bool:bResetAmmo)
+void ResetResupplyTimers(int client, bool bResetAmmo)
 {
-	new iSize = GetArraySize(g_PlayerGrenades[client]);
-	new playerGrenade[PlayerGrenade];
-	for(new i=0;i<iSize;i++)
+	int iSize = GetArraySize(g_PlayerGrenades[client]);
+	int playerGrenade[PlayerGrenade];
+	for(int i=0;i<iSize;i++)
 	{
 		GetPlayerGrenadeByIndex(client, i, playerGrenade);
 		ClearHandle(playerGrenade[PG_timer]);

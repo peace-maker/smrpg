@@ -10,7 +10,7 @@
  * @param client  The client whos maxhealth you want to know.
  * @return        The client's maxhealth depending on his SM:RPG maxhealth level.
  */
-native SMRPG_Health_GetClientMaxHealthEx(client);
+native int SMRPG_Health_GetClientMaxHealthEx(int client);
 
 /**
  * Get the maximal health for a client, if the smrpg_upgrade_health plugin is loaded.
@@ -19,7 +19,7 @@ native SMRPG_Health_GetClientMaxHealthEx(client);
  * @param client  The client whos maxhealth you want to know.
  * @return        The client's maxhealth depending on his SM:RPG maxhealth level, or default maxhealth, if SM:RPG unavailable.
  */
-stock SMRPG_Health_GetClientMaxHealth(client)
+stock int SMRPG_Health_GetClientMaxHealth(int client)
 {
 	// Use Health+ maxlevel, if available.
 	if(GetFeatureStatus(FeatureType_Native, "SMRPG_Health_GetClientMaxHealthEx") == FeatureStatus_Available)
@@ -28,7 +28,7 @@ stock SMRPG_Health_GetClientMaxHealth(client)
 	return GetEntProp(client, Prop_Data, "m_iMaxHealth");
 }
 
-public SharedPlugin:__pl_smrpg_health = 
+public SharedPlugin __pl_smrpg_health = 
 {
 	name = "smrpg_health",
 	file = "smrpg_upgrade_health.smx",
@@ -40,7 +40,7 @@ public SharedPlugin:__pl_smrpg_health =
 };
 
 #if !defined REQUIRE_PLUGIN
-public __pl_smrpg_health_SetNTVOptional()
+public void __pl_smrpg_health_SetNTVOptional()
 {
 	MarkNativeAsOptional("SMRPG_Health_GetClientMaxHealthEx");
 }

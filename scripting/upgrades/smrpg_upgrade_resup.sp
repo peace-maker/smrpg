@@ -2,21 +2,23 @@
 #include <sourcemod>
 #include <sdktools>
 #include <smlib>
+
+//#pragma newdecls required
 #include <smrpg>
 
 #define UPGRADE_SHORTNAME "resup"
 
 #define PLUGIN_VERSION "1.0"
 
-new Handle:g_hResupplyTimer;
+Handle g_hResupplyTimer;
 
-new Handle:g_hCVInterval;
+ConVar g_hCVInterval;
 
 // CS:GO specific
-new EngineVersion:g_Engine;
-new Handle:g_hGiveReserveAmmo;
+EngineVersion g_Engine;
+Handle g_hGiveReserveAmmo;
 
-public Plugin:myinfo = 
+public Plugin myinfo = 
 {
 	name = "SM:RPG Upgrade > Resupply",
 	author = "Jannik \"Peace-Maker\" Hartung",
@@ -25,7 +27,7 @@ public Plugin:myinfo =
 	url = "http://www.wcfan.de/"
 }
 
-public OnPluginStart()
+public void OnPluginStart()
 {
 	LoadTranslations("smrpg_stock_upgrades.phrases");
 	g_Engine = GetEngineVersion();
@@ -33,8 +35,8 @@ public OnPluginStart()
 	// CS:GO stores reserved ammo on weapons now instead of on the players.
 	if (g_Engine == Engine_CSGO)
 	{
-		new Handle:hGConf = LoadGameConfigFile("smrpg_resup.games");
-		if (hGConf == INVALID_HANDLE)
+		Handle hGConf = LoadGameConfigFile("smrpg_resup.games");
+		if (hGConf == null)
 		{
 			SetFailState("Can't find smrpg_resup.games.txt gamedata file.");
 		}
@@ -42,7 +44,7 @@ public OnPluginStart()
 		StartPrepSDKCall(SDKCall_Entity);
 		if (!PrepSDKCall_SetFromConf(hGConf, SDKConf_Signature, "CBaseCombatWeapon::GiveReserveAmmo"))
 		{
-			CloseHandle(hGConf);
+			delete hGConf;
 			SetFailState("Can't find CBaseCombatWeapon::GiveReserveAmmo signature.");
 		}
 		// CBaseCombatWeapon::GiveReserveAmmo(AmmoPosition_t, int, bool, CBaseCombatCharacter *)
@@ -55,26 +57,26 @@ public OnPluginStart()
 		PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain); // return amount of bullets missing until the max is reached including what we're about to add with this call..
 		g_hGiveReserveAmmo = EndPrepSDKCall();
 		
-		CloseHandle(hGConf);
-		if (g_hGiveReserveAmmo == INVALID_HANDLE)
+		delete hGConf;
+		if (g_hGiveReserveAmmo == null)
 		{
 			SetFailState("Failed to prepare CBaseCombatWeapon::GiveReserveAmmo SDK call.");
 		}
 	}
 }
 
-public OnPluginEnd()
+public void OnPluginEnd()
 {
 	if(SMRPG_UpgradeExists(UPGRADE_SHORTNAME))
 		SMRPG_UnregisterUpgradeType(UPGRADE_SHORTNAME);
 }
 
-public OnAllPluginsLoaded()
+public void OnAllPluginsLoaded()
 {
 	OnLibraryAdded("smrpg");
 }
 
-public OnLibraryAdded(const String:name[])
+public void OnLibraryAdded(const char[] name)
 {
 	// Register this upgrade in SM:RPG
 	if(StrEqual(name, "smrpg"))
@@ -83,50 +85,50 @@ public OnLibraryAdded(const String:name[])
 		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
 		
 		g_hCVInterval = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_resup_interval", "3", "Set the interval in which the ammo is given in seconds.", 0, true, 0.5);
-		HookConVarChange(g_hCVInterval, ConVar_OnIntervalChanged);
+		g_hCVInterval.AddChangeHook(ConVar_OnIntervalChanged);
 		
 		// Start the timer with the correct interval.
 		StartResupplyTimer();
 	}
 }
 
-public OnMapStart()
+public void OnMapStart()
 {
 	// OnMapStart might be called before the smrpg library was registered.
-	if(g_hCVInterval == INVALID_HANDLE)
+	if(g_hCVInterval == null)
 		return;
 	
 	StartResupplyTimer();
 }
 
-public OnMapEnd()
+public void OnMapEnd()
 {
-	g_hResupplyTimer = INVALID_HANDLE;
+	g_hResupplyTimer = null;
 }
 
 /**
  * SM:RPG Upgrade callbacks
  */
-public SMRPG_BuySell(client, UpgradeQueryType:type)
+public void SMRPG_BuySell(int client, UpgradeQueryType type)
 {
 	// Nothing to apply here immediately after someone buys this upgrade.
 }
 
-public bool:SMRPG_ActiveQuery(client)
+public bool SMRPG_ActiveQuery(int client)
 {
 	// This is a passive effect, so it's always active, if the player got at least level 1
-	new upgrade[UpgradeInfo];
+	int upgrade[UpgradeInfo];
 	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
 	return SMRPG_IsEnabled() && upgrade[UI_enabled] && SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME) > 0;
 }
 
-public SMRPG_TranslateUpgrade(client, const String:shortname[], TranslationType:type, String:translation[], maxlen)
+public void SMRPG_TranslateUpgrade(int client, const char[] shortname, TranslationType type, char[] translation, int maxlen)
 {
 	if(type == TranslationType_Name)
 		Format(translation, maxlen, "%T", UPGRADE_SHORTNAME, client);
 	else if(type == TranslationType_Description)
 	{
-		new String:sDescriptionKey[MAX_UPGRADE_SHORTNAME_LENGTH+12] = UPGRADE_SHORTNAME;
+		char sDescriptionKey[MAX_UPGRADE_SHORTNAME_LENGTH+12] = UPGRADE_SHORTNAME;
 		StrCat(sDescriptionKey, sizeof(sDescriptionKey), " description");
 		Format(translation, maxlen, "%T", sDescriptionKey, client);
 	}
@@ -135,20 +137,20 @@ public SMRPG_TranslateUpgrade(client, const String:shortname[], TranslationType:
 /**
  * Timer callbacks
  */
-public Action:Timer_Resupply(Handle:timer)
+public Action Timer_Resupply(Handle timer)
 {
 	if(!SMRPG_IsEnabled())
 		return Plugin_Continue;
 	
-	new upgrade[UpgradeInfo];
+	int upgrade[UpgradeInfo];
 	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
 	if(!upgrade[UI_enabled])
 		return Plugin_Continue;
 	
-	new bool:bIgnoreBots = SMRPG_IgnoreBots();
+	bool bIgnoreBots = SMRPG_IgnoreBots();
 	
-	new iLevel, iPrimaryAmmoType;
-	for(new i=1;i<=MaxClients;i++)
+	int iLevel, iPrimaryAmmoType;
+	for(int i=1;i<=MaxClients;i++)
 	{
 		if(!IsClientInGame(i))
 			continue;
@@ -175,7 +177,7 @@ public Action:Timer_Resupply(Handle:timer)
 			
 			if (g_Engine == Engine_CSGO)
 			{
-				if (g_hGiveReserveAmmo != INVALID_HANDLE)
+				if (g_hGiveReserveAmmo != null)
 				{
 					SDKCall(g_hGiveReserveAmmo, iWeapon, 1, iLevel, true, -1);
 				}
@@ -193,7 +195,7 @@ public Action:Timer_Resupply(Handle:timer)
 /**
  * Convar hook callbacks
  */
-public ConVar_OnIntervalChanged(Handle:convar, const String:oldValue[], const String:newValue[])
+public void ConVar_OnIntervalChanged(ConVar convar, const char[] oldValue, const char[] newValue)
 {
 	if(StrEqual(oldValue, newValue, false))
 		return;
@@ -204,8 +206,8 @@ public ConVar_OnIntervalChanged(Handle:convar, const String:oldValue[], const St
 /**
  * Helpers
  */
-StartResupplyTimer()
+void StartResupplyTimer()
 {
 	ClearHandle(g_hResupplyTimer);
-	g_hResupplyTimer = CreateTimer(GetConVarFloat(g_hCVInterval), Timer_Resupply, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
+	g_hResupplyTimer = CreateTimer(g_hCVInterval.FloatValue, Timer_Resupply, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 }

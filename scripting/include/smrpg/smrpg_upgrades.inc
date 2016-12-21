@@ -22,9 +22,8 @@ enum UpgradeQueryType
  *
  * @param client         The client, whos upgrade level changed.
  * @param type           The type of the change. (buy or sell)
- * @noreturn
  */
-functag public SMRPG_UpgradeQueryCB(client, UpgradeQueryType:type);
+typedef SMRPG_UpgradeQueryCB = function void (int client, UpgradeQueryType type);
 
 /**
  * Called to check, if an upgrade's effect is currently active on a client.
@@ -35,7 +34,7 @@ functag public SMRPG_UpgradeQueryCB(client, UpgradeQueryType:type);
  * @param client         The client, which should be checked, if the upgrade is currently active on him.
  * @return True, if the upgrade's effect is currently active on the client, false otherwise.
  */
-functag public bool:SMRPG_ActiveQueryCB(client);
+typedef SMRPG_ActiveQueryCB = function bool (int client);
 
 /**
  * Registers a new upgrade to the rpg core.
@@ -66,10 +65,9 @@ functag public bool:SMRPG_ActiveQueryCB(client);
  * @param iAdminFlags       Restrict this upgrade to players with certain flags. See ADMFLAG_* defines. Set to 0 to have it usable by everyone by default.
  * @param querycb           The callback which is called when a client buys / sells this upgrade. Can be used to apply some effects immediately on purchase.
  * @param activecb          The callback which is called to check whether the upgrade currently has some active effect on the client.
- * @noreturn
  * @error Upgrade shortname already exists.
  */
-native SMRPG_RegisterUpgradeType(const String:name[], const String:shortname[], const String:description[], maxlevelbarrier, bool:bDefaultEnable, iDefaultMaxLevel, iDefaultStartCost, iDefaultCostInc, iAdminFlags=0, SMRPG_UpgradeQueryCB:querycb, SMRPG_ActiveQueryCB:activecb);
+native void SMRPG_RegisterUpgradeType(const char[] name, const char[] shortname, const char[] description, int maxlevelbarrier, bool bDefaultEnable, int iDefaultMaxLevel, int iDefaultStartCost, int iDefaultCostInc, int iAdminFlags=0, SMRPG_UpgradeQueryCB querycb, SMRPG_ActiveQueryCB activecb);
 
 /**
  * Unregisters a given upgrade from the core.
@@ -78,10 +76,9 @@ native SMRPG_RegisterUpgradeType(const String:name[], const String:shortname[], 
  * Call this in OnPluginEnd()!
  *
  * @param shortname      The shortname of the upgrade you want to unregister.
- * @noreturn
  * @error Unknown upgrade shortname.
  */
-native SMRPG_UnregisterUpgradeType(const String:shortname[]);
+native void SMRPG_UnregisterUpgradeType(const char[] shortname);
 
 /**
  * Create a convar for the upgrade.
@@ -100,7 +97,7 @@ native SMRPG_UnregisterUpgradeType(const String:shortname[]);
  * @return A handle to the newly created convar. If the convar already exists, a handle to it will still be returned.
  * @error Convar name is blank or is the same as an existing console command.
  */
-native Handle:SMRPG_CreateUpgradeConVar(const String:shortname[], const String:name[], const String:defaultValue[], const String:description[]="", flags=0, bool:hasMin=false, Float:min=0.0, bool:hasMax=false, Float:max=0.0);
+native ConVar SMRPG_CreateUpgradeConVar(const char[] shortname, const char[] name, const char[] defaultValue, const char[] description="", int flags=0, bool hasMin=false, float min=0.0, bool hasMax=false, float max=0.0);
 
 /**
  * Types of translatable information of the upgrade.
@@ -120,9 +117,8 @@ enum TranslationType
  * @param type           The requested TranslationType (name or description).
  * @param translation    The translation buffer.
  * @param maxlen         The maximal length of the buffer.
- * @noreturn
  */
-functag public SMRPG_TranslateUpgradeCB(client, const String:shortname[], TranslationType:type, String:translation[], maxlen);
+typedef SMRPG_TranslateUpgradeCB = function void (int client, const char[] shortname, TranslationType type, char[] translation, int maxlen);
 
 /**
  * Set a translation callback for the named upgrade.
@@ -131,10 +127,9 @@ functag public SMRPG_TranslateUpgradeCB(client, const String:shortname[], Transl
  *
  * @param shortname      The shortname of the upgrade you want to add the translation callback to.
  * @param cb             The callback function to register.
- * @noreturn
  * @error Unknown upgrade shortname.
  */
-native SMRPG_SetUpgradeTranslationCallback(const String:shortname[], SMRPG_TranslateUpgradeCB:cb);
+native void SMRPG_SetUpgradeTranslationCallback(const char[] shortname, SMRPG_TranslateUpgradeCB cb);
 
 /**
  * Called, when another plugin wants to stop the effect of this upgrade via SMRPG_ResetUpgradeEffectOnClient.
@@ -143,9 +138,8 @@ native SMRPG_SetUpgradeTranslationCallback(const String:shortname[], SMRPG_Trans
  * Passive upgrades (like regeneration) don't need to register this callback.
  *
  * @param client         Stop all effects on this client.
- * @noreturn
  */
-functag public SMRPG_ResetEffectCB(client);
+typedef SMRPG_ResetEffectCB = function void (int client);
 
 /**
  * Set a effect reset callback for the named upgrade.
@@ -156,10 +150,9 @@ functag public SMRPG_ResetEffectCB(client);
  *
  * @param shortname      The shortname of the upgrade you want to add the translation callback to.
  * @param cb             The callback function to register.
- * @noreturn
  * @error Unknown upgrade shortname.
  */
-native SMRPG_SetUpgradeResetCallback(const String:shortname[], SMRPG_ResetEffectCB:cb);
+native void SMRPG_SetUpgradeResetCallback(const char[] shortname, SMRPG_ResetEffectCB cb);
 
 /** List of different cosmetical effects */
 enum SMRPG_FX {
@@ -178,10 +171,9 @@ enum SMRPG_FX {
  * @param shortname       The shortname of the upgrade.
  * @param effecttype      What kind of effect does this plugin support? See SMRPG_FX enum.
  * @param bDefaultEnable  Should the upgrade show the effects by default?
- * @noreturn
  * @error Unknown upgrade shortname.
  */
-native SMRPG_SetUpgradeDefaultCosmeticEffect(const String:shortname[], SMRPG_FX:effecttype, bool:bDefaultEnable);
+native void SMRPG_SetUpgradeDefaultCosmeticEffect(const char[] shortname, SMRPG_FX effecttype, bool bDefaultEnable);
 
 /**
  * Returns whether a visual or sound effect should be played for a client.
@@ -192,7 +184,7 @@ native SMRPG_SetUpgradeDefaultCosmeticEffect(const String:shortname[], SMRPG_FX:
  * @return            True if client has that cosmetic type enabled, false otherwise.
  * @error Invalid client index, unknown upgrade shortname.
  */
-native bool:SMRPG_ClientWantsCosmetics(client, const String:shortname[], SMRPG_FX:effecttype);
+native bool SMRPG_ClientWantsCosmetics(int client, const char[] shortname, SMRPG_FX effecttype);
 
 /**
  * Signal other plugins that this upgrade is about to do its effects on a client.
@@ -209,7 +201,7 @@ native bool:SMRPG_ClientWantsCosmetics(client, const String:shortname[], SMRPG_F
  * @return True, if it's ok to run the effect, false if some other plugin doesn't want you to apply the effects.
  * @error Invalid client index, unknown upgrade shortname.
  */
-native bool:SMRPG_RunUpgradeEffect(target, const String:shortname[], issuer=-1);
+native bool SMRPG_RunUpgradeEffect(int target, const char[] shortname, int issuer=-1);
 
 /**
  * Check if an upgrade with that shortname exists.
@@ -217,7 +209,7 @@ native bool:SMRPG_RunUpgradeEffect(target, const String:shortname[], issuer=-1);
  * @param shortname      The shortname of the upgrade.
  * @return True, if there is an upgrade with that shortname registered, false otherwise.
  */
-native bool:SMRPG_UpgradeExists(const String:shortname[]);
+native bool SMRPG_UpgradeExists(const char[] shortname);
 
 /**
  * The maximal length of the full name of an upgrade
@@ -256,10 +248,9 @@ enum UpgradeInfo
  * @param shortname      The shortname of the upgrade you want to know more about.
  * @param upgrade        An buffer array to hold all the upgrade information.
  * @param size           The size of the buffer array.
- * @noreturn
  * @error Unkown upgrade shortname.
  */
-native SMRPG_GetUpgradeInfo(const String:shortname[], upgrade[UpgradeInfo], size=_:UpgradeInfo);
+native void SMRPG_GetUpgradeInfo(const char[] shortname, upgrade[UpgradeInfo], int size=view_as<int>(UpgradeInfo));
 
 /**
  * Ask the plugin controlling an upgrade to remove all active effects from a client.
@@ -268,10 +259,9 @@ native SMRPG_GetUpgradeInfo(const String:shortname[], upgrade[UpgradeInfo], size
  *
  * @param client         The client to stop all effects on.
  * @param shortname      The upgrade shortname, which effects should be stopped on the client.
- * @noreturn
  * @error Invalid client index, unknown upgrade shortname.
  */
-native SMRPG_ResetUpgradeEffectOnClient(client, const String:shortname[]);
+native void SMRPG_ResetUpgradeEffectOnClient(int client, const char[] shortname);
 
 /**
  * Checks if an upgrade's effect is currently active on a client.
@@ -282,7 +272,7 @@ native SMRPG_ResetUpgradeEffectOnClient(client, const String:shortname[]);
  * @return True, if the plugin handling the upgrade said, there is some effect active, false otherwise.
  * @error Invalid client index, unknown upgrade shortname.
  */
-native bool:SMRPG_IsUpgradeActiveOnClient(client, const String:shortname[]);
+native bool SMRPG_IsUpgradeActiveOnClient(int client, const char[] shortname);
 
 /**
  * Checks if a client has access to an upgrade.
@@ -296,7 +286,7 @@ native bool:SMRPG_IsUpgradeActiveOnClient(client, const String:shortname[]);
  * @return True, if the client is allowed to use this upgrade, false otherwise.
  * @error Invalid client index, unknown upgrade shortname.
  */
-native bool:SMRPG_CheckUpgradeAccess(client, const String:shortname[]);
+native bool SMRPG_CheckUpgradeAccess(int client, const char[] shortname);
 
 /**
  * Get the selected level of an upgrade of a client.
@@ -308,7 +298,7 @@ native bool:SMRPG_CheckUpgradeAccess(client, const String:shortname[]);
  * @return The level of the upgrade the client has selected. 0 if he didn't buy it yet or has it disabled.
  * @error Invalid client index, unknown upgrade shortname.
  */
-native SMRPG_GetClientUpgradeLevel(client, const String:shortname[]);
+native int SMRPG_GetClientUpgradeLevel(int client, const char[] shortname);
 
 /**
  * Get the maximum purchased level of an upgrade of a client.
@@ -320,7 +310,7 @@ native SMRPG_GetClientUpgradeLevel(client, const String:shortname[]);
  * @return The level of the upgrade the client has purchased. 0 if he didn't buy it yet.
  * @error Invalid client index, unknown upgrade shortname.
  */
-native SMRPG_GetClientPurchasedUpgradeLevel(client, const String:shortname[]);
+native int SMRPG_GetClientPurchasedUpgradeLevel(int client, const char[] shortname);
 
 /**
  * Check if a client has the reached the maximum level of an upgrade.
@@ -329,7 +319,7 @@ native SMRPG_GetClientPurchasedUpgradeLevel(client, const String:shortname[]);
  * @param shortname     The upgrade shortname.
  * @return True if client has the maximal upgrade level, false otherwise.
  */
-stock bool:SMRPG_IsClientUpgradeMaxed(client, const String:shortname[])
+stock bool SMRPG_IsClientUpgradeMaxed(int client, const char[] shortname)
 {
   new upgrade[UpgradeInfo];
   SMRPG_GetUpgradeInfo(shortname, upgrade);
@@ -349,7 +339,7 @@ stock bool:SMRPG_IsClientUpgradeMaxed(client, const String:shortname[])
  * @param iLevel         The new selected level of the upgrade.
  * @error Invalid client index, unknown upgrade shortname or purchased level lower than the one you want to select.
  */
-native bool:SMRPG_SetClientSelectedUpgradeLevel(client, const String:shortname[], iLevel);
+native bool SMRPG_SetClientSelectedUpgradeLevel(int client, const char[] shortname, int iLevel);
 
 /**
  * Lets a client buy an upgrade and increases his upgrade level by 1.
@@ -361,7 +351,7 @@ native bool:SMRPG_SetClientSelectedUpgradeLevel(client, const String:shortname[]
  * @return True, if the client bought the upgrade, false if some other plugin stopped the buying in SMRPG_OnBuyUpgrade.
  * @error Invalid client index, unknown upgrade shortname.
  */
-native bool:SMRPG_ClientBuyUpgrade(client, const String:shortname[]);
+native bool SMRPG_ClientBuyUpgrade(int client, const char[] shortname);
 
 /**
  * Lets a client sell an upgrade and decreases his upgrade level by 1.
@@ -373,7 +363,7 @@ native bool:SMRPG_ClientBuyUpgrade(client, const String:shortname[]);
  * @return True, if the client sold the upgrade, false if some other plugin stopped the selling in SMRPG_OnSellUpgrade.
  * @error Invalid client index, unknown upgrade shortname.
  */
-native bool:SMRPG_ClientSellUpgrade(client, const String:shortname[]);
+native bool SMRPG_ClientSellUpgrade(int client, const char[] shortname);
 
 /**
  * Called when a client buys an upgrade or in general, when a client's upgrade level increases.
@@ -384,7 +374,7 @@ native bool:SMRPG_ClientSellUpgrade(client, const String:shortname[]);
  * @param newlevel       The new level, the client's upgrade will be set to.
  * @return >= Plugin_Handled to block the client from buying that upgrade, Plugin_Continue to let it pass.
  */
-forward Action:SMRPG_OnBuyUpgrade(client, const String:shortname[], newlevel);
+forward Action SMRPG_OnBuyUpgrade(int client, const char[] shortname, int newlevel);
 
 /**
  * Called after a client bought an upgrade or in general, when a client's upgrade level increased.
@@ -392,9 +382,8 @@ forward Action:SMRPG_OnBuyUpgrade(client, const String:shortname[], newlevel);
  * @param client         The client who bought an upgrade.
  * @param shortname      The upgrade shortname of the upgrade bought.
  * @param newlevel       The new level, the client's upgrade is set to.
- * @noreturn
  */
-forward SMRPG_OnBuyUpgradePost(client, const String:shortname[], newlevel);
+forward void SMRPG_OnBuyUpgradePost(int client, const char[] shortname, int newlevel);
 
 /**
  * Called when a client sells an upgrade or in general, when a client's upgrade level decreases.
@@ -405,7 +394,7 @@ forward SMRPG_OnBuyUpgradePost(client, const String:shortname[], newlevel);
  * @param newlevel       The new level, the client's upgrade will be set to.
  * @return >= Plugin_Handled to block the client from selling that upgrade, Plugin_Continue to let it pass.
  */
-forward Action:SMRPG_OnSellUpgrade(client, const String:shortname[], newlevel);
+forward Action SMRPG_OnSellUpgrade(int client, const char[] shortname, int newlevel);
 
 /**
  * Called after a client sold an upgrade or in general, when a client's upgrade level decreased.
@@ -413,9 +402,8 @@ forward Action:SMRPG_OnSellUpgrade(client, const String:shortname[], newlevel);
  * @param client         The client who sold an upgrade.
  * @param shortname      The upgrade shortname of the upgrade sold.
  * @param newlevel       The new level, the client's upgrade is set to.
- * @noreturn
  */
-forward SMRPG_OnSellUpgradePost(client, const String:shortname[], newlevel);
+forward void SMRPG_OnSellUpgradePost(int client, const char[] shortname, int newlevel);
 
 /**
  * Called when an upgrade is about to start his effect on a client.
@@ -426,16 +414,15 @@ forward SMRPG_OnSellUpgradePost(client, const String:shortname[], newlevel);
  * @param issuer         (Optional) The client which starts the effect on the target. (Same as target by default)
  * @return >= Plugin_Handled to tell the upgrade to NOT run the effect, Plugin_Continue to let it pass.
  */
-forward Action:SMRPG_OnUpgradeEffect(target, const String:shortname[], issuer);
+forward Action SMRPG_OnUpgradeEffect(int target, const char[] shortname, int issuer);
 
 /**
  * Called after the default convars of an upgrade have changed.
  * @see SMRPG_RegisterUpgradeType
  *
  * @param shortname      The shortname of the upgrade which settings have changed.
- * @noreturn
  */
-forward SMRPG_OnUpgradeSettingsChanged(const String:shortname[]);
+forward void SMRPG_OnUpgradeSettingsChanged(const char[] shortname);
 
 /**
  * Called when an upgrade is registered.
@@ -443,14 +430,12 @@ forward SMRPG_OnUpgradeSettingsChanged(const String:shortname[]);
  * @see SMRPG_OnClientLoaded.
  *
  * @param shortname      The shortname of the loaded upgrade.
- * @noreturn
  */
-forward SMRPG_OnUpgradeRegistered(const String:shortname[]);
+forward void SMRPG_OnUpgradeRegistered(const char[] shortname);
 
 /**
  * Called when an upgrade is unregistered from the core and is no longer available.
  *
  * @param shortname      The shortname of the loaded upgrade.
- * @noreturn
  */
-forward SMRPG_OnUpgradeUnregistered(const String:shortname[]);
+forward void SMRPG_OnUpgradeUnregistered(const char[] shortname);

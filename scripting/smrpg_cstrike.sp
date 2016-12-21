@@ -6,32 +6,33 @@
 #include <smlib>
 #include <autoexecconfig>
 
+#pragma newdecls required
 #define PLUGIN_VERSION "1.0"
 
 //#define _DEBUG
 
-new bool:g_bIsCSGO;
+bool g_bIsCSGO;
 
-new Handle:g_hCVExpKillMax;
-new Handle:g_hCVExpTeamwin;
+ConVar g_hCVExpKillMax;
+ConVar g_hCVExpTeamwin;
 
-new Handle:g_hCVExpKillAssist;
+ConVar g_hCVExpKillAssist;
 
-new Handle:g_hCVExpHeadshot;
+ConVar g_hCVExpHeadshot;
 
-new Handle:g_hCVExpBombPlanted;
-new Handle:g_hCVExpBombDefused;
-new Handle:g_hCVExpBombExploded;
-new Handle:g_hCVExpHostage;
-new Handle:g_hCVExpVIPEscaped;
+ConVar g_hCVExpBombPlanted;
+ConVar g_hCVExpBombDefused;
+ConVar g_hCVExpBombExploded;
+ConVar g_hCVExpHostage;
+ConVar g_hCVExpVIPEscaped;
 
-new Handle:g_hCVExpDominating;
-new Handle:g_hCVExpRevenge;
+ConVar g_hCVExpDominating;
+ConVar g_hCVExpRevenge;
 
-new Handle:g_hCVBotEarnExpObjective;
+ConVar g_hCVBotEarnExpObjective;
 
-new Handle:g_hCVShowMVPLevel;
-new Handle:g_hCVEnableAntiKnifeleveling;
+ConVar g_hCVShowMVPLevel;
+ConVar g_hCVEnableAntiKnifeleveling;
 
 enum KnifeLeveling {
 	KL_Hits,
@@ -39,12 +40,12 @@ enum KnifeLeveling {
 	KL_FirstAttack
 };
 
-new g_iKnifeDamage[MAXPLAYERS+1][MAXPLAYERS+1][KnifeLeveling];
-new bool:g_bKnifeLeveled[MAXPLAYERS+1];
-new Handle:g_hKnifeLevelCooldown[MAXPLAYERS+1];
-new g_iKnifeLevelDetections[MAXPLAYERS+1];
+int g_iKnifeDamage[MAXPLAYERS+1][MAXPLAYERS+1][KnifeLeveling];
+bool g_bKnifeLeveled[MAXPLAYERS+1];
+Handle g_hKnifeLevelCooldown[MAXPLAYERS+1];
+int g_iKnifeLevelDetections[MAXPLAYERS+1];
 
-public Plugin:myinfo = 
+public Plugin myinfo = 
 {
 	name = "SM:RPG > Counter-Strike Experience Module",
 	author = "Jannik \"Peace-Maker\" Hartung, SeLfkiLL",
@@ -53,9 +54,9 @@ public Plugin:myinfo =
 	url = "http://www.wcfan.de/"
 }
 
-public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
+public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
-	new EngineVersion:engine = GetEngineVersion();
+	EngineVersion engine = GetEngineVersion();
 	if(engine != Engine_CSS && engine != Engine_CSGO)
 	{
 		Format(error, err_max, "This plugin is for use in Counter-Strike only. Bad engine version %d.", engine);
@@ -67,11 +68,11 @@ public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
 	return APLRes_Success;
 }
 
-public OnPluginStart()
+public void OnPluginStart()
 {
 	AutoExecConfig_SetFile("plugin.smrpg_cstrike");
 	AutoExecConfig_SetCreateFile(true);
-	AutoExecConfig_SetPlugin(INVALID_HANDLE);
+	AutoExecConfig_SetPlugin(null);
 	
 	g_hCVExpKillAssist = AutoExecConfig_CreateConVar("smrpg_exp_kill_assist", "10.0", "Experience for assisting in killing a player multiplied by the victim's level", 0, true, 0.0);
 	
@@ -109,20 +110,20 @@ public OnPluginStart()
 	HookEvent("round_mvp", Event_OnRoundMVP);
 }
 
-public OnAllPluginsLoaded()
+public void OnAllPluginsLoaded()
 {
 	g_hCVExpKillMax = FindConVar("smrpg_exp_kill_max");
 	g_hCVExpTeamwin = FindConVar("smrpg_exp_teamwin");
 }
 
 // Reset anti knifeleveling stuff
-public OnClientDisconnect(client)
+public void OnClientDisconnect(int client)
 {
 	g_bKnifeLeveled[client] = false;
 	ClearHandle(g_hKnifeLevelCooldown[client]);
 	g_iKnifeLevelDetections[client] = 0;
 	
-	for(new i=1;i<=MaxClients;i++)
+	for(int i=1;i<=MaxClients;i++)
 	{
 		g_iKnifeDamage[client][i][KL_Hits] = 0;
 		g_iKnifeDamage[client][i][KL_LastAttack] = 0;
@@ -134,7 +135,7 @@ public OnClientDisconnect(client)
 	}
 }
 
-public Action:SMRPG_OnAddExperience(client, const String:reason[], &iExperience, other)
+public Action SMRPG_OnAddExperience(int client, const char[] reason, int &iExperience, int other)
 {
 	// Don't let the normal experience calculation hit. We're doing some cstrike specific stuff here.
 	if(StrEqual(reason, ExperienceReason_PlayerHurt) || StrEqual(reason, ExperienceReason_PlayerKill) || StrEqual(reason, ExperienceReason_RoundEnd))
@@ -143,7 +144,7 @@ public Action:SMRPG_OnAddExperience(client, const String:reason[], &iExperience,
 	return Plugin_Continue;
 }
 
-public Action:SMRPG_OnClientLevel(client, oldlevel, newlevel)
+public Action SMRPG_OnClientLevel(int client, int oldlevel, int newlevel)
 {
 	if(IsClientInGame(client))
 		UpdateMVPLevel(client);
@@ -151,7 +152,7 @@ public Action:SMRPG_OnClientLevel(client, oldlevel, newlevel)
 	return Plugin_Continue;
 }
 
-public SMRPG_TranslateExperienceReason(client, const String:reason[], iExperience, other, String:buffer[], maxlen)
+public void SMRPG_TranslateExperienceReason(int client, const char[] reason, int iExperience, int other, char[] buffer, int maxlen)
 {
 	// Just use the reason string directly as translation phrase.
 	if(other > 0)
@@ -160,27 +161,27 @@ public SMRPG_TranslateExperienceReason(client, const String:reason[], iExperienc
 		Format(buffer, maxlen, "%T", reason, client, iExperience);
 }
 
-public Event_OnPlayerSpawn(Handle:event, const String:error[], bool:dontBroadcast)
+public void Event_OnPlayerSpawn(Event event, const char[] error, bool dontBroadcast)
 {
-	new client = GetClientOfUserId(GetEventInt(event, "userid"));
+	int client = GetClientOfUserId(event.GetInt("userid"));
 	UpdateMVPLevel(client);
 }
 
-public Event_OnRoundMVP(Handle:event, const String:error[], bool:dontBroadcast)
+public void Event_OnRoundMVP(Event event, const char[] error, bool dontBroadcast)
 {
-	new client = GetClientOfUserId(GetEventInt(event, "userid"));
+	int client = GetClientOfUserId(event.GetInt("userid"));
 	UpdateMVPLevel(client);
 }
 
-public Event_OnPlayerHurt(Handle:event, const String:error[], bool:dontBroadcast)
+public void Event_OnPlayerHurt(Event event, const char[] error, bool dontBroadcast)
 {
-	new attacker = GetClientOfUserId(GetEventInt(event, "attacker"));
-	new victim = GetClientOfUserId(GetEventInt(event, "userid"));
+	int attacker = GetClientOfUserId(event.GetInt("attacker"));
+	int victim = GetClientOfUserId(event.GetInt("userid"));
 	
-	new iDmgHealth = GetEventInt(event, "dmg_health");
-	new iDmgArmor = GetEventInt(event, "dmg_armor");
-	decl String:sWeapon[64];
-	GetEventString(event, "weapon", sWeapon, sizeof(sWeapon));
+	int iDmgHealth = event.GetInt("dmg_health");
+	int iDmgArmor = event.GetInt("dmg_armor");
+	char sWeapon[64];
+	event.GetString("weapon", sWeapon, sizeof(sWeapon));
 	
 	if(attacker == 0 || victim == 0)
 		return;
@@ -199,8 +200,8 @@ public Event_OnPlayerHurt(Handle:event, const String:error[], bool:dontBroadcast
 	if(!SMRPG_IsFFAEnabled() && GetClientTeam(attacker) == GetClientTeam(victim))
 		return;
 	
-	new iExp;
-	new iTotalDmg = iDmgHealth+iDmgArmor;
+	int iExp;
+	int iTotalDmg = iDmgHealth+iDmgArmor;
 	if(StrContains(sWeapon, "knife") != -1)
 	{
 		// If this guy didn't attack the other player for 30 seconds, reset his hit count.
@@ -221,7 +222,7 @@ public Event_OnPlayerHurt(Handle:event, const String:error[], bool:dontBroadcast
 		if(g_iKnifeDamage[attacker][victim][KL_Hits] > 5 && (g_iKnifeDamage[attacker][victim][KL_LastAttack] - g_iKnifeDamage[attacker][victim][KL_FirstAttack]) > 10)
 		{
 			//PrintToServer("%N is knifeleveling on %N. hits %d, time since first attack: %d", attacker, victim, g_iKnifeDamage[attacker][victim][KL_Hits], (g_iKnifeDamage[attacker][victim][KL_LastAttack] - g_iKnifeDamage[attacker][victim][KL_FirstAttack]));
-			if(GetConVarBool(g_hCVEnableAntiKnifeleveling) && !g_bKnifeLeveled[attacker])
+			if(g_hCVEnableAntiKnifeleveling.BoolValue && !g_bKnifeLeveled[attacker])
 			{
 				LogMessage("%L (lvl %d) is knifeleveling with %L (lvl %d).", attacker, SMRPG_GetClientLevel(attacker), victim, SMRPG_GetClientLevel(victim));
 				Client_PrintToChatAll(false, "%t", "Player is knifeleveling", attacker, victim);
@@ -237,7 +238,7 @@ public Event_OnPlayerHurt(Handle:event, const String:error[], bool:dontBroadcast
 		}
 		
 		// Don't give any experience at all for knife leveling.
-		if(GetConVarBool(g_hCVEnableAntiKnifeleveling) && g_bKnifeLeveled[attacker])
+		if(g_hCVEnableAntiKnifeleveling.BoolValue && g_bKnifeLeveled[attacker])
 			return;
 
 	}
@@ -250,18 +251,18 @@ public Event_OnPlayerHurt(Handle:event, const String:error[], bool:dontBroadcast
 		Debug_AddClientExperience(attacker, iExp, true, "cs_playerhurt", victim);
 }
 
-public Event_OnPlayerDeath(Handle:event, const String:error[], bool:dontBroadcast)
+public void Event_OnPlayerDeath(Event event, const char[] error, bool dontBroadcast)
 {
-	new attacker = GetClientOfUserId(GetEventInt(event, "attacker"));
-	new victim = GetClientOfUserId(GetEventInt(event, "userid"));
-	new assister;
+	int attacker = GetClientOfUserId(event.GetInt("attacker"));
+	int victim = GetClientOfUserId(event.GetInt("userid"));
+	int assister;
 	
 	if(attacker == 0 || victim == 0)
 		return;
 	
 	if(g_bIsCSGO)
 	{
-		assister = GetClientOfUserId(GetEventInt(event, "assister"));
+		assister = GetClientOfUserId(event.GetInt("assister"));
 	}
 	
 	if(!SMRPG_IsEnabled())
@@ -278,7 +279,7 @@ public Event_OnPlayerDeath(Handle:event, const String:error[], bool:dontBroadcas
 	if(assister > 0
 	&& (SMRPG_IsFFAEnabled() || GetClientTeam(victim) != GetClientTeam(assister)))
 	{
-		new iExp = RoundToCeil(SMRPG_GetClientLevel(victim) * GetConVarFloat(g_hCVExpKillAssist));
+		int iExp = RoundToCeil(SMRPG_GetClientLevel(victim) * g_hCVExpKillAssist.FloatValue);
 		Debug_AddClientExperience(assister, iExp, false, "cs_playerkillassist", victim);
 	}
 	
@@ -290,14 +291,14 @@ public Event_OnPlayerDeath(Handle:event, const String:error[], bool:dontBroadcas
 	if(!SMRPG_IsFFAEnabled() && GetClientTeam(attacker) == GetClientTeam(victim))
 		return;
 	
-	new String:sWeapon[64];
-	GetEventString(event, "weapon", sWeapon, sizeof(sWeapon));
+	char sWeapon[64];
+	event.GetString("weapon", sWeapon, sizeof(sWeapon));
 	
-	new iExp = RoundToCeil(SMRPG_GetClientLevel(victim) * SMRPG_GetWeaponExperience(sWeapon, WeaponExperience_Kill) + SMRPG_GetWeaponExperience(sWeapon, WeaponExperience_Bonus));
+	int iExp = RoundToCeil(SMRPG_GetClientLevel(victim) * SMRPG_GetWeaponExperience(sWeapon, WeaponExperience_Kill) + SMRPG_GetWeaponExperience(sWeapon, WeaponExperience_Bonus));
 	if(GetEventBool(event, "headshot"))
-		iExp += GetConVarInt(g_hCVExpHeadshot);
+		iExp += g_hCVExpHeadshot.IntValue;
 	
-	new iExpMax = GetConVarInt(g_hCVExpKillMax);
+	int iExpMax = g_hCVExpKillMax.IntValue;
 	// Limit the possible experience to this.
 	if(iExpMax > 0 && iExp > iExpMax)
 		iExp = iExpMax;
@@ -307,14 +308,14 @@ public Event_OnPlayerDeath(Handle:event, const String:error[], bool:dontBroadcas
 	// Player started dominating this player?
 	if(GetEventBool(event, "dominated"))
 	{
-		iExp = RoundToCeil(SMRPG_GetClientLevel(victim) * GetConVarFloat(g_hCVExpDominating));
+		iExp = RoundToCeil(SMRPG_GetClientLevel(victim) * g_hCVExpDominating.FloatValue);
 		Debug_AddClientExperience(attacker, iExp, false, "cs_dominating", victim);
 	}
 	
 	// Player broke the domination and killed him in revenge?
 	if(GetEventBool(event, "revenge"))
 	{
-		iExp = RoundToCeil(SMRPG_GetClientLevel(victim) * GetConVarFloat(g_hCVExpRevenge));
+		iExp = RoundToCeil(SMRPG_GetClientLevel(victim) * g_hCVExpRevenge.FloatValue);
 		Debug_AddClientExperience(attacker, iExp, false, "cs_revenge", victim);
 	}
 }
@@ -328,10 +329,10 @@ public Event_OnPlayerDeath(Handle:event, const String:error[], bool:dontBroadcas
 	11   Target has been saved!
 	12   Hostages have not been rescued!
 */
-public Event_OnRoundEnd(Handle:event, const String:error[], bool:dontBroadcast)
+public void Event_OnRoundEnd(Event event, const char[] error, bool dontBroadcast)
 {
-	new iTeam = GetEventInt(event, "winner");
-	new CSRoundEndReason:iReason = CSRoundEndReason:GetEventInt(event, "reason");
+	int iTeam = event.GetInt("winner");
+	CSRoundEndReason iReason = view_as<CSRoundEndReason>(event.GetInt("reason"));
 	
 	// The reasons in CS:GO are shifted in the CSRoundEndReason enum..
 	if (g_bIsCSGO)
@@ -349,7 +350,7 @@ public Event_OnRoundEnd(Handle:event, const String:error[], bool:dontBroadcast)
 			return;
 	}
 	
-	new Float:fTeamRatio;
+	float fTeamRatio;
 	if(iTeam == 2)
 		fTeamRatio = SMRPG_TeamRatio(3);
 	else if(iTeam == 3)
@@ -357,128 +358,128 @@ public Event_OnRoundEnd(Handle:event, const String:error[], bool:dontBroadcast)
 	else
 		return;
 	
-	for(new i=1;i<=MaxClients;i++)
+	for(int i=1;i<=MaxClients;i++)
 	{
 		if(IsClientInGame(i) && GetClientTeam(i) == iTeam)
-			Debug_AddClientExperience(i, RoundToCeil(float(SMRPG_LevelToExperience(SMRPG_GetClientLevel(i))) * GetConVarFloat(g_hCVExpTeamwin) * fTeamRatio), false, "cs_winround");
+			Debug_AddClientExperience(i, RoundToCeil(float(SMRPG_LevelToExperience(SMRPG_GetClientLevel(i))) * g_hCVExpTeamwin.FloatValue * fTeamRatio), false, "cs_winround");
 	}
 }
 
-public Event_OnBombPlanted(Handle:event, const String:error[], bool:dontBroadcast)
+public void Event_OnBombPlanted(Event event, const char[] error, bool dontBroadcast)
 {
-	new client = GetClientOfUserId(GetEventInt(event, "userid"));
+	int client = GetClientOfUserId(event.GetInt("userid"));
 	if(!client)
 		return;
 	
 	if(!SMRPG_IsEnabled())
 		return;
 	
-	new iTeam = GetClientTeam(client);
+	int iTeam = GetClientTeam(client);
 	if(iTeam <= 1)
 		return;
 	
-	if(IsFakeClient(client) && !GetConVarBool(g_hCVBotEarnExpObjective))
+	if(IsFakeClient(client) && !g_hCVBotEarnExpObjective.BoolValue)
 		return;
 	
-	new Float:fTeamRatio = SMRPG_TeamRatio(iTeam == 2 ? 3 : 2);
-	Debug_AddClientExperience(client, RoundToCeil(float(SMRPG_LevelToExperience(SMRPG_GetClientLevel(client))) * GetConVarFloat(g_hCVExpBombPlanted) * fTeamRatio), false, "cs_bombplanted");
+	float fTeamRatio = SMRPG_TeamRatio(iTeam == 2 ? 3 : 2);
+	Debug_AddClientExperience(client, RoundToCeil(float(SMRPG_LevelToExperience(SMRPG_GetClientLevel(client))) * g_hCVExpBombPlanted.FloatValue * fTeamRatio), false, "cs_bombplanted");
 }
 
-public Event_OnBombDefused(Handle:event, const String:error[], bool:dontBroadcast)
+public void Event_OnBombDefused(Event event, const char[] error, bool dontBroadcast)
 {
-	new client = GetClientOfUserId(GetEventInt(event, "userid"));
+	int client = GetClientOfUserId(event.GetInt("userid"));
 	if(!client)
 		return;
 	
 	if(!SMRPG_IsEnabled())
 		return;
 	
-	new iTeam = GetClientTeam(client);
+	int iTeam = GetClientTeam(client);
 	if(iTeam <= 1)
 		return;
 	
-	if(IsFakeClient(client) && !GetConVarBool(g_hCVBotEarnExpObjective))
+	if(IsFakeClient(client) && !g_hCVBotEarnExpObjective.BoolValue)
 		return;
 	
-	new Float:fTeamRatio = SMRPG_TeamRatio(iTeam == 2 ? 3 : 2);
-	Debug_AddClientExperience(client, RoundToCeil(float(SMRPG_LevelToExperience(SMRPG_GetClientLevel(client))) * GetConVarFloat(g_hCVExpBombDefused) * fTeamRatio), false, "cs_bombdefused");
+	float fTeamRatio = SMRPG_TeamRatio(iTeam == 2 ? 3 : 2);
+	Debug_AddClientExperience(client, RoundToCeil(float(SMRPG_LevelToExperience(SMRPG_GetClientLevel(client))) * g_hCVExpBombDefused.FloatValue * fTeamRatio), false, "cs_bombdefused");
 }
 
-public Event_OnBombExploded(Handle:event, const String:error[], bool:dontBroadcast)
+public void Event_OnBombExploded(Event event, const char[] error, bool dontBroadcast)
 {
-	new client = GetClientOfUserId(GetEventInt(event, "userid"));
+	int client = GetClientOfUserId(event.GetInt("userid"));
 	if(!client)
 		return;
 	
 	if(!SMRPG_IsEnabled())
 		return;
 	
-	new iTeam = GetClientTeam(client);
+	int iTeam = GetClientTeam(client);
 	if(iTeam <= 1)
 		return;
 	
-	if(IsFakeClient(client) && !GetConVarBool(g_hCVBotEarnExpObjective))
+	if(IsFakeClient(client) && !g_hCVBotEarnExpObjective.BoolValue)
 		return;
 	
-	new Float:fTeamRatio = SMRPG_TeamRatio(iTeam == 2 ? 3 : 2);
-	Debug_AddClientExperience(client, RoundToCeil(float(SMRPG_LevelToExperience(SMRPG_GetClientLevel(client))) * GetConVarFloat(g_hCVExpBombExploded) * fTeamRatio), false, "cs_bombexploded");
+	float fTeamRatio = SMRPG_TeamRatio(iTeam == 2 ? 3 : 2);
+	Debug_AddClientExperience(client, RoundToCeil(float(SMRPG_LevelToExperience(SMRPG_GetClientLevel(client))) * g_hCVExpBombExploded.FloatValue * fTeamRatio), false, "cs_bombexploded");
 }
 
-public Event_OnHostageRescued(Handle:event, const String:error[], bool:dontBroadcast)
+public void Event_OnHostageRescued(Event event, const char[] error, bool dontBroadcast)
 {
-	new client = GetClientOfUserId(GetEventInt(event, "userid"));
+	int client = GetClientOfUserId(event.GetInt("userid"));
 	if(!client)
 		return;
 	
 	if(!SMRPG_IsEnabled())
 		return;
 	
-	new iTeam = GetClientTeam(client);
+	int iTeam = GetClientTeam(client);
 	if(iTeam <= 1)
 		return;
 	
-	if(IsFakeClient(client) && !GetConVarBool(g_hCVBotEarnExpObjective))
+	if(IsFakeClient(client) && !g_hCVBotEarnExpObjective.BoolValue)
 		return;
 	
-	new Float:fTeamRatio = SMRPG_TeamRatio(iTeam == 2 ? 3 : 2);
-	Debug_AddClientExperience(client, RoundToCeil(float(SMRPG_LevelToExperience(SMRPG_GetClientLevel(client))) * GetConVarFloat(g_hCVExpHostage) * fTeamRatio), false, "cs_hostagerescued");
+	float fTeamRatio = SMRPG_TeamRatio(iTeam == 2 ? 3 : 2);
+	Debug_AddClientExperience(client, RoundToCeil(float(SMRPG_LevelToExperience(SMRPG_GetClientLevel(client))) * g_hCVExpHostage.FloatValue * fTeamRatio), false, "cs_hostagerescued");
 }
 
-public Event_OnVIPEscaped(Handle:event, const String:error[], bool:dontBroadcast)
+public void Event_OnVIPEscaped(Event event, const char[] error, bool dontBroadcast)
 {
-	new client = GetClientOfUserId(GetEventInt(event, "userid"));
+	int client = GetClientOfUserId(event.GetInt("userid"));
 	if(!client)
 		return;
 	
 	if(!SMRPG_IsEnabled())
 		return;
 	
-	new iTeam = GetClientTeam(client);
+	int iTeam = GetClientTeam(client);
 	if(iTeam <= 1)
 		return;
 	
-	if(IsFakeClient(client) && !GetConVarBool(g_hCVBotEarnExpObjective))
+	if(IsFakeClient(client) && !g_hCVBotEarnExpObjective.BoolValue)
 		return;
 	
-	new Float:fTeamRatio = SMRPG_TeamRatio(iTeam == 2 ? 3 : 2);
-	Debug_AddClientExperience(client, RoundToCeil(float(SMRPG_LevelToExperience(SMRPG_GetClientLevel(client))) * GetConVarFloat(g_hCVExpVIPEscaped) * fTeamRatio), false, "cs_vipescaped");
+	float fTeamRatio = SMRPG_TeamRatio(iTeam == 2 ? 3 : 2);
+	Debug_AddClientExperience(client, RoundToCeil(float(SMRPG_LevelToExperience(SMRPG_GetClientLevel(client))) * g_hCVExpVIPEscaped.FloatValue * fTeamRatio), false, "cs_vipescaped");
 }
 
-public Action:Timer_ResetKnifeLeveling(Handle:timer, any:userid)
+public Action Timer_ResetKnifeLeveling(Handle timer, any userid)
 {
-	new client = GetClientOfUserId(userid);
+	int client = GetClientOfUserId(userid);
 	if(!client)
 		return Plugin_Stop;
 	
 	//PrintToServer("%N knifeleveling status was reset.", client);
-	g_hKnifeLevelCooldown[client] = INVALID_HANDLE;
+	g_hKnifeLevelCooldown[client] = null;
 	g_bKnifeLeveled[client] = false;
 	return Plugin_Stop;
 }
 
-UpdateMVPLevel(client)
+void UpdateMVPLevel(int client)
 {
-	if(!GetConVarBool(g_hCVShowMVPLevel))
+	if(!g_hCVShowMVPLevel.BoolValue)
 		return;
 	
 	if (IsFakeClient(client) && SMRPG_IgnoreBots())
@@ -489,21 +490,21 @@ UpdateMVPLevel(client)
 
 // This stuff is leftover from balancing the experience on a deathmatch server.
 // Maybe someone finds it useful too when playing with the experience settings, so i'll leave it here.
-Debug_AddClientExperience(client, exp, bool:bHideNotice, const String:sReason[], victim=-1)
+void Debug_AddClientExperience(int client, int exp, bool bHideNotice, const char[] sReason, int victim=-1)
 {
 #if !defined _DEBUG
 	// This is all that's really needed
 	SMRPG_AddClientExperience(client, exp, sReason, bHideNotice, victim, SMRPG_TranslateExperienceReason);
 #else
-	new iOldLevel = SMRPG_GetClientLevel(client);
-	new iOldExperience = SMRPG_GetClientExperience(client);
-	new iOldNeeded = SMRPG_LevelToExperience(iOldLevel);
+	int iOldLevel = SMRPG_GetClientLevel(client);
+	int iOldExperience = SMRPG_GetClientExperience(client);
+	int iOldNeeded = SMRPG_LevelToExperience(iOldLevel);
 	
-	new iOriginalExperience = exp;
-	new bool:bAdded = SMRPG_AddClientExperience(client, exp, sReason, bHideNotice, victim, SMRPG_TranslateExperienceReason);
+	int iOriginalExperience = exp;
+	bool bAdded = SMRPG_AddClientExperience(client, exp, sReason, bHideNotice, victim, SMRPG_TranslateExperienceReason);
 	
-	new iNewLevel = SMRPG_GetClientLevel(client);
-	new String:sAttackerAuth[40], String:sVictimString[256], String:sLevelInc[32], String:sChangedExperience[32];
+	int iNewLevel = SMRPG_GetClientLevel(client);
+	char sAttackerAuth[40], sVictimString[256], sLevelInc[32], sChangedExperience[32];
 	GetClientAuthId(client, AuthId_Engine, sAttackerAuth, sizeof(sAttackerAuth));
 	if(victim > 0)
 		Format(sVictimString, sizeof(sVictimString), " %N (lvl %d)", victim, SMRPG_GetClientLevel(victim));
@@ -521,28 +522,28 @@ Debug_AddClientExperience(client, exp, bool:bHideNotice, const String:sReason[],
 }
 
 #if defined _DEBUG
-stock DebugLog(String:format[], any:...)
+stock void DebugLog(const char[] format, any ...)
 {
-	static String:sLog[8192] = "";
-	static Handle:hFile = INVALID_HANDLE;
-	static iOpenTime = 0;
-	decl String:sBuffer[256];
+	static char sLog[8192] = "";
+	static File hFile = null;
+	static int iOpenTime = 0;
+	char sBuffer[256];
 	SetGlobalTransTarget(LANG_SERVER);
 	VFormat(sBuffer, sizeof(sBuffer), format, 2);
 	
-	decl String:sOldDate[9], String:sCurrentDate[9];
+	char sOldDate[9], sCurrentDate[9];
 	FormatTime(sOldDate, sizeof(sOldDate), "%Y%m%d", iOpenTime);
 	FormatTime(sCurrentDate, sizeof(sCurrentDate), "%Y%m%d");
 	
-	if(hFile == INVALID_HANDLE || !StrEqual(sOldDate, sCurrentDate))
+	if(hFile == null || !StrEqual(sOldDate, sCurrentDate))
 	{
-		decl String:sPath[PLATFORM_MAX_PATH];
+		char sPath[PLATFORM_MAX_PATH];
 		FormatTime(sPath, sizeof(sPath), "%Y_%m_%d");
 		BuildPath(Path_SM, sPath, sizeof(sPath), "data/smrpg_experience_%s.log", sPath);
 		
 		// Basic log rotation
-		if(!StrEqual(sOldDate, sCurrentDate) && hFile != INVALID_HANDLE)
-			CloseHandle(hFile);
+		if(!StrEqual(sOldDate, sCurrentDate) && hFile != null)
+			delete hFile;
 		
 		hFile = OpenFile(sPath, "a");
 		iOpenTime = GetTime();
@@ -551,12 +552,12 @@ stock DebugLog(String:format[], any:...)
 	// Flush the buffer.
 	if((strlen(sLog) + strlen(sBuffer) + 24) >= sizeof(sLog)-1)
 	{
-		if(hFile != INVALID_HANDLE)
-			WriteFileString(hFile, sLog, false);
+		if(hFile != null)
+			hFile.WriteString(sLog, false);
 		sLog[0] = 0;
 	}
 	
-	decl String:sDate[32];
+	char sDate[32];
 	FormatTime(sDate, sizeof(sDate), "%m/%d/%Y - %H:%M:%S: ");
 	StrCat(sLog, sizeof(sLog), sDate);
 	StrCat(sLog, sizeof(sLog), sBuffer);

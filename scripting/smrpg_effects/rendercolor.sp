@@ -4,20 +4,20 @@
  */
 
 // Default render color to reset to when the fade finished.
-new g_iDefaultColor[MAXPLAYERS+1][4];
+int g_iDefaultColor[MAXPLAYERS+1][4];
 
-new Float:g_fColor[MAXPLAYERS+1][4];
+float g_fColor[MAXPLAYERS+1][4];
 
-new g_iColorFadeTarget[MAXPLAYERS+1][4];
-new Float:g_fColorFadeStep[MAXPLAYERS+1][4];
+int g_iColorFadeTarget[MAXPLAYERS+1][4];
+float g_fColorFadeStep[MAXPLAYERS+1][4];
 
 // Save which plugin last changed the color, so only that plugin may reset the color to default.
-new Handle:g_hLastAccessedPlugin[MAXPLAYERS+1][4];
+Handle g_hLastAccessedPlugin[MAXPLAYERS+1][4];
 
 /**
  * Setup helpers
  */
-RegisterRenderColorNatives()
+void RegisterRenderColorNatives()
 {
 	CreateNative("SMRPG_SetClientDefaultColor", Native_SetClientDefaultColor);
 	CreateNative("SMRPG_SetClientRenderColor", Native_SetClientRenderColor);
@@ -27,40 +27,40 @@ RegisterRenderColorNatives()
 	CreateNative("SMRPG_ResetClientToDefaultColor", Native_ResetClientToDefaultColor);
 }
 
-ResetRenderColorClient(client)
+void ResetRenderColorClient(int client)
 {
-	for(new i=0;i<4;i++)
+	for(int i=0;i<4;i++)
 	{
 		g_iDefaultColor[client][i] = 255;
 		g_iColorFadeTarget[client][i] = -1;
 		g_fColorFadeStep[client][i] = 1.0;
 		g_fColor[client][i] = 255.0;
-		g_hLastAccessedPlugin[client][i] = INVALID_HANDLE;
+		g_hLastAccessedPlugin[client][i] = null;
 	}
 }
 
-ApplyDefaultRenderColor(client)
+void ApplyDefaultRenderColor(int client)
 {
-	for(new i=0;i<4;i++)
+	for(int i=0;i<4;i++)
 	{
 		g_iColorFadeTarget[client][i] = -1;
 		g_fColor[client][i] = 255.0;
 	}
-	Help_ResetClientToDefaultColor(INVALID_HANDLE, client, true, true, true, true, true);
+	Help_ResetClientToDefaultColor(null, client, true, true, true, true, true);
 }
 
 // Fade players from current color linearly to the fade target.
-public OnGameFrame()
+public void OnGameFrame()
 {
-	new bool:bFade;
-	for(new client=1;client<=MaxClients;client++)
+	bool bFade;
+	for(int client=1;client<=MaxClients;client++)
 	{
 		if(!IsClientInGame(client) || !IsPlayerAlive(client))
 			continue;
 		
 		bFade = false;
-		new iColor[4];
-		for(new c=0;c<4;c++)
+		int iColor[4];
+		for(int c=0;c<4;c++)
 		{
 			// Don't change this channel by default.
 			iColor[c] = -1;
@@ -115,18 +115,15 @@ public OnGameFrame()
 /**
  * Native handlers
  */
-// native SMRPG_SetClientDefaultColor(client, r=-1, g=-1, b=-1, a=-1);
-public Native_SetClientDefaultColor(Handle:plugin, numParams)
+// native void SMRPG_SetClientDefaultColor(int client, int r=-1, int g=-1, int b=-1, int a=-1);
+public int Native_SetClientDefaultColor(Handle plugin, int numParams)
 {
-	new client = GetNativeCell(1);
+	int client = GetNativeCell(1);
 	if(client <= 0 || client > MaxClients)
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d", client);
-		return;
-	}
+		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d", client);
 	
-	new iColor[4];
-	for(new i=0;i<4;i++)
+	int iColor[4];
+	for(int i=0;i<4;i++)
 	{
 		iColor[i] = GetNativeCell(i+2);
 		if(iColor[i] >= 0)
@@ -138,30 +135,29 @@ public Native_SetClientDefaultColor(Handle:plugin, numParams)
 			g_iDefaultColor[client][i] = iColor[i];
 		}
 	}
+	return 0;
 }
 
-// native SMRPG_SetClientRenderColor(client, r=-1, g=-1, b=-1, a=-1);
-public Native_SetClientRenderColor(Handle:plugin, numParams)
+// native void SMRPG_SetClientRenderColor(intclient, int r=-1, int g=-1, int b=-1, int a=-1);
+public int Native_SetClientRenderColor(Handle plugin, int numParams)
 {
-	new client = GetNativeCell(1);
+	int client = GetNativeCell(1);
 	if(client <= 0 || client > MaxClients)
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d", client);
-		return;
-	}
+		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d", client);
 	
 	Help_SetClientRenderColor(plugin, client, GetNativeCell(2), GetNativeCell(3), GetNativeCell(4), GetNativeCell(5));
+	return 0;
 }
 
-stock Help_SetClientRenderColor(Handle:hPlugin, client, r=-1, g=-1, b=-1, a=-1)
+stock void Help_SetClientRenderColor(Handle hPlugin, int client, int r=-1, int g=-1, int b=-1, int a=-1)
 {
-	new iColor[4];
+	int iColor[4];
 	iColor[0] = r;
 	iColor[1] = g;
 	iColor[2] = b;
 	iColor[3] = a;
 	
-	for(new i=0;i<4;i++)
+	for(int i=0;i<4;i++)
 	{
 		// Entity_SetRenderColor checks explicitly for -1
 		if(iColor[i] < 0)
@@ -184,28 +180,26 @@ stock Help_SetClientRenderColor(Handle:hPlugin, client, r=-1, g=-1, b=-1, a=-1)
 	Entity_SetRenderColor(client, iColor[0], iColor[1], iColor[2], iColor[3]);
 }
 
-// native SMRPG_SetClientRenderColorFadeTarget(client, r=-1, g=-1, b=-1, a=-1);
-public Native_SetClientRenderColorFadeTarget(Handle:plugin, numParams)
+// native void SMRPG_SetClientRenderColorFadeTarget(int client, int r=-1, int g=-1, int b=-1, int a=-1);
+public int Native_SetClientRenderColorFadeTarget(Handle plugin, int numParams)
 {
-	new client = GetNativeCell(1);
+	int client = GetNativeCell(1);
 	if(client <= 0 || client > MaxClients)
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d", client);
-		return;
-	}
+		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d", client);
 	
 	Help_SetClientRenderColorFadeTarget(plugin, client, GetNativeCell(2), GetNativeCell(3), GetNativeCell(4), GetNativeCell(5));
+	return 0;
 }
 
-stock Help_SetClientRenderColorFadeTarget(Handle:hPlugin, client, r=-1, g=-1, b=-1, a=-1)
+stock void Help_SetClientRenderColorFadeTarget(Handle hPlugin, int client, int r=-1, int g=-1, int b=-1, int a=-1)
 {
-	new iColor[4];
+	int iColor[4];
 	iColor[0] = r;
 	iColor[1] = g;
 	iColor[2] = b;
 	iColor[3] = a;
 	
-	for(new i=0;i<4;i++)
+	for(int i=0;i<4;i++)
 	{
 		if(iColor[i] < 0)
 			iColor[i] = -1;
@@ -223,51 +217,47 @@ stock Help_SetClientRenderColorFadeTarget(Handle:hPlugin, client, r=-1, g=-1, b=
 	}
 }
 
-// native SMRPG_SetClientRenderColorFadeStepsize(client, r=-1, g=-1, b=-1, a=-1);
-public Native_SetClientRenderColorFadeStepsize(Handle:plugin, numParams)
+// native void SMRPG_SetClientRenderColorFadeStepsize(int client, int r=-1, int g=-1, int b=-1, int a=-1);
+public int Native_SetClientRenderColorFadeStepsize(Handle plugin, int numParams)
 {
-	new client = GetNativeCell(1);
+	int client = GetNativeCell(1);
 	if(client <= 0 || client > MaxClients)
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d", client);
-		return;
-	}
+		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d", client);
 	
-	new Float:fStepsize[4];
-	for(new i=0;i<4;i++)
+	float fStepsize[4];
+	for(int i=0;i<4;i++)
 	{
-		fStepsize[i] = Float:GetNativeCell(i+2);
+		fStepsize[i] = view_as<float>(GetNativeCell(i+2));
 		
 		if(fStepsize[i] <= 0.0)
 			continue;
 		
 		g_fColorFadeStep[client][i] = fStepsize[i];
 	}
+	return 0;
 }
 
-// native SMRPG_ResetClientToDefaultColor(client, bool:bResetRed, bool:bResetGreen, bool:bResetBlue, bool:bResetAlpha, bool:bForceReset=false);
-public Native_ResetClientToDefaultColor(Handle:plugin, numParams)
+// native void SMRPG_ResetClientToDefaultColor(int client, bool bResetRed, bool bResetGreen, bool bResetBlue, bool bResetAlpha, bool bForceReset=false);
+public int Native_ResetClientToDefaultColor(Handle plugin, int numParams)
 {
-	new client = GetNativeCell(1);
+	int client = GetNativeCell(1);
 	if(client <= 0 || client > MaxClients)
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d", client);
-		return;
-	}
+		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d", client);
 	
 	Help_ResetClientToDefaultColor(plugin, client, GetNativeCell(2), GetNativeCell(3), GetNativeCell(4), GetNativeCell(5), GetNativeCell(6));
+	return 0;
 }
 
-stock Help_ResetClientToDefaultColor(Handle:hPlugin, client, bool:bResetRed, bool:bResetGreen, bool:bResetBlue, bool:bResetAlpha, bool:bForceReset=false)
+stock int Help_ResetClientToDefaultColor(Handle hPlugin, int client, bool bResetRed, bool bResetGreen, bool bResetBlue, bool bResetAlpha, bool bForceReset=false)
 {
-	new bool:bResetChannel[4];
+	bool bResetChannel[4];
 	bResetChannel[0] = bResetRed;
 	bResetChannel[1] = bResetGreen;
 	bResetChannel[2] = bResetBlue;
 	bResetChannel[3] = bResetAlpha;
 	
-	new iColor[4];
-	for(new i=0;i<4;i++)
+	int iColor[4];
+	for(int i=0;i<4;i++)
 	{
 		// Ignore it by default.
 		iColor[i] = -1;
@@ -281,7 +271,7 @@ stock Help_ResetClientToDefaultColor(Handle:hPlugin, client, bool:bResetRed, boo
 		{
 			iColor[i] = g_iDefaultColor[client][i];
 			g_fColor[client][i] = float(g_iDefaultColor[client][i]);
-			g_hLastAccessedPlugin[client][i] = INVALID_HANDLE;
+			g_hLastAccessedPlugin[client][i] = null;
 		}
 	}
 	

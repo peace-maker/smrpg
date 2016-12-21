@@ -8,14 +8,14 @@
  *
  * @return True, if enabled, false otherwise.
  */
-native bool:SMRPG_IsEnabled();
+native bool SMRPG_IsEnabled();
 
 /**
  * Check if bots should not get any effects from the rpg plugin.
  *
  * @return True, if bots should be ignored, false otherwise.
  */
-native bool:SMRPG_IgnoreBots();
+native bool SMRPG_IgnoreBots();
 
 /**
  * Is the server in Free-For-All mode?
@@ -23,15 +23,14 @@ native bool:SMRPG_IgnoreBots();
  *
  * @return True, if teammates are enemies, false otherwise.
  */
-native bool:SMRPG_IsFFAEnabled();
+native bool SMRPG_IsFFAEnabled();
 
 /**
  * Called when SM:RPG is enabled or disabled. (smrpg_enable)
  *
  * @param bEnabled True, if SM:RPG is now enabled, false if it's now disabled.
- * @noreturn
  */
-forward SMRPG_OnEnableStatusChanged(bool:bEnabled);
+forward void SMRPG_OnEnableStatusChanged(bool bEnabled);
 
 #include <smrpg/smrpg_clients>
 #include <smrpg/smrpg_upgrades>
@@ -39,7 +38,7 @@ forward SMRPG_OnEnableStatusChanged(bool:bEnabled);
 #include <smrpg/smrpg_settings>
 #include <smrpg/smrpg_database>
 
-public SharedPlugin:__pl_smrpg = 
+public SharedPlugin __pl_smrpg = 
 {
 	name = "smrpg",
 	file = "smrpg.smx",
@@ -51,7 +50,7 @@ public SharedPlugin:__pl_smrpg =
 };
 
 #if !defined REQUIRE_PLUGIN
-public __pl_smrpg_SetNTVOptional()
+public void __pl_smrpg_SetNTVOptional()
 {
 	MarkNativeAsOptional("SMRPG_IsEnabled");
 	MarkNativeAsOptional("SMRPG_IgnoreBots");

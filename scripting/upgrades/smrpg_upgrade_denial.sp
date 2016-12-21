@@ -2,21 +2,23 @@
 #include <sourcemod>
 #include <sdktools>
 #include <sdkhooks>
-#include <smrpg>
 #include <smlib>
+
+#pragma newdecls required
+#include <smrpg>
 
 #define UPGRADE_SHORTNAME "denial"
 #define PLUGIN_VERSION "1.0"
 
-new Handle:g_hCVDenialRestrict;
+ConVar g_hCVDenialRestrict;
 
-new bool:g_bDenialPlayerWasDead[MAXPLAYERS+1];
-new Handle:g_hDenialStripTimer[MAXPLAYERS+1] = {INVALID_HANDLE,...};
+bool g_bDenialPlayerWasDead[MAXPLAYERS+1];
+Handle g_hDenialStripTimer[MAXPLAYERS+1] = {null,...};
 
-new String:g_sDenialPrimary[MAXPLAYERS+1][64];
-new String:g_sDenialSecondary[MAXPLAYERS+1][64];
+char g_sDenialPrimary[MAXPLAYERS+1][64];
+char g_sDenialSecondary[MAXPLAYERS+1][64];
 
-public Plugin:myinfo = 
+public Plugin myinfo = 
 {
 	name = "SM:RPG Upgrade > Denial",
 	author = "Jannik \"Peace-Maker\" Hartung",
@@ -25,7 +27,7 @@ public Plugin:myinfo =
 	url = "http://www.wcfan.de/"
 }
 
-public OnPluginStart()
+public void OnPluginStart()
 {
 	HookEvent("player_spawn", Event_OnPlayerSpawn);
 	HookEvent("player_death", Event_OnPlayerDeath);
@@ -34,25 +36,25 @@ public OnPluginStart()
 	LoadTranslations("smrpg_stock_upgrades.phrases");
 	
 	// Account for late loading
-	for(new i=1;i<=MaxClients;i++)
+	for(int i=1;i<=MaxClients;i++)
 	{
 		if(IsClientInGame(i))
 			OnClientPutInServer(i);
 	}
 }
 
-public OnPluginEnd()
+public void OnPluginEnd()
 {
 	if(SMRPG_UpgradeExists(UPGRADE_SHORTNAME))
 		SMRPG_UnregisterUpgradeType(UPGRADE_SHORTNAME);
 }
 
-public OnAllPluginsLoaded()
+public void OnAllPluginsLoaded()
 {
 	OnLibraryAdded("smrpg");
 }
 
-public OnLibraryAdded(const String:name[])
+public void OnLibraryAdded(const char[] name)
 {
 	// Register this upgrade in SM:RPG
 	if(StrEqual(name, "smrpg"))
@@ -65,12 +67,12 @@ public OnLibraryAdded(const String:name[])
 	}
 }
 
-public OnClientPutInServer(client)
+public void OnClientPutInServer(int client)
 {
 	SDKHook(client, SDKHook_WeaponEquipPost, Hook_WeaponEquipPost);
 }
 
-public OnClientDisconnect(client)
+public void OnClientDisconnect(int client)
 {
 	Denial_ResetClient(client);
 }
@@ -78,13 +80,13 @@ public OnClientDisconnect(client)
 /**
  * Event callbacks
  */
-public Event_OnPlayerSpawn(Handle:event, const String:name[], bool:dontBroadcast)
+public void Event_OnPlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 {
-	new client = GetClientOfUserId(GetEventInt(event, "userid"));
+	int client = GetClientOfUserId(event.GetInt("userid"));
 	if(!client)
 		return;
 	
-	new upgrade[UpgradeInfo];
+	int upgrade[UpgradeInfo];
 	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
 	
 	/* Reset player Denial data while Denial is disabled */
@@ -112,13 +114,13 @@ public Event_OnPlayerSpawn(Handle:event, const String:name[], bool:dontBroadcast
 	g_hDenialStripTimer[client] = CreateTimer(0.1, Timer_StripPlayer, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
 }
 
-public Event_OnPlayerDeath(Handle:event, const String:name[], bool:dontBroadcast)
+public void Event_OnPlayerDeath(Event event, const char[] name, bool dontBroadcast)
 {
-	new client = GetClientOfUserId(GetEventInt(event, "userid"));
+	int client = GetClientOfUserId(event.GetInt("userid"));
 	if(!client)
 		return;
 	
-	new upgrade[UpgradeInfo];
+	int upgrade[UpgradeInfo];
 	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
 	
 	/* Reset player Denial data while Denial is disabled */
@@ -131,9 +133,9 @@ public Event_OnPlayerDeath(Handle:event, const String:name[], bool:dontBroadcast
 	g_bDenialPlayerWasDead[client] = true;
 }
 
-public Event_OnPlayerTeam(Handle:event, const String:name[], bool:dontBroadcast)
+public void Event_OnPlayerTeam(Event event, const char[] name, bool dontBroadcast)
 {
-	new client = GetClientOfUserId(GetEventInt(event, "userid"));
+	int client = GetClientOfUserId(event.GetInt("userid"));
 	if(!client)
 		return;
 	
@@ -143,34 +145,34 @@ public Event_OnPlayerTeam(Handle:event, const String:name[], bool:dontBroadcast)
 /**
  * SM:RPG Upgrade callbacks
  */
-public SMRPG_BuySell(client, UpgradeQueryType:type)
+public void SMRPG_BuySell(int client, UpgradeQueryType type)
 {
 	
 }
 
-public bool:SMRPG_ActiveQuery(client)
+public bool SMRPG_ActiveQuery(int client)
 {
 	// This is a passive effect, so it's always active, if the player got at least level 1
-	new upgrade[UpgradeInfo];
+	int upgrade[UpgradeInfo];
 	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
 	return SMRPG_IsEnabled() && upgrade[UI_enabled] && SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME) > 0;
 }
 
 // Some plugin wants this effect to end?
-public SMRPG_ResetEffect(client)
+public void SMRPG_ResetEffect(int client)
 {
 	g_sDenialPrimary[client][0] = '\0';
 	g_sDenialSecondary[client][0] = '\0';
 	ClearHandle(g_hDenialStripTimer[client]);
 }
 
-public SMRPG_TranslateUpgrade(client, const String:shortname[], TranslationType:type, String:translation[], maxlen)
+public void SMRPG_TranslateUpgrade(int client, const char[] shortname, TranslationType type, char[] translation, int maxlen)
 {
 	if(type == TranslationType_Name)
 		Format(translation, maxlen, "%T", UPGRADE_SHORTNAME, client);
 	else if(type == TranslationType_Description)
 	{
-		new String:sDescriptionKey[MAX_UPGRADE_SHORTNAME_LENGTH+12] = UPGRADE_SHORTNAME;
+		char sDescriptionKey[MAX_UPGRADE_SHORTNAME_LENGTH+12] = UPGRADE_SHORTNAME;
 		StrCat(sDescriptionKey, sizeof(sDescriptionKey), " description");
 		Format(translation, maxlen, "%T", sDescriptionKey, client);
 	}
@@ -179,9 +181,9 @@ public SMRPG_TranslateUpgrade(client, const String:shortname[], TranslationType:
 /**
  * SDKHook callbacks
  */
-public Action:Hook_WeaponEquipPost(client, weapon)
+public Action Hook_WeaponEquipPost(int client, int weapon)
 {
-	new upgrade[UpgradeInfo];
+	int upgrade[UpgradeInfo];
 	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
 	
 	/* Reset player Denial data while Denial is disabled */
@@ -209,15 +211,15 @@ public Action:Hook_WeaponEquipPost(client, weapon)
 /**
  * Timer callbacks
  */
-public Action:Timer_StripPlayer(Handle:timer, any:userid)
+public Action Timer_StripPlayer(Handle timer, any userid)
 {
-	new client = GetClientOfUserId(userid);
+	int client = GetClientOfUserId(userid);
 	if(!client)
 		return Plugin_Stop;
 	
-	g_hDenialStripTimer[client] = INVALID_HANDLE;
+	g_hDenialStripTimer[client] = null;
 	
-	new iLevel = SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME);
+	int iLevel = SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME);
 	if(iLevel <= 0)
 		return Plugin_Stop;
 	
@@ -226,8 +228,8 @@ public Action:Timer_StripPlayer(Handle:timer, any:userid)
 	{
 		if(StrContains(g_sDenialSecondary[client],"weapon_") != -1 && !Denial_IsWeaponRestricted(g_sDenialSecondary[client]))
 		{
-			decl String:sOldWeapon[64];
-			new iCurrentWeapon = GetPlayerWeaponSlot(client, 1);
+			char sOldWeapon[64];
+			int iCurrentWeapon = GetPlayerWeaponSlot(client, 1);
 			// Remove his current weapon
 			if(iCurrentWeapon != INVALID_ENT_REFERENCE)
 			{
@@ -248,8 +250,8 @@ public Action:Timer_StripPlayer(Handle:timer, any:userid)
 	{
 		if(StrContains(g_sDenialPrimary[client],"weapon_") != -1 && !Denial_IsWeaponRestricted(g_sDenialPrimary[client]))
 		{
-			decl String:sOldWeapon[64];
-			new iCurrentWeapon = GetPlayerWeaponSlot(client, 0);
+			char sOldWeapon[64];
+			int iCurrentWeapon = GetPlayerWeaponSlot(client, 0);
 			// Remove his current weapon
 			if(iCurrentWeapon != INVALID_ENT_REFERENCE)
 			{
@@ -274,18 +276,18 @@ public Action:Timer_StripPlayer(Handle:timer, any:userid)
 /**
  * Helper functions
  */
-Denial_ResetClient(client)
+void Denial_ResetClient(int client)
 {
 	g_bDenialPlayerWasDead[client] = false;
 	SMRPG_ResetEffect(client);
 }
 
-bool:Denial_IsWeaponRestricted(String:sWeapon[])
+bool Denial_IsWeaponRestricted(const char[] sWeapon)
 {
-	decl String:sRestrictedWeapons[1024];
-	GetConVarString(g_hCVDenialRestrict, sRestrictedWeapons, sizeof(sRestrictedWeapons));
+	char sRestrictedWeapons[1024];
+	g_hCVDenialRestrict.GetString(sRestrictedWeapons, sizeof(sRestrictedWeapons));
 	
-	new iPos = StrContains(sWeapon, "weapon_");
+	int iPos = StrContains(sWeapon, "weapon_");
 	if(iPos != -1)
 		iPos += 7; // skip "weapon_" too.
 	else
@@ -296,13 +298,13 @@ bool:Denial_IsWeaponRestricted(String:sWeapon[])
 	return false;
 }
 
-bool:GetRealWeaponClassname(entity, String:sClassname[], maxlen)
+bool GetRealWeaponClassname(int entity, char[] sClassname, int maxlen)
 {
 	// Replace the weapon classname with the correct one for special weapons in CS:GO.
 	if (GetEngineVersion() == Engine_CSGO)
 	{
-		new iItemDefinitionIndex = GetEntProp(entity, Prop_Send, "m_iItemDefinitionIndex");
-		new String:sWeapon[32];
+		int iItemDefinitionIndex = GetEntProp(entity, Prop_Send, "m_iItemDefinitionIndex");
+		char sWeapon[32];
 		switch(iItemDefinitionIndex)
 		{
 			case 60:

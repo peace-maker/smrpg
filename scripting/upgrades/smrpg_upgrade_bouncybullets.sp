@@ -7,6 +7,8 @@
 #include <sourcemod>
 #include <sdktools>
 #include <sdkhooks>
+
+#pragma newdecls required
 #include <smrpg>
 #include <smrpg_effects>
 
@@ -14,10 +16,10 @@
 #define UPGRADE_SHORTNAME "bouncybullets"
 #define PLUGIN_VERSION "1.0"
 
-new Handle:g_hCVForce;
-new Handle:g_hCVIgnoreWeapons;
+ConVar g_hCVForce;
+ConVar g_hCVIgnoreWeapons;
 
-public Plugin:myinfo = 
+public Plugin myinfo = 
 {
 	name = "SM:RPG Upgrade > Bouncy Bullets",
 	author = "Peace-Maker",
@@ -26,30 +28,30 @@ public Plugin:myinfo =
 	url = "http://www.wcfan.de/"
 }
 
-public OnPluginStart()
+public void OnPluginStart()
 {
 	LoadTranslations("smrpg_stock_upgrades.phrases");
 	
 	// Account for late loading
-	for(new i=1;i<=MaxClients;i++)
+	for(int i=1;i<=MaxClients;i++)
 	{
 		if(IsClientInGame(i))
 			OnClientPutInServer(i);
 	}
 }
 
-public OnPluginEnd()
+public void OnPluginEnd()
 {
 	if(SMRPG_UpgradeExists(UPGRADE_SHORTNAME))
 		SMRPG_UnregisterUpgradeType(UPGRADE_SHORTNAME);
 }
 
-public OnAllPluginsLoaded()
+public void OnAllPluginsLoaded()
 {
 	OnLibraryAdded("smrpg");
 }
 
-public OnLibraryAdded(const String:name[])
+public void OnLibraryAdded(const char[] name)
 {
 	// Register this upgrade in SM:RPG
 	if(StrEqual(name, "smrpg"))
@@ -66,7 +68,7 @@ public OnLibraryAdded(const String:name[])
 	}
 }
 
-public OnClientPutInServer(client)
+public void OnClientPutInServer(int client)
 {
 	SDKHook(client, SDKHook_OnTakeDamagePost, Hook_OnTakeDamagePost);
 }
@@ -75,24 +77,24 @@ public OnClientPutInServer(client)
  * SM:RPG Upgrade callbacks
  */
 
-public SMRPG_BuySell(client, UpgradeQueryType:type)
+public void SMRPG_BuySell(int client, UpgradeQueryType type)
 {
 	// Here you can apply your effect directly when the client's upgrade level changes.
 	// E.g. adjust the maximal health of the player immediately when he bought the upgrade.
 	// The client doesn't have to be ingame here!
 }
 
-public bool:SMRPG_ActiveQuery(client)
+public bool SMRPG_ActiveQuery(int client)
 {
 	// If this is a passive effect, it's always active, if the player got at least level 1.
 	// If it's an active effect (like a short speed boost) add a check for the effect as well.
-	new upgrade[UpgradeInfo];
+	int upgrade[UpgradeInfo];
 	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
 	return SMRPG_IsEnabled() && upgrade[UI_enabled] && SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME) > 0;
 }
 
 // The core wants to display your upgrade somewhere. Translate it into the clients language!
-public SMRPG_TranslateUpgrade(client, const String:shortname[], TranslationType:type, String:translation[], maxlen)
+public void SMRPG_TranslateUpgrade(int client, const char[] shortname, TranslationType type, char[] translation, int maxlen)
 {
 	// Easy pattern is to use the shortname of your upgrade in the translation file
 	if(type == TranslationType_Name)
@@ -100,7 +102,7 @@ public SMRPG_TranslateUpgrade(client, const String:shortname[], TranslationType:
 	// And "shortname description" as phrase in the translation file for the description.
 	else if(type == TranslationType_Description)
 	{
-		new String:sDescriptionKey[MAX_UPGRADE_SHORTNAME_LENGTH+12] = UPGRADE_SHORTNAME;
+		char sDescriptionKey[MAX_UPGRADE_SHORTNAME_LENGTH+12] = UPGRADE_SHORTNAME;
 		StrCat(sDescriptionKey, sizeof(sDescriptionKey), " description");
 		Format(translation, maxlen, "%T", sDescriptionKey, client);
 	}
@@ -109,25 +111,25 @@ public SMRPG_TranslateUpgrade(client, const String:shortname[], TranslationType:
 /**
  * Event callbacks
  */
-public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagetype, weapon, const Float:damageForce[3], const Float:damagePosition[3])
+public void Hook_OnTakeDamagePost(int victim, int attacker, int inflictor, float damage, int damagetype, int weapon, const float damageForce[3], const float damagePosition[3])
 {
 	if(attacker <= 0 || attacker > MaxClients || victim <= 0 || victim > MaxClients)
 		return;
 
 	// Check whether this weapon shouldn't push the victim.
-	new String:sIgnoreWeapons[512];
-	GetConVarString(g_hCVIgnoreWeapons, sIgnoreWeapons, sizeof(sIgnoreWeapons));
+	char sIgnoreWeapons[512];
+	g_hCVIgnoreWeapons.GetString(sIgnoreWeapons, sizeof(sIgnoreWeapons));
 	
-	new iWeapon = inflictor;
+	int iWeapon = inflictor;
 	if(inflictor > 0 && inflictor <= MaxClients)
 		iWeapon = GetEntPropEnt(inflictor, Prop_Send, "m_hActiveWeapon");
 	
 	if (iWeapon > 0 && IsValidEntity(iWeapon))
 	{
-		new String:sWeapon[64];
+		char sWeapon[64];
 		GetEntityClassname(iWeapon, sWeapon, sizeof(sWeapon));
 		// Skip "weapon_" prefix.
-		new iPos = StrContains(sWeapon, "weapon_", false);
+		int iPos = StrContains(sWeapon, "weapon_", false);
 		if (iPos != -1)
 			iPos += 7;
 		else
@@ -143,7 +145,7 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 		return;
 	
 	// The upgrade is disabled completely?
-	new upgrade[UpgradeInfo];
+	int upgrade[UpgradeInfo];
 	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
 	if(!upgrade[UI_enabled])
 		return;
@@ -157,7 +159,7 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 		return;
 	
 	// Player didn't buy this upgrade yet.
-	new iLevel = SMRPG_GetClientUpgradeLevel(attacker, UPGRADE_SHORTNAME);
+	int iLevel = SMRPG_GetClientUpgradeLevel(attacker, UPGRADE_SHORTNAME);
 	if(iLevel <= 0)
 		return;
 	
@@ -171,13 +173,13 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 		return;
 	
 	// Push victim away from attacker's position.
-	new Float:fVictimOrigin[3], Float:fAttackerOrigin[3], Float:fDirection[3];
+	float fVictimOrigin[3], fAttackerOrigin[3], fDirection[3];
 	GetClientEyePosition(victim, fVictimOrigin);
 	GetClientEyePosition(attacker, fAttackerOrigin);
 	MakeVectorFromPoints(fAttackerOrigin, fVictimOrigin, fDirection);
 	NormalizeVector(fDirection, fDirection);
 	
-	new Float:fForce = GetConVarFloat(g_hCVForce) * iLevel;
+	float fForce = g_hCVForce.FloatValue * iLevel;
 	ScaleVector(fDirection, fForce);
 	TeleportEntity(victim, NULL_VECTOR, NULL_VECTOR, fDirection);
 }

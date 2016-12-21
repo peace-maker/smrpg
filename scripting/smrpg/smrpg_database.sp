@@ -16,8 +16,8 @@
 // How long to wait for a reconnect after a failed connection attempt to the database?
 #define RECONNECT_INTERVAL 360.0
 
-new Handle:g_hDatabase;
-new Handle:g_hReconnectTimer;
+Database g_hDatabase;
+Handle g_hReconnectTimer;
 
 enum DatabaseDriver {
 	Driver_None,
@@ -25,29 +25,29 @@ enum DatabaseDriver {
 	Driver_SQLite
 };
 
-new DatabaseDriver:g_DriverType;
+DatabaseDriver g_DriverType;
 
-RegisterDatabaseNatives()
+void RegisterDatabaseNatives()
 {
-	// native bool:SMRPG_ResetAllPlayers(const String:sReason[], bool:bHardReset=false);
+	// native bool SMRPG_ResetAllPlayers(const char[] sReason, bool bHardReset=false);
 	CreateNative("SMRPG_ResetAllPlayers", Native_ResetAllPlayers);
-	// native SMRPG_FlushDatabase();
+	// native void SMRPG_FlushDatabase();
 	CreateNative("SMRPG_FlushDatabase", Native_FlushDatabase);
 }
 
-InitDatabase()
+void InitDatabase()
 {
 	ClearHandle(g_hReconnectTimer);
 	
 	if(SQL_CheckConfig(SMRPG_DB))
-		SQL_TConnect(SQL_OnConnect, SMRPG_DB);
+		Database.Connect(SQL_OnConnect, SMRPG_DB);
 	else
-		SQL_TConnect(SQL_OnConnect, "default"); // Default to 'default' section in the databases.cfg.
+		Database.Connect(SQL_OnConnect, "default"); // Default to 'default' section in the databases.cfg.
 }
 
-public SQL_OnConnect(Handle:owner, Handle:hndl, const String:error[], any:data)
+public void SQL_OnConnect(Database db, const char[] error, any data)
 {
-	if(hndl == INVALID_HANDLE)
+	if(db == null)
 	{
 		LogError("Error connecting to database (reconnecting in %.0f seconds): %s", RECONNECT_INTERVAL, error);
 		ClearHandle(g_hReconnectTimer);
@@ -58,16 +58,17 @@ public SQL_OnConnect(Handle:owner, Handle:hndl, const String:error[], any:data)
 	// We're good now. Don't reconnect again. Just to be sure.
 	ClearHandle(g_hReconnectTimer);
 	
-	g_hDatabase = hndl;
+	g_hDatabase = db;
 	
-	new String:sDriverIdent[16];
-	SQL_GetDriverIdent(owner, sDriverIdent, sizeof(sDriverIdent));
+	DBDriver driver = db.Driver;
+	char sDriverIdent[16];
+	driver.GetIdentifier(sDriverIdent, sizeof(sDriverIdent));
 	
 	// Set the right character set in mysql
 	if(StrEqual(sDriverIdent, "mysql", false))
 	{
 		g_DriverType = Driver_MySQL;
-		SQL_SetCharset(g_hDatabase, "utf8");
+		g_hDatabase.SetCharset("utf8");
 	}
 	else if(StrEqual(sDriverIdent, "sqlite", false))
 	{
@@ -79,18 +80,18 @@ public SQL_OnConnect(Handle:owner, Handle:hndl, const String:error[], any:data)
 	}
 	
 	// Make sure the tables are created using the correct charset, if the database was created with something else than utf8 as default.
-	new String:sDefaultCharset[32];
+	char sDefaultCharset[32];
 	if(g_DriverType == Driver_MySQL)
 	{
 		strcopy(sDefaultCharset, sizeof(sDefaultCharset), " DEFAULT CHARSET=utf8");
 	}
 	
 	// Create the player table
-	decl String:sQuery[1024];
+	char sQuery[1024];
 	Format(sQuery, sizeof(sQuery), "CREATE TABLE IF NOT EXISTS %s (player_id INTEGER PRIMARY KEY %s, name VARCHAR(64) NOT NULL DEFAULT ' ', steamid INTEGER DEFAULT NULL UNIQUE, level INTEGER DEFAULT 1, experience INTEGER DEFAULT 0, credits INTEGER DEFAULT 0, showmenu INTEGER DEFAULT 1, fadescreen INTEGER DEFAULT 1, lastseen INTEGER DEFAULT 0, lastreset INTEGER DEFAULT 0)%s", TBL_PLAYERS, (g_DriverType == Driver_MySQL ? "AUTO_INCREMENT" : "AUTOINCREMENT"), sDefaultCharset);
 	if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
 	{
-		decl String:sError[256];
+		char sError[256];
 		SQL_GetError(g_hDatabase, sError, sizeof(sError));
 		SetFailState("Error creating %s table: %s", TBL_PLAYERS, sError);
 		return;
@@ -100,7 +101,7 @@ public SQL_OnConnect(Handle:owner, Handle:hndl, const String:error[], any:data)
 	Format(sQuery, sizeof(sQuery), "CREATE TABLE IF NOT EXISTS %s (player_id INTEGER, upgrade_id INTEGER, purchasedlevel INTEGER NOT NULL, selectedlevel INTEGER NOT NULL, enabled INTEGER DEFAULT 1, visuals INTEGER DEFAULT 1, sounds INTEGER DEFAULT 1, PRIMARY KEY(player_id, upgrade_id))%s", TBL_PLAYERUPGRADES, sDefaultCharset);
 	if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
 	{
-		decl String:sError[256];
+		char sError[256];
 		SQL_GetError(g_hDatabase, sError, sizeof(sError));
 		SetFailState("Error creating %s table: %s", TBL_PLAYERUPGRADES, sError);
 		return;
@@ -110,7 +111,7 @@ public SQL_OnConnect(Handle:owner, Handle:hndl, const String:error[], any:data)
 	Format(sQuery, sizeof(sQuery), "CREATE TABLE IF NOT EXISTS %s (upgrade_id INTEGER PRIMARY KEY %s, shortname VARCHAR(32) UNIQUE NOT NULL, date_added INTEGER)%s", TBL_UPGRADES, (g_DriverType == Driver_MySQL ? "AUTO_INCREMENT" : "AUTOINCREMENT"), sDefaultCharset);
 	if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
 	{
-		decl String:sError[256];
+		char sError[256];
 		SQL_GetError(g_hDatabase, sError, sizeof(sError));
 		SetFailState("Error creating %s table: %s", TBL_UPGRADES, sError);
 		return;
@@ -120,7 +121,7 @@ public SQL_OnConnect(Handle:owner, Handle:hndl, const String:error[], any:data)
 	Format(sQuery, sizeof(sQuery), "CREATE TABLE IF NOT EXISTS %s (setting VARCHAR(64) PRIMARY KEY NOT NULL, value VARCHAR(256) NOT NULL)%s", TBL_SETTINGS, sDefaultCharset);
 	if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
 	{
-		decl String:sError[256];
+		char sError[256];
 		SQL_GetError(g_hDatabase, sError, sizeof(sError));
 		SetFailState("Error creating %s table: %s", TBL_SETTINGS, sError);
 		return;
@@ -130,9 +131,9 @@ public SQL_OnConnect(Handle:owner, Handle:hndl, const String:error[], any:data)
 
 	// This is probably empty since no upgrades could have registered yet, but well..
 	// Add all columns for currently loaded upgrades.
-	new iSize = GetUpgradeCount();
-	new upgrade[InternalUpgradeInfo];
-	for(new i=0;i<iSize;i++)
+	int iSize = GetUpgradeCount();
+	int upgrade[InternalUpgradeInfo];
+	for(int i=0;i<iSize;i++)
 	{
 		GetUpgradeByIndex(i, upgrade);
 		if(!IsValidUpgrade(upgrade) || upgrade[UPGR_databaseId] != -1 || upgrade[UPGR_databaseLoading])
@@ -144,7 +145,7 @@ public SQL_OnConnect(Handle:owner, Handle:hndl, const String:error[], any:data)
 	DatabaseMaid();
 	
 	// Add all already connected players now
-	for(new i=1;i<=MaxClients;i++)
+	for(int i=1;i<=MaxClients;i++)
 	{
 		if(IsClientInGame(i) && !IsFakeClient(i) && IsClientAuthorized(i))
 		{
@@ -153,15 +154,15 @@ public SQL_OnConnect(Handle:owner, Handle:hndl, const String:error[], any:data)
 	}
 }
 
-public Action:Timer_ReconnectDatabase(Handle:timer)
+public Action Timer_ReconnectDatabase(Handle timer)
 {
 	// Try to connect again after it first failed on plugin load.
-	g_hReconnectTimer = INVALID_HANDLE;
+	g_hReconnectTimer = null;
 	InitDatabase();
 	return Plugin_Stop;
 }
 
-CheckUpgradeDatabaseEntry(upgrade[InternalUpgradeInfo])
+void CheckUpgradeDatabaseEntry(int upgrade[InternalUpgradeInfo])
 {
 	if(!g_hDatabase)
 		return;
@@ -169,17 +170,17 @@ CheckUpgradeDatabaseEntry(upgrade[InternalUpgradeInfo])
 	upgrade[UPGR_databaseLoading] = true;
 	SaveUpgradeConfig(upgrade);
 	
-	decl String:sQuery[512];
+	char sQuery[512];
 	// Check if that's a completely new upgrade
-	decl String:sShortNameEscaped[MAX_UPGRADE_SHORTNAME_LENGTH*2+1];
-	SQL_EscapeString(g_hDatabase, upgrade[UPGR_shortName], sShortNameEscaped, sizeof(sShortNameEscaped));
+	char sShortNameEscaped[MAX_UPGRADE_SHORTNAME_LENGTH*2+1];
+	g_hDatabase.Escape(upgrade[UPGR_shortName], sShortNameEscaped, sizeof(sShortNameEscaped));
 	Format(sQuery, sizeof(sQuery), "SELECT upgrade_id FROM %s WHERE shortname = \"%s\";", TBL_UPGRADES, sShortNameEscaped);
-	SQL_TQuery(g_hDatabase, SQL_GetUpgradeInfo, sQuery, upgrade[UPGR_index]);
+	g_hDatabase.Query(SQL_GetUpgradeInfo, sQuery, upgrade[UPGR_index]);
 }
 
-CheckDatabaseVersion()
+void CheckDatabaseVersion()
 {
-	decl String:sValue[8];
+	char sValue[8];
 	if(!GetSetting("version", sValue, sizeof(sValue)))
 	{
 		// There is no version field yet? Just create one, we don't know if we'd need to update something..
@@ -188,7 +189,7 @@ CheckDatabaseVersion()
 		return;
 	}
 	
-	new iVersion = StringToInt(sValue);
+	int iVersion = StringToInt(sValue);
 	if(iVersion < DATABASE_VERSION)
 	{
 		// Perform database updates here..
@@ -197,7 +198,7 @@ CheckDatabaseVersion()
 			if(g_DriverType == Driver_MySQL)
 			{
 				// Save steamids as accountid integers instead of STEAM_X:Y:Z
-				decl String:sQuery[512];
+				char sQuery[512];
 				// Allow NULL as steamid value
 				Format(sQuery, sizeof(sQuery), "ALTER TABLE %s CHANGE steamid steamid VARCHAR(64) CHARACTER SET utf8 COLLATE utf8_general_ci NULL", TBL_PLAYERS);
 				if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
@@ -233,7 +234,7 @@ CheckDatabaseVersion()
 			else if(g_DriverType == Driver_SQLite)
 			{
 				// Save steamids as accountid integers instead of STEAM_X:Y:Z
-				decl String:sQuery[512];
+				char sQuery[512];
 				// Create a new table with the changed steamid field.
 				// SQLite doesn't support altering column types of existing tables.
 				Format(sQuery, sizeof(sQuery), "CREATE TABLE %s_X (player_id INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR(64) NOT NULL DEFAULT ' ', steamid INTEGER DEFAULT NULL UNIQUE, level INTEGER DEFAULT 1, experience INTEGER DEFAULT 0, credits INTEGER DEFAULT 0, showmenu INTEGER DEFAULT 1, fadescreen INTEGER DEFAULT 1, lastseen INTEGER DEFAULT 0, lastreset INTEGER DEFAULT 0);", TBL_PLAYERS);
@@ -287,32 +288,32 @@ CheckDatabaseVersion()
 	}
 }
 
-FailDatabaseUpdateError(iVersion, const String:sQuery[])
+void FailDatabaseUpdateError(int iVersion, const char[] sQuery)
 {
-	decl String:sError[256];
+	char sError[256];
 	SQL_GetError(g_hDatabase, sError, sizeof(sError));
 	SetFailState("Failed to update the database to version %d. The plugin might not run correctly. Query: %s    Error: %s", iVersion, sQuery, sError);
 }
 
-DatabaseMaid()
+void DatabaseMaid()
 {
 	if(!g_hDatabase)
 		return;
 	
 	// Don't touch the database, if we don't want to save any data.
-	if(!GetConVarBool(g_hCVSaveData))
+	if(!g_hCVSaveData.BoolValue)
 		return;
 	
-	new String:sQuery[256];
+	char sQuery[256];
 	// Have players expire after x days and delete them from the database?
-	if(GetConVarInt(g_hCVPlayerExpire) > 0)
+	if(g_hCVPlayerExpire.IntValue > 0)
 	{
-		Format(sQuery, sizeof(sQuery), "OR lastseen <= %d", GetTime()-(86400*GetConVarInt(g_hCVPlayerExpire)));
+		Format(sQuery, sizeof(sQuery), "OR lastseen <= %d", GetTime()-(86400*g_hCVPlayerExpire.IntValue));
 	}
 	
 	// Delete players who are Level 1 and haven't played for 3 days
 	Format(sQuery, sizeof(sQuery), "SELECT player_id FROM %s WHERE (level <= 1 AND lastseen <= %d) %s", TBL_PLAYERS, GetTime()-259200, sQuery);
-	SQL_TQuery(g_hDatabase, SQL_DeleteExpiredPlayers, sQuery);
+	g_hDatabase.Query(SQL_DeleteExpiredPlayers, sQuery);
 	
 	// Reduce sqlite database file size.
 	if(g_DriverType == Driver_SQLite)
@@ -323,33 +324,33 @@ DatabaseMaid()
 }
 
 // Natives
-public Native_ResetAllPlayers(Handle:plugin, numParams)
+public int Native_ResetAllPlayers(Handle plugin, int numParams)
 {
 	if(!g_hDatabase)
 		return false;
 	
 	// Don't touch the database, if we don't want to save any data.
-	if(!GetConVarBool(g_hCVSaveData))
+	if(!g_hCVSaveData.BoolValue)
 		return false;
 	
-	new String:sReason[256];
+	char sReason[256];
 	GetNativeString(1, sReason, sizeof(sReason));
 	
-	new bool:bHardReset = bool:GetNativeCell(2);
-	decl String:sQuery[512];
+	bool bHardReset = view_as<bool>(GetNativeCell(2));
+	char sQuery[512];
 
 	// Delete all player information?
 	if(bHardReset)
 	{
-		new Transaction:hTransaction = SQL_CreateTransaction();
+		Transaction hTransaction = new Transaction();
 		Format(sQuery, sizeof(sQuery), "DELETE FROM %s", TBL_PLAYERUPGRADES);
-		SQL_AddQuery(hTransaction, sQuery);
+		hTransaction.AddQuery(sQuery);
 		Format(sQuery, sizeof(sQuery), "DELETE FROM %s", TBL_PLAYERS);
-		SQL_AddQuery(hTransaction, sQuery);
-		SQL_ExecuteTransaction(g_hDatabase, hTransaction, _, SQLTxn_LogFailure);
+		hTransaction.AddQuery(sQuery);
+		g_hDatabase.Execute(hTransaction, _, SQLTxn_LogFailure);
 		
 		// Reset all ingame players and readd them into the database.
-		for(new i=1;i<=MaxClients;i++)
+		for(int i=1;i<=MaxClients;i++)
 		{
 			if(IsClientInGame(i))
 			{
@@ -364,15 +365,15 @@ public Native_ResetAllPlayers(Handle:plugin, numParams)
 	// Keep the player settings
 	else
 	{
-		new Transaction:hTransaction = SQL_CreateTransaction();
-		Format(sQuery, sizeof(sQuery), "UPDATE %s SET level = 1, experience = 0, credits = %d, lastreset = %d", TBL_PLAYERS, GetConVarInt(g_hCVCreditsStart), GetTime());
-		SQL_AddQuery(hTransaction, sQuery);
+		Transaction hTransaction = new Transaction();
+		Format(sQuery, sizeof(sQuery), "UPDATE %s SET level = 1, experience = 0, credits = %d, lastreset = %d", TBL_PLAYERS, g_hCVCreditsStart.IntValue, GetTime());
+		hTransaction.AddQuery(sQuery);
 		Format(sQuery, sizeof(sQuery), "UPDATE %s SET purchasedlevel = 0, selectedlevel = 0, enabled = 1", TBL_PLAYERUPGRADES);
-		SQL_AddQuery(hTransaction, sQuery);
-		SQL_ExecuteTransaction(g_hDatabase, hTransaction, _, SQLTxn_LogFailure);
+		hTransaction.AddQuery(sQuery);
+		g_hDatabase.Execute(hTransaction, _, SQLTxn_LogFailure);
 		
 		// Just reset all ingame players too
-		for(new i=1;i<=MaxClients;i++)
+		for(int i=1;i<=MaxClients;i++)
 		{
 			if(IsClientInGame(i))
 			{
@@ -392,107 +393,109 @@ public Native_ResetAllPlayers(Handle:plugin, numParams)
 	return true;
 }
 
-public Native_FlushDatabase(Handle:plugin, numParams)
+public int Native_FlushDatabase(Handle plugin, int numParams)
 {
 	// Flush all info into the database. This handles smrpg_save_data and smrpg_enable
 	SaveAllPlayers();
 }
 
-public SQL_DoNothing(Handle:owner, Handle:hndl, const String:error[], any:data)
+public void SQL_DoNothing(Database db, DBResultSet results, const char[] error, any data)
 {
-	if(hndl == INVALID_HANDLE || strlen(error) > 0)
+	if(results == null)
 	{
 		LogError("Error executing query: %s", error);
 	}
 }
 
-public SQLTxn_LogFailure(Handle:db, any:data, numQueries, const String:error[], failIndex, any:queryData[])
+public void SQLTxn_LogFailure(Database db, any data, int numQueries, const char[] error, int failIndex, any[] queryData)
 {
 	LogError("Error executing query %d of %d queries: %s", failIndex, numQueries, error);
 }
 
-public SQL_GetUpgradeInfo(Handle:owner, Handle:hndl, const String:error[], any:index)
+public void SQL_GetUpgradeInfo(Database db, DBResultSet results, const char[] error, any index)
 {
-	if(hndl == INVALID_HANDLE || strlen(error) > 0)
+	if(results == null)
 	{
 		LogError("Error checking for upgrade info: %s", error);
 		return;
 	}
 	
-	new upgrade[InternalUpgradeInfo];
+	int upgrade[InternalUpgradeInfo];
 	GetUpgradeByIndex(index, upgrade);
 	
-	decl String:sQuery[256];
+	char sQuery[256];
 	// This is a new upgrade!
-	if(!SQL_GetRowCount(hndl) || !SQL_FetchRow(hndl))
+	if(!results.RowCount || !results.FetchRow())
 	{
 		Format(sQuery, sizeof(sQuery), "INSERT INTO %s (shortname, date_added) VALUES (\"%s\", %d);", TBL_UPGRADES, upgrade[UPGR_shortName], GetTime());
-		SQL_TQuery(g_hDatabase, SQL_InsertNewUpgrade, sQuery, index);
+		g_hDatabase.Query(SQL_InsertNewUpgrade, sQuery, index);
 		return;
 	}
 	
 	upgrade[UPGR_databaseLoading] = false;
-	upgrade[UPGR_databaseId] = SQL_FetchInt(hndl, 0);
+	upgrade[UPGR_databaseId] = results.FetchInt(0);
 	SaveUpgradeConfig(upgrade);
 	
 	// Load the data for all connected players
-	for(new i=1;i<=MaxClients;i++)
+	for(int i=1;i<=MaxClients;i++)
 	{
 		if(IsClientInGame(i) && IsClientAuthorized(i) && GetClientDatabaseId(i) != -1)
 		{
 			Format(sQuery, sizeof(sQuery), "SELECT upgrade_id, purchasedlevel, selectedlevel, enabled, visuals, sounds FROM %s WHERE player_id = %d AND upgrade_id = %d", TBL_PLAYERUPGRADES, GetClientDatabaseId(i), upgrade[UPGR_databaseId]);
-			SQL_TQuery(g_hDatabase, SQL_GetPlayerUpgrades, sQuery, GetClientUserId(i));
+			g_hDatabase.Query(SQL_GetPlayerUpgrades, sQuery, GetClientUserId(i));
 		}
 	}
 }
 
-public SQL_InsertNewUpgrade(Handle:owner, Handle:hndl, const String:error[], any:index)
+public void SQL_InsertNewUpgrade(Database db, DBResultSet results, const char[] error, any index)
 {
-	if(hndl == INVALID_HANDLE || strlen(error) > 0)
+	if(results == null)
 	{
 		LogError("Error inserting new upgrade info: %s", error);
 		return;
 	}
 	
-	new upgrade[InternalUpgradeInfo];
+	int upgrade[InternalUpgradeInfo];
 	GetUpgradeByIndex(index, upgrade);
 	
 	upgrade[UPGR_databaseLoading] = false;
-	upgrade[UPGR_databaseId] = SQL_GetInsertId(owner);
+	upgrade[UPGR_databaseId] = results.InsertId;
 	SaveUpgradeConfig(upgrade);
 }
 
 // Delete all players which weren't seen on the server for too a long time.
-public SQL_DeleteExpiredPlayers(Handle:owner, Handle:hndl, const String:error[], any:data)
+public void SQL_DeleteExpiredPlayers(Database db, DBResultSet results, const char[] error, any data)
 {
-	if(hndl == INVALID_HANDLE || strlen(error) > 0)
+	if(results == null)
 	{
 		LogError("DatabaseMaid: player expire query failed: %s", error);
+		return;
 	}
 	
 	// Delete them at once.
-	new Transaction:hTransaction = SQL_CreateTransaction();
+	Transaction hTransaction = new Transaction();
 	
-	new iPlayerId, String:sQuery[128];
-	while(SQL_MoreRows(hndl))
+	int iPlayerId;
+	char sQuery[128];
+	while(results.MoreRows)
 	{
-		if(!SQL_FetchRow(hndl))
+		if(!results.FetchRow())
 			continue;
 		
-		iPlayerId = SQL_FetchInt(hndl, 0);
+		iPlayerId = results.FetchInt(0);
 		
 		// Don't delete players who are connected right now.
 		if (GetClientByPlayerID(iPlayerId) != -1)
 			continue;
 		
 		Format(sQuery, sizeof(sQuery), "DELETE FROM %s WHERE player_id = %d", TBL_PLAYERUPGRADES, iPlayerId);
-		SQL_AddQuery(hTransaction, sQuery);
+		hTransaction.AddQuery(sQuery);
 		
 		Format(sQuery, sizeof(sQuery), "DELETE FROM %s WHERE player_id = %d", TBL_PLAYERS, iPlayerId);
-		SQL_AddQuery(hTransaction, sQuery);
+		hTransaction.AddQuery(sQuery);
 	}
 	
-	SQL_ExecuteTransaction(g_hDatabase, hTransaction, _, SQLTxn_LogFailure);
+	g_hDatabase.Execute(hTransaction, _, SQLTxn_LogFailure);
 }
 
 /**
@@ -508,10 +511,10 @@ public SQL_DeleteExpiredPlayers(Handle:owner, Handle:hndl, const String:error[],
  *						SQL_GetError to find the last error.
  * @error				Invalid database Handle.
  */
-stock bool:SQL_LockedFastQuery(Handle:database, const String:query[], len=-1)
+stock bool SQL_LockedFastQuery(Database database, const char[] query, int len=-1)
 {
 	SQL_LockDatabase(database);
-	new bool:bSuccess = SQL_FastQuery(database, query, len);
+	bool bSuccess = SQL_FastQuery(database, query, len);
 	SQL_UnlockDatabase(database);
 	return bSuccess;
 }

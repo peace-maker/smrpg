@@ -1,21 +1,23 @@
 #pragma semicolon 1
 #include <sourcemod>
 #include <sdkhooks>
+#include <smlib>
+
+#pragma newdecls required
 #include <smrpg>
 #include <smrpg_effects>
 #include <smrpg_helper>
 #include <smrpg_sharedmaterials>
-#include <smlib>
 
 #define UPGRADE_SHORTNAME "icestab"
 #define PLUGIN_VERSION "1.0"
 
-new Handle:g_hCVIceStabLimitDmg;
-new Handle:g_hCVTimeIncrease;
-new Handle:g_hCVWeapon;
-new Handle:g_hCVMinDamage;
+ConVar g_hCVIceStabLimitDmg;
+ConVar g_hCVTimeIncrease;
+ConVar g_hCVWeapon;
+ConVar g_hCVMinDamage;
 
-public Plugin:myinfo = 
+public Plugin myinfo = 
 {
 	name = "SM:RPG Upgrade > Ice Stab",
 	author = "Jannik \"Peace-Maker\" Hartung",
@@ -24,32 +26,32 @@ public Plugin:myinfo =
 	url = "http://www.wcfan.de/"
 }
 
-public OnPluginStart()
+public void OnPluginStart()
 {
 	LoadTranslations("smrpg_stock_upgrades.phrases");
 	
 	SMRPG_GC_CheckSharedMaterialsAndSounds();
 	
 	// Account for late loading
-	for(new i=1;i<=MaxClients;i++)
+	for(int i=1;i<=MaxClients;i++)
 	{
 		if(IsClientInGame(i))
 			OnClientPutInServer(i);
 	}
 }
 
-public OnPluginEnd()
+public void OnPluginEnd()
 {
 	if(SMRPG_UpgradeExists(UPGRADE_SHORTNAME))
 		SMRPG_UnregisterUpgradeType(UPGRADE_SHORTNAME);
 }
 
-public OnAllPluginsLoaded()
+public void OnAllPluginsLoaded()
 {
 	OnLibraryAdded("smrpg");
 }
 
-public OnLibraryAdded(const String:name[])
+public void OnLibraryAdded(const char[] name)
 {
 	// Register this upgrade in SM:RPG
 	if(StrEqual(name, "smrpg"))
@@ -67,13 +69,13 @@ public OnLibraryAdded(const String:name[])
 	}
 }
 
-public OnMapStart()
+public void OnMapStart()
 {
 	SMRPG_GC_PrecacheModel("SpriteBeam");
 	SMRPG_GC_PrecacheModel("SpriteHalo");
 }
 
-public OnClientPutInServer(client)
+public void OnClientPutInServer(int client)
 {
 	SDKHook(client, SDKHook_OnTakeDamagePost, Hook_OnTakeDamagePost);
 }
@@ -81,31 +83,31 @@ public OnClientPutInServer(client)
 /**
  * SM:RPG Upgrade callbacks
  */
-public SMRPG_BuySell(client, UpgradeQueryType:type)
+public void SMRPG_BuySell(int client, UpgradeQueryType type)
 {
 	// Nothing to apply here immediately after someone buys this upgrade.
 }
 
-public bool:SMRPG_ActiveQuery(client)
+public bool SMRPG_ActiveQuery(int client)
 {
 	// TODO: Differenciate if we froze the client ourself
 	return SMRPG_IsClientFrozen(client);
 }
 
 // Some plugin wants this effect to end?
-public SMRPG_ResetEffect(client)
+public void SMRPG_ResetEffect(int client)
 {
 	if(SMRPG_IsClientFrozen(client))
 		SMRPG_UnfreezeClient(client);
 }
 
-public SMRPG_TranslateUpgrade(client, const String:shortname[], TranslationType:type, String:translation[], maxlen)
+public void SMRPG_TranslateUpgrade(int client, const char[] shortname, TranslationType type, char[] translation, int maxlen)
 {
 	if(type == TranslationType_Name)
 		Format(translation, maxlen, "%T", UPGRADE_SHORTNAME, client);
 	else if(type == TranslationType_Description)
 	{
-		new String:sDescriptionKey[MAX_UPGRADE_SHORTNAME_LENGTH+12] = UPGRADE_SHORTNAME;
+		char sDescriptionKey[MAX_UPGRADE_SHORTNAME_LENGTH+12] = UPGRADE_SHORTNAME;
 		StrCat(sDescriptionKey, sizeof(sDescriptionKey), " description");
 		Format(translation, maxlen, "%T", sDescriptionKey, client);
 	}
@@ -114,18 +116,18 @@ public SMRPG_TranslateUpgrade(client, const String:shortname[], TranslationType:
 /**
  * Hook callbacks
  */
-public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagetype, weapon, const Float:damageForce[3], const Float:damagePosition[3])
+public void Hook_OnTakeDamagePost(int victim, int attacker, int inflictor, float damage, int damagetype, int weapon, const float damageForce[3], const float damagePosition[3])
 {
 	if(attacker <= 0 || attacker > MaxClients || !IsClientInGame(attacker) || victim <= 0 || victim > MaxClients || !IsClientInGame(victim))
 		return;
 	
-	if(damage < GetConVarFloat(g_hCVMinDamage))
+	if(damage < g_hCVMinDamage.FloatValue)
 		return;
 	
 	if(!SMRPG_IsEnabled())
 		return;
 	
-	new upgrade[UpgradeInfo];
+	int upgrade[UpgradeInfo];
 	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
 	if(!upgrade[UI_enabled])
 		return;
@@ -141,19 +143,19 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 	if(SMRPG_IsClientFrozen(attacker))
 		return; /* don't allow frozen attacker to icestab */
 	
-	new iLevel = SMRPG_GetClientUpgradeLevel(attacker, UPGRADE_SHORTNAME);
+	int iLevel = SMRPG_GetClientUpgradeLevel(attacker, UPGRADE_SHORTNAME);
 	if(iLevel <= 0)
 		return;
 	
-	new iWeapon = inflictor;
+	int iWeapon = inflictor;
 	if(inflictor > 0 && inflictor <= MaxClients)
 		iWeapon = Client_GetActiveWeapon(inflictor);
 	
 	if(iWeapon == -1)
 		return;
 	
-	decl String:sWeapon[256], String:sTargetWeapon[128];
-	GetConVarString(g_hCVWeapon, sTargetWeapon, sizeof(sTargetWeapon));
+	char sWeapon[256], sTargetWeapon[128];
+	g_hCVWeapon.GetString(sTargetWeapon, sizeof(sTargetWeapon));
 	GetEntityClassname(iWeapon, sWeapon, sizeof(sWeapon));
 	ReplaceString(sWeapon, sizeof(sWeapon), "weapon_", "", false);
 	
@@ -165,16 +167,16 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 		return; // Some other plugin doesn't want this effect to run
 	
 	// Freeze the player.
-	new Float:fFreezeTime = GetConVarFloat(g_hCVTimeIncrease)*float(iLevel);
-	if(!SMRPG_FreezeClient(victim, fFreezeTime, GetConVarFloat(g_hCVIceStabLimitDmg), UPGRADE_SHORTNAME, true, true, false))
+	float fFreezeTime = g_hCVTimeIncrease.FloatValue*float(iLevel);
+	if(!SMRPG_FreezeClient(victim, fFreezeTime, g_hCVIceStabLimitDmg.FloatValue, UPGRADE_SHORTNAME, true, true, false))
 		return;
 	
-	new Float:fOrigin[3];
+	float fOrigin[3];
 	GetClientAbsOrigin(victim, fOrigin);
 	fOrigin[2] -= 30.0;
 	
-	new iBeamSprite = SMRPG_GC_GetPrecachedIndex("SpriteBeam");
-	new iHaloSprite = SMRPG_GC_GetPrecachedIndex("SpriteHalo");
+	int iBeamSprite = SMRPG_GC_GetPrecachedIndex("SpriteBeam");
+	int iHaloSprite = SMRPG_GC_GetPrecachedIndex("SpriteHalo");
 	// Just use the beamsprite as halo, if no halo sprite available
 	if(iHaloSprite == -1)
 		iHaloSprite = iBeamSprite;
@@ -188,11 +190,11 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 
 // Thanks to SumGuy14 (Aka SoccerDude)
 // RPGx effects.inc FourBeamEffect
-stock TE_SendFourBeamEffectToEnabled(Float:origin[3], Float:Width, Float:EndWidth, Float:Height, ModelIndex, HaloIndex, StartFrame, FrameRate, Float:Life, 
-                Float:BeamWidth, Float:BeamEndWidth, FadeLength, Float:Amplitude, const Color[4], Speed, Float:delay=0.0)
+stock void TE_SendFourBeamEffectToEnabled(float origin[3], float Width, float EndWidth, float Height, int ModelIndex, int HaloIndex, int StartFrame, int FrameRate, float Life, 
+                float BeamWidth, float BeamEndWidth, int FadeLength, float Amplitude, const int Color[4], int Speed, float delay=0.0)
 {
-	new Float:fPoints[8][3];
-	for(new point=0;point<8;point++)
+	float fPoints[8][3];
+	for(int point=0;point<8;point++)
 	{
 		fPoints[point] = origin;
 	}
@@ -210,7 +212,7 @@ stock TE_SendFourBeamEffectToEnabled(Float:origin[3], Float:Width, Float:EndWidt
 	fPoints[7][1] -= EndWidth;
 	fPoints[7][2] += Height;
 	
-	for(new i=0;i<4;i++)
+	for(int i=0;i<4;i++)
 	{
 		TE_SetupBeamPoints(fPoints[i], fPoints[i+4], ModelIndex, HaloIndex, StartFrame, FrameRate, Life, BeamWidth, BeamEndWidth, FadeLength, Amplitude, Color, Speed);
 		SMRPG_TE_SendToAllEnabled(UPGRADE_SHORTNAME, delay);

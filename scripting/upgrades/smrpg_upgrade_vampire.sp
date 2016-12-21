@@ -2,6 +2,8 @@
 #include <sourcemod>
 #include <sdktools>
 #include <sdkhooks>
+
+#pragma newdecls required
 #include <smrpg>
 #include <smrpg_helper>
 #include <smrpg_sharedmaterials>
@@ -13,13 +15,13 @@
 #define UPGRADE_SHORTNAME "vamp"
 #define PLUGIN_VERSION "1.0"
 
-new Handle:g_hCVPercent;
-new Handle:g_hCVMax;
-new Handle:g_hCVFreezePenalty;
+ConVar g_hCVPercent;
+ConVar g_hCVMax;
+ConVar g_hCVFreezePenalty;
 
-new g_iBeamColor[] = {0,255,0,255}; // green
+int g_iBeamColor[] = {0,255,0,255}; // green
 
-public Plugin:myinfo = 
+public Plugin myinfo = 
 {
 	name = "SM:RPG Upgrade > Vampire",
 	author = "Jannik \"Peace-Maker\" Hartung",
@@ -28,32 +30,32 @@ public Plugin:myinfo =
 	url = "http://www.wcfan.de/"
 }
 
-public OnPluginStart()
+public void OnPluginStart()
 {
 	LoadTranslations("smrpg_stock_upgrades.phrases");
 	
 	SMRPG_GC_CheckSharedMaterialsAndSounds();
 	
 	// Account for late loading
-	for(new i=1;i<=MaxClients;i++)
+	for(int i=1;i<=MaxClients;i++)
 	{
 		if(IsClientInGame(i))
 			OnClientPutInServer(i);
 	}
 }
 
-public OnPluginEnd()
+public void OnPluginEnd()
 {
 	if(SMRPG_UpgradeExists(UPGRADE_SHORTNAME))
 		SMRPG_UnregisterUpgradeType(UPGRADE_SHORTNAME);
 }
 
-public OnAllPluginsLoaded()
+public void OnAllPluginsLoaded()
 {
 	OnLibraryAdded("smrpg");
 }
 
-public OnLibraryAdded(const String:name[])
+public void OnLibraryAdded(const char[] name)
 {
 	// Register this upgrade in SM:RPG
 	if(StrEqual(name, "smrpg"))
@@ -68,12 +70,12 @@ public OnLibraryAdded(const String:name[])
 	}
 }
 
-public OnClientPutInServer(client)
+public void OnClientPutInServer(int client)
 {
 	SDKHook(client, SDKHook_OnTakeDamagePost, Hook_OnTakeDamagePost);
 }
 
-public OnMapStart()
+public void OnMapStart()
 {
 	SMRPG_GC_PrecacheModel("SpriteBeam");
 	SMRPG_GC_PrecacheModel("SpriteHalo");
@@ -82,26 +84,26 @@ public OnMapStart()
 /**
  * SM:RPG Upgrade callbacks
  */
-public SMRPG_BuySell(client, UpgradeQueryType:type)
+public void SMRPG_BuySell(int client, UpgradeQueryType type)
 {
 	// Nothing to apply here immediately after someone buys this upgrade.
 }
 
-public bool:SMRPG_ActiveQuery(client)
+public bool SMRPG_ActiveQuery(int client)
 {
 	// This is a passive effect, so it's always active, if the player got at least level 1
-	new upgrade[UpgradeInfo];
+	int upgrade[UpgradeInfo];
 	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
 	return SMRPG_IsEnabled() && upgrade[UI_enabled] && SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME) > 0;
 }
 
-public SMRPG_TranslateUpgrade(client, const String:shortname[], TranslationType:type, String:translation[], maxlen)
+public void SMRPG_TranslateUpgrade(int client, const char[] shortname, TranslationType type, char[] translation, int maxlen)
 {
 	if(type == TranslationType_Name)
 		Format(translation, maxlen, "%T", UPGRADE_SHORTNAME, client);
 	else if(type == TranslationType_Description)
 	{
-		new String:sDescriptionKey[MAX_UPGRADE_SHORTNAME_LENGTH+12] = UPGRADE_SHORTNAME;
+		char sDescriptionKey[MAX_UPGRADE_SHORTNAME_LENGTH+12] = UPGRADE_SHORTNAME;
 		StrCat(sDescriptionKey, sizeof(sDescriptionKey), " description");
 		Format(translation, maxlen, "%T", sDescriptionKey, client);
 	}
@@ -110,7 +112,7 @@ public SMRPG_TranslateUpgrade(client, const String:shortname[], TranslationType:
 /**
  * Hook callbacks
  */
-public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagetype, weapon, const Float:damageForce[3], const Float:damagePosition[3])
+public void Hook_OnTakeDamagePost(int victim, int attacker, int inflictor, float damage, int damagetype, int weapon, const float damageForce[3], const float damagePosition[3])
 {
 	if(attacker <= 0 || attacker > MaxClients || victim <= 0 || victim > MaxClients)
 		return;
@@ -118,7 +120,7 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 	if(!SMRPG_IsEnabled())
 		return;
 	
-	new upgrade[UpgradeInfo];
+	int upgrade[UpgradeInfo];
 	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
 	if(!upgrade[UI_enabled])
 		return;
@@ -131,12 +133,12 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 	if(!SMRPG_IsFFAEnabled() && GetClientTeam(attacker) == GetClientTeam(victim))
 		return;
 	
-	new iLevel = SMRPG_GetClientUpgradeLevel(attacker, UPGRADE_SHORTNAME);
+	int iLevel = SMRPG_GetClientUpgradeLevel(attacker, UPGRADE_SHORTNAME);
 	if(iLevel <= 0)
 		return;
 	
-	new iOldHealth = GetClientHealth(attacker);
-	new iMaxHealth = SMRPG_Health_GetClientMaxHealth(attacker);
+	int iOldHealth = GetClientHealth(attacker);
+	int iMaxHealth = SMRPG_Health_GetClientMaxHealth(attacker);
 		
 	// Don't reset the health, if the player gained more by other means.
 	if(iOldHealth >= iMaxHealth)
@@ -145,23 +147,23 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 	if(!SMRPG_RunUpgradeEffect(attacker, UPGRADE_SHORTNAME))
 		return; // Some other plugin doesn't want this effect to run
 	
-	new Float:fIncrease = float(iLevel) * GetConVarFloat(g_hCVPercent);
+	float fIncrease = float(iLevel) * g_hCVPercent.FloatValue;
 	fIncrease *= damage;
 	fIncrease += 0.5;
 	
 	// Reduce stolen HP if the victim is frozen with icestab
 	if(GetFeatureStatus(FeatureType_Native, "SMRPG_IsClientFrozen") == FeatureStatus_Available && SMRPG_IsClientFrozen(victim))
 	{
-		fIncrease *= GetConVarFloat(g_hCVFreezePenalty);
+		fIncrease *= g_hCVFreezePenalty.FloatValue;
 	}
 	
 	// Don't let the attacker steal more hp than the set max 
-	new iMaxIncrease = GetConVarInt(g_hCVMax);
-	new iIncrease = RoundToFloor(fIncrease);
+	int iMaxIncrease = g_hCVMax.IntValue;
+	int iIncrease = RoundToFloor(fIncrease);
 	if(iMaxIncrease > 0 && iIncrease > iMaxIncrease)
 		iIncrease = iMaxIncrease;
 	
-	new iNewHealth = iOldHealth + iIncrease;
+	int iNewHealth = iOldHealth + iIncrease;
 	// Limit health gain to maxhealth
 	if(iNewHealth > iMaxHealth)
 		iNewHealth = iMaxHealth;
@@ -171,14 +173,14 @@ public Hook_OnTakeDamagePost(victim, attacker, inflictor, Float:damage, damagety
 	{
 		SetEntityHealth(attacker, iNewHealth);
 		
-		new Float:fAttackerOrigin[3], Float:fVictimOrigin[3];
+		float fAttackerOrigin[3], fVictimOrigin[3];
 		GetClientEyePosition(attacker, fAttackerOrigin);
 		GetClientEyePosition(victim, fVictimOrigin);
 		fAttackerOrigin[2] -= 10.0;
 		fVictimOrigin[2] -= 10.0;
 		
-		new iBeamSprite = SMRPG_GC_GetPrecachedIndex("SpriteBeam");
-		new iHaloSprite = SMRPG_GC_GetPrecachedIndex("SpriteHalo");
+		int iBeamSprite = SMRPG_GC_GetPrecachedIndex("SpriteBeam");
+		int iHaloSprite = SMRPG_GC_GetPrecachedIndex("SpriteHalo");
 		// Just use the beamsprite as halo, if no halo sprite available
 		if(iHaloSprite == -1)
 			iHaloSprite = iBeamSprite;

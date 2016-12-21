@@ -4,16 +4,17 @@
 #include <smrpg>
 #include <autoexecconfig>
 
+#pragma newdecls required
 #define PLUGIN_VERSION "1.0"
 
-new g_iDaysInMonth[] = {0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
-new Handle:g_hCVFirstReset;
-new Handle:g_hCVMonths;
-new Handle:g_hCVTop10MaxLevel;
+int g_iDaysInMonth[] = {0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+ConVar g_hCVFirstReset;
+ConVar g_hCVMonths;
+ConVar g_hCVTop10MaxLevel;
 
-new Handle:g_hCVAutoReset;
+ConVar g_hCVAutoReset;
 
-public Plugin:myinfo = 
+public Plugin myinfo = 
 {
 	name = "SM:RPG > Reset interval",
 	author = "Jannik \"Peace-Maker\" Hartung",
@@ -22,20 +23,20 @@ public Plugin:myinfo =
 	url = "http://www.wcfan.de/"
 }
 
-public OnPluginStart()
+public void OnPluginStart()
 {
-	new Handle:hVersion = CreateConVar("smrpg_resetstats_version", PLUGIN_VERSION, "", FCVAR_NOTIFY|FCVAR_DONTRECORD);
-	if(hVersion != INVALID_HANDLE)
+	ConVar hVersion = CreateConVar("smrpg_resetstats_version", PLUGIN_VERSION, "", FCVAR_NOTIFY|FCVAR_DONTRECORD);
+	if(hVersion != null)
 	{
-		SetConVarString(hVersion, PLUGIN_VERSION);
-		HookConVarChange(hVersion, ConVar_VersionChanged);
+		hVersion.SetString(PLUGIN_VERSION);
+		hVersion.AddChangeHook(ConVar_VersionChanged);
 	}
 	
 	LoadTranslations("smrpg_resetstats.phrases");
 	
 	AutoExecConfig_SetFile("plugin.smrpg_resetstats");
 	AutoExecConfig_SetCreateFile(true);
-	AutoExecConfig_SetPlugin(INVALID_HANDLE);
+	AutoExecConfig_SetPlugin(null);
 	
 	g_hCVFirstReset = AutoExecConfig_CreateConVar("smrpg_resetstats_firstreset", "2014-02-01", "The date of the first reset which is used as a base to get the coming reset dates. Format yyyy-mm-dd.");
 	g_hCVMonths = AutoExecConfig_CreateConVar("smrpg_resetstats_months", "2", "After how many months shall we reset the stats again?", _, true, 0.0);
@@ -52,17 +53,17 @@ public OnPluginStart()
 	RegAdminCmd("smrpg_db_resetdatabase", Cmd_ResetDatabase, ADMFLAG_ROOT, "Resets all players in the database back to level 1. CANNOT BE UNDONE!", "smrpg");
 }
 
-public ConVar_VersionChanged(Handle:convar, const String:oldValue[], const String:newValue[])
+public void ConVar_VersionChanged(ConVar convar, const char[] oldValue, const char[] newValue)
 {
-	SetConVarString(convar, PLUGIN_VERSION);
+	convar.SetString(PLUGIN_VERSION);
 }
 
-public OnMapStart()
+public void OnMapStart()
 {
 	CreateTimer(1200.0, Timer_InformAboutReset, _, TIMER_FLAG_NO_MAPCHANGE|TIMER_REPEAT);
 }
 
-public SMRPG_OnClientLoaded(client)
+public void SMRPG_OnClientLoaded(int client)
 {
 	// This player's stats were reset while he wasn't on the server. Inform him about the reset.
 	if(SMRPG_GetClientLastSeenTime(client) < SMRPG_GetClientLastResetTime(client))
@@ -72,7 +73,7 @@ public SMRPG_OnClientLoaded(client)
 	}
 }
 
-public Action:Cmd_ResetDatabase(client, args)
+public Action Cmd_ResetDatabase(int client, int args)
 {
 	if(args < 1)
 	{
@@ -80,7 +81,7 @@ public Action:Cmd_ResetDatabase(client, args)
 		return Plugin_Handled;
 	}
 	
-	decl String:sReason[256];
+	char sReason[256];
 	GetCmdArgString(sReason, sizeof(sReason));
 	StripQuotes(sReason);
 	TrimString(sReason);
@@ -89,7 +90,7 @@ public Action:Cmd_ResetDatabase(client, args)
 	SMRPG_ResetAllPlayers(sReason);
 	
 	// Inform all ingame players in chat.
-	for(new i=1;i<=MaxClients;i++)
+	for(int i=1;i<=MaxClients;i++)
 	{
 		if(IsClientInGame(i) && !IsFakeClient(i))
 			CreateTimer(1.0, Timer_InformPlayerReset, GetClientSerial(i), TIMER_FLAG_NO_MAPCHANGE);
@@ -101,74 +102,75 @@ public Action:Cmd_ResetDatabase(client, args)
 	return Plugin_Handled;
 }
 
-public Action:Cmd_NextReset(client, args)
+public Action Cmd_NextReset(int client, int args)
 {
-	if(GetConVarInt(g_hCVMonths) > 0)
+	if(g_hCVMonths.IntValue > 0)
 		PrintDaysUntilReset(client);
 	
-	if(GetConVarInt(g_hCVTop10MaxLevel) > 0)
+	if(g_hCVTop10MaxLevel.IntValue > 0)
 		PrintLevelUntilReset(client);
 	
 	return Plugin_Handled;
 }
 
-public Action:Cmd_LastReset(client, args)
+public Action Cmd_LastReset(int client, int args)
 {
-	new String:sLastReset[32], iLastReset[3];
+	char sLastReset[32];
+	int iLastReset[3];
 	if(SMRPG_GetSetting("last_reset", sLastReset, sizeof(sLastReset)))
 	{
-		new iLastGlobalResetStamp = StringToInt(sLastReset);
+		int iLastGlobalResetStamp = StringToInt(sLastReset);
 		GetCurrentDate(iLastReset[0], iLastReset[1], iLastReset[2], iLastGlobalResetStamp);
 		Client_Reply(client, "{OG}SM:RPG{N} > {G}%t", "Last server reset", iLastReset[2], iLastReset[1], iLastReset[0]);
 		
-		new String:sReason[256];
+		char sReason[256];
 		if(SMRPG_GetSetting("reset_reason", sReason, sizeof(sReason)))
 			Client_Reply(client, "{OG}SM:RPG{N} > {G}%t", "Display global reset reason", sReason);
 	}
 	
 	if(client > 0)
 	{
-		new iLastResetStamp = SMRPG_GetClientLastResetTime(client);
+		int iLastResetStamp = SMRPG_GetClientLastResetTime(client);
 		GetCurrentDate(iLastReset[0], iLastReset[1], iLastReset[2], iLastResetStamp);
 		Client_Reply(client, "{OG}SM:RPG{N} > {G}%t", "Last player reset", iLastReset[2], iLastReset[1], iLastReset[0]);
 	}
 	return Plugin_Continue;
 }
 
-PrintLevelUntilReset(client)
+void PrintLevelUntilReset(int client)
 {
 	SMRPG_GetTop10Players(SQL_GetTop10, client?GetClientUserId(client):client);
 }
 
-public SQL_GetTop10(Handle:owner, Handle:hndl, const String:error[], any:userid)
+public void SQL_GetTop10(Database db, DBResultSet results, const char[] error, any userid)
 {
-	new client = GetClientOfUserId(userid);
+	int client = GetClientOfUserId(userid);
 	
-	if(!hndl)
+	if(!results)
 	{
 		LogError("Error fetching top10 players: %s", error);
 		return;
 	}
 	
-	new iTotalLevels;
+	int iTotalLevels;
 	// SELECT name, level, experience, credits FROM ..
-	while(SQL_MoreRows(hndl))
+	while(results.MoreRows)
 	{
-		if(!SQL_FetchRow(hndl))
+		if(!results.FetchRow())
 			continue;
 		
-		iTotalLevels += SQL_FetchInt(hndl, 1);
+		iTotalLevels += results.FetchInt(1);
 	}
 	
-	new iResetMaxLevel = GetConVarInt(g_hCVTop10MaxLevel);
-	new iLevelsLeft = iResetMaxLevel - iTotalLevels;
+	int iResetMaxLevel = g_hCVTop10MaxLevel.IntValue;
+	int iLevelsLeft = iResetMaxLevel - iTotalLevels;
 	if(iLevelsLeft < 0)
 		iLevelsLeft = 0;
 	
 	// Actually reset the database now.
 	if(iLevelsLeft == 0)
 	{
-		decl String:sReason[256];
+		char sReason[256];
 		Format(sReason, sizeof(sReason), "Levels of top 10 players summed up to %d.", iResetMaxLevel);
 		DoReset(sReason);
 	}
@@ -182,14 +184,14 @@ public SQL_GetTop10(Handle:owner, Handle:hndl, const String:error[], any:userid)
 /*
  * Date interval related resetting
  */
-PrintDaysUntilReset(client)
+void PrintDaysUntilReset(int client)
 {
-	new iNextReset[3];
-	new iDays = GetDaysUntilNextReset(iNextReset);
-	new iCurrentYear, iCurrentMonth, iCurrentDay;
+	int iNextReset[3];
+	int iDays = GetDaysUntilNextReset(iNextReset);
+	int iCurrentYear, iCurrentMonth, iCurrentDay;
 	GetCurrentDate(iCurrentYear, iCurrentMonth, iCurrentDay);
 	
-	new iYears, iMonths;
+	int iYears, iMonths;
 	while((iDays - g_iDaysInMonth[iCurrentMonth]) > 0)
 	{
 		iDays -= g_iDaysInMonth[iCurrentMonth];
@@ -211,8 +213,8 @@ PrintDaysUntilReset(client)
 	// Try to reset automatically now
 	if(iDays == 0)
 	{
-		new String:sReason[256] = "Regular reset every ";
-		new iMonthInterval = GetConVarInt(g_hCVMonths);
+		char sReason[256] = "Regular reset every ";
+		int iMonthInterval = g_hCVMonths.IntValue;
 		if(iMonthInterval > 1)
 			Format(sReason, sizeof(sReason), "%s%d months.", sReason, iMonthInterval);
 		else
@@ -230,7 +232,7 @@ PrintDaysUntilReset(client)
 	}
 	else
 	{
-		new String:sYears[32], String:sMonths[32], String:sDays[32];
+		char sYears[32], sMonths[32], sDays[32];
 		
 		if(!client)
 		{
@@ -239,7 +241,7 @@ PrintDaysUntilReset(client)
 		}
 		else
 		{
-			for (new i=1;i<=MaxClients;i++)
+			for (int i=1;i<=MaxClients;i++)
 			{
 				if (!IsClientInGame(i) || IsFakeClient(i))
 					continue;
@@ -251,9 +253,9 @@ PrintDaysUntilReset(client)
 	}
 }
 
-public OnClientSayCommand_Post(client, const String:command[], const String:sArgs[])
+public void OnClientSayCommand_Post(int client, const char[] command, const char[] sArgs)
 {
-	new ReplySource:oldSource = SetCmdReplySource(SM_REPLY_TO_CHAT);
+	ReplySource oldSource = SetCmdReplySource(SM_REPLY_TO_CHAT);
 	if (StrEqual(sArgs, "nextreset", false))
 		Cmd_NextReset(client, 0);
 	else if(StrEqual(sArgs, "lastreset", false))
@@ -261,38 +263,38 @@ public OnClientSayCommand_Post(client, const String:command[], const String:sArg
 	SetCmdReplySource(oldSource);
 }
 
-public Action:Timer_InformAboutReset(Handle:timer)
+public Action Timer_InformAboutReset(Handle timer)
 {
 	Cmd_NextReset(1, 0);
 	
 	return Plugin_Continue;
 }
 
-public Action:Timer_InformPlayerReset(Handle:timer, any:serial)
+public Action Timer_InformPlayerReset(Handle timer, any serial)
 {
-	new client = GetClientFromSerial(serial);
+	int client = GetClientFromSerial(serial);
 	if(!client)
 		return Plugin_Stop;
 	
-	new iLastReset[3];
-	new iLastResetStamp = SMRPG_GetClientLastResetTime(client);
+	int iLastReset[3];
+	int iLastResetStamp = SMRPG_GetClientLastResetTime(client);
 	GetCurrentDate(iLastReset[2], iLastReset[1], iLastReset[0], iLastResetStamp);
 	
 	// Print some chat message multiple times so he really reads it.
-	for(new i=0;i<3;i++)
+	for(int i=0;i<3;i++)
 		Client_PrintToChat(client, false, "{OG}SM:RPG{N} > %t", "Warning, your stats were reset on", iLastReset[0], iLastReset[1], iLastReset[2]);
 	
 	// Might be interesting to know that all other players were reset too.
-	new String:sLastReset[32];
+	char sLastReset[32];
 	if(SMRPG_GetSetting("last_reset", sLastReset, sizeof(sLastReset)))
 	{
-		new iLastGlobalResetStamp = StringToInt(sLastReset);
+		int iLastGlobalResetStamp = StringToInt(sLastReset);
 		if(iLastGlobalResetStamp == iLastResetStamp)
 		{
 			Client_PrintToChat(client, false, "{OG}SM:RPG{N} > {G}%t", "The whole server got reset, so you're not the only one.");
 			Client_PrintToChat(client, false, "{OG}SM:RPG{N} > {G}%t", "This is done automatically regularly.");
 			
-			new String:sReason[256];
+			char sReason[256];
 			if(SMRPG_GetSetting("reset_reason", sReason, sizeof(sReason)))
 				Client_PrintToChat(client, false, "{OG}SM:RPG{N} > {G}%t", "Display global reset reason", sReason);
 		}
@@ -304,20 +306,20 @@ public Action:Timer_InformPlayerReset(Handle:timer, any:serial)
 /**
  * Reset the database iff it wasn't reset already today.
  */
-DoReset(const String:sReason[])
+void DoReset(const char[] sReason)
 {
 	// Don't take any action automatically.
-	if(!GetConVarBool(g_hCVAutoReset))
+	if(!g_hCVAutoReset.BoolValue)
 		return;
 	
-	decl String:sLastReset[32];
+	char sLastReset[32];
 	if(SMRPG_GetSetting("last_reset", sLastReset, sizeof(sLastReset)))
 	{
-		new iLastResetStamp = StringToInt(sLastReset);
-		new iLastReset[3];
+		int iLastResetStamp = StringToInt(sLastReset);
+		int iLastReset[3];
 		GetCurrentDate(iLastReset[2], iLastReset[1], iLastReset[0], iLastResetStamp);
 		
-		new iCurrentDate[3];
+		int iCurrentDate[3];
 		GetCurrentDate(iCurrentDate[2], iCurrentDate[1], iCurrentDate[0]);
 		
 		// Already reset today..
@@ -331,14 +333,14 @@ DoReset(const String:sReason[])
 	SMRPG_ResetAllPlayers(sReason);
 	
 	// Inform all ingame players in chat.
-	for(new i=1;i<=MaxClients;i++)
+	for(int i=1;i<=MaxClients;i++)
 	{
 		if(IsClientInGame(i) && !IsFakeClient(i))
 			CreateTimer(1.0, Timer_InformPlayerReset, GetClientSerial(i), TIMER_FLAG_NO_MAPCHANGE);
 	}
 }
 
-TranslateTimespan(client, String:sYears[], iLenYears, iYears, String:sMonths[], iLenMonths, iMonths, String:sDays[], iLenDays, iDays)
+void TranslateTimespan(int client, char[] sYears, int iLenYears, int iYears, char[] sMonths, int iLenMonths, int iMonths, char[] sDays, int iLenDays, int iDays)
 {
 	if(iYears > 0)
 	{
@@ -365,32 +367,32 @@ TranslateTimespan(client, String:sYears[], iLenYears, iYears, String:sMonths[], 
 	}
 }
 
-stock GetDaysUntilNextReset(iNextReset[3])
+stock int GetDaysUntilNextReset(int iNextReset[3])
 {
 	// Get the current date
-	new iCurrentYear, iCurrentMonth, iCurrentDay;
+	int iCurrentYear, iCurrentMonth, iCurrentDay;
 	GetCurrentDate(iCurrentYear, iCurrentMonth, iCurrentDay);
 	
 	// Parse the start date
-	decl String:sFirstDate[15];
-	GetConVarString(g_hCVFirstReset, sFirstDate, sizeof(sFirstDate));
+	char sFirstDate[15];
+	g_hCVFirstReset.GetString(sFirstDate, sizeof(sFirstDate));
 	TrimString(sFirstDate);
 	if(strlen(sFirstDate) != 10)
 		return 0;
 	
-	decl String:sBuffer[15];
+	char sBuffer[15];
 	strcopy(sBuffer, 5, sFirstDate);
 	sBuffer[4] = '\0';
-	new iFirstYear = StringToInt(sBuffer);
+	int iFirstYear = StringToInt(sBuffer);
 	strcopy(sBuffer, 3, sFirstDate[5]);
 	sBuffer[2] = '\0';
-	new iFirstMonth = StringToInt(sBuffer);
+	int iFirstMonth = StringToInt(sBuffer);
 	strcopy(sBuffer, 3, sFirstDate[8]);
 	sBuffer[2] = '\0';
-	new iFirstDay = StringToInt(sBuffer);
+	int iFirstDay = StringToInt(sBuffer);
 	
 	// Generate the next reset date.
-	new iResetInterval = GetConVarInt(g_hCVMonths);
+	int iResetInterval = g_hCVMonths.IntValue;
 	while(iFirstYear < iCurrentYear || iFirstYear == iCurrentYear && (iFirstMonth < iCurrentMonth || (iFirstMonth == iCurrentMonth && iFirstDay < iCurrentDay)))
 	{
 		iFirstMonth += iResetInterval;
@@ -407,7 +409,7 @@ stock GetDaysUntilNextReset(iNextReset[3])
 	
 	//PrintToServer("Next reset on %d-%d-%d", iFirstYear, iFirstMonth, iFirstDay);
 	
-	new iDays;
+	int iDays;
 	while(iCurrentYear < iFirstYear || (iCurrentMonth < iFirstMonth && iCurrentYear == iFirstYear))
 	{
 		iDays += g_iDaysInMonth[iCurrentMonth];
@@ -430,7 +432,7 @@ stock GetDaysUntilNextReset(iNextReset[3])
 	return iDays;
 }
 
-stock bool:IsLeapYear(year)
+stock bool IsLeapYear(int year)
 {
 	if(year % 4)
 		return false;
@@ -444,9 +446,9 @@ stock bool:IsLeapYear(year)
 	return true;
 }
 
-stock GetCurrentDate(&iYear, &iMonth, &iDay, stamp=-1)
+stock void GetCurrentDate(int &iYear, int &iMonth, int &iDay, int stamp=-1)
 {
-	decl String:sBuffer[15];
+	char sBuffer[15];
 	FormatTime(sBuffer, sizeof(sBuffer), "%Y", stamp);
 	iYear = StringToInt(sBuffer);
 	FormatTime(sBuffer, sizeof(sBuffer), "%m", stamp);

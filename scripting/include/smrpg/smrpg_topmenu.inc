@@ -4,6 +4,7 @@
 #define _smrpg_topmenu_included
 
 #include <smrpg>
+#include <topmenus>
 
 /** Category names of default topmenu categories */
 #define RPGMENU_UPGRADES "RPGUpgradesMenu"
@@ -16,22 +17,20 @@
 /**
  * Get the handle to the rpgmenu top menu.
  *
- * @return Handle to the rpgmenu top menu or INVALID_HANDLE if not created yet.
+ * @return Handle to the rpgmenu top menu or null if not created yet.
  */
-native Handle:SMRPG_GetTopMenu();
+native TopMenu SMRPG_GetTopMenu();
 
 /**
  * Called when the rpgmenu is created and 3rd party plugins can grab the Handle or add categories.
  *
  * @param topmenu Handle to the rpgmenu TopMenu.
- * @noreturn
  */
-forward SMRPG_OnRPGMenuCreated(Handle:topmenu);
+forward void SMRPG_OnRPGMenuCreated(TopMenu topmenu);
 
 /**
  * Called when the rpgmenu is ready to have items added. 
  *
  * @param topmenu Handle to the rpgmenu TopMenu.
- * @noreturn
  */
-forward SMRPG_OnRPGMenuReady(Handle:topmenu);
+forward void SMRPG_OnRPGMenuReady(TopMenu topmenu);

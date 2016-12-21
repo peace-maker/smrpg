@@ -1,6 +1,8 @@
 #pragma semicolon 1
 #include <sourcemod>
 #include <sdktools>
+
+//#pragma newdecls required
 #include <smrpg>
 #include <smrpg_helper>
 #include <smrpg_sharedmaterials>
@@ -15,16 +17,16 @@
 #define MEDIC_HEALTH_BEAM_COLOR {5, 45, 255, 50}
 #define MEDIC_ARMOR_BEAM_COLOR {5, 255, 10, 50}
 
-new Handle:g_hCVIncrease;
-new Handle:g_hCVInterval;
-new Handle:g_hCVRadius;
-new Handle:g_hCVRadiusIncrease;
+ConVar g_hCVIncrease;
+ConVar g_hCVInterval;
+ConVar g_hCVRadius;
+ConVar g_hCVRadiusIncrease;
 
-new bool:g_bIsCstrike;
+bool g_bIsCstrike;
 
-new Handle:g_hMedicTimer;
+Handle g_hMedicTimer;
 
-public Plugin:myinfo = 
+public Plugin myinfo = 
 {
 	name = "SM:RPG Upgrade > Medic",
 	author = "Jannik \"Peace-Maker\" Hartung",
@@ -33,25 +35,25 @@ public Plugin:myinfo =
 	url = "http://www.wcfan.de/"
 }
 
-public OnPluginStart()
+public void OnPluginStart()
 {
 	LoadTranslations("smrpg_stock_upgrades.phrases");
 	g_bIsCstrike = GetEngineVersion() == Engine_CSS || GetEngineVersion() == Engine_CSGO;
 	SMRPG_GC_CheckSharedMaterialsAndSounds();
 }
 
-public OnPluginEnd()
+public void OnPluginEnd()
 {
 	if(SMRPG_UpgradeExists(UPGRADE_SHORTNAME))
 		SMRPG_UnregisterUpgradeType(UPGRADE_SHORTNAME);
 }
 
-public OnAllPluginsLoaded()
+public void OnAllPluginsLoaded()
 {
 	OnLibraryAdded("smrpg");
 }
 
-public OnLibraryAdded(const String:name[])
+public void OnLibraryAdded(const char[] name)
 {
 	// Register this upgrade in SM:RPG
 	if(StrEqual(name, "smrpg"))
@@ -66,16 +68,16 @@ public OnLibraryAdded(const String:name[])
 		g_hCVRadius = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_medic_radius", "250.0", "Base radius around player in which other players are healed.", _, true, 1.0);
 		g_hCVRadiusIncrease = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_medic_radius_increase", "0.0", "Radius increase for each level.", _, true, 0.0);
 		
-		HookConVarChange(g_hCVInterval, ConVar_IntervalChanged);
+		g_hCVInterval.AddChangeHook(ConVar_IntervalChanged);
 	}
 }
 
-public OnMapStart()
+public void OnMapStart()
 {
-	if(g_hMedicTimer != INVALID_HANDLE)
-		CloseHandle(g_hMedicTimer);
+	if(g_hMedicTimer != null)
+		delete g_hMedicTimer;
 	
-	g_hMedicTimer = CreateTimer(GetConVarFloat(g_hCVInterval), Timer_ApplyMedic, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
+	g_hMedicTimer = CreateTimer(g_hCVInterval.FloatValue, Timer_ApplyMedic, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 
 	SMRPG_GC_PrecacheSound("SoundMedicCharge");
 	
@@ -83,34 +85,34 @@ public OnMapStart()
 	SMRPG_GC_PrecacheModel("SpriteHalo");
 }
 
-public OnMapEnd()
+public void OnMapEnd()
 {
-	g_hMedicTimer = INVALID_HANDLE;
+	g_hMedicTimer = null;
 }
 
 /**
  * SM:RPG Upgrade callbacks
  */
-public SMRPG_BuySell(client, UpgradeQueryType:type)
+public void SMRPG_BuySell(int client, UpgradeQueryType type)
 {
 	// Nothing to apply here immediately after someone buys this upgrade.
 }
 
-public bool:SMRPG_ActiveQuery(client)
+public bool SMRPG_ActiveQuery(int client)
 {
 	// This is a passive effect, so it's always active, if the player got at least level 1
-	new upgrade[UpgradeInfo];
+	int upgrade[UpgradeInfo];
 	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
 	return SMRPG_IsEnabled() && upgrade[UI_enabled] && SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME) > 0;
 }
 
-public SMRPG_TranslateUpgrade(client, const String:shortname[], TranslationType:type, String:translation[], maxlen)
+public void SMRPG_TranslateUpgrade(int client, const char[] shortname, TranslationType type, char[] translation, int maxlen)
 {
 	if(type == TranslationType_Name)
 		Format(translation, maxlen, "%T", UPGRADE_SHORTNAME, client);
 	else if(type == TranslationType_Description)
 	{
-		new String:sDescriptionKey[MAX_UPGRADE_SHORTNAME_LENGTH+12] = UPGRADE_SHORTNAME;
+		char sDescriptionKey[MAX_UPGRADE_SHORTNAME_LENGTH+12] = UPGRADE_SHORTNAME;
 		StrCat(sDescriptionKey, sizeof(sDescriptionKey), " description");
 		Format(translation, maxlen, "%T", sDescriptionKey, client);
 	}
@@ -119,7 +121,7 @@ public SMRPG_TranslateUpgrade(client, const String:shortname[], TranslationType:
 /**
  * Checks the distance of each player from a medic and assigns health to them accordingly.
  */
-public Action:Timer_ApplyMedic(Handle:timer, any:data)
+public Action Timer_ApplyMedic(Handle timer, any data)
 {
 	if(!SMRPG_IsEnabled())
 		return Plugin_Continue;
@@ -128,18 +130,19 @@ public Action:Timer_ApplyMedic(Handle:timer, any:data)
 	if(SMRPG_IsFFAEnabled())
 		return Plugin_Continue;
 	
-	new upgrade[UpgradeInfo];
+	int upgrade[UpgradeInfo];
 	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
 	if(!upgrade[UI_enabled])
 		return Plugin_Continue;
 	
-	new bool:bIgnoreBots = SMRPG_IgnoreBots();
+	bool bIgnoreBots = SMRPG_IgnoreBots();
 	
 	// Build origin cache and team targets for beam rings
-	decl Float:vCacheOrigin[MaxClients+1][3];
-	decl iFirstTeam[MaxClients], iSecondTeam[MaxClients];
-	new iFirstCount, iSecondCount;
-	for(new i=1;i<=MaxClients;i++)
+	new Float:vCacheOrigin[MaxClients+1][3];
+	int[] iFirstTeam = new int[MaxClients];
+	int[] iSecondTeam = new int[MaxClients];
+	int iFirstCount, iSecondCount;
+	for(int i=1;i<=MaxClients;i++)
 	{
 		if(!IsClientInGame(i))
 			continue;
@@ -162,20 +165,22 @@ public Action:Timer_ApplyMedic(Handle:timer, any:data)
 		GetClientEyePosition(i, vCacheOrigin[i]);
 	}
 	
-	new Float:fMedicRadiusBase = GetConVarFloat(g_hCVRadius);
-	new Float:fMedicRadiusIncrease = GetConVarFloat(g_hCVRadiusIncrease);
-	new iMedicIncrease = GetConVarInt(g_hCVIncrease);
+	float fMedicRadiusBase = g_hCVRadius.FloatValue;
+	float fMedicRadiusIncrease = g_hCVRadiusIncrease.FloatValue;
+	int iMedicIncrease = g_hCVIncrease.IntValue;
 	
-	new bool:bMedicDidHisJob, iBeamRingColor[4];
+	bool bMedicDidHisJob;
+	int	iBeamRingColor[4];
 	
-	new iBeamSprite = SMRPG_GC_GetPrecachedIndex("SpriteBeam");
-	new iHaloSprite = SMRPG_GC_GetPrecachedIndex("SpriteHalo");
+	int iBeamSprite = SMRPG_GC_GetPrecachedIndex("SpriteBeam");
+	int iHaloSprite = SMRPG_GC_GetPrecachedIndex("SpriteHalo");
 	// Just use the beamsprite as halo, if no halo sprite available
 	if(iHaloSprite == -1)
 		iHaloSprite = iBeamSprite;
 	
-	new iLevel, Float:fMedicRadius, iNewHP, iMaxHealth, iNewArmor, iMaxArmor, Float:vRingOrigin[3];
-	for(new i=1;i<=MaxClients;i++)
+	int iLevel, iNewHP, iMaxHealth, iNewArmor, iMaxArmor;
+	float fMedicRadius, vRingOrigin[3];
+	for(int i=1;i<=MaxClients;i++)
 	{
 		/* If player is a medic and player is not dead */
 		if(!IsClientInGame(i) || !IsPlayerAlive(i))
@@ -194,7 +199,7 @@ public Action:Timer_ApplyMedic(Handle:timer, any:data)
 		fMedicRadius = fMedicRadiusBase + fMedicRadiusIncrease * float(iLevel-1);
 		
 		/* Medic found, now search for teammates */
-		for(new m=1;m<=MaxClients;m++)
+		for(int m=1;m<=MaxClients;m++)
 		{
 			/* If player is on the same team as medic, player is not dead,
 				   and player is not the medic */
@@ -276,9 +281,9 @@ public Action:Timer_ApplyMedic(Handle:timer, any:data)
 	return Plugin_Continue;
 }
 
-public ConVar_IntervalChanged(Handle:convar, const String:oldValue[], const String:newValue[])
+public void ConVar_IntervalChanged(ConVar convar, const char[] oldValue, const char[] newValue)
 {
-	if(g_hMedicTimer != INVALID_HANDLE)
-		CloseHandle(g_hMedicTimer);
-	g_hMedicTimer = CreateTimer(GetConVarFloat(g_hCVInterval), Timer_ApplyMedic, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
+	if(g_hMedicTimer != null)
+		delete g_hMedicTimer;
+	g_hMedicTimer = CreateTimer(g_hCVInterval.FloatValue, Timer_ApplyMedic, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 }
