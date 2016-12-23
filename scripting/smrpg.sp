@@ -90,7 +90,7 @@ ConVar g_hCVFadeOnLevelDefault;
 ConVar g_hCVFadeOnLevelColor;
 
 // List of default core chat commands available to players, which get registered with the smrpg_commandlist plugin.
-char g_sDefaultRPGCommands[] = {"rpgmenu", "rpgrank", "rpginfo", "rpgtop10", "rpgnext", "rpgsession", "rpghelp", "rpgexp"};
+char g_sDefaultRPGCommands[][] = {"rpgmenu", "rpgrank", "rpginfo", "rpgtop10", "rpgnext", "rpgsession", "rpghelp", "rpgexp"};
 
 #include "smrpg/smrpg_upgrades.sp"
 #include "smrpg/smrpg_database.sp"
@@ -770,100 +770,38 @@ public int Native_IsFFAEnabled(Handle plugin, int numParams)
  */
 public Action CommandList_DefaultTranslations(int client, const char[] command, CommandTranslationType type, char[] translation, int maxlen)
 {
-	if(StrEqual(command, "rpgmenu"))
+	bool bValidCommand;
+	for(int i=0;i<sizeof(g_sDefaultRPGCommands);i++)
 	{
-		switch(type)
+		if(StrEqual(command, g_sDefaultRPGCommands[i]))
 		{
-			case CommandTranslationType_ShortDescription:
-				Format(translation, maxlen, "%T", "rpgmenu short desc", client);
-			case CommandTranslationType_Description:
-				Format(translation, maxlen, "%T", "rpgmenu desc", client);
-			case CommandTranslationType_Advert:
-				Format(translation, maxlen, "%T", "rpgmenu advert", client);
+			bValidCommand = true;
+			break;
 		}
 	}
-	else if(StrEqual(command, "rpgrank"))
+	
+	// Make sure we have a translation for that one.
+	if (!bValidCommand)
+		return Plugin_Handled;
+	
+	// All command phrases follow the same pattern.
+	char sPhrase[256];
+	switch(type)
 	{
-		switch(type)
+		case CommandTranslationType_ShortDescription:
 		{
-			case CommandTranslationType_ShortDescription:
-				Format(translation, maxlen, "%T", "rpgrank short desc", client);
-			case CommandTranslationType_Description:
-				Format(translation, maxlen, "%T", "rpgrank desc", client);
-			case CommandTranslationType_Advert:
-				Format(translation, maxlen, "%T", "rpgrank advert", client);
+			Format(sPhrase, sizeof(sPhrase), "%s short desc", command);
+			Format(translation, maxlen, "%T", sPhrase, client);
 		}
-	}
-	else if(StrEqual(command, "rpginfo"))
-	{
-		switch(type)
+		case CommandTranslationType_Description:
 		{
-			case CommandTranslationType_ShortDescription:
-				Format(translation, maxlen, "%T", "rpginfo short desc", client);
-			case CommandTranslationType_Description:
-				Format(translation, maxlen, "%T", "rpginfo desc", client);
-			case CommandTranslationType_Advert:
-				Format(translation, maxlen, "%T", "rpginfo advert", client);
+			Format(sPhrase, sizeof(sPhrase), "%s desc", command);
+			Format(translation, maxlen, "%T", sPhrase, client);
 		}
-	}
-	else if(StrEqual(command, "rpgtop10"))
-	{
-		switch(type)
+		case CommandTranslationType_Advert:
 		{
-			case CommandTranslationType_ShortDescription:
-				Format(translation, maxlen, "%T", "rpgtop10 short desc", client);
-			case CommandTranslationType_Description:
-				Format(translation, maxlen, "%T", "rpgtop10 desc", client);
-			case CommandTranslationType_Advert:
-				Format(translation, maxlen, "%T", "rpgtop10 advert", client);
-		}
-	}
-	else if(StrEqual(command, "rpgnext"))
-	{
-		switch(type)
-		{
-			case CommandTranslationType_ShortDescription:
-				Format(translation, maxlen, "%T", "rpgnext short desc", client);
-			case CommandTranslationType_Description:
-				Format(translation, maxlen, "%T", "rpgnext desc", client);
-			case CommandTranslationType_Advert:
-				Format(translation, maxlen, "%T", "rpgnext advert", client);
-		}
-	}
-	else if(StrEqual(command, "rpgsession"))
-	{
-		switch(type)
-		{
-			case CommandTranslationType_ShortDescription:
-				Format(translation, maxlen, "%T", "rpgsession short desc", client);
-			case CommandTranslationType_Description:
-				Format(translation, maxlen, "%T", "rpgsession desc", client);
-			case CommandTranslationType_Advert:
-				Format(translation, maxlen, "%T", "rpgsession advert", client);
-		}
-	}
-	else if(StrEqual(command, "rpghelp"))
-	{
-		switch(type)
-		{
-			case CommandTranslationType_ShortDescription:
-				Format(translation, maxlen, "%T", "rpghelp short desc", client);
-			case CommandTranslationType_Description:
-				Format(translation, maxlen, "%T", "rpghelp desc", client);
-			case CommandTranslationType_Advert:
-				Format(translation, maxlen, "%T", "rpghelp advert", client);
-		}
-	}
-	else if(StrEqual(command, "rpgexp"))
-	{
-		switch(type)
-		{
-			case CommandTranslationType_ShortDescription:
-				Format(translation, maxlen, "%T", "rpgexp short desc", client);
-			case CommandTranslationType_Description:
-				Format(translation, maxlen, "%T", "rpgexp desc", client);
-			case CommandTranslationType_Advert:
-				Format(translation, maxlen, "%T", "rpgexp advert", client, g_hCVLastExperienceCount.IntValue);
+			Format(sPhrase, sizeof(sPhrase), "%s advert", command);
+			Format(translation, maxlen, "%T", sPhrase, client);
 		}
 	}
 	return Plugin_Continue;
