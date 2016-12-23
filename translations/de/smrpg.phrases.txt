@@ -179,6 +179,11 @@
 	}
 	
 	// Menu Options
+	"Menu"
+	{
+		"de"			"Menü"
+	}
+	
 	"Upgrades"
 	{
 		"de"			"Upgrades"

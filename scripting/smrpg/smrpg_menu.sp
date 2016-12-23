@@ -141,8 +141,23 @@ public void TopMenu_DefaultCategoryHandler(TopMenu topmenu, TopMenuAction action
 	{
 		case TopMenuAction_DisplayTitle:
 		{
+			if(object_id == g_TopMenuUpgrades)
+				Format(buffer, maxlength, "SM:RPG %T", "Upgrades", param);
+			else if(object_id == g_TopMenuSell)
+				Format(buffer, maxlength, "SM:RPG %T", "Sell", param);
+			else if(object_id == g_TopMenuUpgradeSettings)
+				Format(buffer, maxlength, "SM:RPG %T", "Upgrade Settings", param);
+			else if(object_id == g_TopMenuStats)
+				Format(buffer, maxlength, "SM:RPG %T", "Stats", param);
+			else if(object_id == g_TopMenuSettings)
+				Format(buffer, maxlength, "SM:RPG %T", "Settings", param);
+			else if(object_id == g_TopMenuHelp)
+				Format(buffer, maxlength, "SM:RPG %T", "Help", param);
+			else
+				Format(buffer, maxlength, "SM:RPG %T", "Menu", param);
+			
 			// Always display the current credits in the title
-			Format(buffer, maxlength, "%T\n-----\n", "Credits", param, GetClientCredits(param));
+			Format(buffer, maxlength, "%s\n%T\n-----\n", buffer, "Credits", param, GetClientCredits(param));
 		}
 		case TopMenuAction_DisplayOption:
 		{

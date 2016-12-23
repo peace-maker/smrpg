@@ -194,6 +194,11 @@
 	}
 	
 	// Menu Options
+	"Menu"
+	{
+		"en"			"Menu"
+	}
+	
 	"Upgrades"
 	{
 		"en"			"Upgrades"
