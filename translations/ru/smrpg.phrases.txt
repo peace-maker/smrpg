@@ -147,6 +147,98 @@
 		"ru"			"ТОЛЬКО {1} КОМАНДА!"
 	}
 	
+	"RPG menu buy upgrade entry max level"
+	{
+		// 1: Translated name of the upgrade.
+		// 2: Current level of the upgrade the player has purchased.
+		// 3: "Cost" phrase.
+		// 4: Optional " (Is teamlocked)" phrase if upgrade is locked to a team.
+		"ru"			"{1} [Ур:{2}|Макс]{4}"
+	}
+	
+	"RPG menu buy upgrade entry show max"
+	{
+		// 1: Translated name of the upgrade.
+		// 2: Next level of the upgrade the player wants to purchase.
+		// 3: Maximal level of the upgrade.
+		// 4: "Cost" phrase.
+		// 5: Upgrade cost for the next level.
+		// 6: Optional " (Is teamlocked)" phrase if upgrade is locked to a team.
+		"ru"			"{1} [Ур:{2}из{3}|{4}:{5}]{6}"
+	}
+	
+	"RPG menu buy upgrade entry"
+	{
+		// 1: Translated name of the upgrade.
+		// 2: Next level of the upgrade the player wants to purchase.
+		// 3: "Cost" phrase.
+		// 4: Upgrade cost for the next level.
+		// 5: Optional " (Is teamlocked)" phrase if upgrade is locked to a team.
+		"ru"			"{1} [Ур:{2}|{3}:{4}]{5}"
+	}
+	
+	"RPG menu sell upgrade entry show max"
+	{
+		// 1: Translated name of the upgrade.
+		// 2: Current level of the upgrade to be sold.
+		// 3: Maximal level of the upgrade.
+		// 4: "Sale" phrase.
+		// 5: Amount of credits player earns for selling the upgrade level.
+		// 6: Optional " (Is teamlocked)" phrase if upgrade is locked to a team.
+		"ru"			"{1} [Ур:{2}из{3}|{4}:{5}]{6}"
+	}
+	
+	"RPG menu sell upgrade entry"
+	{
+		// 1: Translated name of the upgrade.
+		// 2: Current level of the upgrade to be sold.
+		// 3: "Sale" phrase.
+		// 4: Amount of credits player earns for selling the upgrade level.
+		// 5: Optional " (Is teamlocked)" phrase if upgrade is locked to a team.
+		"ru"			"{1} [Ур:{2}|{3}:{4}]{5}"
+	}
+	
+	"RPG menu upgrade settings entry level selection"
+	{
+		// 1: Translated name of the upgrade.
+		// 2: Currently selected level of the upgrade (might be lower than purchased).
+		// 3: Purchased level of the upgrade.
+		// 4: "On" or "Off" phrase depending on if the player has the upgrade enabled.
+		// 5: Optional " (Is teamlocked)" phrase if upgrade is locked to a team.
+		"ru"			"{1} Ур {2} из {3} [{4}]{5}"
+	}
+	
+	"RPG menu upgrade settings entry"
+	{
+		// 1: Translated name of the upgrade.
+		// 2: Purchased level of the upgrade.
+		// 3: "On" or "Off" phrase depending on if the player has the upgrade enabled.
+		// 4: Optional " (Is teamlocked)" phrase if upgrade is locked to a team.
+		"ru"			"{1} Ур {2} [{3}]{4}"
+	}
+	
+	"RPG menu other players upgrades entry max level"
+	{
+		// 1: Translated name of the upgrade.
+		// 2: Purchased level of the upgrade.
+		"ru"			"{1} Ур {2} Макс"
+	}
+	
+	"RPG menu other players upgrades entry show max"
+	{
+		// 1: Translated name of the upgrade.
+		// 2: Purchased level of the upgrade.
+		// 3: Maximal level of the upgrade.
+		"ru"			"{1} Ур {2}/{3}"
+	}
+	
+	"RPG menu other players upgrades entry"
+	{
+		// 1: Translated name of the upgrade.
+		// 2: Purchased level of the upgrade.
+		"ru"			"{1} Ур {2}"
+	}
+	
 	"Session"
 	{
 		"ru"			"Сессия"

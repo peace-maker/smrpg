@@ -201,11 +201,6 @@ public void TopMenu_HandleUpgrades(TopMenu topmenu, TopMenuAction action, TopMen
 				Format(sTeamlock, sizeof(sTeamlock), " (%T)", "Is teamlocked", param, sTeamlock);
 			}
 			
-			// Optionally show the maxlevel of the upgrade
-			char sMaxlevel[8];
-			if (g_hCVShowMaxLevelInMenu.BoolValue)
-				Format(sMaxlevel, sizeof(sMaxlevel), "/%d", upgrade[UPGR_maxLevel]);
-			
 			char sTranslatedName[MAX_UPGRADE_NAME_LENGTH];
 			GetUpgradeTranslatedName(param, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
 			
@@ -213,11 +208,16 @@ public void TopMenu_HandleUpgrades(TopMenu topmenu, TopMenuAction action, TopMen
 			
 			if(iCurrentLevel >= upgrade[UPGR_maxLevel])
 			{
-				Format(buffer, maxlength, "%s Lvl %d MAX [%T: MAX]%s", sTranslatedName, iCurrentLevel, "Cost", param, sTeamlock);
+				Format(buffer, maxlength, "%T", "RPG menu buy upgrade entry max level", param, sTranslatedName, iCurrentLevel, "Cost", sTeamlock);
+			}
+			// Optionally show the maxlevel of the upgrade
+			else if (g_hCVShowMaxLevelInMenu.BoolValue)
+			{
+				Format(buffer, maxlength, "%T", "RPG menu buy upgrade entry show max", param, sTranslatedName, iCurrentLevel+1, upgrade[UPGR_maxLevel], "Cost", GetUpgradeCost(upgrade[UPGR_index], iCurrentLevel+1), sTeamlock);
 			}
 			else
 			{
-				Format(buffer, maxlength, "%s Lvl %d%s [%T: %d]%s", sTranslatedName, iCurrentLevel+1, sMaxlevel, "Cost", param, GetUpgradeCost(upgrade[UPGR_index], iCurrentLevel+1), sTeamlock);
+				Format(buffer, maxlength, "%T", "RPG menu buy upgrade entry", param, sTranslatedName, iCurrentLevel+1, "Cost", GetUpgradeCost(upgrade[UPGR_index], iCurrentLevel+1), sTeamlock);
 			}
 		}
 		case TopMenuAction_DrawOption:
@@ -317,15 +317,18 @@ public void TopMenu_HandleSell(TopMenu topmenu, TopMenuAction action, TopMenuObj
 				Format(sTeamlock, sizeof(sTeamlock), " (%T)", "Is teamlocked", param, sTeamlock);
 			}
 			
-			// Optionally show the maxlevel of the upgrade
-			char sMaxlevel[8];
-			if (g_hCVShowMaxLevelInMenu.BoolValue)
-				Format(sMaxlevel, sizeof(sMaxlevel), "/%d", upgrade[UPGR_maxLevel]);
-			
 			char sTranslatedName[MAX_UPGRADE_NAME_LENGTH];
 			GetUpgradeTranslatedName(param, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
 			
-			Format(buffer, maxlength, "%s Lvl %d%s [%T: %d]%s", sTranslatedName, GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index]), sMaxlevel, "Sale", param, GetUpgradeSale(upgrade[UPGR_index], GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index])), sTeamlock);
+			// Optionally show the maxlevel of the upgrade
+			if (g_hCVShowMaxLevelInMenu.BoolValue)
+			{
+				Format(buffer, maxlength, "%T", "RPG menu sell upgrade entry show max", param, sTranslatedName, GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index]), upgrade[UPGR_maxLevel], "Sale", GetUpgradeSale(upgrade[UPGR_index], GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index])), sTeamlock);
+			}
+			else
+			{
+				Format(buffer, maxlength, "%T", "RPG menu sell upgrade entry", param, sTranslatedName, GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index]), "Sale", GetUpgradeSale(upgrade[UPGR_index], GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index])), sTeamlock);
+			}
 		}
 		case TopMenuAction_DrawOption:
 		{
@@ -471,12 +474,15 @@ public void TopMenu_HandleUpgradeSettings(TopMenu topmenu, TopMenuAction action,
 			
 			int iPurchasedLevel = GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index]);
 			int iSelectedLevel = GetClientSelectedUpgradeLevel(param, upgrade[UPGR_index]);
-			char sBuffer[128];
-			GetUpgradeTranslatedName(param, upgrade[UPGR_index], sBuffer, sizeof(sBuffer));
-			if(!g_hCVDisableLevelSelection.BoolValue)
-				Format(sBuffer, sizeof(sBuffer), "%s Lvl %d/%d", sBuffer, iSelectedLevel, iPurchasedLevel);
 			
-			Format(sBuffer, sizeof(sBuffer), "%s [%T]%s", sBuffer, IsClientUpgradeEnabled(param, upgrade[UPGR_index])?"On":"Off", param, sTeamlock);
+			char sTranslatedName[MAX_UPGRADE_NAME_LENGTH];
+			GetUpgradeTranslatedName(param, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
+			
+			char sBuffer[128];
+			if(!g_hCVDisableLevelSelection.BoolValue)
+				Format(sBuffer, sizeof(sBuffer), "%T", "RPG menu upgrade settings entry level selection", param, sTranslatedName, iSelectedLevel, iPurchasedLevel, IsClientUpgradeEnabled(param, upgrade[UPGR_index])?"On":"Off", sTeamlock);
+			else
+				Format(sBuffer, sizeof(sBuffer), "%T", "RPG menu upgrade settings entry", param, sTranslatedName, iSelectedLevel, IsClientUpgradeEnabled(param, upgrade[UPGR_index])?"On":"Off", sTeamlock);
 			strcopy(buffer, maxlength, sBuffer);
 		}
 		case TopMenuAction_DrawOption:
@@ -900,7 +906,7 @@ void DisplayOtherUpgradesMenu(int client, int targetClient)
 	
 	int iSize = GetUpgradeCount();
 	int upgrade[InternalUpgradeInfo], iCurrentLevel;
-	char sTranslatedName[MAX_UPGRADE_NAME_LENGTH], sLine[128], sIndex[8], sMaxlevel[8];
+	char sTranslatedName[MAX_UPGRADE_NAME_LENGTH], sLine[128], sIndex[8];
 	for(int i=0;i<iSize;i++)
 	{
 		iCurrentLevel = GetClientPurchasedUpgradeLevel(targetClient, i);
@@ -910,19 +916,23 @@ void DisplayOtherUpgradesMenu(int client, int targetClient)
 		if(!IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled] || !HasAccessToUpgrade(targetClient, upgrade) || !IsClientInLockedTeam(targetClient, upgrade))
 			continue;
 		
-		// Optionally show the maxlevel of the upgrade
-		if (g_hCVShowMaxLevelInMenu.BoolValue)
-			Format(sMaxlevel, sizeof(sMaxlevel), "/%d", upgrade[UPGR_maxLevel]);
-		else
-			sMaxlevel[0] = '\0';
-		
 		GetUpgradeTranslatedName(client, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
 		
-		IntToString(i, sIndex, sizeof(sIndex));
 		if(iCurrentLevel >= upgrade[UPGR_maxLevel])
-			Format(sLine, sizeof(sLine), "%s Lvl %d MAX", sTranslatedName, iCurrentLevel);
+		{
+			Format(sLine, sizeof(sLine), "%T", "RPG menu other players upgrades entry max level", client, sTranslatedName, iCurrentLevel);
+		}
+		// Optionally show the maxlevel of the upgrade
+		else if (g_hCVShowMaxLevelInMenu.BoolValue)
+		{
+			Format(sLine, sizeof(sLine), "%T", "RPG menu other players upgrades entry show max", client, sTranslatedName, iCurrentLevel, upgrade[UPGR_maxLevel]);
+		}
 		else
-			Format(sLine, sizeof(sLine), "%s Lvl %d%s", sTranslatedName, iCurrentLevel, sMaxlevel);
+		{
+			Format(sLine, sizeof(sLine), "%T", "RPG menu other players upgrades entry", client, sTranslatedName, iCurrentLevel);
+		}
+
+		IntToString(i, sIndex, sizeof(sIndex));
 		hMenu.AddItem(sIndex, sLine, ITEMDRAW_DISABLED);
 	}
 	
