@@ -317,6 +317,273 @@
 		"ru"			"Звуковые эффекты"
 	}
 	
+	
+	// Admin menu
+	"Commands"
+	{
+		"ru"			"ADMIN"
+	}
+	
+	"Manage players"
+	{
+		"ru"			"Управление игроками"
+	}
+	
+	"Select player"
+	{
+		"ru"			"Выберите игрока:"
+	}
+	
+	"Player Details"
+	{
+		"ru"			"Информация об игроке"
+	}
+	
+	"Manage stats"
+	{
+		"ru"			"Управление статистикой"
+	}
+	
+	"Manage upgrades"
+	{
+		"ru"			"Управление навыками"
+	}
+	
+	"Reset player"
+	{
+		"ru"			"Сброс"
+	}
+	
+	"Confirm reset player"
+	{
+		// 1: Name of the player to reset stats of.
+		"ru"			"Вы действительно хотите сбросить статистику и навыки {1}?"
+	}
+	
+	"Inform player reset"
+	{
+		// 1: Name of the player who's stats got reset.
+		"ru"			"{1} была полностю сброшена."
+	}
+	
+	"Change credits"
+	{
+		"ru"			"Изменить кредиты"
+	}
+	
+	"Change experience"
+	{
+		"ru"			"Изменить опыт"
+	}
+	
+	"Change level"
+	{
+		"ru"			"Изменить уровень"
+	}
+	
+	"Manage player upgrades"
+	{
+		"ru"			"Управление навыками игрока"
+	}
+	
+	"Give all upgrades free"
+	{
+		"ru"			"Дайть все обновления без каких-либо затрат"
+	}
+	
+	"Adminflags hint"
+	{
+		// 1: The required admin flags like "ab" for that upgrade.
+		"ru"			" (adminflags: {1})"
+	}
+	
+	"Adminflags Admin Denied Warning"
+	{
+		"ru"			"НЕТ ДОСТУПА"
+	}
+	
+	"Adminflags Admin Inform OK"
+	{
+		"ru"			"OK"
+	}
+	
+	"Teamlock hint"
+	{
+		// 1: The team name this upgrade is locked to.
+		"ru"			" (teamlock: {1})"
+	}
+	
+	"Admin player upgrades list item maxed"
+	{
+		// 1: Translated name of the upgrade.
+		// 2: Player's current purchased level of the upgrade.
+		// 3: Maximum level of the upgrade.
+		// 4: Optional required permissions ("Adminflags hint" phrase)
+		// 5: Optional locked team ("Teamlock hint" phrase)
+		"ru"			"{1} Ур [Макс] {2}из{3}{4}{5}"
+	}
+	
+	"Admin player upgrades list item"
+	{
+		// 1: Translated name of the upgrade.
+		// 2: Player's current purchased level of the upgrade.
+		// 3: Maximum level of the upgrade.
+		// 4: Optional required permissions ("Adminflags hint" phrase)
+		// 5: Optional locked team ("Teamlock hint" phrase)
+		"ru"			"{1} Ур {2}из{3}{4}{5}"
+	}
+	
+	"Confirm max all player upgrades"
+	{
+		// 1: The name of the player who's upgrades should be upgraded.
+		"ru"			"Вы действительно хотите установить все обновления до максимального ур {1}?"
+	}
+	
+	"Inform player upgrades maxed"
+	{
+		// 1: The name of the player who's upgrades got set to the maximal level.
+		"ru"			"{1} теперь имеет все навики по макс."
+	}
+	
+	"Change player upgrade level"
+	{
+		// 1: Name of player who's upgrade level should be changed.
+		"ru"			"Изменение {1} навыка Уровень"
+	}
+	
+	"Current player upgrade level"
+	{
+		// 1: Translated name of the upgrade.
+		// 2: Current purchased level of the upgrade.
+		// 3: Maximal level of the upgrade.
+		"ru"			"{1}: {2}/{3}"
+	}
+	
+	"Reset player upgrade level 0 refund"
+	{
+		"ru"			"Сброс навыка до 0 [Продать всё]"
+	}
+	
+	"Give player upgrade level free"
+	{
+		"ru"			"Дать уровень [без Покупки]"
+	}
+	
+	"Force player buy upgrade level"
+	{
+		"ru"			"Купить уровень"
+	}
+	
+	"Take player upgrade level refund"
+	{
+		"ru"			"отнять уровень [без продажи]"
+	}
+	
+	"Force player sell upgrade level"
+	{
+		"ru"			"Продать уровень"
+	}
+	
+	"Set player upgrade level to max free"
+	{
+		"ru"			"Установить [Макс] уровень без затрат"
+	}
+	
+	"Admin reset player upgrades notification"
+	{
+		// 1: Name of the player who got his upgrade reset.
+		// 2: Translated name of the upgrade which got reset.
+		// 3: Previous level of the upgrade before resetting.
+		// 4: New upgrade level after resetting (usually 0).
+		// 5: Returned credits for the bought upgrade levels. Full refund = same amount player payed for it.
+		"ru"			"Сброс {1} Навыка {2} с полным возмещением всех расходов. Уровня навыка изменен с {3} на {4} и игрок заработал {5} кредитов."
+	}
+	
+	"Admin force buy insufficient funds"
+	{
+		// 1: Name of the player who was forced to buy the upgrade.
+		// 2: Translated name of the upgrade.
+		// 3: Current amount of credits the client has.
+		// 4: Cost for the next level of the upgrade.
+		"ru"			"{1} не достаточное количества кредитов для покупки {2} ({3}/{4})."
+	}
+	
+	"Upgrade short name"
+	{
+		// 1: Shortname of the upgrade (used in commands to reference it)
+		"ru"			"Короткое имя: {1}"
+	}
+	
+	"Admin disable upgrade"
+	{
+		"ru"			"Отключить навык"
+	}
+	
+	"Admin enable upgrade"
+	{
+		"ru"			"Включить навык"
+	}
+	
+	"Admin upgrade info maxlevel barrier"
+	{
+		// 1: Maximal level the upgrade can be set to / supports.
+		"ru"			"Макслевел барьер: {1}"
+	}
+	
+	"Admin upgrade info maxlevel"
+	{
+		// 1: Current maximal level of the upgrade.
+		"ru"			"Макслевел: {1}"
+	}
+	
+	"Admin upgrade info cost"
+	{
+		// 1: Current upgrade starting cost.
+		"ru"			"Стоимость: {1}"
+	}
+	
+	"Admin upgrade info increase cost"
+	{
+		// 1: Current upgrade increasing cost.
+		"ru"			"Рост стоимости: {1}"
+	}
+	
+	"Admin upgrade info teamlock"
+	{
+		// 1: Team name of the team this upgrade is locked to.
+		"ru"			"Teamlock: {1}"
+	}
+	
+	"Admin upgrade info visual effects"
+	{
+		// 1: Translated "On" or "Off"
+		"ru"			"Visual effects: {1}"
+	}
+	
+	"Admin upgrade info sound effects"
+	{
+		// 1: Translated "On" or "Off"
+		"ru"			"Sound effects: {1}"
+	}
+	
+	"Admin upgrades change maxlevel"
+	{
+		// 1: Current upgrade's maxlevel.
+		"ru"			"Изменить МАКСЛЕВЕЛ временно: {1}"
+	}
+	
+	"Admin upgrades change start cost"
+	{
+		// 1: Current upgrade's start cost.
+		"ru"			"Изменить начальную стоить временно: {1}"
+	}
+	
+	"Admin upgrades change increasing cost"
+	{
+		// 1: Current upgrade's increasing cost.
+		"ru"			"Изменить рост стоимости временно: {1}"
+	}
+	
 	// Command help
 	"rpgmenu short desc"
 	{

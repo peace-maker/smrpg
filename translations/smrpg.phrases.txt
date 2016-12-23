@@ -336,6 +336,297 @@
 		"en"			"Sound effects"
 	}
 	
+	
+	// Admin menu
+	"Commands"
+	{
+		"en"			"Commands"
+	}
+	
+	"Manage players"
+	{
+		"en"			"Manage players"
+	}
+	
+	"Select player"
+	{
+		"en"			"Select player:"
+	}
+	
+	"Player Details"
+	{
+		"en"			"Player Details"
+	}
+	
+	"Manage stats"
+	{
+		"en"			"Manage RPG stats"
+	}
+	
+	"Manage upgrades"
+	{
+		"en"			"Manage upgrades"
+	}
+	
+	"Reset player"
+	{
+		"en"			"Reset player"
+	}
+	
+	"Confirm reset player"
+	{
+		// 1: Name of the player to reset stats of.
+		"#format"	"{1:N}"
+		"en"			"Do you really want to reset the stats and upgrades of {1}?"
+	}
+	
+	"Inform player reset"
+	{
+		// 1: Name of the player who's stats got reset.
+		"#format"	"{1:N}"
+		"en"			"{1}'s stats have been permanently reset."
+	}
+	
+	"Change credits"
+	{
+		"en"			"Change credits"
+	}
+	
+	"Change experience"
+	{
+		"en"			"Change experience"
+	}
+	
+	"Change level"
+	{
+		"en"			"Change level"
+	}
+	
+	"Manage player upgrades"
+	{
+		"en"			"Manage player upgrades"
+	}
+	
+	"Give all upgrades free"
+	{
+		"en"			"Give all upgrades at no costs"
+	}
+	
+	"Adminflags hint"
+	{
+		// 1: The required admin flags like "ab" for that upgrade.
+		"#format"	"{1:s}"
+		"en"			" (adminflags: {1})"
+	}
+	
+	"Adminflags Admin Denied Warning"
+	{
+		"en"			"NO ACCESS"
+	}
+	
+	"Adminflags Admin Inform OK"
+	{
+		"en"			"OK"
+	}
+	
+	"Teamlock hint"
+	{
+		// 1: The team name this upgrade is locked to.
+		"#format"	"{1:s}"
+		"en"			" (teamlock: {1})"
+	}
+	
+	"Admin player upgrades list item maxed"
+	{
+		// 1: Translated name of the upgrade.
+		// 2: Player's current purchased level of the upgrade.
+		// 3: Maximum level of the upgrade.
+		// 4: Optional required permissions ("Adminflags hint" phrase)
+		// 5: Optional locked team ("Teamlock hint" phrase)
+		"#format"	"{1:s},{2:d},{3:d},{4:s},{5:s}"
+		"en"			"{1} Lvl MAX {2}/{3}{4}{5}"
+	}
+	
+	"Admin player upgrades list item"
+	{
+		// 1: Translated name of the upgrade.
+		// 2: Player's current purchased level of the upgrade.
+		// 3: Maximum level of the upgrade.
+		// 4: Optional required permissions ("Adminflags hint" phrase)
+		// 5: Optional locked team ("Teamlock hint" phrase)
+		"#format"	"{1:s},{2:d},{3:d},{4:s},{5:s}"
+		"en"			"{1} Lvl {2}/{3}{4}{5}"
+	}
+	
+	"Confirm max all player upgrades"
+	{
+		// 1: The name of the player who's upgrades should be upgraded.
+		"#format"	"{1:N}"
+		"en"			"Do you really want to set all upgrades to the maximal level for {1}?"
+	}
+	
+	"Inform player upgrades maxed"
+	{
+		// 1: The name of the player who's upgrades got set to the maximal level.
+		"#format"	"{1:N}"
+		"en"			"{1} now has all upgrades on max."
+	}
+	
+	"Change player upgrade level"
+	{
+		// 1: Name of player who's upgrade level should be changed.
+		"#format"	"{1:N}"
+		"en"			"Change {1}'s upgrade level"
+	}
+	
+	"Current player upgrade level"
+	{
+		// 1: Translated name of the upgrade.
+		// 2: Current purchased level of the upgrade.
+		// 3: Maximal level of the upgrade.
+		"#format"	"{1:s},{2:d},{3:d}"
+		"en"			"{1}: {2}/{3}"
+	}
+	
+	"Reset player upgrade level 0 refund"
+	{
+		"en"			"Reset upgrade to 0 with full refund"
+	}
+	
+	"Give player upgrade level free"
+	{
+		"en"			"Give level at no costs"
+	}
+	
+	"Force player buy upgrade level"
+	{
+		"en"			"Force to buy level"
+	}
+	
+	"Take player upgrade level refund"
+	{
+		"en"			"Take level with full refund"
+	}
+	
+	"Force player sell upgrade level"
+	{
+		"en"			"Force to sell level"
+	}
+	
+	"Set player upgrade level to max free"
+	{
+		"en"			"Set to maximal level at no costs"
+	}
+	
+	"Admin reset player upgrades notification"
+	{
+		// 1: Name of the player who got his upgrade reset.
+		// 2: Translated name of the upgrade which got reset.
+		// 3: Previous level of the upgrade before resetting.
+		// 4: New upgrade level after resetting (usually 0).
+		// 5: Returned credits for the bought upgrade levels. Full refund = same amount player payed for it.
+		"#format"	"{1:N},{2:s},{3:d},{4:d},{5:d}"
+		"en"			"Reset {1}'s upgrade {2} with full refund of all upgrade costs. Upgrade level changed from {3} to {4} and the player earned {5} credits."
+	}
+	
+	"Admin force buy insufficient funds"
+	{
+		// 1: Name of the player who was forced to buy the upgrade.
+		// 2: Translated name of the upgrade.
+		// 3: Current amount of credits the client has.
+		// 4: Cost for the next level of the upgrade.
+		"#format"	"{1:N},{2:s},{3:d},{4:d}"
+		"en"			"{1} doesn't have enough credits to purchase {2} ({3}/{4})"
+	}
+	
+	"Upgrade short name"
+	{
+		// 1: Shortname of the upgrade (used in commands to reference it)
+		"#format"	"{1:s}"
+		"en"			"Short name: {1}"
+	}
+	
+	"Admin disable upgrade"
+	{
+		"en"			"Disable upgrade"
+	}
+	
+	"Admin enable upgrade"
+	{
+		"en"			"Enable upgrade"
+	}
+	
+	"Admin upgrade info maxlevel barrier"
+	{
+		// 1: Maximal level the upgrade can be set to / supports.
+		"#format"	"{1:d}"
+		"en"			"Maxlevel barrier: {1}"
+	}
+	
+	"Admin upgrade info maxlevel"
+	{
+		// 1: Current maximal level of the upgrade.
+		"#format"	"{1:d}"
+		"en"			"Maxlevel: {1}"
+	}
+	
+	"Admin upgrade info cost"
+	{
+		// 1: Current upgrade starting cost.
+		"#format"	"{1:d}"
+		"en"			"Cost: {1}"
+	}
+	
+	"Admin upgrade info increase cost"
+	{
+		// 1: Current upgrade increasing cost.
+		"#format"	"{1:d}"
+		"en"			"Increase cost: {1}"
+	}
+	
+	"Admin upgrade info teamlock"
+	{
+		// 1: Team name of the team this upgrade is locked to.
+		"#format"	"{1:s}"
+		"en"			"Teamlock: {1}"
+	}
+	
+	"Admin upgrade info visual effects"
+	{
+		// 1: Translated "On" or "Off"
+		"#format"	"{1:t}"
+		"en"			"Visual effects: {1}"
+	}
+	
+	"Admin upgrade info sound effects"
+	{
+		// 1: Translated "On" or "Off"
+		"#format"	"{1:t}"
+		"en"			"Sound effects: {1}"
+	}
+	
+	"Admin upgrades change maxlevel"
+	{
+		// 1: Current upgrade's maxlevel.
+		"#format"	"{1:d}"
+		"en"			"Change maxlevel temporarily: {1}"
+	}
+	
+	"Admin upgrades change start cost"
+	{
+		// 1: Current upgrade's start cost.
+		"#format"	"{1:d}"
+		"en"			"Change start cost temporarily: {1}"
+	}
+	
+	"Admin upgrades change increasing cost"
+	{
+		// 1: Current upgrade's increasing cost.
+		"#format"	"{1:d}"
+		"en"			"Change increasing cost temporarily: {1}"
+	}
+	
+	
 	// Command help
 	"rpgmenu short desc"
 	{
