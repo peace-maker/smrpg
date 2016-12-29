@@ -801,7 +801,10 @@ public Action CommandList_DefaultTranslations(int client, const char[] command, 
 		case CommandTranslationType_Advert:
 		{
 			Format(sPhrase, sizeof(sPhrase), "%s advert", command);
-			Format(translation, maxlen, "%T", sPhrase, client);
+			if(StrEqual(command, "rpgexp", false))
+				Format(translation, maxlen, "%T", sPhrase, client, g_hCVLastExperienceCount.IntValue);
+			else
+				Format(translation, maxlen, "%T", sPhrase, client);
 		}
 	}
 	return Plugin_Continue;
