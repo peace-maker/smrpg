@@ -225,7 +225,7 @@ public void Hook_OnTakeDamagePost(int victim, int attacker, int inflictor, float
 	vOrigin[2] -= 40.0;
 	
 	int iSprite = g_iImpulseTrailSprites[victim];
-	if(iSprite == -1)
+	if(iSprite == -1 || !IsValidEntity(iSprite))
 	{
 		iSprite = CreateEntityByName("env_sprite");
 		if(iSprite == -1)
