@@ -450,7 +450,7 @@ public int Native_SetUpgradeTranslationCallback(Handle plugin, int numParams)
 		return ThrowNativeError(SP_ERROR_NATIVE, "No upgrade named \"%s\" loaded.", sShortName);
 	
 	if(upgrade[UPGR_plugin] != plugin)
-		return ThrowNativeError(SP_ERROR_NATIVE, "ResetEffect callback has to be from the same plugin the upgrade was registered in.");
+		return ThrowNativeError(SP_ERROR_NATIVE, "Translation callback has to be from the same plugin the upgrade was registered in.");
 	
 	upgrade[UPGR_translationCallback] = GetNativeFunction(2);
 	
@@ -471,7 +471,7 @@ public int Native_SetUpgradeResetCallback(Handle plugin, int numParams)
 		return ThrowNativeError(SP_ERROR_NATIVE, "No upgrade named \"%s\" loaded.", sShortName);
 	
 	if(upgrade[UPGR_plugin] != plugin)
-		return ThrowNativeError(SP_ERROR_NATIVE, "Translation callback has to be from the same plugin the upgrade was registered in.");
+		return ThrowNativeError(SP_ERROR_NATIVE, "ResetEffect callback has to be from the same plugin the upgrade was registered in.");
 	
 	upgrade[UPGR_resetCallback] = GetNativeFunction(2);
 	
@@ -738,12 +738,12 @@ int GetUpgradeSale(int iItemIndex, int iLevel)
 bool IsValidUpgrade(int upgrade[InternalUpgradeInfo])
 {
 	// This plugin is available (again)?
-	if(IsValidPlugin(upgrade[UPGR_plugin]))
-		upgrade[UPGR_unavailable] = false;
-	else
-		upgrade[UPGR_unavailable] = true;
-	
-	SaveUpgradeConfig(upgrade);
+	bool bUnavailable = !IsValidPlugin(upgrade[UPGR_plugin]);
+	if(upgrade[UPGR_unavailable] != bUnavailable)
+	{
+		upgrade[UPGR_unavailable] = bUnavailable;
+		SaveUpgradeConfig(upgrade);
+	}
 	return !upgrade[UPGR_unavailable];
 }
 

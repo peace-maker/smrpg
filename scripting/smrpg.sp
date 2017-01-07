@@ -839,18 +839,18 @@ stock bool IsValidPlugin(Handle hPlugin) {
 
 	Handle hIterator = GetPluginIterator();
 
-	bool bPluginExists = false;
+	bool bPluginValid = false;
 	while(MorePlugins(hIterator)) {
 		Handle hLoadedPlugin = ReadPlugin(hIterator);
 		if(hLoadedPlugin == hPlugin) {
-			bPluginExists = true;
+			bPluginValid = GetPluginStatus(hLoadedPlugin) == Plugin_Running;
 			break;
 		}
 	}
 
 	delete hIterator;
 
-	return bPluginExists;
+	return bPluginValid;
 }
 
 stock void DebugMsg(char[] format, any ...)
