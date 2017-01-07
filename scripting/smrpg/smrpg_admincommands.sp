@@ -1355,7 +1355,10 @@ public Action Cmd_DBDelPlayer(int client, int args)
 			RemovePlayer(iTarget);
 		
 		hPack.WriteCell(iTarget);
-		Format(sQuery, sizeof(sQuery), "SELECT player_id, name FROM %s WHERE name = '%s'", TBL_PLAYERS, sTarget);
+		
+		char sEscapedName[MAX_NAME_LENGTH*2+1];
+		g_hDatabase.Escape(sTarget, sEscapedName, sizeof(sEscapedName));
+		Format(sQuery, sizeof(sQuery), "SELECT player_id, name FROM %s WHERE name = '%s'", TBL_PLAYERS, sEscapedName);
 		g_hDatabase.Query(SQL_CheckDeletePlayer, sQuery, hPack);
 	}
 	return Plugin_Handled;
