@@ -807,16 +807,36 @@ bool IsUpgradeEffectActive(int client, int upgrade[InternalUpgradeInfo])
 	if(!IsValidUpgrade(upgrade))
 		return false;
 	
+	// See if the whole plugin is active at all.
 	if(!SMRPG_IsEnabled())
 		return false;
 	
+	// See if the upgrade is disabled for all players.
 	if(!upgrade[UI_enabled])
 		return false;
 	
-	// TODO: check for bots and access restrictions?
+	// See if the player is a bot and RPG is disabled for bots.
+	if(IgnoreBotPlayer(client))
+		return false;
 	
-	// Client doesn't have the upgrade enabled?
-	if(SMRPG_GetClientUpgradeLevel(client, upgrade[UPGR_shortName]) <= 0)
+	// Won't be active, if we don't know if he has it yet.
+	if (!IsPlayerDataLoaded(client))
+		return false;
+	
+	// Client didn't buy the upgrade yet?
+	if(GetClientSelectedUpgradeLevel(client, upgrade[UPGR_index]) <= 0)
+		return false;
+	
+	// Not active, if the client has the upgrade disabled himself.
+	if(!IsClientUpgradeEnabled(client, upgrade[UPGR_index]))
+		return false;
+	
+	// Can't be active if client isn't in the team this upgrade is locked to.
+	if(!IsClientInLockedTeam(client, upgrade))
+		return false;
+	
+	// Can't be active if the client doesn't have the permissions.
+	if(!HasAccessToUpgrade(client, upgrade))
 		return false;
 	
 	// Passive upgrades are always on once the player has at least level 1.
