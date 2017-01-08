@@ -76,6 +76,8 @@ public void __pl_smrpg_SetNTVOptional()
 	MarkNativeAsOptional("SMRPG_RegisterUpgradeType");
 	MarkNativeAsOptional("SMRPG_UnregisterUpgradeType");
 	MarkNativeAsOptional("SMRPG_CreateUpgradeConVar");
+	MarkNativeAsOptional("SMRPG_SetUpgradeBuySellCallback");
+	MarkNativeAsOptional("SMRPG_SetUpgradeActiveQueryCallback");
 	MarkNativeAsOptional("SMRPG_SetUpgradeTranslationCallback");
 	MarkNativeAsOptional("SMRPG_SetUpgradeResetCallback");
 	MarkNativeAsOptional("SMRPG_SetUpgradeDefaultCosmeticEffect");

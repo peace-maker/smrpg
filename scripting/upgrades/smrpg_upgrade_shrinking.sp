@@ -55,7 +55,8 @@ public void OnLibraryAdded(const char[] name)
 	// Register this upgrade in SM:RPG
 	if(StrEqual(name, "smrpg"))
 	{
-		SMRPG_RegisterUpgradeType("Shrinking", UPGRADE_SHORTNAME, "Make player models smaller.", 6, true, 3, 25, 15, _, SMRPG_BuySell, SMRPG_ActiveQuery);
+		SMRPG_RegisterUpgradeType("Shrinking", UPGRADE_SHORTNAME, "Make player models smaller.", 6, true, 3, 25, 15);
+		SMRPG_SetUpgradeBuySellCallback(UPGRADE_SHORTNAME, SMRPG_BuySell);
 		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
 		
 		g_hCVIncrease = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_shrinking_increase", "0.1", "How many percent smaller should the player get each level?", _, true, 0.01, true, 0.5);
@@ -69,14 +70,6 @@ public void SMRPG_BuySell(int client, UpgradeQueryType type)
 {
 	if(IsClientInGame(client))
 		Resize_ApplyUpgrade(client, true);
-}
-
-public bool SMRPG_ActiveQuery(int client)
-{
-	// This is a passive effect, so it's always active, if the player got at least level 1
-	int upgrade[UpgradeInfo];
-	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
-	return SMRPG_IsEnabled() && upgrade[UI_enabled] && SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME) > 0;
 }
 
 public void SMRPG_TranslateUpgrade(int client, const char[] shortname, TranslationType type, char[] translation, int maxlen)

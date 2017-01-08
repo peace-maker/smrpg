@@ -60,6 +60,10 @@ void RegisterUpgradeNatives()
 	CreateNative("SMRPG_UnregisterUpgradeType", Native_UnregisterUpgradeType);
 	CreateNative("SMRPG_CreateUpgradeConVar", Native_CreateUpgradeConVar);
 	
+	// native void SMRPG_SetUpgradeBuySellCallback(const char[] shortname, SMRPG_UpgradeQueryCB cb);
+	CreateNative("SMRPG_SetUpgradeBuySellCallback", Native_SetUpgradeBuySellCallback);
+	// native void SMRPG_SetUpgradeActiveQueryCallback(const char[] shortname, SMRPG_ActiveQueryCB cb);
+	CreateNative("SMRPG_SetUpgradeActiveQueryCallback", Native_SetUpgradeActiveQueryCallback);
 	CreateNative("SMRPG_SetUpgradeTranslationCallback", Native_SetUpgradeTranslationCallback);
 	CreateNative("SMRPG_SetUpgradeResetCallback", Native_SetUpgradeResetCallback);
 	CreateNative("SMRPG_SetUpgradeDefaultCosmeticEffect", Native_SetUpgradeDefaultCosmeticEffect);
@@ -437,6 +441,48 @@ public int Native_GetUpgradeInfo(Handle plugin, int numParams)
 	return 0;
 }
 
+// native void SMRPG_SetUpgradeBuySellCallback(const char[] shortname, SMRPG_UpgradeQueryCB cb);
+public int Native_SetUpgradeBuySellCallback(Handle plugin, int numParams)
+{
+	int len;
+	GetNativeStringLength(1, len);
+	char[] sShortName = new char[len+1];
+	GetNativeString(1, sShortName, len+1);
+	
+	int upgrade[InternalUpgradeInfo];
+	if(!GetUpgradeByShortname(sShortName, upgrade) || !IsValidUpgrade(upgrade))
+		return ThrowNativeError(SP_ERROR_NATIVE, "No upgrade named \"%s\" loaded.", sShortName);
+	
+	if(upgrade[UPGR_plugin] != plugin)
+		return ThrowNativeError(SP_ERROR_NATIVE, "BuySell callback has to be from the same plugin the upgrade was registered in.");
+	
+	upgrade[UPGR_queryCallback] = GetNativeFunction(2);
+	
+	SaveUpgradeConfig(upgrade);
+	return 0;
+}
+
+// native void SMRPG_SetUpgradeActiveQueryCallback(const char[] shortname, SMRPG_ActiveQueryCB cb);
+public int Native_SetUpgradeActiveQueryCallback(Handle plugin, int numParams)
+{
+	int len;
+	GetNativeStringLength(1, len);
+	char[] sShortName = new char[len+1];
+	GetNativeString(1, sShortName, len+1);
+	
+	int upgrade[InternalUpgradeInfo];
+	if(!GetUpgradeByShortname(sShortName, upgrade) || !IsValidUpgrade(upgrade))
+		return ThrowNativeError(SP_ERROR_NATIVE, "No upgrade named \"%s\" loaded.", sShortName);
+	
+	if(upgrade[UPGR_plugin] != plugin)
+		return ThrowNativeError(SP_ERROR_NATIVE, "Active query callback has to be from the same plugin the upgrade was registered in.");
+	
+	upgrade[UPGR_activeCallback] = GetNativeFunction(2);
+	
+	SaveUpgradeConfig(upgrade);
+	return 0;
+}
+
 // native void SMRPG_SetUpgradeTranslationCallback(const char[] shortname, SMRPG_TranslateUpgrade cb);
 public int Native_SetUpgradeTranslationCallback(Handle plugin, int numParams)
 {
@@ -641,6 +687,10 @@ public void RequestFrame_OnFrame(any upgradeindex)
 	int upgrade[InternalUpgradeInfo];
 	GetUpgradeByIndex(upgradeindex, upgrade);
 	
+	// Plugin doesn't care? OK :(
+	if(upgrade[UPGR_queryCallback] == INVALID_FUNCTION)
+		return;
+	
 	// Inform the upgrade plugin, that these players need the effect applied again.
 	for(int i=1;i<=MaxClients;i++)
 	{
@@ -757,6 +807,23 @@ bool IsUpgradeEffectActive(int client, int upgrade[InternalUpgradeInfo])
 	if(!IsValidUpgrade(upgrade))
 		return false;
 	
+	if(!SMRPG_IsEnabled())
+		return false;
+	
+	if(!upgrade[UI_enabled])
+		return false;
+	
+	// TODO: check for bots and access restrictions?
+	
+	// Client doesn't have the upgrade enabled?
+	if(SMRPG_GetClientUpgradeLevel(client, upgrade[UPGR_shortName]) <= 0)
+		return false;
+	
+	// Passive upgrades are always on once the player has at least level 1.
+	if(upgrade[UPGR_activeCallback] == INVALID_FUNCTION)
+		return true;
+	
+	// Ask the plugin itself now.
 	bool bActive;
 	Call_StartFunction(upgrade[UPGR_plugin], upgrade[UPGR_activeCallback]);
 	Call_PushCell(client);

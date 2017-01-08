@@ -66,7 +66,8 @@ public void OnLibraryAdded(const char[] name)
 	// Register this upgrade in SM:RPG
 	if(StrEqual(name, "smrpg"))
 	{
-		SMRPG_RegisterUpgradeType("Stealth", UPGRADE_SHORTNAME, "Renders yourself more and more invisible.", 5, true, 5, 15, 10, _, SMRPG_BuySell, SMRPG_ActiveQuery);
+		SMRPG_RegisterUpgradeType("Stealth", UPGRADE_SHORTNAME, "Renders yourself more and more invisible.", 5, true, 5, 15, 10);
+		SMRPG_SetUpgradeBuySellCallback(UPGRADE_SHORTNAME, SMRPG_BuySell);
 		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
 		g_hCVMinimumAlpha = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_stealth_min_alpha", "120", "Player visibility at the maximum upgrade level. 0 = completely invisible", 0, true, 0.0, true, 255.0);
 	}
@@ -208,14 +209,6 @@ public void SMRPG_BuySell(int client, UpgradeQueryType type)
 		return;
 	
 	SetClientVisibility(client);
-}
-
-public bool SMRPG_ActiveQuery(int client)
-{
-	// This is a passive effect, so it's always active, if the player got at least level 1
-	int upgrade[UpgradeInfo];
-	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
-	return SMRPG_IsEnabled() && upgrade[UI_enabled] && SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME) > 0;
 }
 
 public void SMRPG_TranslateUpgrade(int client, const char[] shortname, TranslationType type, char[] translation, int maxlen)

@@ -63,11 +63,11 @@ typedef SMRPG_ActiveQueryCB = function bool (int client);
  * @param iDefaultStartCost The default start costs to buy level 1 of this upgrade. Default of the _cost convar.
  * @param iDefaultCostInc   The default incremential cost to buy higher levels of this upgrade. See _icost comment above. Default of the _icost convar.
  * @param iAdminFlags       Restrict this upgrade to players with certain flags. See ADMFLAG_* defines. Set to 0 to have it usable by everyone by default.
- * @param querycb           The callback which is called when a client buys / sells this upgrade. Can be used to apply some effects immediately on purchase.
- * @param activecb          The callback which is called to check whether the upgrade currently has some active effect on the client.
+ * @param querycb           Deprecated and optional. @see SMRPG_SetUpgradeBuySellCallback
+ * @param activecb          Deprecated and optional. @see SMRPG_SetUpgradeActiveQueryCallback
  * @error Upgrade shortname already exists.
  */
-native void SMRPG_RegisterUpgradeType(const char[] name, const char[] shortname, const char[] description, int maxlevelbarrier, bool bDefaultEnable, int iDefaultMaxLevel, int iDefaultStartCost, int iDefaultCostInc, int iAdminFlags=0, SMRPG_UpgradeQueryCB querycb, SMRPG_ActiveQueryCB activecb);
+native void SMRPG_RegisterUpgradeType(const char[] name, const char[] shortname, const char[] description, int maxlevelbarrier, bool bDefaultEnable, int iDefaultMaxLevel, int iDefaultStartCost, int iDefaultCostInc, int iAdminFlags=0, SMRPG_UpgradeQueryCB querycb=INVALID_FUNCTION, SMRPG_ActiveQueryCB activecb=INVALID_FUNCTION);
 
 /**
  * Unregisters a given upgrade from the core.
@@ -98,6 +98,41 @@ native void SMRPG_UnregisterUpgradeType(const char[] shortname);
  * @error Convar name is blank or is the same as an existing console command.
  */
 native ConVar SMRPG_CreateUpgradeConVar(const char[] shortname, const char[] name, const char[] defaultValue, const char[] description="", int flags=0, bool hasMin=false, float min=0.0, bool hasMax=false, float max=0.0);
+
+/**
+ * Sets the callback to be called when a player buys or sells the upgrade.
+ * 
+ * You only need to set this, if you want to do something when the level of the upgrade changes.
+ *
+ * @param shortname      The shortname of the upgrade you want to receive buy and sell notifications for.
+ * @param cb             The callback function to register.
+ * @error Invalid upgrade shortname or called from a different plugin than which registered the upgrade in the first place.
+ */
+native void SMRPG_SetUpgradeBuySellCallback(const char[] shortname, SMRPG_UpgradeQueryCB cb);
+
+/**
+ * Sets the callback to be used when another plugin wants to know,
+ * if the effect of the upgrade is currently active on a client.
+ *
+ * You only need to set this, if your upgrade effect is an active effect and not passive.
+ * If the effect is always on once the player bought the upgrade, like health regeneration,
+ * you don't have to register this callback. The RPG core will handle the queries for you
+ * with all the necassary checks.
+ * It defaults to something like
+ *
+ * return SMRPG_IsEnabled() && upgrade[UI_enabled] && SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME) > 0;
+ *
+ * If your upgrade adds an effect in reaction to some event, like adding speed when hit,
+ * you should register this query callback and return whether the client is currently
+ * under your effect or not.
+ *
+ * The callback will only be called, if the above general checks pass.
+ *
+ * @param shortname      The shortname of the upgrade you want to add the active query callback to.
+ * @param cb             The callback function to register.
+ * @error Invalid upgrade shortname or called from a different plugin than which registered the upgrade in the first place.
+ */
+native void SMRPG_SetUpgradeActiveQueryCallback(const char[] shortname, SMRPG_ActiveQueryCB cb);
 
 /**
  * Types of translatable information of the upgrade.

@@ -57,7 +57,7 @@ public void OnLibraryAdded(const char[] name)
 	if(StrEqual(name, "smrpg"))
 	{
 		// Register the upgrade type.
-		SMRPG_RegisterUpgradeType("Armor Helmet", UPGRADE_SHORTNAME, "Gives you a chance to get a helmet on spawn.", 0, true, 5, 5, 5, _, SMRPG_BuySell, SMRPG_ActiveQuery);
+		SMRPG_RegisterUpgradeType("Armor Helmet", UPGRADE_SHORTNAME, "Gives you a chance to get a helmet on spawn.", 0, true, 5, 5, 5);
 		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
 		
 		g_hCVChance = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_armorhelmet_chance", "0.1", "Chance percentage of a client spawning with a helmet (multiplied by level).", _, true, 0.01, true, 1.0);
@@ -109,22 +109,6 @@ public void Event_OnPlayerSpawn(Event event, const char[] name, bool dontBroadca
 /**
  * SM:RPG Upgrade callbacks
  */
-
-public void SMRPG_BuySell(int client, UpgradeQueryType type)
-{
-	// Here you can apply your effect directly when the client's upgrade level changes.
-	// E.g. adjust the maximal health of the player immediately when he bought the upgrade.
-	// The client doesn't have to be ingame here!
-}
-
-public bool SMRPG_ActiveQuery(int client)
-{
-	// If this is a passive effect, it's always active, if the player got at least level 1.
-	// If it's an active effect (like a short speed boost) add a check for the effect as well.
-	int upgrade[UpgradeInfo];
-	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
-	return SMRPG_IsEnabled() && upgrade[UI_enabled] && SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME) > 0;
-}
 
 // The core wants to display your upgrade somewhere. Translate it into the clients language!
 public void SMRPG_TranslateUpgrade(int client, const char[] shortname, TranslationType type, char[] translation, int maxlen)

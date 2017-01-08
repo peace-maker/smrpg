@@ -332,6 +332,10 @@ void ResetStats(int client)
 		if(!IsValidUpgrade(upgrade))
 			continue;
 		
+		// Plugin doesn't care? OK :(
+		if(upgrade[UPGR_queryCallback] == INVALID_FUNCTION)
+			continue;
+		
 		Call_StartFunction(upgrade[UPGR_plugin], upgrade[UPGR_queryCallback]);
 		Call_PushCell(client);
 		Call_PushCell(UpgradeQueryType_Sell);
@@ -370,6 +374,10 @@ void NotifyUpgradePluginsOfLevel(int client)
 			continue;
 		
 		if(GetClientSelectedUpgradeLevel(client, i) <= 0)
+			continue;
+		
+		// Plugin doesn't care? OK :(
+		if(upgrade[UPGR_queryCallback] == INVALID_FUNCTION)
 			continue;
 		
 		Call_StartFunction(upgrade[UPGR_plugin], upgrade[UPGR_queryCallback]);
@@ -547,6 +555,10 @@ void SetClientUpgradeEnabledStatus(int client, int iUpgradeIndex, bool bEnabled)
 	if(!IsValidUpgrade(upgrade))
 		return;
 	
+	// Plugin doesn't care? OK :(
+	if(upgrade[UPGR_queryCallback] == INVALID_FUNCTION)
+		return;
+	
 	if(IsClientInGame(client))
 	{
 		int iLevel = GetClientSelectedUpgradeLevel(client, iUpgradeIndex);
@@ -591,6 +603,10 @@ void SetClientSelectedUpgradeLevel(int client, int iUpgradeIndex, int iLevel)
 	GetUpgradeByIndex(iUpgradeIndex, upgrade);
 	
 	if(!IsValidUpgrade(upgrade))
+		return;
+	
+	// Plugin doesn't care? OK :(
+	if(upgrade[UPGR_queryCallback] == INVALID_FUNCTION)
 		return;
 	
 	if(IsClientInGame(client))

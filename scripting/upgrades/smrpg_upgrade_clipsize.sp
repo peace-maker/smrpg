@@ -89,7 +89,8 @@ public void OnLibraryAdded(const char[] name)
 	// Register this upgrade in SM:RPG
 	if(StrEqual(name, "smrpg"))
 	{
-		SMRPG_RegisterUpgradeType("Increase Clipsize", UPGRADE_SHORTNAME, "Increases the size of a weapon's clip.", 0, true, 2, 30, 30, _, SMRPG_BuySell, SMRPG_ActiveQuery);
+		SMRPG_RegisterUpgradeType("Increase Clipsize", UPGRADE_SHORTNAME, "Increases the size of a weapon's clip.", 0, true, 2, 30, 30);
+		SMRPG_SetUpgradeBuySellCallback(UPGRADE_SHORTNAME, SMRPG_BuySell);
 		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
 	}
 }
@@ -180,14 +181,6 @@ public void SMRPG_BuySell(int client, UpgradeQueryType type)
 			}
 		}
 	}
-}
-
-public bool SMRPG_ActiveQuery(int client)
-{
-	// This is a passive effect, so it's always active, if the player got at least level 1
-	int upgrade[UpgradeInfo];
-	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
-	return SMRPG_IsEnabled() && upgrade[UI_enabled] && SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME) > 0;
 }
 
 public void SMRPG_TranslateUpgrade(int client, const char[] shortname, TranslationType type, char[] translation, int maxlen)

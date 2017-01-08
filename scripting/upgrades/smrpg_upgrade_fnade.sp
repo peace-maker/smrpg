@@ -51,7 +51,8 @@ public void OnLibraryAdded(const char[] name)
 	// Register this upgrade in SM:RPG
 	if(StrEqual(name, "smrpg"))
 	{
-		SMRPG_RegisterUpgradeType("Fire Grenade", UPGRADE_SHORTNAME, "Ignites players damaged by your grenade.", 10, true, 5, 15, 10, _, SMRPG_BuySell, SMRPG_ActiveQuery);
+		SMRPG_RegisterUpgradeType("Fire Grenade", UPGRADE_SHORTNAME, "Ignites players damaged by your grenade.", 10, true, 5, 15, 10);
+		SMRPG_SetUpgradeActiveQueryCallback(UPGRADE_SHORTNAME, SMRPG_ActiveQuery);
 		SMRPG_SetUpgradeResetCallback(UPGRADE_SHORTNAME, SMRPG_ResetEffect);
 		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
 		
@@ -69,13 +70,10 @@ public void OnClientPutInServer(int client)
 /**
  * SM:RPG Upgrade callbacks
  */
-public void SMRPG_BuySell(int client, UpgradeQueryType type)
-{
-	// Nothing to apply here immediately after someone buys this upgrade.
-}
 
 public bool SMRPG_ActiveQuery(int client)
 {
+	// TODO: Check if client is burning because of this upgrade?
 	return SMRPG_IsClientBurning(client);
 }
 

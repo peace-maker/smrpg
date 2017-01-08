@@ -59,7 +59,7 @@ public void OnLibraryAdded(const char[] name)
 	// Register this upgrade in SM:RPG
 	if(StrEqual(name, "smrpg"))
 	{
-		SMRPG_RegisterUpgradeType("Denial", UPGRADE_SHORTNAME, "Keep your weapons the next time you spawn after you've died.", 2, true, 2, 75, 50, _, SMRPG_BuySell, SMRPG_ActiveQuery);
+		SMRPG_RegisterUpgradeType("Denial", UPGRADE_SHORTNAME, "Keep your weapons the next time you spawn after you've died.", 2, true, 2, 75, 50);
 		SMRPG_SetUpgradeResetCallback(UPGRADE_SHORTNAME, SMRPG_ResetEffect);
 		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
 		
@@ -145,18 +145,6 @@ public void Event_OnPlayerTeam(Event event, const char[] name, bool dontBroadcas
 /**
  * SM:RPG Upgrade callbacks
  */
-public void SMRPG_BuySell(int client, UpgradeQueryType type)
-{
-	
-}
-
-public bool SMRPG_ActiveQuery(int client)
-{
-	// This is a passive effect, so it's always active, if the player got at least level 1
-	int upgrade[UpgradeInfo];
-	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
-	return SMRPG_IsEnabled() && upgrade[UI_enabled] && SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME) > 0;
-}
 
 // Some plugin wants this effect to end?
 public void SMRPG_ResetEffect(int client)

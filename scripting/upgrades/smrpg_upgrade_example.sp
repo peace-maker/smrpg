@@ -48,7 +48,16 @@ public void OnLibraryAdded(const char[] name)
 	if(StrEqual(name, "smrpg"))
 	{
 		// Register the upgrade type.
-		SMRPG_RegisterUpgradeType("Example", UPGRADE_SHORTNAME, "Does something.", 10, true, 5, 15, 10, _, SMRPG_BuySell, SMRPG_ActiveQuery);
+		SMRPG_RegisterUpgradeType("Example", UPGRADE_SHORTNAME, "Does something.", 10, true, 5, 15, 10);
+		
+		// If you want to catch when a player buys or sells the upgrade (or the upgrade level changes in any way)
+		// register this callback to be able to take action right when the upgrade level changes.
+		SMRPG_SetUpgradeBuySellCallback(UPGRADE_SHORTNAME, SMRPG_BuySell);
+		
+		// If this is an active effect which is only affecting players for a short time on some event,
+		// register this callback so other plugins can ask, if your effect is currently active on a player
+		// using SMRPG_IsUpgradeActiveOnClient.
+		SMRPG_SetUpgradeActiveQueryCallback(UPGRADE_SHORTNAME, SMRPG_ActiveQuery);
 		
 		// If this is an active effect which is only affecting players for a short time on some event, register this callback to enable other plugins to stop your effect anytime.
 		// This can help to prevent compatibility issues between similar upgrades.

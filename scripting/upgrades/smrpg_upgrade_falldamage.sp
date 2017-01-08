@@ -53,7 +53,7 @@ public void OnLibraryAdded(const char[] name)
 	if(StrEqual(name, "smrpg"))
 	{
 		// Register the upgrade type.
-		SMRPG_RegisterUpgradeType("Reduced Fall Damage", UPGRADE_SHORTNAME, "Reduces the damage you take from falling.", 0, true, 5, 10, 10, _, SMRPG_BuySell, SMRPG_ActiveQuery);
+		SMRPG_RegisterUpgradeType("Reduced Fall Damage", UPGRADE_SHORTNAME, "Reduces the damage you take from falling.", 0, true, 5, 10, 10);
 		
 		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
 		
@@ -70,20 +70,6 @@ public void OnClientPutInServer(int client)
 /**
  * SM:RPG Upgrade callbacks
  */
-
-public void SMRPG_BuySell(int client, UpgradeQueryType type)
-{
-}
-
-public bool SMRPG_ActiveQuery(int client)
-{
-	// If this is a passive effect, it's always active, if the player got at least level 1.
-	// If it's an active effect (like a short speed boost) add a check for the effect as well.
-	int upgrade[UpgradeInfo];
-	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
-	return SMRPG_IsEnabled() && upgrade[UI_enabled] && SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME) > 0;
-}
-
 
 // The core wants to display your upgrade somewhere. Translate it into the clients language!
 public void SMRPG_TranslateUpgrade(int client, const char[] shortname, TranslationType type, char[] translation, int maxlen)
