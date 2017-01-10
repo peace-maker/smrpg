@@ -1,6 +1,7 @@
 #pragma semicolon 1
 #include <sourcemod>
 #include <regex>
+#include <smrpg>
 
 #pragma newdecls required
 
