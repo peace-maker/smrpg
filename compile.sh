@@ -101,6 +101,6 @@ cd ..
 
 # upload package
 # TODO: put into seperate deploy script
-if [ ! -z "$DROPURL" ] && [ "$TRAVIS_PULL_REQUEST" == "false" ]; then
+if [ ! -z "$DROPURL" ] && [ "$TRAVIS_PULL_REQUEST" == "false" ] && [ "$TRAVIS_BRANCH" == "master" ]; then
 	curl -F "sm=$SMVERSION" -F "key=$UPLOADKEY" -F "drop=@$ARCHIVE" $DROPURL
 fi
