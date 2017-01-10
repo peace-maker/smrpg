@@ -11,7 +11,6 @@
 #include <smrpg_sharedmaterials>
 
 #define UPGRADE_SHORTNAME "fpistol"
-#define PLUGIN_VERSION "1.0"
 
 ConVar g_hCVTimeIncrease;
 
@@ -25,7 +24,7 @@ public Plugin myinfo =
 	name = "SM:RPG Upgrade > Frost Pistol",
 	author = "Jannik \"Peace-Maker\" Hartung",
 	description = "Frost Pistol upgrade for SM:RPG. Slow down players hit with a pistol.",
-	version = PLUGIN_VERSION,
+	version = SMRPG_VERSION,
 	url = "http://www.wcfan.de/"
 }
 

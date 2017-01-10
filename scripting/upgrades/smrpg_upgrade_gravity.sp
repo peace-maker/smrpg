@@ -13,7 +13,6 @@
 
 // Change the upgrade's shortname to a descriptive abbrevation
 #define UPGRADE_SHORTNAME "gravity"
-#define PLUGIN_VERSION "1.0"
 
 ConVar g_hCVPercent;
 
@@ -24,7 +23,7 @@ public Plugin myinfo =
 	name = "SM:RPG Upgrade > Reduced Gravity",
 	author = "Jannik \"Peace-Maker\" Hartung",
 	description = "Reduced Gravity upgrade for SM:RPG. Reduces a player's gravity and lets them jump higher.",
-	version = PLUGIN_VERSION,
+	version = SMRPG_VERSION,
 	url = "http://www.wcfan.de/"
 }
 

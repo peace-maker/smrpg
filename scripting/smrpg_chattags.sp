@@ -15,7 +15,6 @@
 #endif
 
 #pragma newdecls required
-#define PLUGIN_VERSION "1.0"
 
 ConVar g_hCVMaxChatRank;
 ConVar g_hCVShowLevel;
@@ -25,7 +24,7 @@ public Plugin myinfo =
 	name = "SM:RPG > Chat Tags " ... PROCESSOR_TYPE,
 	author = "Peace-Maker",
 	description = "Add RPG level in front of chat messages.",
-	version = PLUGIN_VERSION,
+	version = SMRPG_VERSION,
 	url = "https://www.wcfan.de/"
 };
 

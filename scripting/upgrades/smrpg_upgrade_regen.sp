@@ -10,7 +10,6 @@
 
 #define UPGRADE_SHORTNAME "regen"
 
-#define PLUGIN_VERSION "1.0"
 
 ConVar g_hCVAmount;
 ConVar g_hCVAmountIncrease;
@@ -24,7 +23,7 @@ public Plugin myinfo =
 	name = "SM:RPG Upgrade > Health regeneration",
 	author = "Jannik \"Peace-Maker\" Hartung",
 	description = "Regeneration upgrade for SM:RPG. Regenerates HP every second.",
-	version = PLUGIN_VERSION,
+	version = SMRPG_VERSION,
 	url = "http://www.wcfan.de/"
 }
 

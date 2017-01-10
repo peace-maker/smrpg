@@ -16,7 +16,6 @@
 // Change the upgrade's shortname to a descriptive abbrevation
 // No spaces allowed here. This is going to be used as a sql table column field name!
 #define UPGRADE_SHORTNAME "fastreload"
-#define PLUGIN_VERSION "1.0"
 
 bool g_bLateLoaded;
 
@@ -27,7 +26,7 @@ public Plugin myinfo =
 	name = "SM:RPG Upgrade > Fast Reload",
 	author = "Peace-Maker",
 	description = "Fast Reload upgrade for SM:RPG. Increases the reload speed of guns.",
-	version = PLUGIN_VERSION,
+	version = SMRPG_VERSION,
 	url = "http://www.wcfan.de/"
 }
 

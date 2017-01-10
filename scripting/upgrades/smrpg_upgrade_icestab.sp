@@ -10,7 +10,6 @@
 #include <smrpg_sharedmaterials>
 
 #define UPGRADE_SHORTNAME "icestab"
-#define PLUGIN_VERSION "1.0"
 
 ConVar g_hCVIceStabLimitDmg;
 ConVar g_hCVTimeIncrease;
@@ -22,7 +21,7 @@ public Plugin myinfo =
 	name = "SM:RPG Upgrade > Ice Stab",
 	author = "Jannik \"Peace-Maker\" Hartung",
 	description = "Ice Stab upgrade for SM:RPG. Freeze a player in place when knifing him.",
-	version = PLUGIN_VERSION,
+	version = SMRPG_VERSION,
 	url = "http://www.wcfan.de/"
 }
 

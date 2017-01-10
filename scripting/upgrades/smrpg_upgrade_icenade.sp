@@ -7,7 +7,6 @@
 #include <smrpg_effects>
 
 #define UPGRADE_SHORTNAME "icenade"
-#define PLUGIN_VERSION "1.0"
 
 ConVar g_hCVLimitDmg;
 ConVar g_hCVDurationIncrease;
@@ -19,7 +18,7 @@ public Plugin myinfo =
 	name = "SM:RPG Upgrade > Ice Grenade",
 	author = "Peace-Maker",
 	description = "Ice Grenade upgrade for SM:RPG. Freeze a player in place when damaged by your grenade.",
-	version = PLUGIN_VERSION,
+	version = SMRPG_VERSION,
 	url = "http://www.wcfan.de/"
 }
 

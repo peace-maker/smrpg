@@ -10,8 +10,6 @@
 #undef REQUIRE_EXTENSIONS
 #include <clientprefs>
 
-#define PLUGIN_VERSION "1.0"
-
 #define MAX_COMMAND_NAME_LENGTH 32
 
 ConVar g_hCVCommandAdvertInterval;
@@ -43,7 +41,7 @@ public Plugin myinfo =
 	name = "SM:RPG > Command List",
 	author = "Jannik \"Peace-Maker\" Hartung",
 	description = "Teaches players about available rpg commands",
-	version = PLUGIN_VERSION,
+	version = SMRPG_VERSION,
 	url = "http://www.wcfan.de/"
 }
 
@@ -59,10 +57,10 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 
 public void OnPluginStart()
 {
-	ConVar hVersion = CreateConVar("smrpg_commandlist_version", PLUGIN_VERSION, "", FCVAR_NOTIFY|FCVAR_DONTRECORD);
+	ConVar hVersion = CreateConVar("smrpg_commandlist_version", SMRPG_VERSION, "", FCVAR_NOTIFY|FCVAR_DONTRECORD);
 	if(hVersion != null)
 	{
-		hVersion.SetString(PLUGIN_VERSION);
+		hVersion.SetString(SMRPG_VERSION);
 		hVersion.AddChangeHook(ConVar_VersionChanged);
 	}
 	
@@ -88,7 +86,7 @@ public void OnPluginStart()
 
 public void ConVar_VersionChanged(ConVar convar, const char[] oldValue, const char[] newValue)
 {
-	convar.SetString(PLUGIN_VERSION);
+	convar.SetString(SMRPG_VERSION);
 }
 
 public void OnLibraryAdded(const char[] name)

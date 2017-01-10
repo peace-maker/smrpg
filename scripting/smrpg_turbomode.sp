@@ -14,7 +14,6 @@
 #include <adminmenu>
 
 #pragma newdecls required
-#define PLUGIN_VERSION "1.0"
 
 ConVar g_hCVRPGSaveData;
 bool g_bRPGSaveDataOld;
@@ -35,7 +34,7 @@ public Plugin myinfo =
 	name = "SM:RPG > Turbo Mode",
 	author = "Jannik \"Peace-Maker\" Hartung",
 	description = "Highers levelup rates for the current map. Stats are not saved.",
-	version = PLUGIN_VERSION,
+	version = SMRPG_VERSION,
 	url = "http://www.wcfan.de/"
 }
 

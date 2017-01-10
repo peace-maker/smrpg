@@ -3,7 +3,6 @@
 #include <regex>
 
 #pragma newdecls required
-#define PLUGIN_VERSION "1.0"
 
 // How many players to fetch and import at once.
 #define IMPORT_STEP 100
@@ -13,7 +12,7 @@ public Plugin myinfo =
 	name = "SM:RPG > Import THC RPG database",
 	author = "Peace-Maker",
 	description = "Import players from THC RPG database.",
-	version = PLUGIN_VERSION,
+	version = SMRPG_VERSION,
 	url = "http://www.wcfan.de/"
 }
 

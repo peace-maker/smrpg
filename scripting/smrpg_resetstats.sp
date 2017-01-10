@@ -5,7 +5,6 @@
 #include <autoexecconfig>
 
 #pragma newdecls required
-#define PLUGIN_VERSION "1.0"
 
 int g_iDaysInMonth[] = {0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 ConVar g_hCVFirstReset;
@@ -19,16 +18,16 @@ public Plugin myinfo =
 	name = "SM:RPG > Reset interval",
 	author = "Jannik \"Peace-Maker\" Hartung",
 	description = "Resets the stats every x months",
-	version = PLUGIN_VERSION,
+	version = SMRPG_VERSION,
 	url = "http://www.wcfan.de/"
 }
 
 public void OnPluginStart()
 {
-	ConVar hVersion = CreateConVar("smrpg_resetstats_version", PLUGIN_VERSION, "", FCVAR_NOTIFY|FCVAR_DONTRECORD);
+	ConVar hVersion = CreateConVar("smrpg_resetstats_version", SMRPG_VERSION, "", FCVAR_NOTIFY|FCVAR_DONTRECORD);
 	if(hVersion != null)
 	{
-		hVersion.SetString(PLUGIN_VERSION);
+		hVersion.SetString(SMRPG_VERSION);
 		hVersion.AddChangeHook(ConVar_VersionChanged);
 	}
 	
@@ -55,7 +54,7 @@ public void OnPluginStart()
 
 public void ConVar_VersionChanged(ConVar convar, const char[] oldValue, const char[] newValue)
 {
-	convar.SetString(PLUGIN_VERSION);
+	convar.SetString(SMRPG_VERSION);
 }
 
 public void OnMapStart()

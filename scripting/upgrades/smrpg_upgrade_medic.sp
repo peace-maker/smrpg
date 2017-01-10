@@ -12,7 +12,6 @@
 #include <smrpg_armorplus>
 
 #define UPGRADE_SHORTNAME "medic"
-#define PLUGIN_VERSION "1.0"
 
 #define MEDIC_HEALTH_BEAM_COLOR {5, 45, 255, 50}
 #define MEDIC_ARMOR_BEAM_COLOR {5, 255, 10, 50}
@@ -31,7 +30,7 @@ public Plugin myinfo =
 	name = "SM:RPG Upgrade > Medic",
 	author = "Jannik \"Peace-Maker\" Hartung",
 	description = "Medic upgrade for SM:RPG. Heals teammates around you.",
-	version = PLUGIN_VERSION,
+	version = SMRPG_VERSION,
 	url = "http://www.wcfan.de/"
 }
 

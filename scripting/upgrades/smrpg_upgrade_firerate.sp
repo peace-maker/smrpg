@@ -14,7 +14,6 @@
 
 // Change the upgrade's shortname to a descriptive abbrevation
 #define UPGRADE_SHORTNAME "firerate"
-#define PLUGIN_VERSION "1.0"
 
 ConVar g_hCVIncrease;
 
@@ -25,7 +24,7 @@ public Plugin myinfo =
 	name = "SM:RPG Upgrade > Firerate",
 	author = "Peace-Maker",
 	description = "Firerate upgrade for SM:RPG. Increases the firerate of weapons.",
-	version = PLUGIN_VERSION,
+	version = SMRPG_VERSION,
 	url = "http://www.wcfan.de/"
 }
 

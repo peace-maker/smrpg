@@ -17,8 +17,6 @@
 #undef REQUIRE_EXTENSIONS
 #include <clientprefs>
 
-#define PLUGIN_VERSION "1.0"
-
 bool g_bLateLoaded;
 Handle g_hPlayerAutoSave;
 
@@ -106,7 +104,7 @@ public Plugin myinfo =
 	name = "SM:RPG",
 	author = "Jannik \"Peace-Maker\" Hartung, SeLfkiLL",
 	description = "SM:RPG Mod",
-	version = PLUGIN_VERSION,
+	version = SMRPG_VERSION,
 	url = "http://www.wcfan.de/"
 }
 
@@ -128,10 +126,10 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 
 public void OnPluginStart()
 {
-	ConVar hVersion = CreateConVar("smrpg_version", PLUGIN_VERSION, "SM:RPG version", FCVAR_NOTIFY|FCVAR_DONTRECORD);
+	ConVar hVersion = CreateConVar("smrpg_version", SMRPG_VERSION, "SM:RPG version", FCVAR_NOTIFY|FCVAR_DONTRECORD);
 	if(hVersion != null)
 	{
-		hVersion.SetString(PLUGIN_VERSION);
+		hVersion.SetString(SMRPG_VERSION);
 		hVersion.AddChangeHook(ConVar_VersionChanged);
 	}
 	
@@ -283,7 +281,7 @@ public void OnPluginStart()
  */
 public void ConVar_VersionChanged(ConVar convar, const char[] oldValue, const char[] newValue)
 {
-	SetConVarString(convar, PLUGIN_VERSION);
+	SetConVarString(convar, SMRPG_VERSION);
 }
 
 public void ConVar_SaveIntervalChanged(ConVar convar, const char[] oldValue, const char[] newValue)
@@ -413,7 +411,7 @@ public void OnClientPutInServer(int client)
 	if (IsPlayerDataLoaded(client))
 		NotifyUpgradePluginsOfLevel(client);
 	
-	Client_PrintToChat(client, false, "%t", "Inform about plugin", PLUGIN_VERSION);
+	Client_PrintToChat(client, false, "%t", "Inform about plugin", SMRPG_VERSION);
 	Client_PrintToChat(client, false, "%t", "Advertise rpgmenu command");
 }
 

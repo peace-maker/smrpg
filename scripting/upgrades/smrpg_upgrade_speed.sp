@@ -6,7 +6,6 @@
 #include <smrpg>
 
 #define UPGRADE_SHORTNAME "speed"
-#define PLUGIN_VERSION "1.0"
 
 Handle g_hGetSpeed;
 ConVar g_hCVPercent;
@@ -16,7 +15,7 @@ public Plugin myinfo =
 	name = "SM:RPG Upgrade > Speed+",
 	author = "Jannik \"Peace-Maker\" Hartung",
 	description = "Speed+ upgrade for SM:RPG. Increase your default moving speed.",
-	version = PLUGIN_VERSION,
+	version = SMRPG_VERSION,
 	url = "http://www.wcfan.de/"
 }
 

@@ -11,7 +11,6 @@
 #include <smrpg>
 
 #define UPGRADE_SHORTNAME "falldamage"
-#define PLUGIN_VERSION "1.0"
 
 ConVar g_hCVPercent;
 
@@ -20,7 +19,7 @@ public Plugin myinfo =
 	name = "SM:RPG Upgrade > Reduced Fall Damage",
 	author = "Peace-Maker",
 	description = "Reduced Fall Damage upgrade for SM:RPG. Reduces the damage you take from falling.",
-	version = PLUGIN_VERSION,
+	version = SMRPG_VERSION,
 	url = "http://www.wcfan.de/"
 }
 

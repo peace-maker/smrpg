@@ -12,7 +12,6 @@
 
 // Change the upgrade's shortname to a descriptive abbrevation
 #define UPGRADE_SHORTNAME "antidote"
-#define PLUGIN_VERSION "1.0"
 
 ConVar g_hCVPercent;
 
@@ -21,7 +20,7 @@ public Plugin myinfo =
 	name = "SM:RPG Upgrade > Antidote",
 	author = "Peace-Maker",
 	description = "Antidote upgrade for SM:RPG. Reduces length of bad effects on a player.",
-	version = PLUGIN_VERSION,
+	version = SMRPG_VERSION,
 	url = "http://www.wcfan.de/"
 }
 

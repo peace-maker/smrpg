@@ -10,7 +10,6 @@
 #include <clientprefs>
 
 #pragma newdecls required
-#define PLUGIN_VERSION "1.0"
 
 #define SECONDS_EXP_AVG_CALC 60.0
 #define EXP_MEMORY_SIZE 10
@@ -35,7 +34,7 @@ public Plugin myinfo =
 	name = "SM:RPG > Key Hint Infopanel",
 	author = "Jannik \"Peace-Maker\" Hartung",
 	description = "Shows some RPG stats in a panel on the screen",
-	version = PLUGIN_VERSION,
+	version = SMRPG_VERSION,
 	url = "http://www.wcfan.de/"
 }
 

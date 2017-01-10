@@ -14,7 +14,6 @@
 
 // Change the upgrade's shortname to a descriptive abbrevation
 #define UPGRADE_SHORTNAME "bouncybullets"
-#define PLUGIN_VERSION "1.0"
 
 ConVar g_hCVForce;
 ConVar g_hCVIgnoreWeapons;
@@ -24,7 +23,7 @@ public Plugin myinfo =
 	name = "SM:RPG Upgrade > Bouncy Bullets",
 	author = "Peace-Maker",
 	description = "Bouncy bullets upgrade for SM:RPG. Push enemies away by shooting them.",
-	version = PLUGIN_VERSION,
+	version = SMRPG_VERSION,
 	url = "http://www.wcfan.de/"
 }
 

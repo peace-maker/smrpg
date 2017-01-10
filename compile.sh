@@ -38,6 +38,15 @@ if [ ! -d "build" ]; then
 	
 	cd ..
 fi
+
+# setup the auto version file to have the git revision in the version convar.
+# get the correct revision count
+# https://github.com/travis-ci/travis-ci/issues/3412
+git fetch --unshallow
+GITREVCOUNT=$(git rev-list --count HEAD)
+
+echo -e "#if defined _smrpg_version_included\n#endinput\n#endif\n#define _smrpg_version_included\n\n" > build/addons/sourcemod/scripting/include/smrpg/smrpg_autoversion.inc
+echo -e "#define SMRPG_VERSION \"1.0-$GITREVCOUNT\"\n" >> build/addons/sourcemod/scripting/include/smrpg/smrpg_autoversion.inc
 	
 # setup package folders
 PACKAGEDIR=$(pwd)/package
@@ -86,10 +95,6 @@ done
 
 # put the files into a nice archive
 cd $PACKAGEDIR
-# get the correct revision count
-# https://github.com/travis-ci/travis-ci/issues/3412
-git fetch --unshallow
-GITREVCOUNT=$(git rev-list --count HEAD)
 ARCHIVE=smrpg-rev$GITREVCOUNT.tar.gz
 tar -zcvf ../$ARCHIVE *
 cd ..

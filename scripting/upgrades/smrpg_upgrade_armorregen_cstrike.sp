@@ -10,8 +10,6 @@
 
 #define UPGRADE_SHORTNAME "armorregen"
 
-#define PLUGIN_VERSION "1.0"
-
 ConVar g_hCVAmount;
 ConVar g_hCVAmountIncrease;
 ConVar g_hCVInterval;
@@ -25,7 +23,7 @@ public Plugin myinfo =
 	name = "SM:RPG Upgrade > Armor regeneration",
 	author = "Jannik \"Peace-Maker\" Hartung",
 	description = "Armor regeneration upgrade for SM:RPG. Regenerates armor regularly.",
-	version = PLUGIN_VERSION,
+	version = SMRPG_VERSION,
 	url = "http://www.wcfan.de/"
 }
 

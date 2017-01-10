@@ -38,6 +38,12 @@ forward void SMRPG_OnEnableStatusChanged(bool bEnabled);
 #include <smrpg/smrpg_settings>
 #include <smrpg/smrpg_database>
 
+// See if we're building using the compile.sh script.
+#tryinclude <smrpg/smrpg_autoversion>
+#if !defined SMRPG_VERSION
+#define SMRPG_VERSION "1.0-custom"
+#endif
+
 public SharedPlugin __pl_smrpg = 
 {
 	name = "smrpg",

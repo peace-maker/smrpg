@@ -7,7 +7,6 @@
 #include <smrpg>
 
 #define UPGRADE_SHORTNAME "damage"
-#define PLUGIN_VERSION "1.0"
 
 ConVar g_hCVDefaultPercent;
 ConVar g_hCVDefaultMaxDamage;
@@ -24,7 +23,7 @@ public Plugin myinfo =
 	name = "SM:RPG Upgrade > Damage+",
 	author = "Jannik \"Peace-Maker\" Hartung",
 	description = "Damage+ upgrade for SM:RPG. Deal additional damage on enemies.",
-	version = PLUGIN_VERSION,
+	version = SMRPG_VERSION,
 	url = "http://www.wcfan.de/"
 }
 

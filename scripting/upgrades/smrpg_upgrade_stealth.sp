@@ -8,7 +8,6 @@
 
 #define UPGRADE_SHORTNAME "stealth"
 
-#define PLUGIN_VERSION "1.0"
 
 ConVar g_hCVMinimumAlpha;
 
@@ -20,7 +19,7 @@ public Plugin myinfo =
 	name = "SM:RPG Upgrade > Stealth",
 	author = "Jannik \"Peace-Maker\" Hartung",
 	description = "Stealth upgrade for SM:RPG. Renders players opaque.",
-	version = PLUGIN_VERSION,
+	version = SMRPG_VERSION,
 	url = "http://www.wcfan.de/"
 }
 

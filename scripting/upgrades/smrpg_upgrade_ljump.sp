@@ -5,7 +5,6 @@
 #pragma newdecls required
 #include <smrpg>
 
-#define PLUGIN_VERSION "1.0"
 #define UPGRADE_SHORTNAME "ljump"
 
 ConVar g_hCVIncrease;
@@ -19,7 +18,7 @@ public Plugin myinfo =
 	name = "SM:RPG Upgrade > Long Jump",
 	author = "Jannik \"Peace-Maker\" Hartung",
 	description = "Long Jump upgrade for SM:RPG. Boosts players jump speed.",
-	version = PLUGIN_VERSION,
+	version = SMRPG_VERSION,
 	url = "http://www.wcfan.de/"
 }
 

@@ -10,7 +10,6 @@
 #include <smrpg>
 
 #define UPGRADE_SHORTNAME "armorhelmet"
-#define PLUGIN_VERSION "1.0"
 
 ConVar g_hCVChance;
 
@@ -19,7 +18,7 @@ public Plugin myinfo =
 	name = "SM:RPG Upgrade > Armor Helmet",
 	author = "Peace-Maker",
 	description = "Armor Helmet upgrade for SM:RPG. Chance to get a helmet on spawn.",
-	version = PLUGIN_VERSION,
+	version = SMRPG_VERSION,
 	url = "http://www.wcfan.de/"
 }
 
