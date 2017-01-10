@@ -6,7 +6,6 @@
 #include <smrpg>
 #include <smrpg_armorplus>
 
-#define PLUGIN_VERSION "1.0"
 #define UPGRADE_SHORTNAME "armorplus"
 
 ConVar g_hCVMaxIncrease;
@@ -16,7 +15,7 @@ public Plugin myinfo =
 	name = "SM:RPG Upgrade > Armor+",
 	author = "Jannik \"Peace-Maker\" Hartung",
 	description = "Armor+ upgrade for SM:RPG. Increases player's armor.",
-	version = PLUGIN_VERSION,
+	version = SMRPG_VERSION,
 	url = "http://www.wcfan.de/"
 }
 

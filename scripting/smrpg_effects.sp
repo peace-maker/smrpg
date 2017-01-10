@@ -11,8 +11,6 @@
 #undef REQUIRE_PLUGIN
 #include <smrpg_helper>
 
-#define PLUGIN_VERSION "1.0"
-
 ConVar g_hCVCreditFireAttacker;
 
 #include "smrpg_effects/rendercolor.sp"
@@ -25,7 +23,7 @@ public Plugin myinfo =
 	name = "SM:RPG > Effect Hub",
 	author = "Peace-Maker",
 	description = "Central place for effects.",
-	version = PLUGIN_VERSION,
+	version = SMRPG_VERSION,
 	url = "http://www.wcfan.de/"
 }
 

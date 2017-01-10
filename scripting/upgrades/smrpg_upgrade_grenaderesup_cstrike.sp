@@ -9,7 +9,6 @@
 
 #define UPGRADE_SHORTNAME "grenaderesup"
 
-#define PLUGIN_VERSION "1.0"
 
 #define GRENADE_CLASSNAME_LENGTH 64
 
@@ -40,7 +39,7 @@ public Plugin myinfo =
 	name = "SM:RPG Upgrade > Grenade Resupply",
 	author = "Jannik \"Peace-Maker\" Hartung",
 	description = "Grenade resupply upgrade for SM:RPG. Regenerates grenades x seconds after you threw them.",
-	version = PLUGIN_VERSION,
+	version = SMRPG_VERSION,
 	url = "http://www.wcfan.de/"
 }
 

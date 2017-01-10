@@ -9,7 +9,6 @@
 #include <smrpg_effects>
 
 #define UPGRADE_SHORTNAME "firepistol"
-#define PLUGIN_VERSION "1.0"
 
 ConVar g_hCVTimeIncrease;
 
@@ -18,7 +17,7 @@ public Plugin myinfo =
 	name = "SM:RPG Upgrade > Fire Pistol",
 	author = "Jannik \"Peace-Maker\" Hartung",
 	description = "Fire Pistol upgrade for SM:RPG. Ignites players hit with a pistol.",
-	version = PLUGIN_VERSION,
+	version = SMRPG_VERSION,
 	url = "http://www.wcfan.de/"
 }
 

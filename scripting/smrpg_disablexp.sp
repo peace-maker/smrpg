@@ -7,8 +7,6 @@
 
 #pragma newdecls required
 
-#define PLUGIN_VERSION "1.0"
-
 TopMenu g_hTopMenu;
 bool g_bDisableExperience[MAXPLAYERS+1];
 
@@ -17,7 +15,7 @@ public Plugin myinfo =
 	name = "SM:RPG > Disable experience",
 	author = "Jannik \"Peace-Maker\" Hartung",
 	description = "Lets admins disable any experience gainings for players.",
-	version = PLUGIN_VERSION,
+	version = SMRPG_VERSION,
 	url = "http://www.wcfan.de/"
 }
 

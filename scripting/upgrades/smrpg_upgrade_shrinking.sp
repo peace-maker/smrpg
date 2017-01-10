@@ -10,7 +10,6 @@
 #include <smrpg>
 
 #define UPGRADE_SHORTNAME "shrinking"
-#define PLUGIN_VERSION "1.0"
 
 ConVar g_hCVIncrease;
 
@@ -19,7 +18,7 @@ public Plugin myinfo =
 	name = "SM:RPG Upgrade > Shrinking",
 	author = "Peace-Maker",
 	description = "Shrinking upgrade for SM:RPG. Make player models smaller.",
-	version = PLUGIN_VERSION,
+	version = SMRPG_VERSION,
 	url = "http://www.wcfan.de/"
 }
 

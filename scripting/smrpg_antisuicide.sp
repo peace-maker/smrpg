@@ -5,7 +5,6 @@
 #include <smlib>
 
 #pragma newdecls required
-#define PLUGIN_VERSION "1.0"
 
 ConVar g_hCVLastAttackSince;
 ConVar g_hCVExpPunish;
@@ -23,16 +22,16 @@ public Plugin myinfo =
 	name = "SM:RPG > Anti-Selfkill",
 	author = "Peace-Maker",
 	description = "Punishes players for suiciding.",
-	version = PLUGIN_VERSION,
+	version = SMRPG_VERSION,
 	url = "http://www.wcfan.de/"
 }
 
 public void OnPluginStart()
 {
-	ConVar hVersion = CreateConVar("smrpg_antiselfkill_version", PLUGIN_VERSION, "", FCVAR_NOTIFY|FCVAR_DONTRECORD);
+	ConVar hVersion = CreateConVar("smrpg_antiselfkill_version", SMRPG_VERSION, "", FCVAR_NOTIFY|FCVAR_DONTRECORD);
 	if(hVersion != null)
 	{
-		hVersion.SetString(PLUGIN_VERSION);
+		hVersion.SetString(SMRPG_VERSION);
 		hVersion.AddChangeHook(ConVar_VersionChanged);
 	}
 	
@@ -47,7 +46,7 @@ public void OnPluginStart()
 
 public void ConVar_VersionChanged(ConVar convar, const char[] oldValue, const char[] newValue)
 {
-	convar.SetString(PLUGIN_VERSION);
+	convar.SetString(SMRPG_VERSION);
 }
 
 /**

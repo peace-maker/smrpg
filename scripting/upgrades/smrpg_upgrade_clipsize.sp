@@ -16,7 +16,6 @@
 #include <smrpg>
 
 #define UPGRADE_SHORTNAME "clipsize"
-#define PLUGIN_VERSION "1.0"
 
 int g_iGameMaxClip1[2048];
 bool g_bWeaponReloadOnFull[2048];
@@ -29,7 +28,7 @@ public Plugin myinfo =
 	name = "SM:RPG Upgrade > Increase Clipsize",
 	author = "Peace-Maker",
 	description = "Increase Clipsize upgrade for SM:RPG. Increases the clipsize of weapons.",
-	version = PLUGIN_VERSION,
+	version = SMRPG_VERSION,
 	url = "http://www.wcfan.de/"
 }
 

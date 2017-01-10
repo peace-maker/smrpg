@@ -11,7 +11,6 @@
 #include <smrpg>
 
 #define UPGRADE_SHORTNAME "poisonsmoke"
-#define PLUGIN_VERSION "1.0"
 
 enum GrenadeInfo {
 	GR_userid,
@@ -40,7 +39,7 @@ public Plugin myinfo =
 	name = "SM:RPG Upgrade > Poison Smoke",
 	author = "Jannik \"Peace-Maker\" Hartung",
 	description = "Poison Smoke upgrade for SM:RPG. Damages players standing inside the smoke of a smoke grenade.",
-	version = PLUGIN_VERSION,
+	version = SMRPG_VERSION,
 	url = "http://www.wcfan.de/"
 }
 

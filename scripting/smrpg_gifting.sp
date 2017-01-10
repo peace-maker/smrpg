@@ -8,8 +8,6 @@
 #undef REQUIRE_PLUGIN
 #include <smrpg_commandlist>
 
-#define PLUGIN_VERSION "1.0"
-
 ConVar g_hCVMinLevel;
 
 public Plugin myinfo = 
@@ -17,16 +15,16 @@ public Plugin myinfo =
 	name = "SM:RPG > Credit Gifting",
 	author = "Peace-Maker",
 	description = "Players are able to gift credits to other players",
-	version = PLUGIN_VERSION,
+	version = SMRPG_VERSION,
 	url = "http://www.wcfan.de/"
 }
 
 public void OnPluginStart()
 {
-	ConVar hVersion = CreateConVar("smrpg_gifting_version", PLUGIN_VERSION, "SM:RPG Credit Gifting version", FCVAR_NOTIFY|FCVAR_DONTRECORD);
+	ConVar hVersion = CreateConVar("smrpg_gifting_version", SMRPG_VERSION, "SM:RPG Credit Gifting version", FCVAR_NOTIFY|FCVAR_DONTRECORD);
 	if(hVersion != null)
 	{
-		hVersion.SetString(PLUGIN_VERSION);
+		hVersion.SetString(SMRPG_VERSION);
 		hVersion.AddChangeHook(ConVar_VersionChanged);
 	}
 	
@@ -45,7 +43,7 @@ public void OnPluginStart()
 
 public void ConVar_VersionChanged(ConVar convar, const char[] oldValue, const char[] newValue)
 {
-	convar.SetString(PLUGIN_VERSION);
+	convar.SetString(SMRPG_VERSION);
 }
 
 public void OnPluginEnd()

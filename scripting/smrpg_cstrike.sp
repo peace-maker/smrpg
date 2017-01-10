@@ -7,7 +7,6 @@
 #include <autoexecconfig>
 
 #pragma newdecls required
-#define PLUGIN_VERSION "1.0"
 
 //#define _DEBUG
 
@@ -50,7 +49,7 @@ public Plugin myinfo =
 	name = "SM:RPG > Counter-Strike Experience Module",
 	author = "Jannik \"Peace-Maker\" Hartung, SeLfkiLL",
 	description = "Counter-Strike specific calculations for SM:RPG",
-	version = PLUGIN_VERSION,
+	version = SMRPG_VERSION,
 	url = "http://www.wcfan.de/"
 }
 
@@ -295,7 +294,7 @@ public void Event_OnPlayerDeath(Event event, const char[] error, bool dontBroadc
 	event.GetString("weapon", sWeapon, sizeof(sWeapon));
 	
 	int iExp = RoundToCeil(SMRPG_GetClientLevel(victim) * SMRPG_GetWeaponExperience(sWeapon, WeaponExperience_Kill) + SMRPG_GetWeaponExperience(sWeapon, WeaponExperience_Bonus));
-	if(GetEventBool(event, "headshot"))
+	if(event.GetBool("headshot"))
 		iExp += g_hCVExpHeadshot.IntValue;
 	
 	int iExpMax = g_hCVExpKillMax.IntValue;
@@ -306,14 +305,14 @@ public void Event_OnPlayerDeath(Event event, const char[] error, bool dontBroadc
 	Debug_AddClientExperience(attacker, iExp, false, "cs_playerkill", victim);
 	
 	// Player started dominating this player?
-	if(GetEventBool(event, "dominated"))
+	if(event.GetBool("dominated"))
 	{
 		iExp = RoundToCeil(SMRPG_GetClientLevel(victim) * g_hCVExpDominating.FloatValue);
 		Debug_AddClientExperience(attacker, iExp, false, "cs_dominating", victim);
 	}
 	
 	// Player broke the domination and killed him in revenge?
-	if(GetEventBool(event, "revenge"))
+	if(event.GetBool("revenge"))
 	{
 		iExp = RoundToCeil(SMRPG_GetClientLevel(victim) * g_hCVExpRevenge.FloatValue);
 		Debug_AddClientExperience(attacker, iExp, false, "cs_revenge", victim);

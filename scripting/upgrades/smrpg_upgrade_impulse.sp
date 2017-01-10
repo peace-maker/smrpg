@@ -11,7 +11,6 @@
 #include <smrpg_sharedmaterials>
 
 #define UPGRADE_SHORTNAME "impulse"
-#define PLUGIN_VERSION "1.0"
 
 // Config
 ConVar g_hCVDefaultSpeedIncrease;
@@ -32,7 +31,7 @@ public Plugin myinfo =
 	name = "SM:RPG Upgrade > Impulse",
 	author = "Jannik \"Peace-Maker\" Hartung",
 	description = "Impulse upgrade for SM:RPG. Gain speed shortly when being shot.",
-	version = PLUGIN_VERSION,
+	version = SMRPG_VERSION,
 	url = "http://www.wcfan.de/"
 }
 

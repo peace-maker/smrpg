@@ -9,7 +9,6 @@
 #include <smrpg_effects>
 
 #define UPGRADE_SHORTNAME "fnade"
-#define PLUGIN_VERSION "1.0"
 
 ConVar g_hCVDurationIncrease;
 ConVar g_hCVMinDamage;
@@ -20,7 +19,7 @@ public Plugin myinfo =
 	name = "SM:RPG Upgrade > Fire Grenade",
 	author = "Jannik \"Peace-Maker\" Hartung",
 	description = "Fire Grenade upgrade for SM:RPG. Ignites players damaged by your grenade.",
-	version = PLUGIN_VERSION,
+	version = SMRPG_VERSION,
 	url = "http://www.wcfan.de/"
 }
 

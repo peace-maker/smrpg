@@ -8,7 +8,6 @@
 #include <smrpg>
 
 #define UPGRADE_SHORTNAME "denial"
-#define PLUGIN_VERSION "1.0"
 
 ConVar g_hCVDenialRestrict;
 
@@ -23,7 +22,7 @@ public Plugin myinfo =
 	name = "SM:RPG Upgrade > Denial",
 	author = "Jannik \"Peace-Maker\" Hartung",
 	description = "Denial upgrade for SM:RPG. Keep your weapons after you die.",
-	version = PLUGIN_VERSION,
+	version = SMRPG_VERSION,
 	url = "http://www.wcfan.de/"
 }
 

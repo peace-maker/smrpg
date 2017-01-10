@@ -8,8 +8,6 @@
 #undef REQUIRE_EXTENSIONS
 #include <clientprefs>
 
-#define PLUGIN_VERSION "1.0"
-
 // RPG Topmenu
 TopMenu g_hRPGMenu;
 
@@ -31,7 +29,7 @@ public Plugin myinfo =
 	name = "SM:RPG > Chat Experience Stats",
 	author = "Jannik \"Peace-Maker\" Hartung",
 	description = "Shows some RPG stats on events in chat",
-	version = PLUGIN_VERSION,
+	version = SMRPG_VERSION,
 	url = "http://www.wcfan.de/"
 }
 

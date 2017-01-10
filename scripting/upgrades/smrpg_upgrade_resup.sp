@@ -8,7 +8,6 @@
 
 #define UPGRADE_SHORTNAME "resup"
 
-#define PLUGIN_VERSION "1.0"
 
 Handle g_hResupplyTimer;
 
@@ -23,7 +22,7 @@ public Plugin myinfo =
 	name = "SM:RPG Upgrade > Resupply",
 	author = "Jannik \"Peace-Maker\" Hartung",
 	description = "Resupply upgrade for SM:RPG. Regenerates ammo every x seconds.",
-	version = PLUGIN_VERSION,
+	version = SMRPG_VERSION,
 	url = "http://www.wcfan.de/"
 }
 

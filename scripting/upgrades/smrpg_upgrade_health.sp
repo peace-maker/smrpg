@@ -5,7 +5,6 @@
 #include <smrpg>
 #include <smrpg_health>
 
-#define PLUGIN_VERSION "1.0"
 #define UPGRADE_SHORTNAME "health"
 
 ConVar g_hCVMaxIncrease;
@@ -15,7 +14,7 @@ public Plugin myinfo =
 	name = "SM:RPG Upgrade > Health+",
 	author = "Jannik \"Peace-Maker\" Hartung",
 	description = "Health+ upgrade for SM:RPG. Increases player's health.",
-	version = PLUGIN_VERSION,
+	version = SMRPG_VERSION,
 	url = "http://www.wcfan.de/"
 }
 
