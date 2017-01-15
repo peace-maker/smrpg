@@ -289,4 +289,14 @@
 	{
 		"de"			"Du hast die Chance beim Spawn einen Helm zu bekommen."
 	}
+	
+	"antiflash"
+	{
+		"de"			"Antiflash"
+	}
+	
+	"antiflash description"
+	{
+		"de"			"Reduziert den Blendeffekt einer Blendgranate gegen dich."
+	}
 }

@@ -289,4 +289,14 @@
 	{
 		"en"			"Gives you a chance to get a helmet on spawn."
 	}
+	
+	"antiflash"
+	{
+		"en"			"Antiflash"
+	}
+	
+	"antiflash description"
+	{
+		"en"			"Reduce blinding effect of flashbangs on you."
+	}
 }

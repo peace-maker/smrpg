@@ -69,6 +69,7 @@ See the available upgrade plugins for examples. You can use the [example upgrade
 
 # Available upgrades
 * Antidote - Reduce duration of bad effects against you like burning, freezing or slow down.
+* Antiflash (Counter-Strike only) - Reduce blinding effect of flashbangs on you.
 * Armor+ (Counter-Strike only) - Increases your maximal armor.
 * Armor Helmet (Counter-Strike only) - Gives players a chance to receive a helmet on spawn.
 * Armor Regeneration (Counter-Strike only) - Regenerates armor regularly.
