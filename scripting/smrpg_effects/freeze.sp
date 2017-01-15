@@ -14,6 +14,14 @@ Handle g_hFreezePlugin[MAXPLAYERS+1];
 float g_fLimitDamage[MAXPLAYERS+1];
 char g_sUpgradeName[MAXPLAYERS+1][MAX_UPGRADE_SHORTNAME_LENGTH];
 
+enum DamageReductionConfig
+{
+	DRC_MaxDamage,
+	Float:DRC_DmgReduction
+};
+
+StringMap g_hDamageReductionConfig;
+
 /**
  * Setup helpers
  */
@@ -32,6 +40,11 @@ void RegisterFreezeForwards()
 	g_hfwdOnClientFrozen = CreateGlobalForward("SMRPG_OnClientFrozen", ET_Ignore, Param_Cell, Param_Float);
 	// forward void SMRPG_OnClientUnfrozen(client);
 	g_hfwdOnClientUnfrozen = CreateGlobalForward("SMRPG_OnClientUnfrozen", ET_Ignore, Param_Cell);
+}
+
+void SetupFreezeData()
+{
+	g_hDamageReductionConfig = new StringMap();
 }
 
 void PrecacheFreezeSounds()
@@ -90,23 +103,53 @@ Action Freeze_OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 	// Limit disabled?
 	if(g_fLimitDamage[victim] <= 0.0)
 		return Plugin_Continue;
+		
+	float fLimitDamage = g_fLimitDamage[victim];
 	
-	// TODO: Add config option to exclude weapons from limitation.
-	/*int iWeapon = inflictor;
+	// See if there is special configuration for this weapon.
+	int iWeapon = inflictor;
 	if(inflictor > 0 && inflictor <= MaxClients)
 		iWeapon = Client_GetActiveWeapon(inflictor);
 	
-	// All weapons except for the knife do less damage.
-	// TODO: Add support for more games
-	if(attacker <= 0 || attacker > MaxClients || GetPlayerWeaponSlot(attacker, KNIFE_SLOT) == iWeapon)
-		return Plugin_Continue;*/
+	char sWeapon[64];
+	GetEntityClassname(iWeapon, sWeapon, sizeof(sWeapon));
+	RemovePrefixFromString("weapon_", sWeapon, sWeapon, sizeof(sWeapon));
+	
+	// Get the invidiual setting for this weapon
+	// or the default values for this upgrade, if there is no special setting for the weapon.
+	Action ret = Plugin_Continue;
+	int iDamageReduction[DamageReductionConfig];
+	if(GetDamageReductionConfigForWeapon(sWeapon, g_sUpgradeName[victim], iDamageReduction)
+	|| GetDamageReductionConfigForWeapon("#default", g_sUpgradeName[victim], iDamageReduction))
+	{
+		//PrintToServer("Weapon config for weapon %s in %s: max_damage: %d, dmg_reduction: %f", sWeapon, g_sUpgradeName[victim], iDamageReduction[DRC_MaxDamage], iDamageReduction[DRC_DmgReduction]);
+		// Only use this value, if it was set in the config.
+		if(iDamageReduction[DRC_MaxDamage] >= 0)
+			fLimitDamage = float(iDamageReduction[DRC_MaxDamage]);
+		
+		// Reduce the damage by x percent.
+		if(iDamageReduction[DRC_DmgReduction] > 0.0)
+		{
+			float fReduction = damage * iDamageReduction[DRC_DmgReduction];
+			damage -= fReduction;
+			ret = Plugin_Changed;
+			
+			// Just block the damage, if there is none. Don't just return now, so we still play the sound.
+			if(damage <= 0.0)
+				ret = Plugin_Handled;
+		}
+	}
 	
 	// This was less than the limit. It's ok.
-	if(damage <= g_fLimitDamage[victim])
-		return Plugin_Continue;
+	if(fLimitDamage > 0.0 && damage > 0.0 && damage <= fLimitDamage)
+		return ret;
 	
-	// Limit the damage!
-	damage = g_fLimitDamage[victim];
+	// Limit the damage if it wasn't reduced to 0. So we still play the sound.
+	if(damage > 0.0)
+	{
+		damage = g_fLimitDamage[victim];
+		ret = Plugin_Changed;
+	}
 	
 	if(g_iLimitDmgSoundCount > 0)
 	{
@@ -115,7 +158,7 @@ Action Freeze_OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 		SMRPG_EmitSoundToAllEnabled(g_sUpgradeName[victim], SMRPG_GC_GetKeyValue(sKey), victim, SNDCHAN_AUTO, SNDLEVEL_NORMAL, SND_NOFLAGS, SNDVOL_NORMAL, SNDPITCH_NORMAL, victim);
 	}
 	
-	return Plugin_Changed;
+	return ret;
 }
 
 /**
@@ -156,6 +199,7 @@ public int Native_FreezeClient(Handle plugin, int numParams)
 	strcopy(g_sUpgradeName[client], MAX_UPGRADE_SHORTNAME_LENGTH, sUpgradeName);
 	
 	// Don't allow more damage than this if victim is frozen.
+	// !!! This is deprecated and overwritten by anything in the freeze_limit_damage config!
 	g_fLimitDamage[client] = fLimitDamage;
 	
 	// Freeze the player.
@@ -245,4 +289,145 @@ void ResetClientFreezeState(int client)
 	g_hFreezePlugin[client] = null;
 	g_fLimitDamage[client] = 0.0;
 	g_sUpgradeName[client][0] = 0;
+}
+
+bool ReadLimitDamageConfig()
+{
+	// Remove old config first.
+	StringMapSnapshot hSnapshot = g_hDamageReductionConfig.Snapshot();
+	int iSize = hSnapshot.Length;
+	char sBuffer[64];
+	Handle hSubmap;
+	for(int i=0; i<iSize; i++)
+	{
+		hSnapshot.GetKey(i, sBuffer, sizeof(sBuffer));
+		g_hDamageReductionConfig.GetValue(sBuffer, hSubmap);
+		delete hSubmap;
+	}
+	g_hDamageReductionConfig.Clear();
+
+	char sPath[PLATFORM_MAX_PATH];
+	BuildPath(Path_SM, sPath, sizeof(sPath), "configs/smrpg/freeze_limit_damage.cfg");
+	
+	if(!FileExists(sPath))
+		return false;
+	
+	KeyValues hKV = new KeyValues("SMRPGFreezeLimitDamage");
+	if(!hKV.ImportFromFile(sPath))
+	{
+		delete hKV;
+		return false;
+	}
+	
+	if(!hKV.GotoFirstSubKey())
+	{
+		delete hKV;
+		return true;
+	}
+	
+	int iDamageReduction[DamageReductionConfig];
+	char sWeapon[64], sUpgradeShortname[MAX_UPGRADE_SHORTNAME_LENGTH];
+	StringMap hSubUpgradeMap;
+	int iDefaultSetting[DamageReductionConfig], iBaseUpgradeDefault[DamageReductionConfig], iWeaponDefault[DamageReductionConfig];
+	do
+	{
+		hKV.GetSectionName(sWeapon, sizeof(sWeapon));
+		RemovePrefixFromString("weapon_", sWeapon, sWeapon, sizeof(sWeapon));
+		
+		if(!hKV.GotoFirstSubKey())
+			continue;
+		
+		if(!g_hDamageReductionConfig.GetValue(sWeapon, hSubUpgradeMap))
+		{
+			hSubUpgradeMap = new StringMap();
+		}
+		
+		// Check the global #default
+		if(!GetDamageReductionConfigForWeapon("#default", "#default", iDefaultSetting))
+		{
+			iDefaultSetting[DRC_MaxDamage] = -1;
+			iDefaultSetting[DRC_DmgReduction] = -1.0;
+		}
+		
+		// Load this current weapon's default section
+		if(!hSubUpgradeMap.GetArray("#default", iWeaponDefault[0], view_as<int>(DamageReductionConfig)))
+		{
+			iWeaponDefault[DRC_MaxDamage] = -1;
+			iWeaponDefault[DRC_DmgReduction] = -1.0;
+		}
+		
+		do
+		{
+			hKV.GetSectionName(sUpgradeShortname, sizeof(sUpgradeShortname));
+			// Load the global default section for this upgrade.
+			if(StrEqual(sUpgradeShortname, "#default", false)
+			|| !GetDamageReductionConfigForWeapon("#default", sUpgradeShortname, iBaseUpgradeDefault))
+			{
+				iBaseUpgradeDefault[DRC_MaxDamage] = -1;
+				iBaseUpgradeDefault[DRC_DmgReduction] = -1.0;
+			}
+			// Use the global default, if there is some value unset in this global upgrade setting.
+			MergeDamageReductionValues(iBaseUpgradeDefault, iDefaultSetting);
+			
+			// Always prefer the #default section of the current weapon.
+			if(iWeaponDefault[DRC_MaxDamage] >= 0)
+				iBaseUpgradeDefault[DRC_MaxDamage] = iWeaponDefault[DRC_MaxDamage];
+			if(iWeaponDefault[DRC_DmgReduction] >= 0.0)
+				iBaseUpgradeDefault[DRC_DmgReduction] = iWeaponDefault[DRC_DmgReduction];
+			
+			iDamageReduction[DRC_MaxDamage] = hKV.GetNum("max_damage", -1);
+			iDamageReduction[DRC_DmgReduction] = hKV.GetFloat("dmg_reduction", -1.0);
+			// Can't reduce 100%!
+			if(iDamageReduction[DRC_DmgReduction] > 1.0)
+			{
+				LogError("Invalid \"dmg_reduction\" setting (%f) in upgrade \"%s\" section of weapon \"%s\" in freeze_limit_damage.cfg. Can't be higher than 1.0. Ignoring.", iDamageReduction[DRC_DmgReduction], sUpgradeShortname, sWeapon);
+				iDamageReduction[DRC_DmgReduction] = -1.0;
+			}
+			
+			// Use default, if a value is not set in this upgrade's section.
+			if (!StrEqual(sUpgradeShortname, "#default", false))
+				MergeDamageReductionValues(iDamageReduction, iBaseUpgradeDefault);
+			else
+				iWeaponDefault = iDamageReduction;
+			
+			//PrintToServer("Parsed weapon \"%s\" for upgrade \"%s\": max_damage: %d, dmg_reduction: %f (base defaults: max_damage: %d, dmg_reduction: %f)", sWeapon, sUpgradeShortname, iDamageReduction[DRC_MaxDamage], iDamageReduction[DRC_DmgReduction], iBaseUpgradeDefault[DRC_MaxDamage], iBaseUpgradeDefault[DRC_DmgReduction]);
+			
+			hSubUpgradeMap.SetArray(sUpgradeShortname, iDamageReduction[0], view_as<int>(DamageReductionConfig), true);
+			
+		} while(hKV.GotoNextKey());
+		
+		g_hDamageReductionConfig.SetValue(sWeapon, hSubUpgradeMap, true);
+		
+		hKV.GoBack();
+		
+	} while(hKV.GotoNextKey());
+	delete hKV;
+	
+	return true;
+}
+
+// Use the value of the baseconfig if there is no value set in the current config.
+void MergeDamageReductionValues(int iCurrentConfig[DamageReductionConfig], const int iBaseConfig[DamageReductionConfig])
+{
+	if(iCurrentConfig[DRC_MaxDamage] < 0)
+		iCurrentConfig[DRC_MaxDamage] = iBaseConfig[DRC_MaxDamage];
+	if(iCurrentConfig[DRC_DmgReduction] < 0.0)
+		iCurrentConfig[DRC_DmgReduction] = iBaseConfig[DRC_DmgReduction];
+}
+
+// Find the DamageReductionConfig of the weapon for an upgrade.
+// Use the #default section of the weapon if there is no extra config for the upgrade.
+bool GetDamageReductionConfigForWeapon(const char[] sWeapon, const char[] sShortname, int iDamageReduction[DamageReductionConfig])
+{
+	// No section for this weapon?
+	StringMap hSubUpgradeMap;
+	if(!g_hDamageReductionConfig.GetValue(sWeapon, hSubUpgradeMap))
+		return false;
+	
+	// Special settings for this upgrade?
+	if(hSubUpgradeMap.GetArray(sShortname, iDamageReduction[0], view_as<int>(DamageReductionConfig)))
+		return true;
+	
+	// Get at least the default values for this weapon.
+	return hSubUpgradeMap.GetArray("#default", iDamageReduction[0], view_as<int>(DamageReductionConfig));
 }

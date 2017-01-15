@@ -51,6 +51,8 @@ public void OnPluginStart()
 
 	g_hCVCreditFireAttacker = CreateConVar("smrpg_credit_ignite_attacker", "1", "Credit fire damage to the attacker which ignited the victim?", _, true, 0.0, true, 1.0);
 	AutoExecConfig(true, "plugin.smrpg_effects");
+	
+	SetupFreezeData();
 
 	// Account for late loading
 	for(int i=1;i<=MaxClients;i++)
@@ -63,6 +65,7 @@ public void OnPluginStart()
 public void OnMapStart()
 {
 	PrecacheFreezeSounds();
+	ReadLimitDamageConfig();
 }
 
 public void OnClientPutInServer(int client)
@@ -126,16 +129,35 @@ stock bool IsValidPlugin(Handle hPlugin) {
 
 	Handle hIterator = GetPluginIterator();
 
-	bool bPluginExists = false;
+	bool bPluginValid = false;
 	while(MorePlugins(hIterator)) {
 		Handle hLoadedPlugin = ReadPlugin(hIterator);
 		if(hLoadedPlugin == hPlugin) {
-			bPluginExists = true;
+			bPluginValid = GetPluginStatus(hLoadedPlugin) == Plugin_Running;
 			break;
 		}
 	}
 
 	delete hIterator;
 
-	return bPluginExists;
+	return bPluginValid;
+}
+
+// This removes a prefix from a string including anything before the prefix.
+// This is useful for TF2's tfweapon_ prefix vs. default weapon_ prefix in other sourcegames.
+stock void RemovePrefixFromString(const char[] sPrefix, const char[] sInput, char[] sOutput, int maxlen)
+{
+	int iPos = StrContains(sInput, sPrefix, false);
+	// The prefix isn't in the string, just copy the whole string.
+	if(iPos == -1)
+		iPos = 0;
+	// Skip the prefix and all other stuff before it.
+	else
+		iPos += strlen(sPrefix);
+	
+	// Support for inputstring == outputstring?
+	char[] sBuffer = new char[maxlen+1];
+	strcopy(sBuffer, maxlen, sInput[iPos]);
+	
+	strcopy(sOutput, maxlen, sBuffer);
 }

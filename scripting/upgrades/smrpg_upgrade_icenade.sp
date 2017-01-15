@@ -56,7 +56,8 @@ public void OnLibraryAdded(const char[] name)
 		SMRPG_SetUpgradeDefaultCosmeticEffect(UPGRADE_SHORTNAME, SMRPG_FX_Sounds, true);
 		SMRPG_SetUpgradeDefaultCosmeticEffect(UPGRADE_SHORTNAME, SMRPG_FX_Visuals, true);
 		
-		g_hCVLimitDmg = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_icenade_limit_dmg", "10", "Maximum damage that can be done upon frozen victims (0 = disable)", 0, true, 0.0);
+		// Still read this, but deprecate it for new installs. Use the freeze_limit_damage.cfg now.
+		g_hCVLimitDmg = CreateConVar("smrpg_icenade_limit_dmg", "10", "Maximum damage that can be done upon frozen victims (0 = disable)", 0, true, 0.0);
 		g_hCVDurationIncrease = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_icenade_inc", "1.0", "Freeze duration increase in seconds for every level", _, true, 0.1);
 		g_hCVMinDamage = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_icenade_mindmg", "10.0", "Minimum damage done with the grenade to trigger the effect", _, true, 0.0);
 		g_hCVWeapon = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_icenade_weapon", "hegrenade", "Entity name of the weapon which should trigger the effect. (e.g. hegrenade)");

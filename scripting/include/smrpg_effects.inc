@@ -8,7 +8,7 @@
  *
  * @param client             The client index.
  * @param fTime              The time to freeze the player for.
- * @param fDamageLimit       Don't allow more damage than this if victim is frozen. Set to 0, if you don't want to limit the damage.
+ * @param fDamageLimit       DEPRECATED: Overwritten by freeze_limit_damage.cfg! Don't allow more damage than this if victim is frozen. Set to 0, if you don't want to limit the damage.
  * @param sUpgradeName       Upgrade shortname which issues the freeze. Used to see if clients want to see the visual/sound effects.
  * @param bPlaySound         Play a random icy sound?
  * @param bFadeColor         Fade the player's model from blue to normal?
