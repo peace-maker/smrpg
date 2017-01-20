@@ -12,7 +12,6 @@
 ConVar g_hCVDenialRestrict;
 
 bool g_bDenialPlayerWasDead[MAXPLAYERS+1];
-Handle g_hDenialStripTimer[MAXPLAYERS+1] = {null,...};
 
 char g_sDenialPrimary[MAXPLAYERS+1][64];
 char g_sDenialSecondary[MAXPLAYERS+1][64];
@@ -109,8 +108,7 @@ public void Event_OnPlayerSpawn(Event event, const char[] name, bool dontBroadca
 	g_bDenialPlayerWasDead[client] = false;
 	
 	// Strip weapons
-	ClearHandle(g_hDenialStripTimer[client]);
-	g_hDenialStripTimer[client] = CreateTimer(0.1, Timer_StripPlayer, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
+	RequestFrame(Frame_StripPlayer, GetClientUserId(client));
 }
 
 public void Event_OnPlayerDeath(Event event, const char[] name, bool dontBroadcast)
@@ -150,7 +148,6 @@ public void SMRPG_ResetEffect(int client)
 {
 	g_sDenialPrimary[client][0] = '\0';
 	g_sDenialSecondary[client][0] = '\0';
-	ClearHandle(g_hDenialStripTimer[client]);
 }
 
 public void SMRPG_TranslateUpgrade(int client, const char[] shortname, TranslationType type, char[] translation, int maxlen)
@@ -198,66 +195,75 @@ public Action Hook_WeaponEquipPost(int client, int weapon)
 /**
  * Timer callbacks
  */
-public Action Timer_StripPlayer(Handle timer, any userid)
+public void Frame_StripPlayer(any userid)
 {
 	int client = GetClientOfUserId(userid);
 	if(!client)
-		return Plugin_Stop;
+		return;
 	
-	g_hDenialStripTimer[client] = null;
+	if(!IsPlayerAlive(client))
+		return;
 	
 	int iLevel = SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME);
 	if(iLevel <= 0)
-		return Plugin_Stop;
+		return;
 	
 	// Level 1: Secondary Weapon
+	int iSecondaryWeapon = INVALID_ENT_REFERENCE;
 	if(iLevel >= 1)
 	{
 		if(StrContains(g_sDenialSecondary[client],"weapon_") != -1 && !Denial_IsWeaponRestricted(g_sDenialSecondary[client]))
 		{
 			char sOldWeapon[64];
-			int iCurrentWeapon = GetPlayerWeaponSlot(client, 1);
+			iSecondaryWeapon = GetPlayerWeaponSlot(client, 1);
 			// Remove his current weapon
-			if(iCurrentWeapon != INVALID_ENT_REFERENCE)
+			if(iSecondaryWeapon != INVALID_ENT_REFERENCE)
 			{
-				GetEdictClassname(iCurrentWeapon, sOldWeapon, sizeof(sOldWeapon));
+				GetEdictClassname(iSecondaryWeapon, sOldWeapon, sizeof(sOldWeapon));
 				Client_RemoveWeapon(client, sOldWeapon);
 			}
-			iCurrentWeapon = GivePlayerItem(client, g_sDenialSecondary[client]);
-			if(iCurrentWeapon != INVALID_ENT_REFERENCE)
+			iSecondaryWeapon = GivePlayerItem(client, g_sDenialSecondary[client]);
+			if(iSecondaryWeapon != INVALID_ENT_REFERENCE)
 			{
-				EquipPlayerWeapon(client, iCurrentWeapon);
-				GivePlayerAmmo(client, 1000, Weapon_GetPrimaryAmmoType(iCurrentWeapon), false);
+				EquipPlayerWeapon(client, iSecondaryWeapon);
+				GivePlayerAmmo(client, 1000, Weapon_GetPrimaryAmmoType(iSecondaryWeapon), false);
 			}
 		}
 	}
 	
 	// Level 2: Primary Weapon
+	int iPrimaryWeapon = INVALID_ENT_REFERENCE;
 	if(iLevel >= 2)
 	{
 		if(StrContains(g_sDenialPrimary[client],"weapon_") != -1 && !Denial_IsWeaponRestricted(g_sDenialPrimary[client]))
 		{
 			char sOldWeapon[64];
-			int iCurrentWeapon = GetPlayerWeaponSlot(client, 0);
+			iPrimaryWeapon = GetPlayerWeaponSlot(client, 0);
 			// Remove his current weapon
-			if(iCurrentWeapon != INVALID_ENT_REFERENCE)
+			if(iPrimaryWeapon != INVALID_ENT_REFERENCE)
 			{
-				GetEdictClassname(iCurrentWeapon, sOldWeapon, sizeof(sOldWeapon));
+				GetEdictClassname(iPrimaryWeapon, sOldWeapon, sizeof(sOldWeapon));
 				Client_RemoveWeapon(client, sOldWeapon);
 			}
-			iCurrentWeapon = GivePlayerItem(client, g_sDenialPrimary[client]);
-			if(iCurrentWeapon != INVALID_ENT_REFERENCE)
+			iPrimaryWeapon = GivePlayerItem(client, g_sDenialPrimary[client]);
+			if(iPrimaryWeapon != INVALID_ENT_REFERENCE)
 			{
-				EquipPlayerWeapon(client, iCurrentWeapon);
-				GivePlayerAmmo(client, 1000, Weapon_GetPrimaryAmmoType(iCurrentWeapon), false);
-				
-				// Have the player use the new primary weapon by default.
-				Client_SetActiveWeapon(client, iCurrentWeapon);
+				EquipPlayerWeapon(client, iPrimaryWeapon);
+				GivePlayerAmmo(client, 1000, Weapon_GetPrimaryAmmoType(iPrimaryWeapon), false);
 			}
 		}
 	}
 	
-	return Plugin_Stop;
+	if(iPrimaryWeapon != INVALID_ENT_REFERENCE)
+	{
+		// Have the player use the new primary weapon by default.
+		Client_SetActiveWeapon(client, iPrimaryWeapon);
+	}
+	else if(iSecondaryWeapon != INVALID_ENT_REFERENCE && GetPlayerWeaponSlot(client, 0) == INVALID_ENT_REFERENCE)
+	{
+		// If the player doesn't have a primary weapon, change to the new secondary right away.
+		Client_SetActiveWeapon(client, iSecondaryWeapon);
+	}
 }
 
 /**
