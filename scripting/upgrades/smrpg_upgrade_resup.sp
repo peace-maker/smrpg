@@ -145,6 +145,10 @@ public Action Timer_Resupply(Handle timer)
 		if(bIgnoreBots && IsFakeClient(i))
 			continue;
 		
+		// Only change alive players.
+		if(!IsPlayerAlive(i) || IsClientObserver(i))
+			continue;
+		
 		// Player didn't buy this upgrade yet.
 		iLevel = SMRPG_GetClientUpgradeLevel(i, UPGRADE_SHORTNAME);
 		if(iLevel <= 0)

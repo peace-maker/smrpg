@@ -268,6 +268,10 @@ void SetVisibilities()
 
 void SetClientVisibility(int client)
 {
+	// Only change alive players.
+	if(!IsPlayerAlive(client) || IsClientObserver(client))
+		return;
+	
 	if(!SMRPG_RunUpgradeEffect(client, UPGRADE_SHORTNAME))
 		return; // Some other plugin doesn't want this effect to run
 	

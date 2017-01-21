@@ -252,7 +252,7 @@ public Action Timer_ResupplyPlayer(Handle timer, DataPack data)
 	playerGrenade[PG_timer] = null;
 	SavePlayerGrenadeByIndex(client, iEntryIndex, playerGrenade);
 	
-	if(!IsPlayerAlive(client))
+	if(!IsPlayerAlive(client) || IsClientObserver(client))
 		return Plugin_Handled;
 	
 	// The player already picked up enough grenades by himself?

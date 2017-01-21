@@ -64,6 +64,10 @@ public void Event_OnPlayerSpawn(Event event, const char[] name, bool dontBroadca
 	if(!client)
 		return;
 	
+	// Only change alive players.
+	if(!IsPlayerAlive(client) || IsClientObserver(client))
+		return;
+	
 	if(!SMRPG_IsEnabled())
 		return;
 	
@@ -94,6 +98,10 @@ public void SMRPG_BuySell(int client, UpgradeQueryType type)
 	
 	// Are bots allowed to use this upgrade?
 	if(IsFakeClient(client) && SMRPG_IgnoreBots())
+		return;
+	
+	// Only change alive players.
+	if(!IsPlayerAlive(client) || IsClientObserver(client))
 		return;
 	
 	int upgrade[UpgradeInfo];

@@ -145,7 +145,7 @@ public Action Timer_ApplyMedic(Handle timer, any data)
 				iSecondTeam[iSecondCount++] = i;
 		}
 		
-		if(!IsPlayerAlive(i))
+		if(!IsPlayerAlive(i) || IsClientObserver(i))
 			continue;
 		
 		GetClientEyePosition(i, vCacheOrigin[i]);
@@ -169,7 +169,7 @@ public Action Timer_ApplyMedic(Handle timer, any data)
 	for(int i=1;i<=MaxClients;i++)
 	{
 		/* If player is a medic and player is not dead */
-		if(!IsClientInGame(i) || !IsPlayerAlive(i))
+		if(!IsClientInGame(i) || !IsPlayerAlive(i) || IsClientObserver(i))
 			continue;
 		
 		if(bIgnoreBots && IsFakeClient(i))

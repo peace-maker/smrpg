@@ -121,6 +121,10 @@ public Action Timer_IncreaseArmor(Handle timer, any userid)
 	if(SMRPG_IgnoreBots() && IsFakeClient(client))
 		return Plugin_Continue;
 	
+	// Only change alive players.
+	if(!IsPlayerAlive(client) || IsClientObserver(client))
+		return Plugin_Continue;
+	
 	// Player didn't buy this upgrade yet.
 	int iLevel = SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME);
 	if(iLevel <= 0)

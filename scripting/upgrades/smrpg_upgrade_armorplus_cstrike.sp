@@ -73,6 +73,10 @@ public void Event_OnPlayerSpawn(Event event, const char[] name, bool dontBroadca
 	if(!client)
 		return;
 	
+	// Only change alive players.
+	if(!IsPlayerAlive(client) || IsClientObserver(client))
+		return;
+	
 	int iMaxArmor = GetClientMaxArmor(client);
 	int iArmor = GetClientArmor(client);
 	if(iArmor == DEFAULT_MAX_ARMOR && iMaxArmor > iArmor)
@@ -98,6 +102,10 @@ public Action CS_OnBuyCommand(int client, const char[] weapon)
 public void SMRPG_BuySell(int client, UpgradeQueryType type)
 {
 	if(!IsClientInGame(client))
+		return;
+	
+	// Only change alive players.
+	if(!IsPlayerAlive(client) || IsClientObserver(client))
 		return;
 	
 	// Are bots allowed to use this upgrade?

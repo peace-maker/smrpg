@@ -102,9 +102,6 @@ public void Event_OnPlayerSpawn(Event event, const char[] name, bool dontBroadca
 	if(IsFakeClient(client) && SMRPG_IgnoreBots())
 		return;
 	
-	if(!SMRPG_RunUpgradeEffect(client, UPGRADE_SHORTNAME))
-		return; // Some other plugin doesn't want this effect to run
-	
 	g_bDenialPlayerWasDead[client] = false;
 	
 	// Strip weapons
@@ -201,8 +198,12 @@ public void Frame_StripPlayer(any userid)
 	if(!client)
 		return;
 	
-	if(!IsPlayerAlive(client))
+	// Only change alive players.
+	if(!IsPlayerAlive(client) || IsClientObserver(client))
 		return;
+	
+	if(!SMRPG_RunUpgradeEffect(client, UPGRADE_SHORTNAME))
+		return; // Some other plugin doesn't want this effect to run
 	
 	int iLevel = SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME);
 	if(iLevel <= 0)

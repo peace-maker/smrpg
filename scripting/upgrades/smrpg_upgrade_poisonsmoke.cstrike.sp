@@ -344,7 +344,7 @@ public Action Timer_CheckDamage(Handle timer, any entityref)
 	bool bIgnoreFriendlyFire = g_hCVIgnoreFriendlyFire.BoolValue;
 	for(int i=1;i<=MaxClients;i++)
 	{
-		if(IsClientInGame(i) && IsPlayerAlive(i) && (SMRPG_IsFFAEnabled() || (bFriendlyFire && !bIgnoreFriendlyFire || GetClientTeam(i) != iGrenade[GR_team])))
+		if(IsClientInGame(i) && IsPlayerAlive(i) && IsClientObserver(i) && (SMRPG_IsFFAEnabled() || (bFriendlyFire && !bIgnoreFriendlyFire || GetClientTeam(i) != iGrenade[GR_team])))
 		{
 			GetClientAbsOrigin(i, fPlayerOrigin);
 			if(GetVectorDistance(fParticleOrigin, fPlayerOrigin) <= 220)

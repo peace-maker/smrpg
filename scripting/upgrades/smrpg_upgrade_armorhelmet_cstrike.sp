@@ -90,6 +90,10 @@ public void Event_OnPlayerSpawn(Event event, const char[] name, bool dontBroadca
 	if(IsFakeClient(client) && SMRPG_IgnoreBots())
 		return;
 	
+	// Only change alive players.
+	if(!IsPlayerAlive(client) || IsClientObserver(client))
+		return;
+	
 	// Player didn't buy this upgrade yet.
 	int iLevel = SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME);
 	if(iLevel <= 0)
