@@ -445,7 +445,7 @@ public int Menu_HandlePlayerChangeLevel(Menu menu, MenuAction action, int param1
 			SetClientExperience(g_iCurrentMenuTarget[param1], 0);
 			
 			if(g_hCVAnnounceNewLvl.BoolValue)
-				PrintToChatAll("%t", "new_lvl1", g_iCurrentMenuTarget[param1], GetClientLevel(g_iCurrentMenuTarget[param1]));
+				PrintToChatAll("%t", "Client level changed", g_iCurrentMenuTarget[param1], GetClientLevel(g_iCurrentMenuTarget[param1]));
 		}
 		
 		LogAction(param1, g_iCurrentMenuTarget[param1], "%L changed level of %L by %d from %d to %d.", param1, g_iCurrentMenuTarget[param1], iAmount, iOldLevel, GetClientLevel(g_iCurrentMenuTarget[param1]));
