@@ -306,7 +306,12 @@ public void TopMenu_HandleSell(TopMenu topmenu, TopMenuAction action, TopMenuObj
 			if(!GetUpgradeByShortname(sShortname[8], upgrade))
 				return;
 			
-			if(!IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled])
+			if(!IsValidUpgrade(upgrade))
+				return;
+
+			// Don't show the upgrade if it is disabled and players are not allowed to sell disabled upgrades.
+			// TODO: Show if upgrade is disabled?
+			if(!upgrade[UPGR_enabled] && (!g_hCVAllowSellDisabled.BoolValue || GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index]) <= 0))
 				return;
 			
 			// Show the team this upgrade is locked to, if it is.
@@ -337,13 +342,16 @@ public void TopMenu_HandleSell(TopMenu topmenu, TopMenuAction action, TopMenuObj
 			
 			int upgrade[InternalUpgradeInfo];
 			// Don't show invalid upgrades at all in the menu.
-			if(!GetUpgradeByShortname(sShortname[8], upgrade) || !IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled])
+			if(!GetUpgradeByShortname(sShortname[8], upgrade) || !IsValidUpgrade(upgrade))
 			{
 				buffer[0] = ITEMDRAW_IGNORE;
 				return;
 			}
-			
+
 			int iCurrentLevel = GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index]);
+			// Don't show the upgrade if it is disabled and players are not allowed to sell disabled upgrades.
+			if(!upgrade[UPGR_enabled] && (!g_hCVAllowSellDisabled.BoolValue || iCurrentLevel <= 0))
+				return;
 			
 			// Allow clients to sell upgrades they no longer have access to, but don't show them, if they never bought it.
 			if(!HasAccessToUpgrade(param, upgrade) && iCurrentLevel <= 0)
@@ -370,11 +378,15 @@ public void TopMenu_HandleSell(TopMenu topmenu, TopMenuAction action, TopMenuObj
 			int upgrade[InternalUpgradeInfo];
 			
 			// Bad upgrade?
-			if(!GetUpgradeByShortname(sShortname[8], upgrade) || !IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled])
+			if(!GetUpgradeByShortname(sShortname[8], upgrade) || !IsValidUpgrade(upgrade))
 			{
 				g_hRPGTopMenu.Display(param, TopMenuPosition_LastCategory);
 				return;
 			}
+
+			// Don't allow selling the upgrade if it is disabled and players are not allowed to sell disabled upgrades.
+			if(!upgrade[UPGR_enabled] && (!g_hCVAllowSellDisabled.BoolValue || GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index]) <= 0))
+				return;
 			
 			Menu hMenu = new Menu(Menu_ConfirmSell, MENU_ACTIONS_DEFAULT|MenuAction_Display|MenuAction_DisplayItem);
 			hMenu.ExitBackButton = true;
