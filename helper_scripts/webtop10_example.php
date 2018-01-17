@@ -28,7 +28,7 @@ $dbname = "smrpg"; // The database name
 			if ($db->connect_errno)
 				throw new Exception("Failed to connect to MySQL: (" . $db->connect_errno . ") " . $db->connect_error);
 			
-			$db->set_charset('utf8');
+			$db->set_charset('utf8mb4');
 			
 			// Get top 10 players
 			$q = $db->query('SELECT player_id, name, (cast(\'76561197960265728\' as unsigned) + steamid) as steamid64, level, experience, credits, lastseen, lastreset FROM players ORDER BY level DESC, experience DESC LIMIT 10');

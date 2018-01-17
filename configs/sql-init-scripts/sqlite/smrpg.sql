@@ -33,4 +33,4 @@ CREATE TABLE settings (
 	value VARCHAR(256) NOT NULL
 );
 
-INSERT INTO settings (setting, value) VALUES ('version', '101');
+INSERT INTO settings (setting, value) VALUES ('version', '102');

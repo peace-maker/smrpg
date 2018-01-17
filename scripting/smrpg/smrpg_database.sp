@@ -9,9 +9,10 @@
 
 #define DBVER_INIT 100       // Initial database version
 #define DBVER_UPDATE_1 101   // Update 01.09.2014. Store steamids in accountid form instead of STEAM_X:Y:Z (steamid column varchar -> int)
+#define DBVER_UPDATE_2 102   // Update 16.01.2018. Change table character set to utf8mb4 to allow new characters. Requires MySQL 5.5.3+.
 
 // Newest database version
-#define DATABASE_VERSION DBVER_UPDATE_1
+#define DATABASE_VERSION DBVER_UPDATE_2
 
 // How long to wait for a reconnect after a failed connection attempt to the database?
 #define RECONNECT_INTERVAL 360.0
@@ -68,7 +69,9 @@ public void SQL_OnConnect(Database db, const char[] error, any data)
 	if(StrEqual(sDriverIdent, "mysql", false))
 	{
 		g_DriverType = Driver_MySQL;
-		g_hDatabase.SetCharset("utf8");
+		// Fallback to just utf8 until SourceMod's client libraries are updated.
+		if (!g_hDatabase.SetCharset("utf8mb4"))
+			g_hDatabase.SetCharset("utf8");
 	}
 	else if(StrEqual(sDriverIdent, "sqlite", false))
 	{
@@ -83,7 +86,7 @@ public void SQL_OnConnect(Database db, const char[] error, any data)
 	char sDefaultCharset[32];
 	if(g_DriverType == Driver_MySQL)
 	{
-		strcopy(sDefaultCharset, sizeof(sDefaultCharset), " DEFAULT CHARSET=utf8");
+		strcopy(sDefaultCharset, sizeof(sDefaultCharset), " DEFAULT CHARSET=utf8mb4");
 	}
 	
 	// Create the player table
@@ -186,6 +189,7 @@ void CheckDatabaseVersion()
 		// There is no version field yet? Just create one, we don't know if we'd need to update something..
 		IntToString(DATABASE_VERSION, sValue, sizeof(sValue));
 		SetSetting("version", sValue);
+		LogError("Warning: Couldn't find the current database schema \"version\" in the settings table. Just setting it to \"%d\", but you might have to upgrade the database yourself.", DATABASE_VERSION);
 		return;
 	}
 	
@@ -273,6 +277,44 @@ void CheckDatabaseVersion()
 				if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
 				{
 					FailDatabaseUpdateError(DBVER_UPDATE_1, sQuery);
+					return;
+				}
+			}
+		}
+		
+		// Allow all characters in player names.
+		if(iVersion < DBVER_UPDATE_2)
+		{
+			// MySQL only. Can't change the character set of a SQLite database after it was created. SQLite is always UTF-8 in SourceMod.
+			if(g_DriverType == Driver_MySQL)
+			{
+				// Update the character sets of the tables.
+				char sQuery[512];
+				Format(sQuery, sizeof(sQuery), "ALTER TABLE %s CONVERT TO CHARACTER SET utf8mb4", TBL_PLAYERS);
+				if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
+				{
+					FailDatabaseUpdateError(DBVER_UPDATE_2, sQuery);
+					return;
+				}
+				
+				Format(sQuery, sizeof(sQuery), "ALTER TABLE %s CONVERT TO CHARACTER SET utf8mb4", TBL_UPGRADES);
+				if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
+				{
+					FailDatabaseUpdateError(DBVER_UPDATE_2, sQuery);
+					return;
+				}
+				
+				Format(sQuery, sizeof(sQuery), "ALTER TABLE %s CONVERT TO CHARACTER SET utf8mb4", TBL_PLAYERUPGRADES);
+				if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
+				{
+					FailDatabaseUpdateError(DBVER_UPDATE_2, sQuery);
+					return;
+				}
+				
+				Format(sQuery, sizeof(sQuery), "ALTER TABLE %s CONVERT TO CHARACTER SET utf8mb4", TBL_SETTINGS);
+				if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
+				{
+					FailDatabaseUpdateError(DBVER_UPDATE_2, sQuery);
 					return;
 				}
 			}
