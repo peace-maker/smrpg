@@ -2,9 +2,8 @@
 #include <sourcemod>
 #include <topmenus>
 #include <smrpg>
+#include <autoexecconfig>
 #include <smlib/clients>
-#include <smrpg/smrpg_clients>
-#include <smrpg/smrpg_topmenu>
 
 #undef REQUIRE_EXTENSIONS
 #include <clientprefs>
@@ -13,6 +12,9 @@
 
 #define SECONDS_EXP_AVG_CALC 60.0
 #define EXP_MEMORY_SIZE 10
+
+// Convar to set whether to show the panel to new players by default.
+ConVar g_hCVDefaultHidePanel;
 
 // RPG Topmenu
 TopMenu g_hRPGMenu;
@@ -40,6 +42,14 @@ public Plugin myinfo =
 
 public void OnPluginStart()
 {
+	AutoExecConfig_SetFile("plugin.smrpg_keyhint_info");
+	AutoExecConfig_SetCreateFile(true);
+	AutoExecConfig_SetPlugin(null);
+
+	g_hCVDefaultHidePanel = AutoExecConfig_CreateConVar("smrpg_hide_infopanel_default", "0", "Hide the info panel by default for new players? They'll have to enable it themselves.", 0, true, 0.0, true, 1.0);
+	
+	AutoExecConfig_ExecuteFile();
+
 	LoadTranslations("common.phrases");
 	LoadTranslations("smrpg.phrases");
 	LoadTranslations("smrpg_keyhint_info.phrases");
@@ -62,7 +72,7 @@ public void OnPluginStart()
 
 public void OnLibraryAdded(const char[] name)
 {
-	if(StrEqual(name, "clientprefs"))
+	if(StrEqual(name, "clientprefs") && !g_hCookieHidePanel)
 	{
 		g_hCookieHidePanel = RegClientCookie("smrpg_keyhint_hide", "Hide the rpg info panel showing RPG stats.", CookieAccess_Protected);
 	}
@@ -80,7 +90,12 @@ public void OnClientCookiesCached(int client)
 {
 	char sBuffer[4];
 	GetClientCookie(client, g_hCookieHidePanel, sBuffer, sizeof(sBuffer));
-	g_bClientHidePanel[client] = StringToInt(sBuffer)==1;
+	// Only use the cookie value if the player already set it.
+	if (sBuffer[0] != '\0')
+		g_bClientHidePanel[client] = StringToInt(sBuffer)==1;
+	// Fall back to the default value for new players.
+	else
+		g_bClientHidePanel[client] = g_hCVDefaultHidePanel.BoolValue;
 }
 
 public void OnClientPutInServer(int client)
