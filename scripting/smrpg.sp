@@ -283,7 +283,7 @@ public void OnPluginStart()
  */
 public void ConVar_VersionChanged(ConVar convar, const char[] oldValue, const char[] newValue)
 {
-	SetConVarString(convar, SMRPG_VERSION);
+	convar.SetString(SMRPG_VERSION);
 }
 
 public void ConVar_SaveIntervalChanged(ConVar convar, const char[] oldValue, const char[] newValue)
@@ -307,9 +307,9 @@ public void ConVar_EnableChanged(ConVar convar, const char[] oldValue, const cha
 		return;
 	
 	convar.RemoveChangeHook(ConVar_EnableChanged);
-	SetConVarBool(convar, true);
+	convar.BoolValue = true;
 	SaveAllPlayers();
-	SetConVarBool(convar, false);
+	convar.BoolValue = false;
 	convar.AddChangeHook(ConVar_EnableChanged);
 	PrintToServer("SM:RPG smrpg_enable: SM:RPG data has been saved");
 }

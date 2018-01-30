@@ -36,7 +36,7 @@ public void OnPluginStart()
 		g_hCVIgnoreImmunity = FindConVar("sv_disable_immunity_alpha");
 		if(g_hCVIgnoreImmunity != null)
 		{
-			SetConVarBool(g_hCVIgnoreImmunity, true);
+			g_hCVIgnoreImmunity.BoolValue = true;
 			g_hCVIgnoreImmunity.AddChangeHook(ConVar_OnDisableImmunityAlphaChanged);
 		}
 	}
