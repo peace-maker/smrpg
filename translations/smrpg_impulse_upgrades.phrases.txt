@@ -1,0 +1,12 @@
+"Phrases"
+{
+	"impulse"
+	{
+		"en"			"Impulse"
+	}
+	
+	"impulse description"
+	{
+		"en"			"Gain speed for a short time when you shot."
+	}
+}
