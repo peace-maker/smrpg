@@ -202,7 +202,6 @@ public Action Timer_ShowInfoPanel(Handle timer)
 			Format(sBuffer, sizeof(sBuffer), "%s%T", sBuffer, "Credits", i, SMRPG_GetClientCredits(iTarget));
 		}
 		
-		// No space for that in CS:GO :(
 		int iRank = SMRPG_GetClientRank(iTarget);
 		if(iRank > 0)
 			Format(sBuffer, sizeof(sBuffer), "%s\n%T", sBuffer, "Rank", i, iRank, iRankCount);
@@ -218,7 +217,6 @@ public Action Timer_ShowInfoPanel(Handle timer)
 				Format(sBuffer, sizeof(sBuffer), "%s\n%T: %s", sBuffer, "Estimated time until levelup", i, sTime);
 		}
 		
-		// Not enough space in csgo..
 		if(g_iLastExperience[iTarget] > 0)
 			Format(sBuffer, sizeof(sBuffer), "%s\n%T: +%d", sBuffer, "Last Experience Short", i, g_iLastExperience[iTarget]);
 
