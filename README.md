@@ -25,6 +25,7 @@ Server admins can install a new upgrade simply by loading the upgrade plugin.
 * Upload the plugins as well as the configs, gamedata and translations folders to your gameserver.
   * Only upload the plugins/upgrades you want to use. See below for an explanation of each plugin's purpose.
 * (Optional) Install [DHooks](https://forums.alliedmods.net/showthread.php?t=180114) for the Speed+ upgrade.
+* (Optional) On CS:GO install [Movement Unlocker](https://forums.alliedmods.net/showthread.php?t=255298) for the Bouncy Bullets upgrade.
 * Add a "smrpg" section to your databases.cfg. Both mysql and sqlite are supported.
 
 ```
