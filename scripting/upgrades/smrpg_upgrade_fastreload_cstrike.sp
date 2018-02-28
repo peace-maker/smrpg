@@ -34,9 +34,10 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 {
 	g_bLateLoaded = late;
 	
-	if(GetEngineVersion() != Engine_CSS)
+	EngineVersion engine = GetEngineVersion();
+	if(engine != Engine_CSS && engine != Engine_CSGO)
 	{
-		Format(error, err_max, "This plugin is for CS:S only.");
+		Format(error, err_max, "This plugin is for use in Counter-Strike games only.");
 		return APLRes_SilentFailure;
 	}
 	return APLRes_Success;
@@ -49,10 +50,10 @@ public void OnPluginStart()
 	if(g_bLateLoaded)
 	{
 		int iEntities = GetMaxEntities();
-		char sClassname[64];
 		for(int i=MaxClients+1;i<=iEntities;i++)
 		{
-			if(IsValidEntity(i) && GetEntityClassname(i, sClassname, sizeof(sClassname)) && (StrEqual(sClassname, "weapon_m3") || StrEqual(sClassname, "weapon_xm1014")))
+			// Hook shotguns.
+			if(IsValidEntity(i) && HasEntProp(i, Prop_Send, "m_reloadState"))
 			{
 				SDKHook(i, SDKHook_ReloadPost, Hook_OnReloadPost);
 			}
@@ -85,7 +86,8 @@ public void OnLibraryAdded(const char[] name)
 
 public void OnEntityCreated(int entity, const char[] classname)
 {
-	if(StrEqual(classname, "weapon_m3") || StrEqual(classname, "weapon_xm1014"))
+	// Hook shotguns - they reload differently.
+	if(HasEntProp(entity, Prop_Send, "m_reloadState"))
 		SDKHook(entity, SDKHook_ReloadPost, Hook_OnReloadPost);
 }
 
@@ -145,15 +147,13 @@ void IncreaseReloadSpeed(int client)
 		return;
 	
 	// No shotgun?
-	bool bIsShotgun;
-	if(StrEqual(sWeapon, "weapon_m3") || StrEqual(sWeapon, "weapon_xm1014"))
+	bool bIsShotgun = HasEntProp(iWeapon, Prop_Send, "m_reloadState");
+	if(bIsShotgun)
 	{
 		int iReloadState = GetEntProp(iWeapon, Prop_Send, "m_reloadState");
 		// The shotgun isn't really reloading. (full or no ammo left)
 		if(iReloadState == 0)
 			return;
-		
-		bIsShotgun = true;
 	}
 	
 	float fNextAttack = GetEntPropFloat(iWeapon, Prop_Send, "m_flNextPrimaryAttack");
@@ -229,7 +229,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 	
 	bool bIsReloading = Weapon_IsReloading(iWeapon);
 	// Shotguns don't use m_bInReload but have their own m_reloadState
-	if(!bIsReloading && (StrEqual(sWeapon, "weapon_m3") || StrEqual(sWeapon, "weapon_xm1014")) && GetEntProp(iWeapon, Prop_Send, "m_reloadState") > 0)
+	if(!bIsReloading && HasEntProp(iWeapon, Prop_Send, "m_reloadState") && GetEntProp(iWeapon, Prop_Send, "m_reloadState") > 0)
 		bIsReloading = true;
 	
 	if(bIsReloading && !s_ClientIsReloading[client])
