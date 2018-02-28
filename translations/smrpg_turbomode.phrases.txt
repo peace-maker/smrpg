@@ -1,11 +1,18 @@
 "Phrases"
 {
-  "Turbo mode enabled"
+  "Turbo mode enabled discard stats"
   {
-	// 1: How many times faster are players earning experience (e.g. 1.5)
-	// 2: How many times faster are players earning credits (e.g. 1.8)
-	"#format"	"{1:.2f},{2:.2f}"
-    "en"  "{RB}Turbo mode enabled!{G} Experience earned increase {N}{1}x{G} and credits {N}{2}x{G} faster! Stats are not permanent."
+    // 1: How many times faster are players earning experience (e.g. 1.5)
+    // 2: How many times faster are players earning credits (e.g. 1.8)
+    "#format"	"{1:.2f},{2:.2f}"
+    "en"  "{RB}Turbo mode enabled!{G} Experience earned increase {N}{1}x{G} and credits {N}{2}x{G} faster! Stats are not saved."
+  }
+  "Turbo mode enabled save stats"
+  {
+    // 1: How many times faster are players earning experience (e.g. 1.5)
+    // 2: How many times faster are players earning credits (e.g. 1.8)
+    "#format" "{1:.2f},{2:.2f}"
+    "en"  "{RB}Turbo mode enabled!{G} Experience earned increase {N}{1}x{G} and credits {N}{2}x{G} faster!"
   }
   "Turbo mode disabled"
   {
@@ -13,14 +20,14 @@
   }
   "Command Turbo mode enabled"
   {
-	"en"	"Turbo mode is now enabled. All players have been reset and experience is speed up."
+    "en"	"Turbo mode is now enabled. All players have been reset and experience is speed up."
   }
   "Command Turbo mode disabled"
   {
-	"en"	"Turbo mode is now disabled. All players will be reconnected."
+    "en"	"Turbo mode is now disabled. All players will be reconnected."
   }
   "Turbo mode"
   {
-	"en"	"Turbo mode"
+    "en"	"Turbo mode"
   }
 }

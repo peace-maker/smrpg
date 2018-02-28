@@ -20,9 +20,11 @@ bool g_bRPGSaveDataOld;
 
 ConVar g_hCVTurboMode;
 ConVar g_hCVTurboModeAnnounce;
+ConVar g_hCVPersistChanges;
 ConVar g_hCVExperienceMultiplier;
 ConVar g_hCVCreditsMultiplier;
 
+bool g_bPersistChanges;
 bool g_bMapEnded;
 
 bool g_bClientLeveledUp[MAXPLAYERS+1];
@@ -42,6 +44,7 @@ public void OnPluginStart()
 {
 	g_hCVTurboMode = CreateConVar("smrpg_turbomode_enabled", "0", "Enable SM:RPG turbo mode with higher experience and credits rates.", FCVAR_NOTIFY, true, 0.0, true, 1.0);
 	g_hCVTurboModeAnnounce = CreateConVar("smrpg_turbomode_announce", "1", "Announce turbomode to all players in chat when it's enabled.", 0, true, 0.0, true, 1.0);
+	g_hCVPersistChanges = CreateConVar("smrpg_turbomode_persist_changes", "0", "Keep the player's stat changes while turbo mode is active and don't set them to level 1 beforehand?", 0, true, 0.0, true, 1.0);
 	g_hCVExperienceMultiplier = CreateConVar("smrpg_turbomode_expmultiplier", "3", "Multiply all earned experience by this value.", 0, true, 1.0);
 	g_hCVCreditsMultiplier = CreateConVar("smrpg_turbomode_creditsmultiplier", "2", "Multiply all earned credits by this value.", 0, true, 1.0);
 	
@@ -103,7 +106,7 @@ public void OnMapEnd()
 public void ConVar_SaveDataChanged(ConVar convar, const char[] oldValue, const char[] newValue)
 {
 	// DON'T SAVE ANYTHING DURING TURBO MODE!
-	if(g_hCVTurboMode.BoolValue && convar.BoolValue)
+	if(g_hCVTurboMode.BoolValue && !g_bPersistChanges && convar.BoolValue)
 		convar.SetBool(false);
 	else
 		g_bRPGSaveDataOld = convar.BoolValue;
@@ -114,28 +117,37 @@ public void ConVar_TurboModeChanged(ConVar convar, const char[] oldValue, const 
 	if(StrEqual(oldValue, newValue))
 		return;
 	
+	// Enable turbo mode now.
 	if(g_hCVTurboMode.BoolValue)
 	{
-		// Remember the old value before enabling turbo mode.
-		g_bRPGSaveDataOld = g_hCVRPGSaveData.BoolValue;
-		
-		// Save all current progress to the database!
-		SMRPG_FlushDatabase();
-		
-		// Disable saving.
-		g_hCVRPGSaveData.SetBool(false);
-		
-		// Reset all ingame players.
-		for(int i=1;i<=MaxClients;i++)
+		g_bPersistChanges = g_hCVPersistChanges.BoolValue;
+		// We don't want any changes happening now to be saved to the database.
+		if(!g_bPersistChanges)
 		{
-			if(IsClientInGame(i))
-				SMRPG_ResetClientStats(i);
+			// Remember the old value before enabling turbo mode.
+			g_bRPGSaveDataOld = g_hCVRPGSaveData.BoolValue;
+			
+			// Save all current progress to the database!
+			SMRPG_FlushDatabase();
+			
+			// Disable saving.
+			g_hCVRPGSaveData.SetBool(false);
+			
+			// Reset all ingame players.
+			for(int i=1;i<=MaxClients;i++)
+			{
+				if(IsClientInGame(i))
+					SMRPG_ResetClientStats(i);
+			}
 		}
 		
 		// Restart the round.
 		//ServerCommand("mp_restartgame 2");
 		
-		Client_PrintToChatAll(false, "{OG}SM:RPG{N} > %t", "Turbo mode enabled", g_hCVExperienceMultiplier.FloatValue, g_hCVCreditsMultiplier.FloatValue);
+		if(g_bPersistChanges)
+			Client_PrintToChatAll(false, "{OG}SM:RPG{N} > %t", "Turbo mode enabled save stats", g_hCVExperienceMultiplier.FloatValue, g_hCVCreditsMultiplier.FloatValue);
+		else
+			Client_PrintToChatAll(false, "{OG}SM:RPG{N} > %t", "Turbo mode enabled discard stats", g_hCVExperienceMultiplier.FloatValue, g_hCVCreditsMultiplier.FloatValue);
 		
 		// Start showing a constant message on the screen.
 		if(Timer_DisplayTurboModeHud(null) == Plugin_Continue)
@@ -143,21 +155,25 @@ public void ConVar_TurboModeChanged(ConVar convar, const char[] oldValue, const 
 	}
 	else
 	{
-		// Reset saving
-		g_hCVRPGSaveData.SetBool(g_bRPGSaveDataOld);
-		
-		if(!g_bMapEnded)
+		// We don't want any changes happening now to be saved to the database.
+		if (!g_bPersistChanges)
 		{
-			// Reconnect all clients so their old level is loaded.
-			for(int i=1;i<=MaxClients;i++)
+			// Reset saving
+			g_hCVRPGSaveData.SetBool(g_bRPGSaveDataOld);
+			
+			if(!g_bMapEnded)
 			{
-				if(IsClientInGame(i))
+				// Reconnect all clients so their old level is loaded.
+				for(int i=1;i<=MaxClients;i++)
 				{
-					if(IsFakeClient(i))
-						SMRPG_ResetClientStats(i);
-					else
-						ReconnectClient(i);
-					
+					if(IsClientInGame(i))
+					{
+						if(IsFakeClient(i))
+							SMRPG_ResetClientStats(i);
+						else
+							ReconnectClient(i);
+						
+					}
 				}
 			}
 		}
@@ -176,7 +192,12 @@ public void Event_OnPlayerSpawn(Event event, const char[] name, bool dontBroadca
 		return;
 	
 	if(IsPlayerAlive(client) && g_hCVTurboMode.BoolValue && g_hCVTurboModeAnnounce.BoolValue)
-		Client_PrintToChat(client, false, "{OG}SM:RPG{N} > %t", "Turbo mode enabled", g_hCVExperienceMultiplier.FloatValue, g_hCVCreditsMultiplier.FloatValue);
+	{
+		if(g_bPersistChanges)
+			Client_PrintToChat(client, false, "{OG}SM:RPG{N} > %t", "Turbo mode enabled save stats", g_hCVExperienceMultiplier.FloatValue, g_hCVCreditsMultiplier.FloatValue);
+		else
+			Client_PrintToChat(client, false, "{OG}SM:RPG{N} > %t", "Turbo mode enabled discard stats", g_hCVExperienceMultiplier.FloatValue, g_hCVCreditsMultiplier.FloatValue);
+	}
 }
 
 /**

@@ -1,10 +1,16 @@
 "Phrases"
 {
-  "Turbo mode enabled"
+  "Turbo mode enabled discard stats"
   {
-	// 1: How many times faster are players earning experience (e.g. 1.5)
-	// 2: How many times faster are players earning credits (e.g. 1.8)
+    // 1: How many times faster are players earning experience (e.g. 1.5)
+    // 2: How many times faster are players earning credits (e.g. 1.8)
     "de"  "{RB}Turbomodus aktiviert!{G} Du bekommst {N}{1}x{G} schneller Erfahrung und {N}{2}x{G} mehr Kredite! Die Stats werden nicht gespeichert."
+  }
+  "Turbo mode enabled save stats"
+  {
+    // 1: How many times faster are players earning experience (e.g. 1.5)
+    // 2: How many times faster are players earning credits (e.g. 1.8)
+    "de"  "{RB}Turbomodus aktiviert!{G} Du bekommst {N}{1}x{G} schneller Erfahrung und {N}{2}x{G} mehr Kredite!"
   }
   "Turbo mode disabled"
   {
@@ -12,14 +18,14 @@
   }
   "Command Turbo mode enabled"
   {
-	"de"	"Turbomodus ist jetzt aktiviert. Alle Spieler wurden zurückgesetzt und erhalten mehr Erfahrung und Kredite."
+    "de"	"Turbomodus ist jetzt aktiviert. Alle Spieler wurden zurückgesetzt und erhalten mehr Erfahrung und Kredite."
   }
   "Command Turbo mode disabled"
   {
-	"de"	"Turbomodus ist jetzt deaktiviert. Alle Spieler werden neu verbunden und sind zurück auf ihren alten Leveln."
+    "de"	"Turbomodus ist jetzt deaktiviert. Alle Spieler werden neu verbunden und sind zurück auf ihren alten Leveln."
   }
   "Turbo mode"
   {
-	"de"	"Turbomodus"
+    "de"	"Turbomodus"
   }
 }
