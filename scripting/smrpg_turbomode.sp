@@ -7,6 +7,7 @@
 #pragma semicolon 1
 #include <sourcemod>
 #include <sdktools>
+#include <autoexecconfig>
 #include <smrpg>
 #include <smlib>
 
@@ -42,15 +43,19 @@ public Plugin myinfo =
 
 public void OnPluginStart()
 {
-	g_hCVTurboMode = CreateConVar("smrpg_turbomode_enabled", "0", "Enable SM:RPG turbo mode with higher experience and credits rates.", FCVAR_NOTIFY, true, 0.0, true, 1.0);
-	g_hCVTurboModeAnnounce = CreateConVar("smrpg_turbomode_announce", "1", "Announce turbomode to all players in chat when it's enabled.", 0, true, 0.0, true, 1.0);
-	g_hCVPersistChanges = CreateConVar("smrpg_turbomode_persist_changes", "0", "Keep the player's stat changes while turbo mode is active and don't set them to level 1 beforehand?", 0, true, 0.0, true, 1.0);
-	g_hCVExperienceMultiplier = CreateConVar("smrpg_turbomode_expmultiplier", "3", "Multiply all earned experience by this value.", 0, true, 1.0);
-	g_hCVCreditsMultiplier = CreateConVar("smrpg_turbomode_creditsmultiplier", "2", "Multiply all earned credits by this value.", 0, true, 1.0);
+	AutoExecConfig_SetFile("plugin.smrpg_turbomode");
+	AutoExecConfig_SetCreateFile(true);
+	AutoExecConfig_SetPlugin(null);
+
+	g_hCVTurboMode = AutoExecConfig_CreateConVar("smrpg_turbomode_enabled", "0", "Enable SM:RPG turbo mode with higher experience and credits rates.", FCVAR_NOTIFY, true, 0.0, true, 1.0);
+	g_hCVTurboModeAnnounce = AutoExecConfig_CreateConVar("smrpg_turbomode_announce", "1", "Announce turbomode to all players in chat when it's enabled.", 0, true, 0.0, true, 1.0);
+	g_hCVPersistChanges = AutoExecConfig_CreateConVar("smrpg_turbomode_persist_changes", "0", "Keep the player's stat changes while turbo mode is active and don't set them to level 1 beforehand?", 0, true, 0.0, true, 1.0);
+	g_hCVExperienceMultiplier = AutoExecConfig_CreateConVar("smrpg_turbomode_expmultiplier", "3", "Multiply all earned experience by this value.", 0, true, 1.0);
+	g_hCVCreditsMultiplier = AutoExecConfig_CreateConVar("smrpg_turbomode_creditsmultiplier", "2", "Multiply all earned credits by this value.", 0, true, 1.0);
 	
 	g_hCVTurboMode.AddChangeHook(ConVar_TurboModeChanged);
-	
-	AutoExecConfig();
+
+	AutoExecConfig_ExecuteFile();
 	
 	RegAdminCmd("sm_turbomode", Cmd_TurboMode, ADMFLAG_CONFIG, "Enables SM:RPG turbo mode. Higher experience rates for everyone until mapchange. Stats are not saved.", "smrpg");
 	
