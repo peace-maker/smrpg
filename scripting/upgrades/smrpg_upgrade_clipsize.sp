@@ -21,6 +21,7 @@ int g_iGameMaxClip1[2048];
 bool g_bWeaponReloadOnFull[2048];
 StringMap g_hWeaponTrie;
 
+bool g_bIsCSGO;
 bool g_bLateLoaded;
 
 public Plugin myinfo = 
@@ -42,6 +43,9 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 		Format(error, err_max, "Can't read config file in configs/smrpg/clipsize_weapons.cfg!");
 		return APLRes_Failure;
 	}
+
+	g_bIsCSGO = GetEngineVersion() == Engine_CSGO;
+
 	return APLRes_Success;
 }
 
@@ -150,7 +154,7 @@ public void SMRPG_BuySell(int client, UpgradeQueryType type)
 		iClip1 = Weapon_GetPrimaryClip(iWeapon);
 		
 		iAmmoCount = 0;
-		Client_GetWeaponPlayerAmmoEx(client, iWeapon, iAmmoCount);
+		GetClientWeaponReserveAmmo(client, iWeapon, iAmmoCount);
 		
 		switch(type)
 		{
@@ -166,7 +170,7 @@ public void SMRPG_BuySell(int client, UpgradeQueryType type)
 						iIncrease = iAmmoCount;
 					
 					Weapon_SetPrimaryClip(iWeapon, iClip1+iIncrease);
-					Client_SetWeaponPlayerAmmoEx(client, iWeapon, iAmmoCount-iIncrease);
+					SetClientWeaponReserveAmmo(client, iWeapon, iAmmoCount-iIncrease);
 				}
 			}
 			case UpgradeQueryType_Sell:
@@ -175,7 +179,7 @@ public void SMRPG_BuySell(int client, UpgradeQueryType type)
 				if(iClip1 > iNewMaxClip)
 				{
 					Weapon_SetPrimaryClip(iWeapon, iNewMaxClip);
-					Client_SetWeaponPlayerAmmoEx(client, iWeapon, iAmmoCount+(iClip1-iNewMaxClip));
+					SetClientWeaponReserveAmmo(client, iWeapon, iAmmoCount+(iClip1-iNewMaxClip));
 				}
 			}
 		}
@@ -230,8 +234,8 @@ public void Hook_OnWeaponDropPost(int client, int weapon)
 		Weapon_SetPrimaryClip(weapon, g_iGameMaxClip1[weapon]);
 		// Also give the player the extra ammo back, so he doesn't lose ammo when dropping the gun and picking it up again.
 		int iPrimaryAmmo;
-		Client_GetWeaponPlayerAmmoEx(client, weapon, iPrimaryAmmo);
-		Client_SetWeaponPlayerAmmoEx(client, weapon, iPrimaryAmmo + (iClip1 - g_iGameMaxClip1[weapon]));
+		GetClientWeaponReserveAmmo(client, weapon, iPrimaryAmmo);
+		SetClientWeaponReserveAmmo(client, weapon, iPrimaryAmmo + (iClip1 - g_iGameMaxClip1[weapon]));
 	}
 	
 	return;
@@ -343,6 +347,8 @@ public void Hook_OnReloadPost(int weapon, bool bSuccessful)
 	DataPack hPack = new DataPack();
 	hPack.WriteCell(EntIndexToEntRef(weapon));
 	hPack.WriteCell(Weapon_GetPrimaryClip(weapon));
+	hPack.WriteCell(false); // reload visually complete (CSGO only)?
+	hPack.WriteCell(-1); // new clip after reload (CSGO only)
 	CreateTimer(0.1, Timer_CheckReloadFinish, hPack, TIMER_FLAG_NO_MAPCHANGE|TIMER_REPEAT|TIMER_DATA_HNDL_CLOSE);
 }
 
@@ -392,6 +398,11 @@ public Action Timer_SetEquipAmmo(Handle timer, any weapon)
 	int client = Weapon_GetOwner(weapon);
 	if(client <= 0)
 		return Plugin_Stop;
+
+	// This doesn't have a full clip anymore.
+	// Don't apply our effect twice if the weapon is equipped twice.
+	if (Weapon_GetPrimaryClip(weapon) != g_iGameMaxClip1[weapon])
+		return Plugin_Stop;
 	
 	int iClipIncrease;
 	char sWeapon[64];
@@ -406,12 +417,12 @@ public Action Timer_SetEquipAmmo(Handle timer, any weapon)
 	iClipIncrease *= iLevel;
 	
 	int iAmmoCount;
-	Client_GetWeaponPlayerAmmoEx(client, weapon, iAmmoCount);
+	GetClientWeaponReserveAmmo(client, weapon, iAmmoCount);
 	if(iAmmoCount < iClipIncrease)
 		iClipIncrease = iAmmoCount;
-	
+
 	Weapon_SetPrimaryClip(weapon, Weapon_GetPrimaryClip(weapon)+iClipIncrease);
-	Client_SetWeaponPlayerAmmoEx(client, weapon, iAmmoCount-iClipIncrease);
+	SetClientWeaponReserveAmmo(client, weapon, iAmmoCount-iClipIncrease);
 	return Plugin_Stop;
 }
 
@@ -420,13 +431,34 @@ public Action Timer_CheckReloadFinish(Handle timer, DataPack data)
 	data.Reset();
 	int weapon = EntRefToEntIndex(data.ReadCell());
 	int iPreReloadClip1 = data.ReadCell();
+	DataPackPos iVisuallyCompletePosition = data.Position;
+	bool bOldReloadVisuallyComplete = data.ReadCell();
+	int iNewClipAfterReload = data.ReadCell();
 	
 	if(!IsValidEntity(weapon))
 		return Plugin_Stop;
 	
+	// CS:GO already adds the ammo when the animation showed the magazine go into the weapon.
+	// Players can't shoot yet though.
+	bool bReloadVisuallyComplete;
+	if (g_bIsCSGO)
+		bReloadVisuallyComplete = GetEntProp(weapon, Prop_Send, "m_bReloadVisuallyComplete") != 0;
 	// Wait until it's finished..
-	if(Weapon_IsReloading(weapon))
+	if(Weapon_IsReloading(weapon) && (!bReloadVisuallyComplete || bOldReloadVisuallyComplete))
 		return Plugin_Continue;
+
+	// CS:GO only!
+	// The weapon's animation showed the clip getting replaced.
+	// The ammo count is updated already, but the player isn't able to shoot yet.
+	// The game sets the ammo count ~again~ when the animation is fully finished 
+	// and the player is able to shoot. Set the new maximum at both times.
+	if (!bOldReloadVisuallyComplete && bReloadVisuallyComplete)
+	{
+		// Remember that we're already past the point where the animation showed
+		// the magazine go into the weapon for the next iteration of this timer.
+		data.Position = iVisuallyCompletePosition;
+		data.WriteCell(true);
+	}
 	
 	int client = Weapon_GetOwner(weapon);
 	if(client <= 0)
@@ -436,49 +468,72 @@ public Action Timer_CheckReloadFinish(Handle timer, DataPack data)
 	if(Client_GetActiveWeapon(client) != weapon)
 		return Plugin_Stop;
 	
-	int iClip1 = Weapon_GetPrimaryClip(weapon);
-	// Support for learning new maxclip value for late-loading.
-	if(g_iGameMaxClip1[weapon] == 0)
-		g_iGameMaxClip1[weapon] = iClip1;
-	
-	// Weapon still had more ammo than the default max.
-	if(iClip1 < iPreReloadClip1)
-		iClip1 = iPreReloadClip1;
-	
-	// There is less ammo in the clip than after an usual full reload. The player doesn't have enough ammo for the default clipsize already.. Don't try to add even more!
-	if(iClip1 < g_iGameMaxClip1[weapon])
-		return Plugin_Stop;
-	
-	// Get the weapon's clip increase from the config file
-	int iClipIncrease;
-	char sWeapon[64];
-	GetEntityClassname(weapon, sWeapon, sizeof(sWeapon));
-	if(!g_hWeaponTrie.GetValue(sWeapon, iClipIncrease))
+	// This is the first time running through this logic.
+	// CS:GO sets the ammo twice - once when the animation 
+	// shows the magazine go into the weapon and once the animation finishes.
+	if (iNewClipAfterReload == -1)
+	{
+		int iClip1 = Weapon_GetPrimaryClip(weapon);
+		// Support for learning new maxclip value for late-loading.
+		if(g_iGameMaxClip1[weapon] == 0)
+			g_iGameMaxClip1[weapon] = iClip1;
+
+		// Weapon still had more ammo than the default max.
+		if(iClip1 < iPreReloadClip1)
+			iClip1 = iPreReloadClip1;
+		
+		// There is less ammo in the clip than after an usual full reload. 
+		// The player doesn't have enough ammo for the default clipsize already.. Don't try to add even more!
+		if(iClip1 < g_iGameMaxClip1[weapon])
+			return Plugin_Stop;
+		
+		// Get the weapon's clip increase from the config file
+		int iClipIncrease;
+		char sWeapon[64];
+		GetEntityClassname(weapon, sWeapon, sizeof(sWeapon));
+		if(!g_hWeaponTrie.GetValue(sWeapon, iClipIncrease))
+			return Plugin_Continue;
+		
+		int iLevel = SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME);
+		if(iLevel <= 0)
+			return Plugin_Continue;
+		
+		iClipIncrease *= iLevel;
+		
+		int iNewMaxClip = g_iGameMaxClip1[weapon]+iClipIncrease;
+		
+		// How many bullets do we need to add to match the new virtual max clipsize?
+		int iIncrease = iNewMaxClip - iClip1;
+		
+		int iAmmoCount;
+		GetClientWeaponReserveAmmo(client, weapon, iAmmoCount);
+		// Player doesn't have enough ammo for a whole reload, see how much we can add
+		if(iAmmoCount < iIncrease)
+			iIncrease = iAmmoCount;
+		
+		// No ammo left for us :(
+		if(iIncrease == 0)
+			return Plugin_Stop;
+		
+		Weapon_SetPrimaryClip(weapon, iClip1+iIncrease);
+		SetClientWeaponReserveAmmo(client, weapon, iAmmoCount-iIncrease);
+
+		// Remember the value we set the clip to now so we don't have
+		// to worry about the reserve ammo again when CS:GO sets the clip
+		// the second time when the reload animation finishes.
+		if (bReloadVisuallyComplete)
+			data.WriteCell(iClip1+iIncrease);
+	}
+	// CS:GO only! The reload animation finished and the game just reset the clip again.
+	else
+	{
+		Weapon_SetPrimaryClip(weapon, iNewClipAfterReload);
+	}
+
+	// CS:GO only!
+	// The reload animation isn't done yet. Wait until it's ready to set the clip again.
+	if (!bOldReloadVisuallyComplete && bReloadVisuallyComplete)
 		return Plugin_Continue;
-	
-	int iLevel = SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME);
-	if(iLevel <= 0)
-		return Plugin_Continue;
-	
-	iClipIncrease *= iLevel;
-	
-	int iNewMaxClip = g_iGameMaxClip1[weapon]+iClipIncrease;
-	
-	// How many bullets do we need to add to match the new virtual max clipsize?
-	int iIncrease = iNewMaxClip - iClip1;
-	
-	int iAmmoCount;
-	Client_GetWeaponPlayerAmmoEx(client, weapon, iAmmoCount);
-	// Player doesn't have enough ammo for a whole reload, see how much we can add
-	if(iAmmoCount < iIncrease)
-		iIncrease = iAmmoCount;
-	
-	// No ammo left for us :(
-	if(iIncrease == 0)
-		return Plugin_Stop;
-	
-	Weapon_SetPrimaryClip(weapon, iClip1+iIncrease);
-	Client_SetWeaponPlayerAmmoEx(client, weapon, iAmmoCount-iIncrease);
 	return Plugin_Stop;
 }
 
@@ -510,7 +565,7 @@ public Action Timer_SetWeaponsClips(Handle timer, any userid)
 		if(iClip1 == g_iGameMaxClip1[iWeapon])
 		{
 			iAmmoCount = 0;
-			Client_GetWeaponPlayerAmmoEx(client, iWeapon, iAmmoCount);
+			GetClientWeaponReserveAmmo(client, iWeapon, iAmmoCount);
 			
 			int iIncrease = iNewMaxClip - iClip1;
 			// Player doesn't have enough ammo for a whole reload, see how much we can add
@@ -518,7 +573,7 @@ public Action Timer_SetWeaponsClips(Handle timer, any userid)
 				iIncrease = iAmmoCount;
 			
 			Weapon_SetPrimaryClip(iWeapon, iClip1+iIncrease);
-			Client_SetWeaponPlayerAmmoEx(client, iWeapon, iAmmoCount-iIncrease);
+			SetClientWeaponReserveAmmo(client, iWeapon, iAmmoCount-iIncrease);
 		}
 	}
 	
@@ -583,4 +638,34 @@ bool IsUpgradeActive(int client)
 		return false; // Some other plugin doesn't want this effect to run
 	
 	return true;
+}
+
+void GetClientWeaponReserveAmmo(int client, int weapon, int &primaryAmmo=-1, int &secondaryAmmo=-1)
+{
+	if (!g_bIsCSGO)
+	{
+		Client_GetWeaponPlayerAmmoEx(client, weapon, primaryAmmo, secondaryAmmo);
+		return;
+	}
+
+	// CSGO stores ammo per weapon now.
+	if (primaryAmmo != -1)
+		primaryAmmo = GetEntProp(weapon, Prop_Send, "m_iPrimaryReserveAmmoCount");
+	if (secondaryAmmo != -1)
+		secondaryAmmo = GetEntProp(weapon, Prop_Send, "m_iSecondaryReserveAmmoCount");
+}
+
+void SetClientWeaponReserveAmmo(int client, int weapon, int primaryAmmo=-1, int secondaryAmmo=-1)
+{
+	if (!g_bIsCSGO)
+	{
+		Client_SetWeaponPlayerAmmoEx(client, weapon, primaryAmmo, secondaryAmmo);
+		return;
+	}
+
+	// CSGO stores ammo per weapon now.
+	if (primaryAmmo != -1)
+		SetEntProp(weapon, Prop_Send, "m_iPrimaryReserveAmmoCount", primaryAmmo);
+	if (secondaryAmmo != -1)
+		SetEntProp(weapon, Prop_Send, "m_iSecondaryReserveAmmoCount", secondaryAmmo);
 }
