@@ -327,6 +327,14 @@ void CheckDatabaseVersion()
 		{
 			char sQuery[512];
 
+			// Delete lines that should not exist
+			Format(sQuery, sizeof(sQuery), "DELETE FROM %s WHERE player_id NOT IN (SELECT player_id FROM %s) OR upgrade_id NOT IN (SELECT upgrade_id FROM %s)", TBL_PLAYERUPGRADES, TBL_PLAYERS, TBL_UPGRADES);
+			if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
+			{
+				FailDatabaseUpdateError(DBVER_UPDATE_3, sQuery);
+				return;
+			}
+
 			// Make sure the tables use an engine that supports foreign keys.
 			if(g_DriverType == Driver_MySQL)
 			{
@@ -357,31 +365,75 @@ void CheckDatabaseVersion()
 					FailDatabaseUpdateError(DBVER_UPDATE_3, sQuery);
 					return;
 				}
-			}
 
-			// Delete lines that should not exist
-			Format(sQuery, sizeof(sQuery), "DELETE FROM %s WHERE player_id NOT IN (SELECT player_id FROM %s) OR upgrade_id NOT IN (SELECT upgrade_id FROM %s)", TBL_PLAYERUPGRADES, TBL_PLAYERS, TBL_UPGRADES);
-			if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
-			{
-				FailDatabaseUpdateError(DBVER_UPDATE_3, sQuery);
-				return;
-			}
+				// Add foreign key constraint on player_id.
+				Format(sQuery, sizeof(sQuery), "ALTER TABLE %s ADD FOREIGN KEY (player_id) REFERENCES %s(player_id) ON DELETE CASCADE", TBL_PLAYERUPGRADES, TBL_PLAYERS);
+				if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
+				{
+					FailDatabaseUpdateError(DBVER_UPDATE_3, sQuery);
+					return;
+				}
 
-			// Add foreign key constraint on player_id.
-			Format(sQuery, sizeof(sQuery), "ALTER TABLE %s ADD FOREIGN KEY (player_id) REFERENCES %s(player_id) ON DELETE CASCADE", TBL_PLAYERUPGRADES, TBL_PLAYERS);
-			if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
-			{
-				FailDatabaseUpdateError(DBVER_UPDATE_3, sQuery);
-				return;
+				// Add foreign key constraint on upgrade_id.
+				Format(sQuery, sizeof(sQuery), "ALTER TABLE %s ADD FOREIGN KEY (upgrade_id) REFERENCES %s(upgrade_id) ON DELETE CASCADE", TBL_PLAYERUPGRADES, TBL_UPGRADES);
+				if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
+				{
+					FailDatabaseUpdateError(DBVER_UPDATE_3, sQuery);
+					return;
+				}
 			}
+			else
+			{
+				// Turn off foreign keys while we change the schema.
+				Format(sQuery, sizeof(sQuery), "PRAGMA foreign_keys=OFF");
+				if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
+				{
+					FailDatabaseUpdateError(DBVER_UPDATE_3, sQuery);
+					return;
+				}
 
-			// Add foreign key constraint on upgrade_id.
-			Format(sQuery, sizeof(sQuery), "ALTER TABLE %s ADD FOREIGN KEY (upgrade_id) REFERENCES %s(upgrade_id) ON DELETE CASCADE", TBL_PLAYERUPGRADES, TBL_UPGRADES);
-			if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
-			{
-				FailDatabaseUpdateError(DBVER_UPDATE_3, sQuery);
-				return;
+				// Rename table to keep old data.
+				Format(sQuery, sizeof(sQuery), "ALTER TABLE %s RENAME TO %s_old", TBL_PLAYERUPGRADES, TBL_PLAYERUPGRADES);
+				if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
+				{
+					FailDatabaseUpdateError(DBVER_UPDATE_3, sQuery);
+					return;
+				}
+
+				// Recreate table with foreign key constraints to avoid data pollution.
+				Format(sQuery, sizeof(sQuery), "CREATE TABLE %s (player_id INTEGER, upgrade_id INTEGER, purchasedlevel INTEGER NOT NULL, selectedlevel INTEGER NOT NULL, enabled INTEGER DEFAULT 1, visuals INTEGER DEFAULT 1, sounds INTEGER DEFAULT 1, PRIMARY KEY(player_id, upgrade_id), FOREIGN KEY (player_id) REFERENCES %s(player_id) ON DELETE CASCADE, FOREIGN KEY (upgrade_id) REFERENCES %s(upgrade_id) ON DELETE CASCADE)", TBL_PLAYERUPGRADES, TBL_PLAYERS, TBL_UPGRADES);
+				if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
+				{
+					FailDatabaseUpdateError(DBVER_UPDATE_3, sQuery);
+					return;
+				}
+
+				// Restore old data.
+				Format(sQuery, sizeof(sQuery), "INSERT INTO %s SELECT * FROM %s_old", TBL_PLAYERUPGRADES, TBL_PLAYERUPGRADES);
+				if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
+				{
+					FailDatabaseUpdateError(DBVER_UPDATE_3, sQuery);
+					return;
+				}
+
+				// Get rid of the old table.
+				Format(sQuery, sizeof(sQuery), "DROP TABLE %s_old", TBL_PLAYERUPGRADES);
+				if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
+				{
+					FailDatabaseUpdateError(DBVER_UPDATE_3, sQuery);
+					return;
+				}
+
+				// Enable foreign key constraints now.
+				Format(sQuery, sizeof(sQuery), "PRAGMA foreign_keys=ON");
+				if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
+				{
+					FailDatabaseUpdateError(DBVER_UPDATE_3, sQuery);
+					return;
+				}
 			}
+			
+			LogMessage("Updated database schema to version %d", DATABASE_VERSION);
 		}
 		
 		// We're on a higher version now.
