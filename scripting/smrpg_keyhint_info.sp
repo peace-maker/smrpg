@@ -15,6 +15,12 @@
 
 // Convar to set whether to show the panel to new players by default.
 ConVar g_hCVDefaultHidePanel;
+ConVar gc_iRed;
+ConVar gc_iBlue;
+ConVar gc_iGreen;
+ConVar gc_iAlpha;
+ConVar gc_fX;
+ConVar gc_fY;
 
 // RPG Topmenu
 TopMenu g_hRPGMenu;
@@ -22,7 +28,7 @@ TopMenu g_hRPGMenu;
 // Clientprefs
 bool g_bClientHidePanel[MAXPLAYERS+1];
 Handle g_hCookieHidePanel;
-
+Handle g_hHUD;
 // Last experience memory
 int g_iLastExperience[MAXPLAYERS+1];
 ArrayList g_hExperienceMemory[MAXPLAYERS+1];
@@ -47,6 +53,12 @@ public void OnPluginStart()
 	AutoExecConfig_SetPlugin(null);
 
 	g_hCVDefaultHidePanel = AutoExecConfig_CreateConVar("smrpg_hide_infopanel_default", "0", "Hide the info panel by default for new players? They'll have to enable it themselves.", 0, true, 0.0, true, 1.0);
+	gc_fX = AutoExecConfig_CreateConVar("sm_hud_x", "-1", "x coordinate, from 0 to 1. -1.0 is the center of sm_hud_type '1'", _, true, -1.0, true, 1.0);
+	gc_fY = AutoExecConfig_CreateConVar("sm_hud_y", "0.1", "y coordinate, from 0 to 1. -1.0 is the center of sm_hud_type '1'", _, true, -1.0, true, 1.0);
+	gc_iRed = AutoExecConfig_CreateConVar("sm_hud_red", "0", "Color of sm_hud_type '1' (set R, G and B values to 255 to disable) (Rgb): x - red value", _, true, 0.0, true, 255.0);
+	gc_iBlue = AutoExecConfig_CreateConVar("sm_hud_green", "200", "Color of sm_hud_type '1' (set R, G and B values to 255 to disable) (rGb): x - green value", _, true, 0.0, true, 255.0);
+	gc_iGreen = AutoExecConfig_CreateConVar("sm_hud_blue", "200", "Color of sm_hud_type '1' (set R, G and B values to 255 to disable) (rgB): x - blue value", _, true, 0.0, true, 255.0);
+	gc_iAlpha = AutoExecConfig_CreateConVar("sm_hud_alpha", "200", "Alpha value of sm_hud_type '1' (set value to 255 to disable for transparency)", _, true, 0.0, true, 255.0);
 	
 	AutoExecConfig_ExecuteFile();
 
@@ -68,6 +80,7 @@ public void OnPluginStart()
 		if(IsClientInGame(i))
 			OnClientPutInServer(i);
 	}
+	g_hHUD = CreateHudSynchronizer();
 }
 
 public void OnLibraryAdded(const char[] name)
@@ -128,7 +141,7 @@ public Action Timer_ShowInfoPanel(Handle timer)
 	char sBuffer[512];
 	int iLevel, iExp, iExpForLevel, iExpNeeded;
 	char sTime[32];
-	
+	SetHudTextParams(gc_fX.FloatValue, gc_fY.FloatValue, 5.0, gc_iRed.IntValue, gc_iGreen.IntValue, gc_iBlue.IntValue, gc_iAlpha.IntValue, 1, 1.0, 0.0, 0.0);
 	int iRankCount = SMRPG_GetRankCount();
 	for(int i=1;i<=MaxClients;i++)
 	{
@@ -138,7 +151,7 @@ public Action Timer_ShowInfoPanel(Handle timer)
 		
 		if(!IsClientInGame(i) || IsFakeClient(i))
 			continue;
-		
+		ClearSyncHud(i, g_hHUD);
 		iTarget = i;
 		// Show info of the player he's spectating
 		if(IsClientObserver(i) || !IsPlayerAlive(i))
@@ -157,7 +170,7 @@ public Action Timer_ShowInfoPanel(Handle timer)
 		// CS:GO doesn't support the KeyHint usermessage.
 		// Show a 3 line formatted HintText instead.
 		if (g_bIsCSGO)
-			strcopy(sBuffer, sizeof(sBuffer), "<font size=\"20\"><u>RPG Stats</u></font>");
+			strcopy(sBuffer, sizeof(sBuffer), "RPG Stats");
 		else
 			strcopy(sBuffer, sizeof(sBuffer), "RPG Stats\n");
 			
@@ -165,7 +178,7 @@ public Action Timer_ShowInfoPanel(Handle timer)
 		if(iTarget != i)
 		{
 			if (g_bIsCSGO)
-				Format(sBuffer, sizeof(sBuffer), "%s for <font color=\"#ff0000\">%N</font>\n", sBuffer, iTarget);
+				Format(sBuffer, sizeof(sBuffer), "%s for %N\n", sBuffer, iTarget);
 			else
 				Format(sBuffer, sizeof(sBuffer), "%s%N\n", sBuffer, iTarget);
 		}
@@ -178,9 +191,9 @@ public Action Timer_ShowInfoPanel(Handle timer)
 		
 		if (g_bIsCSGO)
 		{
-			Format(sBuffer, sizeof(sBuffer), "%s<font size=\"16\">%T\t", sBuffer, "Level", i, iLevel);
+			Format(sBuffer, sizeof(sBuffer), "%s%T\t", sBuffer, "Level", i, iLevel);
 			Format(sBuffer, sizeof(sBuffer), "%s%T\t", sBuffer, "Experience short", i, iExp, iExpForLevel);
-			Format(sBuffer, sizeof(sBuffer), "%s%T</font>", sBuffer, "Credits", i, SMRPG_GetClientCredits(iTarget));
+			Format(sBuffer, sizeof(sBuffer), "%s%T", sBuffer, "Credits", i, SMRPG_GetClientCredits(iTarget));
 		}
 		else
 		{
@@ -190,12 +203,9 @@ public Action Timer_ShowInfoPanel(Handle timer)
 		}
 		
 		// No space for that in CS:GO :(
-		if (!g_bIsCSGO)
-		{
-			int iRank = SMRPG_GetClientRank(iTarget);
-			if(iRank > 0)
-				Format(sBuffer, sizeof(sBuffer), "%s\n%T", sBuffer, "Rank", i, iRank, iRankCount);
-		}
+		int iRank = SMRPG_GetClientRank(iTarget);
+		if(iRank > 0)
+			Format(sBuffer, sizeof(sBuffer), "%s\n%T", sBuffer, "Rank", i, iRank, iRankCount);
 		
 		if(g_fExperienceAverage[iTarget] > 0.0)
 		{
@@ -203,23 +213,20 @@ public Action Timer_ShowInfoPanel(Handle timer)
 			SecondsToString(sTime, sizeof(sTime), RoundToCeil(float(iExpNeeded)/g_fExperienceAverage[iTarget]*SECONDS_EXP_AVG_CALC));
 			
 			if (g_bIsCSGO)
-				Format(sBuffer, sizeof(sBuffer), "%s\t<font size=\"15\" color=\"#00ff00\"><i>%T: %s</i></font>", sBuffer, "Estimated time until levelup", i, sTime);
+				Format(sBuffer, sizeof(sBuffer), "%s\t%T: %s", sBuffer, "Estimated time until levelup", i, sTime);
 			else
 				Format(sBuffer, sizeof(sBuffer), "%s\n%T: %s", sBuffer, "Estimated time until levelup", i, sTime);
 		}
 		
 		// Not enough space in csgo..
-		if(!g_bIsCSGO)
-		{
-			if(g_iLastExperience[iTarget] > 0)
-				Format(sBuffer, sizeof(sBuffer), "%s\n%T: +%d", sBuffer, "Last Experience Short", i, g_iLastExperience[iTarget]);
-			
-			if(SMRPG_IsClientAFK(iTarget))
-				Format(sBuffer, sizeof(sBuffer), "%s\n\n%T", sBuffer, "Player is AFK", i);
-		}
+		if(g_iLastExperience[iTarget] > 0)
+			Format(sBuffer, sizeof(sBuffer), "%s\n%T: +%d", sBuffer, "Last Experience Short", i, g_iLastExperience[iTarget]);
+
+		if(SMRPG_IsClientAFK(iTarget))
+			Format(sBuffer, sizeof(sBuffer), "%s\n\n%T", sBuffer, "Player is AFK", i);
 		
 		if (g_bIsCSGO)
-			Client_PrintHintText(i, "%s", sBuffer);
+			ShowSyncHudText(i, g_hHUD, "%s", sBuffer);
 		else
 			Client_PrintKeyHintText(i, "%s", sBuffer);
 	}
