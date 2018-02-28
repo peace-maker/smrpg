@@ -1493,12 +1493,8 @@ public void SQL_CheckDeletePlayer(Database db, DBResultSet results, const char[]
 	if(g_hCVSaveData.BoolValue)
 	{
 		char sQuery[128];
-		Transaction hTransaction = new Transaction();
-		Format(sQuery, sizeof(sQuery), "DELETE FROM %s WHERE player_id = %d", TBL_PLAYERUPGRADES, iPlayerId);
-		hTransaction.AddQuery(sQuery);
 		Format(sQuery, sizeof(sQuery), "DELETE FROM %s WHERE player_id = %d", TBL_PLAYERS, iPlayerId);
-		hTransaction.AddQuery(sQuery);
-		g_hDatabase.Execute(hTransaction, _, SQLTxn_LogFailure);
+		g_hDatabase.Query(SQL_DoNothing, sQuery);
 		
 		if(iTarget != -1)
 			g_iPlayerInfo[iTarget][PLR_dbId] = -1;

@@ -25,7 +25,9 @@ CREATE TABLE player_upgrades (
 	enabled INTEGER DEFAULT '1', 
 	visuals INTEGER DEFAULT '1', 
 	sounds INTEGER DEFAULT '1', 
-	PRIMARY KEY(player_id, upgrade_id)
+	PRIMARY KEY (player_id, upgrade_id),
+	FOREIGN KEY (player_id) REFERENCES players(player_id) ON DELETE CASCADE,
+	FOREIGN KEY (upgrade_id) REFERENCES upgrades(upgrade_id) ON DELETE CASCADE
 );
 
 CREATE TABLE settings (
@@ -33,4 +35,4 @@ CREATE TABLE settings (
 	value VARCHAR(256) NOT NULL
 );
 
-INSERT INTO settings (setting, value) VALUES ('version', '102');
+INSERT INTO settings (setting, value) VALUES ('version', '103');

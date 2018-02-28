@@ -10,9 +10,10 @@
 #define DBVER_INIT 100       // Initial database version
 #define DBVER_UPDATE_1 101   // Update 01.09.2014. Store steamids in accountid form instead of STEAM_X:Y:Z (steamid column varchar -> int)
 #define DBVER_UPDATE_2 102   // Update 16.01.2018. Change table character set to utf8mb4 to allow new characters. Requires MySQL 5.5.3+.
+#define DBVER_UPDATE_3 103   // Update 28.02.2018. Add foreign keys to avoid data pollution.
 
 // Newest database version
-#define DATABASE_VERSION DBVER_UPDATE_2
+#define DATABASE_VERSION DBVER_UPDATE_3
 
 // How long to wait for a reconnect after a failed connection attempt to the database?
 #define RECONNECT_INTERVAL 360.0
@@ -76,6 +77,8 @@ public void SQL_OnConnect(Database db, const char[] error, any data)
 	else if(StrEqual(sDriverIdent, "sqlite", false))
 	{
 		g_DriverType = Driver_SQLite;
+		// Enable support for foreign keys in sqlite3.
+		SQL_LockedFastQuery(g_hDatabase, "PRAGMA foreign_keys = ON");
 	}
 	else
 	{
@@ -83,15 +86,15 @@ public void SQL_OnConnect(Database db, const char[] error, any data)
 	}
 	
 	// Make sure the tables are created using the correct charset, if the database was created with something else than utf8 as default.
-	char sDefaultCharset[32];
+	char sExtraOptions[64];
 	if(g_DriverType == Driver_MySQL)
 	{
-		strcopy(sDefaultCharset, sizeof(sDefaultCharset), " DEFAULT CHARSET=utf8mb4");
+		sExtraOptions = " ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
 	}
 	
 	// Create the player table
 	char sQuery[1024];
-	Format(sQuery, sizeof(sQuery), "CREATE TABLE IF NOT EXISTS %s (player_id INTEGER PRIMARY KEY %s, name VARCHAR(64) NOT NULL DEFAULT ' ', steamid INTEGER DEFAULT NULL UNIQUE, level INTEGER DEFAULT 1, experience INTEGER DEFAULT 0, credits INTEGER DEFAULT 0, showmenu INTEGER DEFAULT 1, fadescreen INTEGER DEFAULT 1, lastseen INTEGER DEFAULT 0, lastreset INTEGER DEFAULT 0)%s", TBL_PLAYERS, (g_DriverType == Driver_MySQL ? "AUTO_INCREMENT" : "AUTOINCREMENT"), sDefaultCharset);
+	Format(sQuery, sizeof(sQuery), "CREATE TABLE IF NOT EXISTS %s (player_id INTEGER PRIMARY KEY %s, name VARCHAR(64) NOT NULL DEFAULT ' ', steamid INTEGER DEFAULT NULL UNIQUE, level INTEGER DEFAULT 1, experience INTEGER DEFAULT 0, credits INTEGER DEFAULT 0, showmenu INTEGER DEFAULT 1, fadescreen INTEGER DEFAULT 1, lastseen INTEGER DEFAULT 0, lastreset INTEGER DEFAULT 0)%s", TBL_PLAYERS, (g_DriverType == Driver_MySQL ? "AUTO_INCREMENT" : "AUTOINCREMENT"), sExtraOptions);
 	if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
 	{
 		char sError[256];
@@ -100,8 +103,18 @@ public void SQL_OnConnect(Database db, const char[] error, any data)
 		return;
 	}
 	
+	// Create the upgrades table.
+	Format(sQuery, sizeof(sQuery), "CREATE TABLE IF NOT EXISTS %s (upgrade_id INTEGER PRIMARY KEY %s, shortname VARCHAR(32) UNIQUE NOT NULL, date_added INTEGER)%s", TBL_UPGRADES, (g_DriverType == Driver_MySQL ? "AUTO_INCREMENT" : "AUTOINCREMENT"), sExtraOptions);
+	if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
+	{
+		char sError[256];
+		SQL_GetError(g_hDatabase, sError, sizeof(sError));
+		SetFailState("Error creating %s table: %s", TBL_UPGRADES, sError);
+		return;
+	}
+
 	// Create the player -> upgrades table.
-	Format(sQuery, sizeof(sQuery), "CREATE TABLE IF NOT EXISTS %s (player_id INTEGER, upgrade_id INTEGER, purchasedlevel INTEGER NOT NULL, selectedlevel INTEGER NOT NULL, enabled INTEGER DEFAULT 1, visuals INTEGER DEFAULT 1, sounds INTEGER DEFAULT 1, PRIMARY KEY(player_id, upgrade_id))%s", TBL_PLAYERUPGRADES, sDefaultCharset);
+	Format(sQuery, sizeof(sQuery), "CREATE TABLE IF NOT EXISTS %s (player_id INTEGER, upgrade_id INTEGER, purchasedlevel INTEGER NOT NULL, selectedlevel INTEGER NOT NULL, enabled INTEGER DEFAULT 1, visuals INTEGER DEFAULT 1, sounds INTEGER DEFAULT 1, PRIMARY KEY(player_id, upgrade_id), FOREIGN KEY (player_id) REFERENCES %s(player_id) ON DELETE CASCADE, FOREIGN KEY (upgrade_id) REFERENCES %s(upgrade_id) ON DELETE CASCADE)%s", TBL_PLAYERUPGRADES, TBL_PLAYERS, TBL_UPGRADES, sExtraOptions);
 	if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
 	{
 		char sError[256];
@@ -110,18 +123,8 @@ public void SQL_OnConnect(Database db, const char[] error, any data)
 		return;
 	}
 	
-	// Create the upgrades table.
-	Format(sQuery, sizeof(sQuery), "CREATE TABLE IF NOT EXISTS %s (upgrade_id INTEGER PRIMARY KEY %s, shortname VARCHAR(32) UNIQUE NOT NULL, date_added INTEGER)%s", TBL_UPGRADES, (g_DriverType == Driver_MySQL ? "AUTO_INCREMENT" : "AUTOINCREMENT"), sDefaultCharset);
-	if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
-	{
-		char sError[256];
-		SQL_GetError(g_hDatabase, sError, sizeof(sError));
-		SetFailState("Error creating %s table: %s", TBL_UPGRADES, sError);
-		return;
-	}
-	
 	// Create the settings table.
-	Format(sQuery, sizeof(sQuery), "CREATE TABLE IF NOT EXISTS %s (setting VARCHAR(64) PRIMARY KEY NOT NULL, value VARCHAR(256) NOT NULL)%s", TBL_SETTINGS, sDefaultCharset);
+	Format(sQuery, sizeof(sQuery), "CREATE TABLE IF NOT EXISTS %s (setting VARCHAR(64) PRIMARY KEY NOT NULL, value VARCHAR(256) NOT NULL)%s", TBL_SETTINGS, sExtraOptions);
 	if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
 	{
 		char sError[256];
@@ -319,6 +322,67 @@ void CheckDatabaseVersion()
 				}
 			}
 		}
+
+		if(iVersion < DBVER_UPDATE_3)
+		{
+			char sQuery[512];
+
+			// Make sure the tables use an engine that supports foreign keys.
+			if(g_DriverType == Driver_MySQL)
+			{
+				Format(sQuery, sizeof(sQuery), "ALTER TABLE %s ENGINE=InnoDB", TBL_PLAYERS);
+				if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
+				{
+					FailDatabaseUpdateError(DBVER_UPDATE_3, sQuery);
+					return;
+				}
+				
+				Format(sQuery, sizeof(sQuery), "ALTER TABLE %s ENGINE=InnoDB", TBL_UPGRADES);
+				if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
+				{
+					FailDatabaseUpdateError(DBVER_UPDATE_3, sQuery);
+					return;
+				}
+				
+				Format(sQuery, sizeof(sQuery), "ALTER TABLE %s ENGINE=InnoDB", TBL_PLAYERUPGRADES);
+				if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
+				{
+					FailDatabaseUpdateError(DBVER_UPDATE_3, sQuery);
+					return;
+				}
+				
+				Format(sQuery, sizeof(sQuery), "ALTER TABLE %s ENGINE=InnoDB", TBL_SETTINGS);
+				if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
+				{
+					FailDatabaseUpdateError(DBVER_UPDATE_3, sQuery);
+					return;
+				}
+			}
+
+			// Delete lines that should not exist
+			Format(sQuery, sizeof(sQuery), "DELETE FROM %s WHERE player_id NOT IN (SELECT player_id FROM %s) OR upgrade_id NOT IN (SELECT upgrade_id FROM %s)", TBL_PLAYERUPGRADES, TBL_PLAYERS, TBL_UPGRADES);
+			if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
+			{
+				FailDatabaseUpdateError(DBVER_UPDATE_3, sQuery);
+				return;
+			}
+
+			// Add foreign key constraint on player_id.
+			Format(sQuery, sizeof(sQuery), "ALTER TABLE %s ADD FOREIGN KEY (player_id) REFERENCES %s(player_id) ON DELETE CASCADE", TBL_PLAYERUPGRADES, TBL_PLAYERS);
+			if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
+			{
+				FailDatabaseUpdateError(DBVER_UPDATE_3, sQuery);
+				return;
+			}
+
+			// Add foreign key constraint on upgrade_id.
+			Format(sQuery, sizeof(sQuery), "ALTER TABLE %s ADD FOREIGN KEY (upgrade_id) REFERENCES %s(upgrade_id) ON DELETE CASCADE", TBL_PLAYERUPGRADES, TBL_UPGRADES);
+			if(!SQL_LockedFastQuery(g_hDatabase, sQuery))
+			{
+				FailDatabaseUpdateError(DBVER_UPDATE_3, sQuery);
+				return;
+			}
+		}
 		
 		// We're on a higher version now.
 		IntToString(DATABASE_VERSION, sValue, sizeof(sValue));
@@ -384,12 +448,8 @@ public int Native_ResetAllPlayers(Handle plugin, int numParams)
 	// Delete all player information?
 	if(bHardReset)
 	{
-		Transaction hTransaction = new Transaction();
-		Format(sQuery, sizeof(sQuery), "DELETE FROM %s", TBL_PLAYERUPGRADES);
-		hTransaction.AddQuery(sQuery);
 		Format(sQuery, sizeof(sQuery), "DELETE FROM %s", TBL_PLAYERS);
-		hTransaction.AddQuery(sQuery);
-		g_hDatabase.Execute(hTransaction, _, SQLTxn_LogFailure);
+		g_hDatabase.Query(SQL_DoNothing, sQuery);
 		
 		// Reset all ingame players and readd them into the database.
 		for(int i=1;i<=MaxClients;i++)
@@ -529,9 +589,6 @@ public void SQL_DeleteExpiredPlayers(Database db, DBResultSet results, const cha
 		// Don't delete players who are connected right now.
 		if (GetClientByPlayerID(iPlayerId) != -1)
 			continue;
-		
-		Format(sQuery, sizeof(sQuery), "DELETE FROM %s WHERE player_id = %d", TBL_PLAYERUPGRADES, iPlayerId);
-		hTransaction.AddQuery(sQuery);
 		
 		Format(sQuery, sizeof(sQuery), "DELETE FROM %s WHERE player_id = %d", TBL_PLAYERS, iPlayerId);
 		hTransaction.AddQuery(sQuery);
