@@ -299,4 +299,14 @@
 	{
 		"de"			"Reduziert den Blendeffekt einer Blendgranate gegen dich."
 	}
+	
+	"adrenaline"
+	{
+		"de"			"Adrenalin"
+	}
+	
+	"adrenaline description"
+	{
+		"de"			"Erhöht kurzeitig deine Geschwindigkeit, wenn du schiesst."
+	}
 }

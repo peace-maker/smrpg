@@ -299,4 +299,14 @@
 	{
 		"en"			"Reduce blinding effect of flashbangs on you."
 	}
+	
+	"adrenaline"
+	{
+		"en"			"Adrenaline"
+	}
+	
+	"adrenaline description"
+	{
+		"en"			"Increase your speed shortly when firing a weapon."
+	}
 }

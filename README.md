@@ -68,6 +68,7 @@ Have a look at the [include files](https://github.com/peace-maker/smrpg/blob/mas
 See the available upgrade plugins for examples. You can use the [example upgrade](https://github.com/peace-maker/smrpg/blob/master/scripting/upgrades/smrpg_upgrade_example.sp) as a skeleton.
 
 # Available upgrades
+* Adrenaline (Counter-Strike only) - Increase your speed shortly when firing a weapon.
 * Antidote - Reduce duration of bad effects against you like burning, freezing or slow down.
 * Antiflash (Counter-Strike only) - Reduce blinding effect of flashbangs on you.
 * Armor+ (Counter-Strike only) - Increases your maximal armor.
