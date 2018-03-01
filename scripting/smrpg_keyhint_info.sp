@@ -223,7 +223,7 @@ public Action Timer_ShowInfoPanel(Handle timer)
 			Format(sBuffer, sizeof(sBuffer), "%s%T", sBuffer, "Credits", i, SMRPG_GetClientCredits(iTarget));
 		}
 		
-		if (!g_bIsCSGO || (g_bIsCSGO && gc_bType.BoolValue)
+		if (!g_bIsCSGO || (g_bIsCSGO && gc_bType.BoolValue))
 		{
 			int iRank = SMRPG_GetClientRank(iTarget);
 			if(iRank > 0)
@@ -246,7 +246,7 @@ public Action Timer_ShowInfoPanel(Handle timer)
 				Format(sBuffer, sizeof(sBuffer), "%s\n%T: %s", sBuffer, "Estimated time until levelup", i, sTime);
 		}
 		
-		if (!g_bIsCSGO || (g_bIsCSGO && gc_bType.BoolValue)
+		if (!g_bIsCSGO || (g_bIsCSGO && gc_bType.BoolValue))
 		{
 			if(g_iLastExperience[iTarget] > 0)
 				Format(sBuffer, sizeof(sBuffer), "%s\n%T: +%d", sBuffer, "Last Experience Short", i, g_iLastExperience[iTarget]);
