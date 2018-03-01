@@ -551,22 +551,27 @@
 		"ru"			"{1}: {2}/{3}"
 	}
 	
-	"Reset player upgrade level 0 refund"
+	"Reset player upgrade level 0"
 	{
-		"ru"			"Сброс навыка до 0 [Продать всё]"
+		"ru"			"Сброс навыка до 0"
 	}
 	
-	"Give player upgrade level free"
+	"Remove player upgrade level"
 	{
-		"ru"			"Дать уровень [без Покупки]"
+		"ru"			"отнять уровень"
 	}
 	
-	"Force player buy upgrade level"
+	"Add player upgrade level"
 	{
-		"ru"			"Купить уровень"
+		"ru"			"Дать уровень"
 	}
 	
-	"Take player upgrade level refund"
+	"Set player upgrade level to max"
+	{
+		"ru"			"Установить [Макс] уровень"
+	}
+	
+	"Take player upgrade level full refund"
 	{
 		"ru"			"отнять уровень [без продажи]"
 	}
@@ -576,9 +581,19 @@
 		"ru"			"Продать уровень"
 	}
 	
-	"Set player upgrade level to max free"
+	"Take player upgrade level no refund"
 	{
-		"ru"			"Установить [Макс] уровень без затрат"
+		"ru"			"отнять уровень"
+	}
+	
+	"Give player upgrade level for free"
+	{
+		"ru"			"Дать уровень [без Покупки]"
+	}
+	
+	"Force player buy upgrade level"
+	{
+		"ru"			"Купить уровень"
 	}
 	
 	"Admin reset player upgrades notification"

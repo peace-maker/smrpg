@@ -556,34 +556,49 @@
 		"de"			"{1}: {2}/{3}"
 	}
 	
-	"Reset player upgrade level 0 refund"
+	"Reset player upgrade level 0"
 	{
-		"de"			"Upgrade ohne Rückerstattung auf Level 0 zurücksetzen"
+		"de"			"Upgrade auf Level 0 zurücksetzen"
 	}
 	
-	"Give player upgrade level free"
+	"Remove player upgrade level"
 	{
-		"de"			"Gib Level kostenlos"
+		"de"			"Level abziehen"
 	}
 	
-	"Force player buy upgrade level"
+	"Add player upgrade level"
 	{
-		"de"			"Zwinge zum Kauf eines Levels"
+		"de"			"Level erhöhen"
 	}
 	
-	"Take player upgrade level refund"
+	"Set player upgrade level to max"
 	{
-		"de"			"Nimm Level mit voller Rückerstattung"
+		"de"			"Setze auf Maximallevel"
+	}
+	
+	"Take player upgrade level full refund"
+	{
+		"de"			"Level mit voller Rückerstattung abziehen"
 	}
 	
 	"Force player sell upgrade level"
 	{
-		"de"			"Zwinge zum Verkauf eines Levels"
+		"de"			"Zwinge zum Verkauf"
 	}
 	
-	"Set player upgrade level to max free"
+	"Take player upgrade level no refund"
 	{
-		"de"			"Setzte kostenlos auf Maximallevel"
+		"de"			"Level ohne Rückerstattung abziehen"
+	}
+	
+	"Give player upgrade level for free"
+	{
+		"de"			"Level kostenlos erhöhen"
+	}
+	
+	"Force player buy upgrade level"
+	{
+		"de"			"Zwinge zum Kauf"
 	}
 	
 	"Admin reset player upgrades notification"
