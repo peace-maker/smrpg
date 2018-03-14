@@ -15,13 +15,17 @@
 
 // Convar to set whether to show the panel to new players by default.
 ConVar g_hCVDefaultHidePanel;
-ConVar gc_bType;
-ConVar gc_iRed;
-ConVar gc_iBlue;
-ConVar gc_iGreen;
-ConVar gc_iAlpha;
-ConVar gc_fX;
-ConVar gc_fY;
+// Choose where to show the panel in. See PanelDisplayType enum.
+ConVar g_hCVPanelType;
+ConVar g_hCVPanelUseHTML;
+ConVar g_hCVPanelColor;
+ConVar g_hCVPanelPosition;
+
+enum PanelDisplayType {
+	DisplayType_Hint,		// Show info panel in the hint are in the middle of the screen.
+	DisplayType_KeyHint,	// Show info panel on the right side of the screen. (CS:S)
+	DisplayType_HudMsg		// Show info panel on arbitary position on the screen.
+};
 
 // RPG Topmenu
 TopMenu g_hRPGMenu;
@@ -29,18 +33,20 @@ TopMenu g_hRPGMenu;
 // Clientprefs
 bool g_bClientHidePanel[MAXPLAYERS+1];
 Handle g_hCookieHidePanel;
-Handle g_hHUD;
+
+// HUD synchronizer object to help keep the hud on the
+// screen without interferring with other plugins.
+Handle g_hHUDSync;
+
 // Last experience memory
 int g_iLastExperience[MAXPLAYERS+1];
 ArrayList g_hExperienceMemory[MAXPLAYERS+1];
 int g_iExperienceThisMinute[MAXPLAYERS+1];
 float g_fExperienceAverage[MAXPLAYERS+1];
 
-bool g_bIsCSGO;
-
 public Plugin myinfo = 
 {
-	name = "SM:RPG > Key Hint Infopanel",
+	name = "SM:RPG > Stats Info Panel",
 	author = "Jannik \"Peace-Maker\" Hartung",
 	description = "Shows some RPG stats in a panel on the screen",
 	version = SMRPG_VERSION,
@@ -53,14 +59,13 @@ public void OnPluginStart()
 	AutoExecConfig_SetCreateFile(true);
 	AutoExecConfig_SetPlugin(null);
 
+	bool bIsCSGO = GetEngineVersion() == Engine_CSGO;
+
 	g_hCVDefaultHidePanel = AutoExecConfig_CreateConVar("smrpg_hide_infopanel_default", "0", "Hide the info panel by default for new players? They'll have to enable it themselves.", 0, true, 0.0, true, 1.0);
-	gc_bType = AutoExecConfig_CreateConVar("smrpg_hud_type", "1", "0 - show hud via a center-bottom hint box (sm_hsay), 1 - show hud via 'new hud' system", _, true, 0.0, true, 1.0);
-	gc_fX = AutoExecConfig_CreateConVar("smrpg_hud_x", "-1", "x coordinate, from 0 to 1. -1.0 is the center of sm_hud_type '1'", _, true, -1.0, true, 1.0);
-	gc_fY = AutoExecConfig_CreateConVar("smrpg_hud_y", "0.1", "y coordinate, from 0 to 1. -1.0 is the center of sm_hud_type '1'", _, true, -1.0, true, 1.0);
-	gc_iRed = AutoExecConfig_CreateConVar("smrpg_hud_red", "0", "Color of sm_hud_type '1' (set R, G and B values to 255 to disable) (Rgb): x - red value", _, true, 0.0, true, 255.0);
-	gc_iBlue = AutoExecConfig_CreateConVar("smrpg_hud_green", "200", "Color of sm_hud_type '1' (set R, G and B values to 255 to disable) (rGb): x - green value", _, true, 0.0, true, 255.0);
-	gc_iGreen = AutoExecConfig_CreateConVar("smrpg_hud_blue", "200", "Color of sm_hud_type '1' (set R, G and B values to 255 to disable) (rgB): x - blue value", _, true, 0.0, true, 255.0);
-	gc_iAlpha = AutoExecConfig_CreateConVar("smrpg_hud_alpha", "200", "Alpha value of sm_hud_type '1' (set value to 255 to disable for transparency)", _, true, 0.0, true, 255.0);
+	g_hCVPanelType = AutoExecConfig_CreateConVar("smrpg_infopanel_type", (bIsCSGO ? "2" :"1"), "Select where to display the panel. 0 - Show info panel in hint area in the center-bottom box, 1 - Show info panel in keyhint area on the right side of the screen, 2 - Show info panel on arbitary position on the screen specified by other convars.", _, true, 0.0, true, 2.0);
+	g_hCVPanelUseHTML = AutoExecConfig_CreateConVar("smrpg_infopanel_use_html", (bIsCSGO ? "1" :"0"), "Use HTML to format the hint text. Some games like CS:GO support a limited set of HTML tags in hint messages.");
+	g_hCVPanelColor = AutoExecConfig_CreateConVar("smrpg_infopanel_color", "0 200 200 200", "The text color of on-screen info panel when smrpg_hud_type is set to 1 in 'r g b a'.");
+	g_hCVPanelPosition = AutoExecConfig_CreateConVar("smrpg_infopanel_position", "-1 0.1", "Relative position of on-screen info panel in 'x y' format. Values can go from 0.0 to 1.0 starting at the top left corner. -1 is the center.");
 	
 	AutoExecConfig_ExecuteFile();
 
@@ -75,14 +80,13 @@ public void OnPluginStart()
 	if(LibraryExists("clientprefs"))
 		OnLibraryAdded("clientprefs");
 	
-	g_bIsCSGO = GetEngineVersion() == Engine_CSGO;
-	
 	for(int i=1;i<=MaxClients;i++)
 	{
 		if(IsClientInGame(i))
 			OnClientPutInServer(i);
 	}
-	g_hHUD = CreateHudSynchronizer();
+
+	g_hHUDSync = CreateHudSynchronizer();
 }
 
 public void OnLibraryAdded(const char[] name)
@@ -143,8 +147,20 @@ public Action Timer_ShowInfoPanel(Handle timer)
 	char sBuffer[512];
 	int iLevel, iExp, iExpForLevel, iExpNeeded;
 	char sTime[32];
-	SetHudTextParams(gc_fX.FloatValue, gc_fY.FloatValue, 5.0, gc_iRed.IntValue, gc_iGreen.IntValue, gc_iBlue.IntValue, gc_iAlpha.IntValue, 1, 1.0, 0.0, 0.0);
 	int iRankCount = SMRPG_GetRankCount();
+	
+	PanelDisplayType iPanelType = view_as<PanelDisplayType>(g_hCVPanelType.IntValue);
+
+	// Setup HudMsg with correct color etc.
+	if (iPanelType == DisplayType_HudMsg)
+	{
+		int iColor[4];
+		float fPosition[2];
+		iColor = GetHUDColor();
+		fPosition = GetHUDPosition();
+		SetHudTextParams(fPosition[0], fPosition[1], 5.0, iColor[0], iColor[1], iColor[2], iColor[3], 1, 1.0, 0.0, 0.0);
+	}
+
 	for(int i=1;i<=MaxClients;i++)
 	{
 		// This player doesn't want this info.
@@ -153,7 +169,7 @@ public Action Timer_ShowInfoPanel(Handle timer)
 		
 		if(!IsClientInGame(i) || IsFakeClient(i))
 			continue;
-		ClearSyncHud(i, g_hHUD);
+
 		iTarget = i;
 		// Show info of the player he's spectating
 		if(IsClientObserver(i) || !IsPlayerAlive(i))
@@ -168,62 +184,77 @@ public Action Timer_ShowInfoPanel(Handle timer)
 			if(iTarget <= 0 || iTarget > MaxClients)
 				continue;
 		}
-		
-		// CS:GO doesn't support the KeyHint usermessage.
-		// Show a 3 line formatted HintText instead.
-		if (g_bIsCSGO)
-		{
-			if (gc_bType.BoolValue)
-				strcopy(sBuffer, sizeof(sBuffer), "RPG Stats");
-			else
-				strcopy(sBuffer, sizeof(sBuffer), "<font size=\"20\"><u>RPG Stats</u></font>");
-		}
-		else
-			strcopy(sBuffer, sizeof(sBuffer), "RPG Stats\n");
 			
 		// Show the name of the player he's spectating
 		if(iTarget != i)
 		{
-			if (g_bIsCSGO)
+			switch(iPanelType)
 			{
-				if (gc_bType.BoolValue)
-					Format(sBuffer, sizeof(sBuffer), "%s for %N\n", sBuffer, iTarget);
-				else
-					Format(sBuffer, sizeof(sBuffer), "%s for <font color=\"#ff0000\">%N</font>\n", sBuffer, iTarget);
+				case DisplayType_Hint, DisplayType_HudMsg:
+				{
+					Format(sBuffer, sizeof(sBuffer), "%T\n", "Show for other player", i, "RPG stats", iTarget);
+
+					// Substitute the HTML heading formating in the phrase.
+					if(iPanelType == DisplayType_Hint && g_hCVPanelUseHTML.BoolValue)
+					{
+						char sStatsHeader[64], sHTMLHeader[128];
+						Format(sStatsHeader, sizeof(sStatsHeader), "%T", "RPG stats", i);
+						Format(sHTMLHeader, sizeof(sHTMLHeader), "<font size=\"20\"><u>%s</u></font>", sStatsHeader);
+						ReplaceString(sBuffer, sizeof(sBuffer), sStatsHeader, sHTMLHeader);
+					}
+				}
+				case DisplayType_KeyHint:
+				{
+					Format(sBuffer, sizeof(sBuffer), "%T\n%N\n", "RPG stats", i, iTarget);
+				}
 			}
-			else
-				Format(sBuffer, sizeof(sBuffer), "%s%N\n", sBuffer, iTarget);
 		}
-		else if (g_bIsCSGO)
-			StrCat(sBuffer, sizeof(sBuffer), "\n");
+		// Show plain "Stats" header
+		else
+		{
+			if(iPanelType == DisplayType_Hint && g_hCVPanelUseHTML.BoolValue)
+				Format(sBuffer, sizeof(sBuffer), "<font size=\"20\"><u>%T</u></font>\n", "RPG stats", i);
+			else
+				Format(sBuffer, sizeof(sBuffer), "%T\n", "RPG stats", i);
+		}
 		
 		iLevel = SMRPG_GetClientLevel(iTarget);
 		iExp = SMRPG_GetClientExperience(iTarget),
 		iExpForLevel = SMRPG_LevelToExperience(iLevel);
 		
-		if (g_bIsCSGO)
+		switch(iPanelType)
 		{
-			if (gc_bType.BoolValue)
+			case DisplayType_Hint:
+			{
+				if(g_hCVPanelUseHTML.BoolValue)
+				{
+					Format(sBuffer, sizeof(sBuffer), "%s<font size=\"16\">%T\t", sBuffer, "Level", i, iLevel);
+					Format(sBuffer, sizeof(sBuffer), "%s%T\t", sBuffer, "Experience short", i, iExp, iExpForLevel);
+					Format(sBuffer, sizeof(sBuffer), "%s%T</font>", sBuffer, "Credits", i, SMRPG_GetClientCredits(iTarget));
+				}
+				else
+				{
+					Format(sBuffer, sizeof(sBuffer), "%s%T    ", sBuffer, "Level", i, iLevel);
+					Format(sBuffer, sizeof(sBuffer), "%s%T    ", sBuffer, "Experience short", i, iExp, iExpForLevel);
+					Format(sBuffer, sizeof(sBuffer), "%s%T", sBuffer, "Credits", i, SMRPG_GetClientCredits(iTarget));
+				}
+			}
+			case DisplayType_KeyHint:
+			{
+				Format(sBuffer, sizeof(sBuffer), "%s\n%T\n", sBuffer, "Level", i, iLevel);
+				Format(sBuffer, sizeof(sBuffer), "%s%T\n", sBuffer, "Experience short", i, iExp, iExpForLevel);
+				Format(sBuffer, sizeof(sBuffer), "%s%T", sBuffer, "Credits", i, SMRPG_GetClientCredits(iTarget));
+			}
+			case DisplayType_HudMsg:
 			{
 				Format(sBuffer, sizeof(sBuffer), "%s%T\t", sBuffer, "Level", i, iLevel);
 				Format(sBuffer, sizeof(sBuffer), "%s%T\t", sBuffer, "Experience short", i, iExp, iExpForLevel);
 				Format(sBuffer, sizeof(sBuffer), "%s%T", sBuffer, "Credits", i, SMRPG_GetClientCredits(iTarget));
 			}
-			else
-			{
-				Format(sBuffer, sizeof(sBuffer), "%s<font size=\"16\">%T\t", sBuffer, "Level", i, iLevel);
-				Format(sBuffer, sizeof(sBuffer), "%s%T\t", sBuffer, "Experience short", i, iExp, iExpForLevel);
-				Format(sBuffer, sizeof(sBuffer), "%s%T</font>", sBuffer, "Credits", i, SMRPG_GetClientCredits(iTarget));
-			}
-		}
-		else
-		{
-			Format(sBuffer, sizeof(sBuffer), "%s\n%T\n", sBuffer, "Level", i, iLevel);
-			Format(sBuffer, sizeof(sBuffer), "%s%T\n", sBuffer, "Experience short", i, iExp, iExpForLevel);
-			Format(sBuffer, sizeof(sBuffer), "%s%T", sBuffer, "Credits", i, SMRPG_GetClientCredits(iTarget));
 		}
 		
-		if (!g_bIsCSGO || (g_bIsCSGO && gc_bType.BoolValue))
+		// No place in the hint box for that. :(
+		if(iPanelType != DisplayType_Hint || !g_hCVPanelUseHTML.BoolValue)
 		{
 			int iRank = SMRPG_GetClientRank(iTarget);
 			if(iRank > 0)
@@ -235,18 +266,27 @@ public Action Timer_ShowInfoPanel(Handle timer)
 			iExpNeeded = iExpForLevel - iExp;
 			SecondsToString(sTime, sizeof(sTime), RoundToCeil(float(iExpNeeded)/g_fExperienceAverage[iTarget]*SECONDS_EXP_AVG_CALC));
 			
-			if (g_bIsCSGO)
+			switch(iPanelType)
 			{
-				if(gc_bType.BoolValue)
-					Format(sBuffer, sizeof(sBuffer), "%s\t%T: %s", sBuffer, "Estimated time until levelup", i, sTime);
-				else
-					Format(sBuffer, sizeof(sBuffer), "%s\t<font size=\"15\" color=\"#00ff00\"><i>%T: %s</i></font>", sBuffer, "Estimated time until levelup", i, sTime);
+				case DisplayType_Hint:
+				{
+					if(g_hCVPanelUseHTML.BoolValue)
+						Format(sBuffer, sizeof(sBuffer), "%s\t<font size=\"15\" color=\"#00ff00\"><i>%T: %s</i></font>", sBuffer, "Estimated time until levelup", i, sTime);
+					else
+						Format(sBuffer, sizeof(sBuffer), "%s\n%T: %s", sBuffer, "Estimated time until levelup", i, sTime);
+				}
+				case DisplayType_KeyHint:
+				{
+					Format(sBuffer, sizeof(sBuffer), "%s\n%T: %s", sBuffer, "Estimated time until levelup", i, sTime);
+				}
+				case DisplayType_HudMsg:
+				{
+					Format(sBuffer, sizeof(sBuffer), "%s\n%T: %s", sBuffer, "Estimated time until levelup", i, sTime);
+				}
 			}
-			else
-				Format(sBuffer, sizeof(sBuffer), "%s\n%T: %s", sBuffer, "Estimated time until levelup", i, sTime);
 		}
 		
-		if (!g_bIsCSGO || (g_bIsCSGO && gc_bType.BoolValue))
+		if(iPanelType != DisplayType_Hint || !g_hCVPanelUseHTML.BoolValue)
 		{
 			if(g_iLastExperience[iTarget] > 0)
 				Format(sBuffer, sizeof(sBuffer), "%s\n%T: +%d", sBuffer, "Last Experience Short", i, g_iLastExperience[iTarget]);
@@ -255,15 +295,15 @@ public Action Timer_ShowInfoPanel(Handle timer)
 				Format(sBuffer, sizeof(sBuffer), "%s\n\n%T", sBuffer, "Player is AFK", i);
 		}
 		
-		if (g_bIsCSGO)
+		switch(iPanelType)
 		{
-			if(gc_bType.BoolValue)
-				ShowSyncHudText(i, g_hHUD, "%s", sBuffer);
-			else
-				Client_PrintHintText(i, "%s", sBuffer);
+			case DisplayType_Hint:
+				PrintHintText(i, "%s", sBuffer);
+			case DisplayType_KeyHint:
+				Client_PrintKeyHintText(i, "%s", sBuffer);
+			case DisplayType_HudMsg:
+				ShowSyncHudText(i, g_hHUDSync, "%s", sBuffer);
 		}
-		else
-			Client_PrintKeyHintText(i, "%s", sBuffer);
 	}
 	
 	return Plugin_Continue;
@@ -351,9 +391,18 @@ public void TopMenu_SettingsItemHandler(TopMenu topmenu, TopMenuAction action, T
 			
 			topmenu.Display(param, TopMenuPosition_LastCategory);
 			
+			// The panel will be shown in the next timer iteration.
+			if(!g_bClientHidePanel[param])
+				return;
+
 			// Hide the panel right away to be responsive!
-			if(g_bClientHidePanel[param] && !g_bIsCSGO)
-				Client_PrintKeyHintText(param, "");
+			switch(view_as<PanelDisplayType>(g_hCVPanelType.IntValue))
+			{
+				case DisplayType_KeyHint:
+					Client_PrintKeyHintText(param, "");
+				case DisplayType_HudMsg:
+					ClearSyncHud(param, g_hHUDSync);
+			}
 		}
 	}
 }
@@ -385,4 +434,34 @@ void SecondsToString(char[] sBuffer, int iLength, int iSecs, bool bTextual = tru
 		iSecs     %= 60;
 		Format(sBuffer, iLength, "%02i:%02i:%02i", iHours, iMins, iSecs);
 	}
+}
+
+int GetHUDColor()
+{
+	int iColor[4];
+	
+	// Parse the color string 'r g b a' into the array.
+	char sColor[32], sSplit[4][8];
+	g_hCVPanelColor.GetString(sColor, sizeof(sColor));
+	ExplodeString(sColor, " ", sSplit, sizeof(sSplit), sizeof(sSplit[]));
+	for (int i; i < sizeof(iColor); i++)
+	{
+		iColor[i] = StringToInt(sSplit[i]);
+	}
+	return iColor;
+}
+
+float GetHUDPosition()
+{
+	float fPosition[2];
+	
+	// Parse the color string 'r g b a' into the array.
+	char sPosition[16], sSplit[2][8];
+	g_hCVPanelPosition.GetString(sPosition, sizeof(sPosition));
+	ExplodeString(sPosition, " ", sSplit, sizeof(sSplit), sizeof(sSplit[]));
+	for (int i; i < sizeof(fPosition); i++)
+	{
+		fPosition[i] = StringToFloat(sSplit[i]);
+	}
+	return fPosition;
 }

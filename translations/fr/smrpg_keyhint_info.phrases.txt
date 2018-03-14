@@ -5,9 +5,9 @@
 		"fr"	"Vous êtes AFK"
 	}
 
-	"Hide stats info panel on the right"
+	"Hide stats info panel"
 	{
-		"fr"	"Cacher les statistiques dans le panel à droite"
+		"fr"	"Cacher les statistiques dans le panel"
 	}
 
 	"Last Experience Short"

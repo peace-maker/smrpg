@@ -1,13 +1,25 @@
 "Phrases"
 {
+	"RPG stats"
+	{
+		"de"			"RPG stats"
+	}
+
+	"Show for other player"
+	{
+		// 1: "RPG stats" phrase
+		// 2: Name of the target client.
+		"de"			"{1} für {2}"
+	}
+
 	"Player is AFK"
 	{
 		"de"			"Spieler ist AFK"
 	}
 
-	"Hide stats info panel on the right"
+	"Hide stats info panel"
 	{
-		"de"			"Verstecke Infopanel mit Statisiken auf der rechten Seite"
+		"de"			"Verstecke Infopanel mit Statisiken"
 	}
 
 	"Last Experience Short"

@@ -5,9 +5,9 @@
 		"hu"			"A játékos AFK"
 	}
 
-	"Hide stats info panel on the right"
+	"Hide stats info panel"
 	{
-		"hu"			"Info panel elrejtése a jobb oldalon"
+		"hu"			"Info panel elrejtése"
 	}
 
 	"Last Experience Short"
