@@ -259,8 +259,8 @@ public Action Timer_DisplayTurboModeHud(Handle timer)
  */
 public void SMRPG_OnClientLoaded(int client)
 {
-	// Reset client to 0 during turbo mode.
-	if(g_hCVTurboMode.BoolValue)
+	// Reset client to 0 during turbo mode if we don't want to save the changes.
+	if(!g_bPersistChanges && g_hCVTurboMode.BoolValue)
 		SMRPG_ResetClientStats(client);
 }
 
