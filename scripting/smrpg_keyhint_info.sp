@@ -376,7 +376,7 @@ public void TopMenu_SettingsItemHandler(TopMenu topmenu, TopMenuAction action, T
 	{
 		case TopMenuAction_DisplayOption:
 		{
-			Format(buffer, maxlength, "%T: %T", "Hide stats info panel on the right", param, (g_bClientHidePanel[param]?"Yes":"No"), param);
+			Format(buffer, maxlength, "%T: %T", "Hide stats info panel", param, (g_bClientHidePanel[param]?"Yes":"No"), param);
 		}
 		case TopMenuAction_SelectOption:
 		{
