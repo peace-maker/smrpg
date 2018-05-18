@@ -3,6 +3,9 @@
 #pragma newdecls required
 #include <smrpg>
 
+#undef REQUIRE_PLUGIN
+#include <adminmenu>
+
 #define MAX_BAN_REASON_LENGTH 256
 
 enum BanInfo
@@ -15,6 +18,11 @@ enum BanInfo
 StringMap g_hBans;
 bool g_bClientBanned[MAXPLAYERS+1];
 int g_iClientBanNotificationCount[MAXPLAYERS+1];
+
+TopMenu g_hTopMenu;
+int g_iClientPlayerListSelection[MAXPLAYERS+1];
+int g_iClientBanTargetUserId[MAXPLAYERS+1];
+int g_iClientBanLengthMinutes[MAXPLAYERS+1];
 
 public Plugin myinfo = 
 {
@@ -38,6 +46,14 @@ public void OnPluginStart()
 
 	g_hBans = new StringMap();
 	LoadTranslations("common.phrases");
+
+	// See if the menu plugin is already ready
+	TopMenu topmenu;
+	if (LibraryExists("adminmenu") && ((topmenu = GetAdminTopMenu()) != null))
+	{
+		// If so, manually fire the callback
+		OnAdminMenuReady(topmenu);
+	}
 }
 
 public void OnClientAuthorized(int client, const char[] auth)
@@ -51,6 +67,7 @@ public void OnClientDisconnect(int client)
 {
 	g_bClientBanned[client] = false;
 	g_iClientBanNotificationCount[client] = 0;
+	g_iClientPlayerListSelection[client] = 0;
 }
 
 public void Event_OnPlayerSpawn(Event event, const char[] name, bool dontBroadcast)
@@ -156,7 +173,6 @@ public Action Cmd_OnRPGBan(int client, int args)
 
 public Action Cmd_OnRPGUnban(int client, int args)
 {
-	// Require all arguments for RCON.
 	if (args < 2)
 	{
 		ReplyToCommand(client, "Usage sm_rpgunban <name|#steamid|#userid>");
@@ -181,6 +197,220 @@ public Action Cmd_OnRPGUnban(int client, int args)
 	return Plugin_Handled;
 }
 
+/**
+ * Admin menu integration.
+ */
+public void OnAdminMenuReady(Handle topmenu)
+{
+	// Get the rpg category
+	TopMenuObject iRPGCategory = FindTopMenuCategory(topmenu, "SM:RPG");
+	
+	if(iRPGCategory == INVALID_TOPMENUOBJECT)
+		return;
+	
+	if(g_hTopMenu == view_as<TopMenu>(topmenu))
+		return;
+	
+	g_hTopMenu = view_as<TopMenu>(topmenu);
+	
+	g_hTopMenu.AddItem("RPG Ban Player", TopMenu_AdminHandleBanPlayer, iRPGCategory, "sm_rpgban", ADMFLAG_BAN);
+}
+
+public void TopMenu_AdminHandleBanPlayer(TopMenu topmenu, TopMenuAction action, TopMenuObject object_id, int param, char[] buffer, int maxlength)
+{
+	if (action == TopMenuAction_DisplayOption)
+	{
+		Format(buffer, maxlength, "RPG Ban Player");
+	}
+	else if (action == TopMenuAction_SelectOption)
+	{
+		DisplayPlayerList(param);
+	}
+}
+
+void DisplayPlayerList(int client)
+{
+	Menu hMenu = new Menu(Menu_HandlePlayerlist);
+	hMenu.ExitBackButton = true;
+	hMenu.SetTitle("Select player to ban from RPG:");
+	
+	char sBuffer[128], sUserId[16], sAuth[64];
+	for(int i=1;i<=MaxClients;i++)
+	{
+		if(!IsClientInGame(i) || IsFakeClient(i))
+			continue;
+		
+		// Player is immune?
+		if (!CanUserTarget(client, i))
+			continue;
+
+		// Still allow to ban players locally.
+		if(!GetClientAuthId(i, AuthId_Engine, sAuth, sizeof(sAuth)))
+			sAuth[0] = 0;
+		
+		Format(sBuffer, sizeof(sBuffer), "%N <%s>", i, sAuth);
+		IntToString(GetClientUserId(i), sUserId, sizeof(sUserId));
+		hMenu.AddItem(sUserId, sBuffer);
+	}
+	
+	g_iClientBanTargetUserId[client] = 0;
+	hMenu.DisplayAt(client, g_iClientPlayerListSelection[client], MENU_TIME_FOREVER);
+}
+
+public int Menu_HandlePlayerlist(Menu menu, MenuAction action, int param1, int param2)
+{
+	if(action == MenuAction_End)
+	{
+		delete menu;
+	}
+	else if(action == MenuAction_Cancel)
+	{
+		g_iClientPlayerListSelection[param1] = 0;
+		if(param2 == MenuCancel_ExitBack && g_hTopMenu != null)
+			RedisplayAdminMenu(g_hTopMenu, param1);
+	}
+	else if(action == MenuAction_Select)
+	{
+		char sInfo[16];
+		menu.GetItem(param2, sInfo, sizeof(sInfo));
+		int iUserId = StringToInt(sInfo);
+		g_iClientPlayerListSelection[param1] = menu.Selection;
+		
+		int iTarget = GetClientOfUserId(iUserId);
+		if (!iTarget)
+		{
+			PrintToChat(param1, "%t", "Player no longer available");
+			DisplayPlayerList(param1);
+			return;
+		}
+
+		g_iClientBanTargetUserId[param1] = iUserId;
+		
+		DisplayBanTimeMenu(param1);
+	}
+}
+
+void DisplayBanTimeMenu(int client)
+{
+	int iTarget = GetClientOfUserId(g_iClientBanTargetUserId[client]);
+	if (!iTarget)
+	{
+		PrintToChat(client, "%t", "Player no longer available");
+		DisplayPlayerList(client);
+		return;
+	}
+
+	Menu hMenu = new Menu(Menu_HandleBanTimeList);
+	hMenu.ExitBackButton = true;
+	hMenu.SetTitle("Select length of RPG ban for %N:", iTarget);
+	
+	hMenu.AddItem("0", "Permanent");
+	hMenu.AddItem("10", "10 Minutes");
+	hMenu.AddItem("30", "30 Minutes");
+	hMenu.AddItem("60", "1 Hour");
+	hMenu.AddItem("240", "4 Hours");
+	hMenu.AddItem("1440", "1 Day");
+	hMenu.AddItem("10080", "1 Week");
+	
+	hMenu.Display(client, MENU_TIME_FOREVER);
+}
+
+public int Menu_HandleBanTimeList(Menu menu, MenuAction action, int param1, int param2)
+{
+	if(action == MenuAction_End)
+	{
+		delete menu;
+	}
+	else if(action == MenuAction_Cancel)
+	{
+		g_iClientBanTargetUserId[param1] = 0;
+		if(param2 == MenuCancel_ExitBack)
+			DisplayPlayerList(param1);
+	}
+	else if(action == MenuAction_Select)
+	{
+		char sInfo[16];
+		menu.GetItem(param2, sInfo, sizeof(sInfo));
+		int iMinutes = StringToInt(sInfo);
+		
+		int iTarget = GetClientOfUserId(g_iClientBanTargetUserId[param1]);
+		if (!iTarget)
+		{
+			PrintToChat(param1, "%t", "Player no longer available");
+			DisplayPlayerList(param1);
+			return;
+		}
+
+		g_iClientBanLengthMinutes[param1] = iMinutes;
+		
+		DisplayBanReasonMenu(param1);
+	}
+}
+
+void DisplayBanReasonMenu(int client)
+{
+	int iTarget = GetClientOfUserId(g_iClientBanTargetUserId[client]);
+	if (!iTarget)
+	{
+		g_iClientBanLengthMinutes[client] = 0;
+		PrintToChat(client, "%t", "Player no longer available");
+		DisplayPlayerList(client);
+		return;
+	}
+
+	Menu hMenu = new Menu(Menu_HandleBanReasonList);
+	hMenu.ExitBackButton = true;
+	hMenu.SetTitle("Select the reason for the RPG ban for %N:", iTarget);
+	
+	hMenu.AddItem("Abusive", "Abusive");
+	hMenu.AddItem("Racism", "Racism");
+	hMenu.AddItem("General cheating/exploits", "General cheating/exploits");
+	hMenu.AddItem("Mic spamming", "Mic spamming");
+	hMenu.AddItem("Admin disrespect", "Admin disrespect");
+	hMenu.AddItem("Camping", "Camping");
+	hMenu.AddItem("Team killing", "Team killing");
+	hMenu.AddItem("Unacceptable Spray", "Unacceptable Spray");
+	hMenu.AddItem("Breaking Server Rules", "Breaking Server Rules");
+	hMenu.AddItem("Other", "Other");
+	
+	hMenu.Display(client, MENU_TIME_FOREVER);
+}
+
+public int Menu_HandleBanReasonList(Menu menu, MenuAction action, int param1, int param2)
+{
+	if(action == MenuAction_End)
+	{
+		delete menu;
+	}
+	else if(action == MenuAction_Cancel)
+	{
+		g_iClientBanLengthMinutes[param1] = 0;
+		if(param2 == MenuCancel_ExitBack)
+			DisplayBanTimeMenu(param1);
+	}
+	else if(action == MenuAction_Select)
+	{
+		char sReason[MAX_BAN_REASON_LENGTH];
+		menu.GetItem(param2, sReason, sizeof(sReason));
+		
+		int iTarget = GetClientOfUserId(g_iClientBanTargetUserId[param1]);
+		if (!iTarget)
+		{
+			g_iClientBanLengthMinutes[param1] = 0;
+			PrintToChat(param1, "%t", "Player no longer available");
+			DisplayPlayerList(param1);
+			return;
+		}
+
+		BanClientFromRPG(param1, iTarget, g_iClientBanLengthMinutes[param1], sReason);
+		g_iClientBanTargetUserId[param1] = 0;
+		g_iClientBanLengthMinutes[param1] = 0;
+	}
+}
+
+/**
+ * Helpers
+ */
 void BanClientFromRPG(int client, int iTarget, int iTime, const char[] sReason)
 {
 	int iBanInfo[BanInfo];
