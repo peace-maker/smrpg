@@ -104,30 +104,40 @@ public void SMRPG_BuySell(int client, UpgradeQueryType type)
 	if(!IsPlayerAlive(client) || IsClientObserver(client))
 		return;
 	
-	int upgrade[UpgradeInfo];
-	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
+	if (type == UpgradeQueryType_Sell)
+	{
+		// Client had more health than his new maxhealth?
+		// Decrease it.
+		int iMaxHealth = GetClientMaxHealth(client);
+		if(GetClientHealth(client) > iMaxHealth)
+			SetClientHealth(client, iMaxHealth);
+	}
+}
+
+public void SMRPG_OnBuyUpgradePost(int client, const char[] shortname, int newlevel)
+{
+	if (!StrEqual(shortname, UPGRADE_SHORTNAME))
+		return;
+
+	if(!IsClientInGame(client))
+		return;
+	
+	// Are bots allowed to use this upgrade?
+	if(IsFakeClient(client) && SMRPG_IgnoreBots())
+		return;
+	
+	// Only change alive players.
+	if(!IsPlayerAlive(client) || IsClientObserver(client))
+		return;
 	
 	int iHealth = GetClientHealth(client);
 	int iMaxHealth = GetClientMaxHealth(client);
-	
-	switch(type)
-	{
-		case UpgradeQueryType_Buy:
-		{
-			// Client currently had his old maxhealth or more?
-			// Set him to his new higher maxhealth immediately.
-			// Don't touch his health, if he were already damaged.
-			if(iHealth >= (iMaxHealth - g_hCVMaxIncrease.IntValue))
-				SetClientHealth(client, iMaxHealth);
-		}
-		case UpgradeQueryType_Sell:
-		{
-			// Client had more health than his new maxhealth?
-			// Decrease it.
-			if(GetClientHealth(client) > iMaxHealth)
-				SetClientHealth(client, iMaxHealth);
-		}
-	}
+
+	// Client currently had his old maxhealth or more?
+	// Set him to his new higher maxhealth immediately.
+	// Don't touch his health, if he were already damaged.
+	if(iHealth >= (iMaxHealth - g_hCVMaxIncrease.IntValue))
+		SetClientHealth(client, iMaxHealth);
 }
 
 public void SMRPG_TranslateUpgrade(int client, const char[] shortname, TranslationType type, char[] translation, int maxlen)
