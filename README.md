@@ -102,10 +102,11 @@ See the available upgrade plugins for examples. You can use the [example upgrade
 * Vampire - Steal HP from players when damaging them.
 
 # RPG Top 10 on your website
-There is an [example PHP script](https://github.com/peace-maker/smrpg/blob/master/helper_scripts/webtop10_example.php) to list the top 10 rpg players including their stats and selected levels. You might want to merge it into your website.
+There is an [example PHP script](https://github.com/peace-maker/smrpg/blob/master/webserver/rpg-statistics.php) to list the top 10 rpg players including their stats and selected levels. You might want to add it to your website.
 
 # Credits
 * SeLfkiLL - author of the original MM:S [CSS:RPG](http://forums.alliedmods.net/showthread.php?t=51039) plugin.
 * arsirc - author of [THC:RPG](https://forums.alliedmods.net/showthread.php?t=123596). Provided the Damage+, Speed+ and Gravity- upgrade ideas and the team lock option.
 * SumGuy14 (Aka Soccerdude) - author of [RPGx](https://forums.alliedmods.net/showthread.php?t=56877). Config and visual effect ideas, using a seperate plugin to coordinate similar effects.
 * freddukes - author of [SourceRPG](http://forums.eventscripts.com/viewtopic.php?f=27&t=20789). Config ideas, turbo mode, showing menu on levelup, ...
+* [B3none](https://github.com/b3none) - updates to the PHP statistics page.
