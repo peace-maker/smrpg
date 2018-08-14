@@ -560,12 +560,16 @@ void BanClientFromRPG(int client, int iTarget, int iTime, const char[] sReason)
 	}
 	else
 	{
-		char sQuery[1024];
+		char sQuery[1024], sName[MAX_NAME_LENGTH], sEscapedName[MAX_NAME_LENGTH*2+1], sEscapedReason[MAX_BAN_REASON_LENGTH*2+1];
+		GetClientName(iTarget, sName, sizeof(sName));
+		g_hDatabase.Escape(sName, sEscapedName, sizeof(sEscapedName));
+		g_hDatabase.Escape(iBanInfo[BanInfo_Reason], sEscapedReason, sizeof(sEscapedReason));
+
 		// New ban
 		if (iBanInfo[BanInfo_DatabaseId] == -1)
-			g_hDatabase.Format(sQuery, sizeof(sQuery), "INSERT INTO `%s` (name, steamid, start, length, reason) VALUES ('%N', %d, %d, %d, '%s')", TBL_BANS, iTarget, iBanInfo[BanInfo_AccountId], iBanInfo[BanInfo_StartTime], iBanInfo[BanInfo_Time], iBanInfo[BanInfo_Reason]);
+			Format(sQuery, sizeof(sQuery), "INSERT INTO `%s` (name, steamid, start, length, reason) VALUES ('%s', %d, %d, %d, '%s')", TBL_BANS, sEscapedName, iBanInfo[BanInfo_AccountId], iBanInfo[BanInfo_StartTime], iBanInfo[BanInfo_Time], sEscapedReason);
 		else
-			g_hDatabase.Format(sQuery, sizeof(sQuery), "INSERT INTO `%s` (ban_id, name, steamid, start, length, reason) VALUES (%d, '%N', %d, %d, %d, '%s') ON DUPLICATE KEY UPDATE name=VALUES(name), steamid=VALUES(steamid), start=VALUES(start), length=VALUES(length), reason=VALUES(reason)", TBL_BANS, iBanInfo[BanInfo_DatabaseId], iTarget, iBanInfo[BanInfo_AccountId], iBanInfo[BanInfo_StartTime], iBanInfo[BanInfo_Time], iBanInfo[BanInfo_Reason]);
+			Format(sQuery, sizeof(sQuery), "INSERT INTO `%s` (ban_id, name, steamid, start, length, reason) VALUES (%d, '%s', %d, %d, %d, '%s') ON DUPLICATE KEY UPDATE name=VALUES(name), steamid=VALUES(steamid), start=VALUES(start), length=VALUES(length), reason=VALUES(reason)", TBL_BANS, iBanInfo[BanInfo_DatabaseId], sEscapedName, iBanInfo[BanInfo_AccountId], iBanInfo[BanInfo_StartTime], iBanInfo[BanInfo_Time], sEscapedReason);
 		g_hDatabase.Query(SQL_InsertBan, sQuery, iBanInfo[BanInfo_AccountId]);
 	}
 }
