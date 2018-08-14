@@ -44,10 +44,9 @@ public void OnPluginStart()
 
 	HookEvent("player_spawn", Event_OnPlayerSpawn);
 
-	// TODO: Make messages translatable.
-
 	g_hBans = new StringMap();
 	LoadTranslations("common.phrases");
+	LoadTranslations("smrpg_ban.phrases");
 
 	// See if the menu plugin is already ready
 	TopMenu topmenu;
@@ -89,7 +88,7 @@ public void Event_OnPlayerSpawn(Event event, const char[] name, bool dontBroadca
 		return;
 
 	// TODO: Show time until ban expires.
-	Client_PrintToChat(client, false, "{OG}SM:RPG{N} > {G}You are banned from RPG features. You will gain no experience nor be able to use your upgrades.");
+	Client_PrintToChat(client, false, "{OG}SM:RPG{N} > {G}%t", "You are banned");
 	g_iClientBanNotificationCount[client]++;
 }
 
@@ -152,7 +151,7 @@ public Action SMRPG_OnBuyUpgrade(int client, const char[] shortname, int newleve
 {
 	if (IsClientBanned(client))
 	{
-		Client_PrintToChat(client, false, "{OG}SM:RPG{N} > {G}You are banned from RPG features. You cannot buy upgrades right now.");
+		Client_PrintToChat(client, false, "{OG}SM:RPG{N} > {G}%t", "Cannot buy upgrades");
 		return Plugin_Handled;
 	}
 	return Plugin_Continue;
@@ -163,7 +162,7 @@ public Action SMRPG_OnSellUpgrade(int client, const char[] shortname, int newlev
 {
 	if (IsClientBanned(client))
 	{
-		Client_PrintToChat(client, false, "{OG}SM:RPG{N} > {G}You are banned from RPG features. You cannot sell upgrades right now.");
+		Client_PrintToChat(client, false, "{OG}SM:RPG{N} > {G}%t", "Cannot sell upgrades");
 		return Plugin_Handled;
 	}
 	return Plugin_Continue;
@@ -188,7 +187,7 @@ public Action Cmd_OnRPGBan(int client, int args)
 
 	if (!IsClientAuthorized(iTarget))
 	{
-		ReplyToCommand(client, "%N isn't authorized with steam yet. Try again later.", iTarget);
+		ReplyToCommand(client, "SM:RPG > %t", "Not authorized yet", iTarget);
 		return Plugin_Handled;
 	}
 
@@ -200,7 +199,7 @@ public Action Cmd_OnRPGBan(int client, int args)
 	int iTime;
 	if (StringToIntEx(sTime, iTime) != strlen(sTime))
 	{
-		ReplyToCommand(client, "Failed to parse the length of the ban. \"%s\" is not a number.", sTime);
+		ReplyToCommand(client, "SM:RPG > %t", "Invalid ban length", sTime);
 		return Plugin_Handled;
 	}
 
@@ -232,12 +231,12 @@ public Action Cmd_OnRPGUnban(int client, int args)
 
 	if (!IsClientBanned(iTarget))
 	{
-		ReplyToCommand(client, "%N is not banned from RPG.", iTarget);
+		ReplyToCommand(client, "SMRPG > %t", "Player is not banned", iTarget);
 		return Plugin_Handled;
 	}
 
 	AdminUnbanClientFromRPG(client, iTarget);
-	ReplyToCommand(client, "SM:RPG > %N was unbanned from RPG.", iTarget);
+	ReplyToCommand(client, "SM:RPG > %t", "Player unbanned", iTarget);
 	LogAction(client, iTarget, "%L unbanned %L from RPG features.", client, iTarget);
 	return Plugin_Handled;
 }
@@ -265,7 +264,7 @@ public void TopMenu_AdminHandleBanPlayer(TopMenu topmenu, TopMenuAction action, 
 {
 	if (action == TopMenuAction_DisplayOption)
 	{
-		Format(buffer, maxlength, "RPG Ban Player");
+		Format(buffer, maxlength, "%T", "RPG Ban Player", param);
 	}
 	else if (action == TopMenuAction_SelectOption)
 	{
@@ -277,7 +276,7 @@ void DisplayPlayerList(int client)
 {
 	Menu hMenu = new Menu(Menu_HandlePlayerlist);
 	hMenu.ExitBackButton = true;
-	hMenu.SetTitle("Select player to ban from RPG:");
+	hMenu.SetTitle("%T", "Select player to ban", client);
 	
 	char sBuffer[128], sUserId[16], sAuth[64];
 	for(int i=1;i<=MaxClients;i++)
@@ -347,7 +346,7 @@ void DisplayBanTimeMenu(int client)
 
 	Menu hMenu = new Menu(Menu_HandleBanTimeList);
 	hMenu.ExitBackButton = true;
-	hMenu.SetTitle("Select length of RPG ban for %N:", iTarget);
+	hMenu.SetTitle("%T", "Select length of ban", client, iTarget);
 	
 	hMenu.AddItem("0", "Permanent");
 	hMenu.AddItem("10", "10 Minutes");
@@ -405,7 +404,7 @@ void DisplayBanReasonMenu(int client)
 
 	Menu hMenu = new Menu(Menu_HandleBanReasonList);
 	hMenu.ExitBackButton = true;
-	hMenu.SetTitle("Select the reason for the RPG ban for %N:", iTarget);
+	hMenu.SetTitle("%T", "Select reason for ban", client, iTarget);
 	
 	hMenu.AddItem("Abusive", "Abusive");
 	hMenu.AddItem("Racism", "Racism");
@@ -537,7 +536,7 @@ void BanClientFromRPG(int client, int iTarget, int iTime, const char[] sReason)
 	if (IsClientBanned(iTarget))
 	{
 		GetClientBanInfo(iTarget, iBanInfo);
-		Client_PrintToChat(client, false, "{OG}SM:RPG{N} > {G}%N was banned before. Changed the ban from %d minutes to %d minutes. (Old reason: \"%s\")", iTarget, iBanInfo[BanInfo_Time], iTime, iBanInfo[BanInfo_Reason]);
+		Client_PrintToChat(client, false, "{OG}SM:RPG{N} > {G}%t", "Already banned, change length", iTarget, iBanInfo[BanInfo_Time], iTime, iBanInfo[BanInfo_Reason]);
 	}
 
 	iBanInfo[BanInfo_AccountId] = GetSteamAccountID(iTarget);
@@ -550,7 +549,10 @@ void BanClientFromRPG(int client, int iTarget, int iTime, const char[] sReason)
 	g_bClientBanned[iTarget] = true;
 
 	LogAction(client, iTarget, "%L banned %L from RPG features (time %d) (reason \"%s\")", client, iTarget, iTime, sReason);
-	Client_PrintToChatAll(false, "{OG}SM:RPG{N} > {G}%N banned %N from RPG features for %d minutes. Reason: %s", client, iTarget, iTime, sReason);
+	if(iTime == 0)
+		Client_PrintToChatAll(false, "{OG}SM:RPG{N} > {G}%t", "Player was banned permanently", client, iTarget, sReason);
+	else
+		Client_PrintToChatAll(false, "{OG}SM:RPG{N} > {G}%t", "Player was banned", client, iTarget, iTime, sReason);
 
 	if(!g_hDatabase)
 	{
@@ -594,7 +596,7 @@ void UnbanClientFromRPG(int client)
 	char sAccountId[64];
 	sAccountId = GetClientAccountIDString(client);
 	g_hBans.Remove(sAccountId);
-	Client_PrintToChat(client, false, "{OG}SM:RPG{N} > {G}Your RPG ban expired. You may play normally again. Behave yourself!");
+	Client_PrintToChat(client, false, "{OG}SM:RPG{N} > {G}%t", "Ban expired");
 }
 
 bool IsClientBanned(int client)
