@@ -29,12 +29,22 @@ enum DatabaseDriver {
 
 DatabaseDriver g_DriverType;
 
+Handle g_hfwdOnDatabaseConnected;
+
 void RegisterDatabaseNatives()
 {
 	// native bool SMRPG_ResetAllPlayers(const char[] sReason, bool bHardReset=false);
 	CreateNative("SMRPG_ResetAllPlayers", Native_ResetAllPlayers);
 	// native void SMRPG_FlushDatabase();
 	CreateNative("SMRPG_FlushDatabase", Native_FlushDatabase);
+	// native void SMRPG_CheckDatabaseConnection();
+	CreateNative("SMRPG_CheckDatabaseConnection", Native_CheckDatabaseConnection);
+}
+
+void RegisterDatabaseForwards()
+{
+	// forward void SMRPG_OnDatabaseConnected(Database database);
+	g_hfwdOnDatabaseConnected = CreateGlobalForward("SMRPG_OnDatabaseConnected", ET_Ignore, Param_Cell);
 }
 
 void InitDatabase()
@@ -158,6 +168,11 @@ public void SQL_OnConnect(Database db, const char[] error, any data)
 			AddPlayer(i);
 		}
 	}
+
+	// Share the handle with other plugins.
+	Call_StartForward(g_hfwdOnDatabaseConnected);
+	Call_PushCell(g_hDatabase);
+	Call_Finish();
 }
 
 public Action Timer_ReconnectDatabase(Handle timer)
@@ -551,6 +566,21 @@ public int Native_FlushDatabase(Handle plugin, int numParams)
 {
 	// Flush all info into the database. This handles smrpg_save_data and smrpg_enable
 	SaveAllPlayers();
+}
+
+public int Native_CheckDatabaseConnection(Handle plugin, int numParams)
+{
+	if(!g_hDatabase)
+		return;
+
+	// Call the global forward callback ONLY in the calling plugin.
+	Function funOnDatabaseConnected = GetFunctionByName(plugin, "SMRPG_OnDatabaseConnected");
+	if(funOnDatabaseConnected == INVALID_FUNCTION)
+		return;
+
+	Call_StartFunction(plugin, funOnDatabaseConnected);
+	Call_PushCell(g_hDatabase);
+	Call_Finish();
 }
 
 public void SQL_DoNothing(Database db, DBResultSet results, const char[] error, any data)
