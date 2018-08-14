@@ -21,7 +21,7 @@ When an upgrade registers itself at the core, it'll automatically be added to th
 Server admins can install a new upgrade simply by loading the upgrade plugin.
 
 # Installation
-* Download the [latest build](http://build.wcfan.de/smrpg/1.8/)
+* Download the [latest pre-compiled build](http://build.wcfan.de/smrpg/1.9/).
 * Upload the plugins as well as the configs, gamedata and translations folders to your gameserver.
   * Only upload the plugins/upgrades you want to use. See below for an explanation of each plugin's purpose.
 * (Optional) Install [DHooks](https://forums.alliedmods.net/showthread.php?t=180114) for the Speed+ upgrade.
