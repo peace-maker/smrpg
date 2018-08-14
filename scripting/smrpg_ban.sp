@@ -10,6 +10,7 @@
 
 enum BanInfo
 {
+	BanInfo_DatabaseId,
 	BanInfo_AccountId,
 	BanInfo_Time,
 	BanInfo_StartTime,
@@ -23,6 +24,9 @@ TopMenu g_hTopMenu;
 int g_iClientPlayerListSelection[MAXPLAYERS+1];
 int g_iClientBanTargetUserId[MAXPLAYERS+1];
 int g_iClientBanLengthMinutes[MAXPLAYERS+1];
+
+Database g_hDatabase;
+#define TBL_BANS "bans"
 
 public Plugin myinfo = 
 {
@@ -40,8 +44,6 @@ public void OnPluginStart()
 
 	HookEvent("player_spawn", Event_OnPlayerSpawn);
 
-	// TODO: Integrate RPGBan Player into admin menu.
-	// TODO: Make bans persistent in database.
 	// TODO: Make messages translatable.
 
 	g_hBans = new StringMap();
@@ -54,6 +56,9 @@ public void OnPluginStart()
 		// If so, manually fire the callback
 		OnAdminMenuReady(topmenu);
 	}
+
+	// See if we're late loaded and the database connection is already open.
+	SMRPG_CheckDatabaseConnection();
 }
 
 public void OnClientAuthorized(int client, const char[] auth)
@@ -91,6 +96,39 @@ public void Event_OnPlayerSpawn(Event event, const char[] name, bool dontBroadca
 /**
  * SMRPG forwards.
  */
+public void SMRPG_OnDatabaseConnected(Database database)
+{
+	g_hDatabase = database;
+
+	DBDriver driver = database.Driver;
+	char sDriverIdent[16];
+	driver.GetIdentifier(sDriverIdent, sizeof(sDriverIdent));
+
+	char sAutoIncrement[32], sExtraOptions[64];
+	if(StrEqual(sDriverIdent, "mysql", false))
+	{
+		sAutoIncrement = "AUTO_INCREMENT";
+		sExtraOptions = " ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
+	}
+	else if(StrEqual(sDriverIdent, "sqlite", false))
+	{
+		sAutoIncrement = "AUTOINCREMENT";
+	}
+	else
+	{
+		SetFailState("Unknown SQL driver: %s. Aborting..", sDriverIdent);
+	}
+
+	char sQuery[512];
+	Format(sQuery, sizeof(sQuery), "CREATE TABLE IF NOT EXISTS `%s` (ban_id INTEGER PRIMARY KEY %s, name VARCHAR(128) NOT NULL, steamid INTEGER NOT NULL, start INTEGER NOT NULL, length INTEGER NOT NULL, reason VARCHAR(%d) NOT NULL, unban_time INTEGER DEFAULT NULL)%s", TBL_BANS, sAutoIncrement, MAX_BAN_REASON_LENGTH, sExtraOptions);
+	g_hDatabase.Query(SQL_LogError, sQuery);
+
+	// Load all active bans
+	// We're prefetching here, since RPG bans are expected to be temporary and the list of banned players at the same time should be fairly short.
+	Format(sQuery, sizeof(sQuery), "SELECT ban_id, steamid, start, length, reason FROM `%s` WHERE (length = 0 OR (start + length*60) > %d) AND unban_time IS NULL", TBL_BANS, GetTime());
+	g_hDatabase.Query(SQL_LoadBans, sQuery);
+}
+
 public Action SMRPG_OnAddExperience(int client, const char[] reason, int &iExperience, int other)
 {
 	// Don't give him any regular experience.
@@ -113,7 +151,10 @@ public Action SMRPG_OnUpgradeEffect(int target, const char[] shortname, int issu
 public Action SMRPG_OnBuyUpgrade(int client, const char[] shortname, int newlevel)
 {
 	if (IsClientBanned(client))
+	{
+		Client_PrintToChat(client, false, "{OG}SM:RPG{N} > {G}You are banned from RPG features. You cannot buy upgrades right now.");
 		return Plugin_Handled;
+	}
 	return Plugin_Continue;
 }
 
@@ -121,7 +162,10 @@ public Action SMRPG_OnBuyUpgrade(int client, const char[] shortname, int newleve
 public Action SMRPG_OnSellUpgrade(int client, const char[] shortname, int newlevel)
 {
 	if (IsClientBanned(client))
+	{
+		Client_PrintToChat(client, false, "{OG}SM:RPG{N} > {G}You are banned from RPG features. You cannot sell upgrades right now.");
 		return Plugin_Handled;
+	}
 	return Plugin_Continue;
 }
 
@@ -130,7 +174,7 @@ public Action SMRPG_OnSellUpgrade(int client, const char[] shortname, int newlev
  */
 public Action Cmd_OnRPGBan(int client, int args)
 {
-	if (args < 4)
+	if (args < 3)
 	{
 		ReplyToCommand(client, "Usage sm_rpgban <name|#steamid|#userid> <length in minutes> <reason>");
 		return Plugin_Handled;
@@ -173,7 +217,7 @@ public Action Cmd_OnRPGBan(int client, int args)
 
 public Action Cmd_OnRPGUnban(int client, int args)
 {
-	if (args < 2)
+	if (args < 1)
 	{
 		ReplyToCommand(client, "Usage sm_rpgunban <name|#steamid|#userid>");
 		return Plugin_Handled;
@@ -192,7 +236,8 @@ public Action Cmd_OnRPGUnban(int client, int args)
 		return Plugin_Handled;
 	}
 
-	UnbanClientFromRPG(iTarget);
+	AdminUnbanClientFromRPG(client, iTarget);
+	ReplyToCommand(client, "SM:RPG > %N was unbanned from RPG.", iTarget);
 	LogAction(client, iTarget, "%L unbanned %L from RPG features.", client, iTarget);
 	return Plugin_Handled;
 }
@@ -409,20 +454,94 @@ public int Menu_HandleBanReasonList(Menu menu, MenuAction action, int param1, in
 }
 
 /**
+ * SQL callbacks
+ */
+public void SQL_LogError(Database db, DBResultSet results, const char[] error, any data)
+{
+	if(!results)
+	{
+		LogError("Error executing query: %s", error);
+	}
+}
+
+public void SQL_LoadBans(Database db, DBResultSet results, const char[] error, any data)
+{
+	if(!results)
+	{
+		LogError("Error loading active bans: %s", error);
+		return;
+	}
+
+	// Remove any bans in our cache. The database always takes higher priority.
+	g_hBans.Clear();
+
+	int iBanInfo[BanInfo];
+	char sAccountId[64];
+	// SELECT ban_id, steamid, start, length, reason
+	while(results.FetchRow())
+	{
+		iBanInfo[BanInfo_DatabaseId] = results.FetchInt(0);
+		iBanInfo[BanInfo_AccountId] = results.FetchInt(1);
+		iBanInfo[BanInfo_StartTime] = results.FetchInt(2);
+		iBanInfo[BanInfo_Time] = results.FetchInt(3);
+		results.FetchString(4, iBanInfo[BanInfo_Reason], MAX_BAN_REASON_LENGTH);
+
+		IntToString(iBanInfo[BanInfo_AccountId], sAccountId, sizeof(sAccountId));
+		g_hBans.SetArray(sAccountId, iBanInfo[0], view_as<int>(BanInfo));
+	}
+
+	// Check if any connected player is banned.
+	for(int i = 1; i <= MaxClients; i++)
+	{
+		if (!IsClientInGame(i) || IsFakeClient(i) || !IsClientAuthorized(i))
+			continue;
+
+		if (GetClientBanInfo(i, iBanInfo))
+			g_bClientBanned[i] = true;
+	}
+}
+
+public void SQL_InsertBan(Database db, DBResultSet results, const char[] error, any iAccountId)
+{
+	if(!results)
+	{
+		LogError("Error saving ban: %s", error);
+		return;
+	}
+
+	char sAccountId[64];
+	IntToString(iAccountId, sAccountId, sizeof(sAccountId));
+
+	// See if this is a new ban and we need to save the ban_id.
+	int iBanInfo[BanInfo];
+	g_hBans.GetArray(sAccountId, iBanInfo[0], view_as<int>(BanInfo));
+	if (iBanInfo[BanInfo_DatabaseId] != -1)
+		return;
+
+	// Remember the ban id of the ban in the database.
+	iBanInfo[BanInfo_DatabaseId] = results.InsertId;
+	g_hBans.SetArray(sAccountId, iBanInfo[0], view_as<int>(BanInfo));
+}
+
+/**
  * Helpers
  */
 void BanClientFromRPG(int client, int iTarget, int iTime, const char[] sReason)
 {
 	int iBanInfo[BanInfo];
+	iBanInfo[BanInfo_DatabaseId] = -1;
+	// Don't touch the start time of the ban, if the player is currently banned already.
+	// Only change the length of the ban.
+	iBanInfo[BanInfo_StartTime] = GetTime();
+
 	if (IsClientBanned(iTarget))
 	{
 		GetClientBanInfo(iTarget, iBanInfo);
-		Client_PrintToChat(client, false, "{OG}SM:RPG{N} > {G}%N was banned before. Changed the ban from %d minutes to %d minutes. (Old reason: \"%s\")", iBanInfo[BanInfo_Time], iTime, iBanInfo[BanInfo_Reason]);
+		Client_PrintToChat(client, false, "{OG}SM:RPG{N} > {G}%N was banned before. Changed the ban from %d minutes to %d minutes. (Old reason: \"%s\")", iTarget, iBanInfo[BanInfo_Time], iTime, iBanInfo[BanInfo_Reason]);
 	}
 
 	iBanInfo[BanInfo_AccountId] = GetSteamAccountID(iTarget);
 	iBanInfo[BanInfo_Time] = iTime;
-	iBanInfo[BanInfo_StartTime] = GetTime();
 	strcopy(iBanInfo[BanInfo_Reason], MAX_BAN_REASON_LENGTH, sReason);
 
 	char sAccountId[64];
@@ -431,7 +550,41 @@ void BanClientFromRPG(int client, int iTarget, int iTime, const char[] sReason)
 	g_bClientBanned[iTarget] = true;
 
 	LogAction(client, iTarget, "%L banned %L from RPG features (time %d) (reason \"%s\")", client, iTarget, iTime, sReason);
-	ShowActivity2(client, "SM:RPG", "%N banned %N from RPG features for %d minutes. Reason: %s", client, iTarget, iTime, sReason);
+	Client_PrintToChatAll(false, "{OG}SM:RPG{N} > {G}%N banned %N from RPG features for %d minutes. Reason: %s", client, iTarget, iTime, sReason);
+
+	if(!g_hDatabase)
+	{
+		Client_PrintToChat(client, false, "{OG}SM:RPG{N} > {G}No database connection available. The ban will only last until the server restarts!");
+	}
+	else
+	{
+		char sQuery[1024];
+		// New ban
+		if (iBanInfo[BanInfo_DatabaseId] == -1)
+			g_hDatabase.Format(sQuery, sizeof(sQuery), "INSERT INTO `%s` (name, steamid, start, length, reason) VALUES ('%N', %d, %d, %d, '%s')", TBL_BANS, iTarget, iBanInfo[BanInfo_AccountId], iBanInfo[BanInfo_StartTime], iBanInfo[BanInfo_Time], iBanInfo[BanInfo_Reason]);
+		else
+			g_hDatabase.Format(sQuery, sizeof(sQuery), "INSERT INTO `%s` (ban_id, name, steamid, start, length, reason) VALUES (%d, '%N', %d, %d, %d, '%s') ON DUPLICATE KEY UPDATE name=VALUES(name), steamid=VALUES(steamid), start=VALUES(start), length=VALUES(length), reason=VALUES(reason)", TBL_BANS, iBanInfo[BanInfo_DatabaseId], iTarget, iBanInfo[BanInfo_AccountId], iBanInfo[BanInfo_StartTime], iBanInfo[BanInfo_Time], iBanInfo[BanInfo_Reason]);
+		g_hDatabase.Query(SQL_InsertBan, sQuery, iBanInfo[BanInfo_AccountId]);
+	}
+}
+
+void AdminUnbanClientFromRPG(int client, int target)
+{
+	int iBanInfo[BanInfo];
+	GetClientBanInfo(target, iBanInfo);
+
+	UnbanClientFromRPG(target);
+
+	if(!g_hDatabase)
+	{
+		Client_PrintToChat(client, false, "{OG}SM:RPG{N} > {G}No database connection available. The player might still be banned when the database comes back.");
+	}
+	else if (iBanInfo[BanInfo_DatabaseId] > 0)
+	{
+		char sQuery[512];
+		Format(sQuery, sizeof(sQuery), "UPDATE `%s` SET unban_time = %d WHERE ban_id = %d", TBL_BANS, GetTime(), iBanInfo[BanInfo_DatabaseId]);
+		g_hDatabase.Query(SQL_LogError, sQuery);
+	}
 }
 
 void UnbanClientFromRPG(int client)
