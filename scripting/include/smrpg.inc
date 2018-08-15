@@ -85,6 +85,7 @@ public void __pl_smrpg_SetNTVOptional()
 	// smrpg_database
 	MarkNativeAsOptional("SMRPG_ResetAllPlayers");
 	MarkNativeAsOptional("SMRPG_FlushDatabase");
+	MarkNativeAsOptional("SMRPG_CheckDatabaseConnection");
 
 	// smrpg_clients
 	MarkNativeAsOptional("SMRPG_RegisterUpgradeType");

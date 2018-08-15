@@ -50,6 +50,7 @@ Server admins can install a new upgrade simply by loading the upgrade plugin.
 * If there is a seperate experience module for your game (currently only cstrike), compile and upload that too.
 * Compile all optional features if you want them.
   * smrpg_antisuicide - Punish players who commit suicide during a fight by taking some experience.
+  * smrpg_ban - Ban players from using and managing their upgrades and gaining experience for a time or permanently.
   * smrpg_chattags - Add RPG level and/or rank in front of chat messages.
   * smrpg_chatxpstats - Display infos in chat about gained experience for a kill or during the whole last life.
   * smrpg_commandlist - Teach players about different available rpg related chat commands.
