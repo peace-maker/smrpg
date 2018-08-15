@@ -226,6 +226,7 @@ public void OnPluginStart()
 	RegisterAdminCommands();
 	RegisterPlayerForwards();
 	RegisterTopMenuForwards();
+	RegisterDatabaseForwards();
 	RegisterStatsForwards();
 	RegisterUpgradeForwards();
 	RegisterSettingsForwards();

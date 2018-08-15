@@ -416,11 +416,11 @@ public int Menu_ConfirmSell(Menu menu, MenuAction action, int param1, int param2
 		int iItemIndex = StringToInt(sInfo);
 		int upgrade[InternalUpgradeInfo];
 		GetUpgradeByIndex(iItemIndex, upgrade);
-		SellClientUpgrade(param1, iItemIndex);
-		
 		char sTranslatedName[MAX_UPGRADE_NAME_LENGTH];
 		GetUpgradeTranslatedName(param1, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
-		Client_PrintToChat(param1, false, "%t", "Upgrade sold", sTranslatedName, GetClientPurchasedUpgradeLevel(param1, iItemIndex)+1);
+		
+		if (SellClientUpgrade(param1, iItemIndex))
+			Client_PrintToChat(param1, false, "%t", "Upgrade sold", sTranslatedName, GetClientPurchasedUpgradeLevel(param1, iItemIndex));
 		
 		g_hRPGTopMenu.Display(param1, TopMenuPosition_LastCategory);
 	}

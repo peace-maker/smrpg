@@ -1,0 +1,94 @@
+"Phrases"
+{
+	"RPG Ban Player"
+	{
+		"de"			"Spieler vom RPG bannen"
+	}
+	
+	"You are banned"
+	{
+		"de"			"Du wurdest vom RPG gebannt. Du bekommst keine Erfahrung und kannst deine Upgrades nicht benutzen."
+	}
+	
+	"Cannot buy upgrades"
+	{
+		"de"			"Du wurdest vom RPG gebannt. Du kannst gerade keine Upgrades kaufen."
+	}
+	
+	"Cannot sell upgrades"
+	{
+		"de"			"Du wurdest vom RPG gebannt. Du kannst gerade keine Upgrades verkaufen."
+	}
+	
+	"Not authorized yet"
+	{
+		// 1: Name of the player.
+		"de"			"{1} ist noch nicht von Steam authentifiziert. Probiere es später nochmal."
+	}
+	
+	"Invalid ban length"
+	{
+		// 1: String that was entered as length in the command.
+		"de"			"Konnte die Länge des Banns nicht lesen. \"{1}\" ist keine Zahl."
+	}
+	
+	"Player is not banned"
+	{
+		// 1: Name of the player.
+		"de"			"{1} ist nicht vom RPG gebannt."
+	}
+	
+	"Player unbanned"
+	{
+		// 1: Name of the player.
+		"de"			"{1} wurde vom RPG entbannt."
+	}
+	
+	"Select player to ban"
+	{
+		"de"			"Wähle den vom RPG zu bannenden Spieler:"
+	}
+
+	"Select length of ban"
+	{
+		// 1: Name of the player.
+		"de"			"Wähle die Länge des RPG Banns für {1}:"
+	}
+
+	"Select reason for ban"
+	{
+		// 1: Name of the player.
+		"de"			"Wähle den Grund für den RPG Bann von {1}:"
+	}
+
+	"Already banned, change length"
+	{
+		// 1: Name of the player.
+		// 2: Old length of the ban in minutes.
+		// 3: New length of the ban in minutes.
+		// 4: Old reason for the ban.
+		"de"			"{1} ist bereits gebannt. Die Bannlänge wurde von {2} Minuten auf {3} Minuten geändert. (Alter Grund: \"{4}\")"
+	}
+
+	"Player was banned"
+	{
+		// 1: Name of the admin who is banning the player.
+		// 2: Name of the banned player.
+		// 3: Length of the ban in minutes.
+		// 4: Reason for the ban.
+		"de"			"{1} hat {2} für {3} Minuten vom RPG gebannt. Grund: {4}"
+	}
+
+	"Player was banned permanently"
+	{
+		// 1: Name of the admin who is banning the player.
+		// 2: Name of the banned player.
+		// 3: Reason for the ban.
+		"de"			"{1} hat {2} permanent vom RPG gebannt. Grund: {3}"
+	}
+	
+	"Ban expired"
+	{
+		"de"			"Dein RPG Bann ist abgelaufen. Du kannst wieder normal spielen. Sei artig!"
+	}
+}

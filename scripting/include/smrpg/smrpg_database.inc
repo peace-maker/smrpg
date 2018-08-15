@@ -21,3 +21,17 @@ native bool SMRPG_ResetAllPlayers(const char[] sReason, bool bHardReset=false);
  * This obeys the settings for smrpg_enable and smrpg_save_data.
  */
 native void SMRPG_FlushDatabase();
+
+/**
+ * Checks if the database connection is available and fires the SMRPG_OnDatabaseConnected function in the calling plugin in that case.
+ * Should be used in OnPluginStart to support late loading.
+ */
+native void SMRPG_CheckDatabaseConnection();
+
+/**
+ * Called when the connection to the SQL database was established.
+ * The database handle can be saved to execute custom queries against the SM:RPG database.
+ *
+ * @param database      The database handle.
+ */
+forward void SMRPG_OnDatabaseConnected(Database database);

@@ -1,0 +1,103 @@
+"Phrases"
+{
+	"RPG Ban Player"
+	{
+		"en"			"Ban player from RPG"
+	}
+	
+	"You are banned"
+	{
+		"en"			"You are banned from RPG features. You will gain no experience nor be able to use your upgrades."
+	}
+	
+	"Cannot buy upgrades"
+	{
+		"en"			"You are banned from RPG features. You cannot buy upgrades right now."
+	}
+	
+	"Cannot sell upgrades"
+	{
+		"en"			"You are banned from RPG features. You cannot sell upgrades right now."
+	}
+	
+	"Not authorized yet"
+	{
+		// 1: Name of the player.
+		"#format"		"{1:N}"
+		"en"			"{1} isn't authorized with steam yet. Try again later."
+	}
+	
+	"Invalid ban length"
+	{
+		// 1: String that was entered as length in the command.
+		"#format"		"{1:s}"
+		"en"			"Failed to parse the length of the ban. \"{1}\" is not a number."
+	}
+	
+	"Player is not banned"
+	{
+		// 1: Name of the player.
+		"#format"		"{1:N}"
+		"en"			"{1} is not banned from RPG."
+	}
+	
+	"Player unbanned"
+	{
+		// 1: Name of the player.
+		"#format"		"{1:N}"
+		"en"			"{1} was unbanned from RPG."
+	}
+	
+	"Select player to ban"
+	{
+		"en"			"Select player to ban from RPG:"
+	}
+
+	"Select length of ban"
+	{
+		// 1: Name of the player.
+		"#format"		"{1:N}"
+		"en"			"Select length of RPG ban for {1}:"
+	}
+
+	"Select reason for ban"
+	{
+		// 1: Name of the player.
+		"#format"		"{1:N}"
+		"en"			"Select the reason for the RPG ban for {1}:"
+	}
+
+	"Already banned, change length"
+	{
+		// 1: Name of the player.
+		// 2: Old length of the ban in minutes.
+		// 3: New length of the ban in minutes.
+		// 4: Old reason for the ban.
+		"#format"		"{1:N},{2:d},{3:d},{4:s}"
+		"en"			"{1} is already banned. Changed the ban from {2} minutes to {3} minutes. (Old reason: \"{4}\")"
+	}
+
+	"Player was banned"
+	{
+		// 1: Name of the admin who is banning the player.
+		// 2: Name of the banned player.
+		// 3: Length of the ban in minutes.
+		// 4: Reason for the ban.
+		"#format"		"{1:N},{2:N},{3:d},{4:s}"
+		"en"			"{1} banned {2} from RPG features for {3} minutes. Reason: {4}"
+	}
+
+	"Player was banned permanently"
+	{
+		// 1: Name of the admin who is banning the player.
+		// 2: Name of the banned player.
+		// 3: Reason for the ban.
+		"#format"		"{1:N},{2:N},{3:s}"
+		"en"			"{1} banned {2} from RPG features permanently. Reason: {3}"
+	}
+	
+	"Ban expired"
+	{
+		"en"			"Your RPG ban expired. You may play normally again. Behave yourself!"
+	}
+}
