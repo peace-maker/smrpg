@@ -248,7 +248,12 @@ public void Hook_OnWeaponEquipPost(int client, int weapon)
 	
 	// Weapon wasn't spawned completely yet. Can happen when buying a weapon. It's already equipped before it's spawned.
 	if(g_iGameMaxClip1[weapon] <= 0)
+	{
+		// Check the clip again in case the weapon was lying on the floor.
+		// In CS:GO m_iClip1 is only set once a player picks the weapon up.
+		RequestFrame(Frame_GetGameMaxClip1, EntIndexToEntRef(weapon));
 		return;
+	}
 	
 	if(!IsUpgradeActive(client))
 		return;
@@ -377,7 +382,13 @@ public void Frame_GetGameMaxClip1(any entity)
 	if(entity == INVALID_ENT_REFERENCE)
 		return;
 	
-	g_iGameMaxClip1[entity] = Weapon_GetPrimaryClip(entity);
+	// Only save the current clip of the weapon as the maximum if it wasn't carried by some other player already.
+	if (!HasEntProp(entity, Prop_Send, "m_hPrevOwner") || GetEntPropEnt(entity, Prop_Send, "m_hPrevOwner") == INVALID_ENT_REFERENCE)
+		g_iGameMaxClip1[entity] = Weapon_GetPrimaryClip(entity);
+
+	// The weapon isn't setup yet. Happens in CS:GO for weapons spawned on the ground. The clip is set when a player equips the weapon.
+	if (g_iGameMaxClip1[entity] <= 0)
+		return;
 	
 	// If this weapon already has an owner right after it spawned it was probably bought.
 	// Weapons are equipped before spawning them when buying them.
