@@ -63,7 +63,7 @@ public void OnLibraryAdded(const char[] name)
 	if(StrEqual(name, "smrpg"))
 	{
 		// Register the upgrade type.
-		SMRPG_RegisterUpgradeType("Reduced Gravity", UPGRADE_SHORTNAME, "Reduces your gravity and lets you jump higher.", 10, true, 10, 10, 15);
+		SMRPG_RegisterUpgradeType("Reduced Gravity", UPGRADE_SHORTNAME, "Reduces your gravity and lets you jump higher.", 0, true, 10, 10, 15);
 		SMRPG_SetUpgradeBuySellCallback(UPGRADE_SHORTNAME, SMRPG_BuySell);
 		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
 		

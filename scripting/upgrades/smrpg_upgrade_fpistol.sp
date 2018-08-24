@@ -70,7 +70,7 @@ public void OnLibraryAdded(const char[] name)
 	// Register this upgrade in SM:RPG
 	if(StrEqual(name, "smrpg"))
 	{
-		SMRPG_RegisterUpgradeType("Frost Pistol", UPGRADE_SHORTNAME, "Slow down players hit with a pistol.", 10, true, 10, 20, 15);
+		SMRPG_RegisterUpgradeType("Frost Pistol", UPGRADE_SHORTNAME, "Slow down players hit with a pistol.", 0, true, 10, 20, 15);
 		SMRPG_SetUpgradeActiveQueryCallback(UPGRADE_SHORTNAME, SMRPG_ActiveQuery);
 		SMRPG_SetUpgradeResetCallback(UPGRADE_SHORTNAME, SMRPG_ResetEffect);
 		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);

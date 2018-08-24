@@ -59,7 +59,7 @@ public void OnLibraryAdded(const char[] name)
 	// Register this upgrade in SM:RPG
 	if(StrEqual(name, "smrpg"))
 	{
-		SMRPG_RegisterUpgradeType("Vampire", UPGRADE_SHORTNAME, "Steal HP from players when damaging them.", 15, true, 10, 15, 10);
+		SMRPG_RegisterUpgradeType("Vampire", UPGRADE_SHORTNAME, "Steal HP from players when damaging them.", 0, true, 10, 15, 10);
 		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
 		SMRPG_SetUpgradeDefaultCosmeticEffect(UPGRADE_SHORTNAME, SMRPG_FX_Visuals, true);
 		

@@ -49,7 +49,7 @@ public void OnLibraryAdded(const char[] name)
 	// Register this upgrade in SM:RPG
 	if(StrEqual(name, "smrpg"))
 	{
-		SMRPG_RegisterUpgradeType("Ice Grenade", UPGRADE_SHORTNAME, "Freeze a player in place when damaged by your grenade.", 10, true, 5, 15, 10);
+		SMRPG_RegisterUpgradeType("Ice Grenade", UPGRADE_SHORTNAME, "Freeze a player in place when damaged by your grenade.", 0, true, 5, 15, 10);
 		SMRPG_SetUpgradeActiveQueryCallback(UPGRADE_SHORTNAME, SMRPG_ActiveQuery);
 		SMRPG_SetUpgradeResetCallback(UPGRADE_SHORTNAME, SMRPG_ResetEffect);
 		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);

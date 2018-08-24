@@ -57,7 +57,7 @@ public void OnLibraryAdded(const char[] name)
 	// Register this upgrade in SM:RPG
 	if(StrEqual(name, "smrpg"))
 	{
-		SMRPG_RegisterUpgradeType("Damage+", UPGRADE_SHORTNAME, "Deal additional damage on enemies.", 10, true, 5, 5, 10);
+		SMRPG_RegisterUpgradeType("Damage+", UPGRADE_SHORTNAME, "Deal additional damage on enemies.", 0, true, 5, 5, 10);
 		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
 		g_hCVDefaultPercent = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_damage_percent", "0.05", "Percentage of damage done the victim loses additionally (multiplied by level)", _, true, 0.0);
 		g_hCVDefaultMaxDamage = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_damage_max", "25", "Maximum damage a player could deal additionally ignoring higher percentual values. (0 = disable)", _, true, 0.0);

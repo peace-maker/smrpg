@@ -55,7 +55,7 @@ public void OnLibraryAdded(const char[] name)
 	// Register this upgrade in SM:RPG
 	if(StrEqual(name, "smrpg"))
 	{
-		SMRPG_RegisterUpgradeType("Ice Stab", UPGRADE_SHORTNAME, "Freeze a player in place when knifing him.", 10, true, 10, 30, 10);
+		SMRPG_RegisterUpgradeType("Ice Stab", UPGRADE_SHORTNAME, "Freeze a player in place when knifing him.", 0, true, 10, 30, 10);
 		SMRPG_SetUpgradeActiveQueryCallback(UPGRADE_SHORTNAME, SMRPG_ActiveQuery);
 		SMRPG_SetUpgradeResetCallback(UPGRADE_SHORTNAME, SMRPG_ResetEffect);
 		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);

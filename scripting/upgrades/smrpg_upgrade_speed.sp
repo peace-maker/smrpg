@@ -1,5 +1,6 @@
 #pragma semicolon 1
 #include <sourcemod>
+#include <sdktools>
 #include <dhooks>
 
 #pragma newdecls required
@@ -61,7 +62,7 @@ public void OnLibraryAdded(const char[] name)
 	// Register this upgrade in SM:RPG
 	if(StrEqual(name, "smrpg"))
 	{
-		SMRPG_RegisterUpgradeType("Speed+", UPGRADE_SHORTNAME, "Increase your average movement speed.", 10, true, 6, 10, 10);
+		SMRPG_RegisterUpgradeType("Speed+", UPGRADE_SHORTNAME, "Increase your average movement speed.", 0, true, 6, 10, 10);
 		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
 		g_hCVPercent = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_speed_percent", "0.05", "Percentage of speed added to player (multiplied by level)", _, true, 0.0, true, 1.0);
 	}

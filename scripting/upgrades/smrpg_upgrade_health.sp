@@ -47,7 +47,7 @@ public void OnLibraryAdded(const char[] name)
 	// Register this upgrade in SM:RPG
 	if(StrEqual(name, "smrpg"))
 	{
-		SMRPG_RegisterUpgradeType("Health+", UPGRADE_SHORTNAME, "Increases your health.", 16, true, 16, 10, 10);
+		SMRPG_RegisterUpgradeType("Health+", UPGRADE_SHORTNAME, "Increases your health.", 0, true, 16, 10, 10);
 		SMRPG_SetUpgradeBuySellCallback(UPGRADE_SHORTNAME, SMRPG_BuySell);
 		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
 		

@@ -77,7 +77,7 @@ public void OnLibraryAdded(const char[] name)
 	if(StrEqual(name, "smrpg"))
 	{
 		// Register the upgrade type.
-		SMRPG_RegisterUpgradeType("Fast Reload", UPGRADE_SHORTNAME, "Increases the reload speed of your guns.", 10, true, 5, 20, 10);
+		SMRPG_RegisterUpgradeType("Fast Reload", UPGRADE_SHORTNAME, "Increases the reload speed of your guns.", 0, true, 5, 20, 10);
 		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
 		
 		g_hCVSpeedInc = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_fastreload_speedmult", "0.05", "Speed up reloading of guns by this amount each level.");

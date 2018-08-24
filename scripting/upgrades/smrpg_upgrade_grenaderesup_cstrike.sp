@@ -87,7 +87,7 @@ public void OnLibraryAdded(const char[] name)
 	// Register this upgrade in SM:RPG
 	if(StrEqual(name, "smrpg"))
 	{
-		SMRPG_RegisterUpgradeType("Grenade Resupply", UPGRADE_SHORTNAME, "Regenerates grenades x seconds after you threw them.", 20, true, 5, 5, 15);
+		SMRPG_RegisterUpgradeType("Grenade Resupply", UPGRADE_SHORTNAME, "Regenerates grenades x seconds after you threw them.", 0, true, 5, 5, 15);
 		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
 	}
 }

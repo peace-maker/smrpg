@@ -86,7 +86,7 @@ public void OnLibraryAdded(const char[] name)
 	if(StrEqual(name, "smrpg"))
 	{
 		// Register the upgrade type.
-		SMRPG_RegisterUpgradeType("Poison Smoke", UPGRADE_SHORTNAME, "Damages players standing inside the smoke of a smoke grenade.", 20, true, 10, 15, 10);
+		SMRPG_RegisterUpgradeType("Poison Smoke", UPGRADE_SHORTNAME, "Damages players standing inside the smoke of a smoke grenade.", 0, true, 10, 15, 10);
 		
 		// If you want to translate the upgrade name and description into the client languages, register this callback!
 		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);

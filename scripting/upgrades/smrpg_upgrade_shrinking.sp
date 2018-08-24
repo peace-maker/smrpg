@@ -54,7 +54,7 @@ public void OnLibraryAdded(const char[] name)
 	// Register this upgrade in SM:RPG
 	if(StrEqual(name, "smrpg"))
 	{
-		SMRPG_RegisterUpgradeType("Shrinking", UPGRADE_SHORTNAME, "Make player models smaller.", 6, true, 3, 25, 15);
+		SMRPG_RegisterUpgradeType("Shrinking", UPGRADE_SHORTNAME, "Make player models smaller.", 0, true, 3, 25, 15);
 		SMRPG_SetUpgradeBuySellCallback(UPGRADE_SHORTNAME, SMRPG_BuySell);
 		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
 		

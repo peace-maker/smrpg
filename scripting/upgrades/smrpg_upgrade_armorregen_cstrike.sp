@@ -59,7 +59,7 @@ public void OnLibraryAdded(const char[] name)
 	// Register this upgrade in SM:RPG
 	if(StrEqual(name, "smrpg"))
 	{
-		SMRPG_RegisterUpgradeType("Armor regeneration", UPGRADE_SHORTNAME, "Regenerates armor regularly.", 15, true, 5, 5, 10);
+		SMRPG_RegisterUpgradeType("Armor regeneration", UPGRADE_SHORTNAME, "Regenerates armor regularly.", 0, true, 5, 5, 10);
 		SMRPG_SetUpgradeBuySellCallback(UPGRADE_SHORTNAME, SMRPG_BuySell);
 		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
 		
