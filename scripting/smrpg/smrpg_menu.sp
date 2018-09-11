@@ -281,7 +281,7 @@ public void TopMenu_HandleUpgrades(TopMenu topmenu, TopMenuAction action, TopMen
 							if(i != param && IsClientInGame(i) && !IsFakeClient(i))
 							{
 								GetUpgradeTranslatedName(i, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
-								Client_PrintToChat(i, false, "Upgrade purchase notification", param, sTranslatedName, iItemLevel+1);
+								Client_PrintToChat(i, false, "%t", "Upgrade purchase notification", param, sTranslatedName, iItemLevel+1);
 							}
 						}
 					}
