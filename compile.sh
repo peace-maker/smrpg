@@ -24,7 +24,7 @@ if [ ! -d "build" ]; then
 	git clone https://github.com/Impact123/AutoExecConfig.git
 	cp AutoExecConfig/autoexecconfig.inc addons/sourcemod/scripting/include/
 
-	hg clone https://bitbucket.org/Drifter321/dhooks2
+	hg --config hostsecurity.disabletls10warning=true clone https://bitbucket.org/Drifter321/dhooks2
 	cp dhooks2/sourcemod/scripting/include/dhooks.inc addons/sourcemod/scripting/include/
 
 	git clone https://github.com/Drixevel/Chat-Processor.git
