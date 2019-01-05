@@ -70,7 +70,7 @@ public void OnClientPutInServer(int client)
 	SDKHook(client, SDKHook_WeaponEquipPost, Hook_WeaponEquipPost);
 }
 
-public void OnClientDisconnect(int client)
+public void OnClientDisconnect_Post(int client)
 {
 	Denial_ResetClient(client);
 }

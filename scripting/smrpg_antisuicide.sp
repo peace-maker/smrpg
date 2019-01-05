@@ -58,7 +58,7 @@ public void OnClientPutInServer(int client)
 	SDKHook(client, SDKHook_OnTakeDamagePost, Hook_OnTakeDamagePost);
 }
 
-public void OnClientDisconnect(int client)
+public void OnClientDisconnect_Post(int client)
 {
 	if(g_hHitInfo[client] != null)
 		CloseHandle(g_hHitInfo[client]);

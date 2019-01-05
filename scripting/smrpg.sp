@@ -437,8 +437,14 @@ public void OnClientDisconnect(int client)
 	
 	ClearClientRankCache(client);
 	RemovePlayer(client);
-	ResetAFKPlayer(client);
 	ResetSpawnProtection(client);
+}
+
+public void OnClientDisconnect_Post(int client)
+{
+	// In CS:GO player_death can be fired after OnClientDisconnect. See mp_disconnect_kills_players.
+	// Make sure to reset the state after player_death might have modified it again.
+	ResetAFKPlayer(client);
 }
 
 public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3], float angles[3], int &weapon, int &subtype, int &cmdnum, int &tickcount, int &seed, int mouse[2])

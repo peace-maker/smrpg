@@ -74,7 +74,7 @@ public void OnClientPutInServer(int client)
 	ResetRenderColorClient(client);
 }
 
-public void OnClientDisconnect(int client)
+public void OnClientDisconnect_Post(int client)
 {
 	ResetRenderColorClient(client);
 	ResetFreezeClient(client);
