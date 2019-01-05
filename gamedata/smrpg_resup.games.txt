@@ -3,11 +3,14 @@
 	"csgo"
 	{
 		"Signatures"
-		{ 
+		{
+			// Two parts:
+			// 1. CBaseCombatWeapon::SetReserveAmmoCount -> "BaseCombatCharacter.AmmoPickup" only string, longer function
+			// 2. SetReserveAmmoCount is called in GiveReserveAmmo (short function) all parameters passed through, except the amount being GetReserveAmmoCount() + amount.
 			"CBaseCombatWeapon::GiveReserveAmmo"
 			{
 				"library"	"server"
-				"windows"	"\x55\x8B\xEC\x51\x8B\x45\x14\x53\x56"
+				"windows"	"\x55\x8B\xEC\x51\x83\x7D\x0C\x00\x53\x8B\xD9"
 				// _ZN17CBaseCombatWeapon15GiveReserveAmmoE14AmmoPosition_tibP20CBaseCombatCharacter
 				"linux"		"\x55\x89\xE5\x83\xEC\x38\x8B\x55\x10\x89\x5D\xF4\x89\x75\xF8\x8B\x5D\x08"
 			}
