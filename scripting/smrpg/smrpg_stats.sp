@@ -346,6 +346,10 @@ void Stats_PlayerDamage(int attacker, int victim, float fDamage, const char[] sW
 
 void Stats_PlayerKill(int attacker, int victim, const char[] sWeapon)
 {
+	// Ignore suicide.
+	if(attacker == victim)
+		return;
+
 	if(!g_hCVEnable.BoolValue)
 		return;
 	
