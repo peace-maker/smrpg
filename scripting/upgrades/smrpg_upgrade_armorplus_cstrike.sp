@@ -8,7 +8,16 @@
 
 #define UPGRADE_SHORTNAME "armorplus"
 
+/** Technical maximal armor value in Counter-Strike: Source */
+#define CSS_MAX_ARMOR 127 // m_ArmorValue is a signed byte in the HUD.
+
+/** Technical maximal armor value in Counter-Strike: Global Offensive */
+#define CSGO_MAX_ARMOR 255 // m_ArmorValue is an unsigned byte
+
 ConVar g_hCVMaxIncrease;
+
+// Remember which flavor of Counter-Strike we're running.
+bool g_bIsCSGO;
 
 public Plugin myinfo = 
 {
@@ -27,6 +36,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 		Format(error, err_max, "This plugin is for use in Counter-Strike games only. Bad engine version %d.", engine);
 		return APLRes_SilentFailure;
 	}
+	g_bIsCSGO = engine == Engine_CSGO;
 	
 	RegPluginLibrary("smrpg_armorplus");
 	CreateNative("SMRPG_Armor_GetClientMaxArmorEx", Native_GetMaxArmor);
@@ -56,7 +66,7 @@ public void OnLibraryAdded(const char[] name)
 	// Register this upgrade in SM:RPG
 	if(StrEqual(name, "smrpg"))
 	{
-		SMRPG_RegisterUpgradeType("Armor+", UPGRADE_SHORTNAME, "Increases your armor.", 5, true, 5, 10, 10);
+		SMRPG_RegisterUpgradeType("Armor+", UPGRADE_SHORTNAME, "Increases your armor.", 0, true, 5, 10, 10);
 		SMRPG_SetUpgradeBuySellCallback(UPGRADE_SHORTNAME, SMRPG_BuySell);
 		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
 		
@@ -172,8 +182,12 @@ int GetClientMaxArmor(int client)
 		return iDefaultMaxArmor;
 	
 	int iNewMaxArmor = iDefaultMaxArmor + g_hCVMaxIncrease.IntValue * iLevel;
-	if(iNewMaxArmor > CS_MAX_ARMOR)
-		iNewMaxArmor = CS_MAX_ARMOR;
+	int iGameMaxArmor = CSS_MAX_ARMOR;
+	if (g_bIsCSGO)
+		iGameMaxArmor = CSGO_MAX_ARMOR;
+
+	if(iNewMaxArmor > iGameMaxArmor)
+		iNewMaxArmor = iGameMaxArmor;
 	
 	return iNewMaxArmor;
 }

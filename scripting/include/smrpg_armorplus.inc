@@ -6,9 +6,6 @@
 /** Default maximal armor in Counter-Strike */
 #define DEFAULT_MAX_ARMOR 100
 
-/** Technical maximal armor value in Counter-Strike */
-#define CS_MAX_ARMOR 127 // m_ArmorValue is a signed byte
-
 /**
  * Get the maximal health for a client.
  * Returns the default maxhealth value, if client doesn't have the health upgrade or SM:RPG is disabled.
