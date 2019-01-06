@@ -207,7 +207,6 @@ void CheckDatabaseVersion()
 		// There is no version field yet? Just create one, we don't know if we'd need to update something..
 		IntToString(DATABASE_VERSION, sValue, sizeof(sValue));
 		SetSetting("version", sValue);
-		LogError("Warning: Couldn't find the current database schema \"version\" in the settings table. Just setting it to \"%d\", but you might have to upgrade the database yourself.", DATABASE_VERSION);
 		return;
 	}
 	
