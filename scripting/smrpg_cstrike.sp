@@ -33,6 +33,8 @@ ConVar g_hCVBotEarnExpObjective;
 ConVar g_hCVShowMVPLevel;
 ConVar g_hCVEnableAntiKnifeleveling;
 
+ConVar g_hCVDisableXPDuringWarmup;
+
 enum KnifeLeveling {
 	KL_Hits,
 	KL_LastAttack,
@@ -90,6 +92,8 @@ public void OnPluginStart()
 	
 	g_hCVShowMVPLevel = AutoExecConfig_CreateConVar("smrpg_mvp_level", "1", "Show player level as MVP stars on the scoreboard?", 0, true, 0.0, true, 1.0);
 	g_hCVEnableAntiKnifeleveling = AutoExecConfig_CreateConVar("smrpg_anti_knifelevel", "1", "Stop giving exp to players who knife each other too often in a time frame?", 0, true, 0.0, true, 1.0);
+
+	g_hCVDisableXPDuringWarmup = AutoExecConfig_CreateConVar("smrpg_disable_experience_warmup", "0", "Stop players from getting any experience during the warmup period? (CS:GO only)", 0, true, 0.0, true, 1.0);
 	
 	AutoExecConfig_ExecuteFile();
 	//AutoExecConfig_CleanFile();
@@ -138,6 +142,10 @@ public Action SMRPG_OnAddExperience(int client, const char[] reason, int &iExper
 {
 	// Don't let the normal experience calculation hit. We're doing some cstrike specific stuff here.
 	if(StrEqual(reason, ExperienceReason_PlayerHurt) || StrEqual(reason, ExperienceReason_PlayerKill) || StrEqual(reason, ExperienceReason_RoundEnd))
+		return Plugin_Handled;
+
+	// Disable any experience during warmup if smrpg_disable_experience_warmup is set.
+	if(g_bIsCSGO && g_hCVDisableXPDuringWarmup.BoolValue && !StrEqual(reason, ExperienceReason_Admin) && GameRules_GetProp("m_bWarmupPeriod"))
 		return Plugin_Handled;
 	
 	return Plugin_Continue;
