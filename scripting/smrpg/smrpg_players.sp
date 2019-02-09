@@ -150,6 +150,10 @@ void AddPlayer(int client)
 	{
 		if(!g_hCVBotSaveStats.BoolValue)
 			return;
+
+		// Don't save stats for SourceTV.
+		if(IsClientSourceTV(client) || IsClientReplay(client))
+			return;
 		
 		// Lookup bot levels depending on their names.
 		char sNameEscaped[MAX_NAME_LENGTH*2+1];
@@ -211,6 +215,9 @@ bool SaveData(int client, Transaction hTransaction=null)
 		return false;
 	
 	if(IsFakeClient(client) && !g_hCVBotSaveStats.BoolValue)
+		return false;
+
+	if(IsClientSourceTV(client) || IsClientReplay(client))
 		return false;
 	
 	// We're still in the process of loading this client's info from the db. Wait for it..
@@ -426,6 +433,10 @@ bool IgnoreBotPlayer(int client)
 	
 	// Bot features disabled as a whole.
 	if(!g_hCVBotEnable.BoolValue)
+		return true;
+
+	// Ignore SourceTV.
+	if(IsClientSourceTV(client) || IsClientReplay(client))
 		return true;
 	
 	// No human players on the server.
