@@ -303,16 +303,32 @@ public void ConVar_EnableChanged(ConVar convar, const char[] oldValue, const cha
 	Call_PushCell(convar.BoolValue);
 	Call_Finish();
 	
-	// Don't need to do anything, if we're enabled or we don't want to save the stats to the database.
-	if(convar.BoolValue || !g_hCVSaveData.BoolValue)
-		return;
-	
-	convar.RemoveChangeHook(ConVar_EnableChanged);
-	convar.BoolValue = true;
-	SaveAllPlayers();
-	convar.BoolValue = false;
-	convar.AddChangeHook(ConVar_EnableChanged);
-	PrintToServer("SM:RPG smrpg_enable: SM:RPG data has been saved");
+	// SM:RPG got enabled.
+	if(convar.BoolValue)
+	{
+		// Load the stats of all connected players.
+		for(int i=1;i<=MaxClients;i++)
+		{
+			if(!IsClientConnected(i))
+				continue;
+			if(!IsClientAuthorized(i) && !IsFakeClient(i))
+				continue;
+			if(IsPlayerDataLoaded(i))
+				continue;
+			AddPlayer(i);
+		}
+	}
+	// SM:RPG got disabled.
+	// Don't need to do anything, if we don't want to save the stats to the database.
+	else if(!g_hCVSaveData.BoolValue)
+	{
+		convar.RemoveChangeHook(ConVar_EnableChanged);
+		convar.BoolValue = true;
+		SaveAllPlayers();
+		convar.BoolValue = false;
+		convar.AddChangeHook(ConVar_EnableChanged);
+		PrintToServer("SM:RPG smrpg_enable: SM:RPG data has been saved");
+	}
 }
 
 /**
