@@ -533,8 +533,11 @@ public int Native_ResetAllPlayers(Handle plugin, int numParams)
 	// Keep the player settings
 	else
 	{
+		int iStartLevel, iStartCredits;
+		GetStartLevelAndExperience(iStartLevel, iStartCredits);
+
 		Transaction hTransaction = new Transaction();
-		Format(sQuery, sizeof(sQuery), "UPDATE %s SET level = 1, experience = 0, credits = %d, lastreset = %d", TBL_PLAYERS, g_hCVCreditsStart.IntValue, GetTime());
+		Format(sQuery, sizeof(sQuery), "UPDATE %s SET level = %d, experience = 0, credits = %d, lastreset = %d", TBL_PLAYERS, iStartLevel, iStartCredits, GetTime());
 		hTransaction.AddQuery(sQuery);
 		Format(sQuery, sizeof(sQuery), "UPDATE %s SET purchasedlevel = 0, selectedlevel = 0, enabled = 1", TBL_PLAYERUPGRADES);
 		hTransaction.AddQuery(sQuery);

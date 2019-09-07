@@ -102,14 +102,8 @@ void InitPlayer(int client, bool bGetBotName = true)
 	g_bFirstLoaded[client] = true;
 	
 	// See if the player should start at a higher level than 1?
-	int iStartLevel = g_hCVLevelStart.IntValue;
-	if (iStartLevel < 1)
-		iStartLevel = 1;
-	
-	// If the start level is at a higher level than 1, he might get more credits for his level.
-	int iStartCredits = g_hCVCreditsStart.IntValue;
-	if (g_hCVLevelStartGiveCredits.BoolValue)
-		iStartCredits += g_hCVCreditsInc.IntValue * (iStartLevel - 1);
+	int iStartLevel, iStartCredits;
+	GetStartLevelAndExperience(iStartLevel, iStartCredits);
 	
 	g_iPlayerInfo[client][PLR_level] = iStartLevel;
 	g_iPlayerInfo[client][PLR_experience] = 0;
@@ -943,6 +937,19 @@ bool SetClientExperience(int client, int iExperience)
 	Call_Finish();
 	
 	return true;
+}
+
+void GetStartLevelAndExperience(int &iStartLevel, int &iStartCredits)
+{
+	// See if the player should start at a higher level than 1?
+	iStartLevel = g_hCVLevelStart.IntValue;
+	if (iStartLevel < 1)
+		iStartLevel = 1;
+	
+	// If the start level is at a higher level than 1, he might get more credits for his level.
+	iStartCredits = g_hCVCreditsStart.IntValue;
+	if (g_hCVLevelStartGiveCredits.BoolValue)
+		iStartCredits += g_hCVCreditsInc.IntValue * (iStartLevel - 1);
 }
 
 /**
