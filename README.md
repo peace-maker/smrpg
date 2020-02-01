@@ -43,6 +43,7 @@ Server admins can install a new upgrade simply by loading the upgrade plugin.
 * [AutoExecConfig](https://github.com/Impact123/AutoExecConfig)
 * (optional) [DHooks](https://forums.alliedmods.net/showthread.php?t=180114) for Speed+ upgrade
 * (optional) [Chat Processor](https://forums.alliedmods.net/showthread.php?t=286913) *OR* [Simple Chat Processor](https://forums.alliedmods.net/showthread.php?t=198501) and [ColorVariables](https://forums.alliedmods.net/showthread.php?t=267743) for the Chat Tags module
+* (optional) [mapzonelib](https://github.com/peace-maker/mapzonelib) for No Experience Zones
 
 # Compile instructions
 * Compile the core smrpg plugin (see Compile requirements)
@@ -58,6 +59,7 @@ Server admins can install a new upgrade simply by loading the upgrade plugin.
   * smrpg_effects - Central library to apply similar upgrade effects. Required by some upgrades!
   * smrpg_gifting - Allow players to give other players rpg credits as a gift.
   * smrpg_keyhint_info - Display rpg stats and more info permanently on the screen.
+  * smrpg_noxpzones - Disable earning of experience while a player or the target is in a defined zone on the map.
   * smrpg_resetstats - Automatically reset the stats on different conditions and display next reset date in chat.
   * smrpg_turbomode - Increase the experience and credits rate for one map, but don't save the stats. For fun events.
 * Compile all the upgrades you want to use
