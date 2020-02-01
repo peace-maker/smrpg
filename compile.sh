@@ -35,6 +35,9 @@ if [ ! -d "build" ]; then
 	
 	git clone https://github.com/KissLick/ColorVariables.git
 	cp ColorVariables/addons/sourcemod/scripting/includes/colorvariables.inc addons/sourcemod/scripting/include/
+
+	git clone https://github.com/peace-maker/mapzonelib.git
+	cp mapzonelib/scripting/include/mapzonelib.inc addons/sourcemod/scripting/include/
 	
 	cd ..
 fi
