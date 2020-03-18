@@ -132,9 +132,7 @@ float GetClientEffectReduction(int client)
 		return 0.0;
 	
 	// The upgrade is disabled completely?
-	int upgrade[UpgradeInfo];
-	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
-	if(!upgrade[UI_enabled])
+	if(!SMRPG_IsUpgradeEnabled(UPGRADE_SHORTNAME))
 		return 0.0;
 	
 	// Are bots allowed to use this upgrade?

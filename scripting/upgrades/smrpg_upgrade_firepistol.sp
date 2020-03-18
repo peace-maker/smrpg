@@ -103,9 +103,7 @@ public void Hook_OnTakeDamagePost(int victim, int attacker, int inflictor, float
 	if(!SMRPG_IsEnabled())
 		return;
 	
-	int upgrade[UpgradeInfo];
-	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
-	if(!upgrade[UI_enabled])
+	if(!SMRPG_IsUpgradeEnabled(UPGRADE_SHORTNAME))
 		return;
 	
 	// This player is already burning. Don't stack the effect and wait until he stopped to be able to burn him again.

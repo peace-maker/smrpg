@@ -49,31 +49,31 @@ void InitMenu()
 {
 	// Add any already loaded upgrades to the menus
 	int iSize = GetUpgradeCount();
-	int upgrade[InternalUpgradeInfo];
+	InternalUpgradeInfo upgrade;
 	char sBuffer[MAX_UPGRADE_SHORTNAME_LENGTH+20];
 	for(int i=0;i<iSize;i++)
 	{
 		GetUpgradeByIndex(i, upgrade);
 		
-		if(upgrade[UPGR_topmenuUpgrades] == INVALID_TOPMENUOBJECT)
+		if(upgrade.topmenuUpgrades == INVALID_TOPMENUOBJECT)
 		{
-			Format(sBuffer, sizeof(sBuffer), "rpgupgrade_%s", upgrade[UPGR_shortName]);
-			upgrade[UPGR_topmenuUpgrades] = g_hRPGTopMenu.AddItem(sBuffer, TopMenu_HandleUpgrades, g_TopMenuUpgrades);
+			Format(sBuffer, sizeof(sBuffer), "rpgupgrade_%s", upgrade.shortName);
+			upgrade.topmenuUpgrades = g_hRPGTopMenu.AddItem(sBuffer, TopMenu_HandleUpgrades, g_TopMenuUpgrades);
 		}
-		if(upgrade[UPGR_topmenuSell] == INVALID_TOPMENUOBJECT)
+		if(upgrade.topmenuSell == INVALID_TOPMENUOBJECT)
 		{
-			Format(sBuffer, sizeof(sBuffer), "rpgsell_%s", upgrade[UPGR_shortName]);
-			upgrade[UPGR_topmenuSell] = g_hRPGTopMenu.AddItem(sBuffer, TopMenu_HandleSell, g_TopMenuSell);
+			Format(sBuffer, sizeof(sBuffer), "rpgsell_%s", upgrade.shortName);
+			upgrade.topmenuSell = g_hRPGTopMenu.AddItem(sBuffer, TopMenu_HandleSell, g_TopMenuSell);
 		}
-		if(upgrade[UPGR_topmenuUpgradeSettings] == INVALID_TOPMENUOBJECT)
+		if(upgrade.topmenuUpgradeSettings == INVALID_TOPMENUOBJECT)
 		{
-			Format(sBuffer, sizeof(sBuffer), "rpgupgrsettings_%s", upgrade[UPGR_shortName]);
-			upgrade[UPGR_topmenuUpgradeSettings] = g_hRPGTopMenu.AddItem(sBuffer, TopMenu_HandleUpgradeSettings, g_TopMenuUpgradeSettings);
+			Format(sBuffer, sizeof(sBuffer), "rpgupgrsettings_%s", upgrade.shortName);
+			upgrade.topmenuUpgradeSettings = g_hRPGTopMenu.AddItem(sBuffer, TopMenu_HandleUpgradeSettings, g_TopMenuUpgradeSettings);
 		}
-		if(upgrade[UPGR_topmenuHelp] == INVALID_TOPMENUOBJECT)
+		if(upgrade.topmenuHelp == INVALID_TOPMENUOBJECT)
 		{
-			Format(sBuffer, sizeof(sBuffer), "rpghelp_%s", upgrade[UPGR_shortName]);
-			upgrade[UPGR_topmenuHelp] = g_hRPGTopMenu.AddItem(sBuffer, TopMenu_HandleHelp, g_TopMenuHelp);
+			Format(sBuffer, sizeof(sBuffer), "rpghelp_%s", upgrade.shortName);
+			upgrade.topmenuHelp = g_hRPGTopMenu.AddItem(sBuffer, TopMenu_HandleHelp, g_TopMenuHelp);
 		}
 		SaveUpgradeConfig(upgrade);
 	}
@@ -186,38 +186,38 @@ public void TopMenu_HandleUpgrades(TopMenu topmenu, TopMenuAction action, TopMen
 			char sShortname[MAX_UPGRADE_SHORTNAME_LENGTH+20];
 			topmenu.GetObjName(object_id, sShortname, sizeof(sShortname));
 			
-			int upgrade[InternalUpgradeInfo];
+			InternalUpgradeInfo upgrade;
 			if(!GetUpgradeByShortname(sShortname[11], upgrade))
 				return;
 			
-			if(!IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled])
+			if(!IsValidUpgrade(upgrade) || !upgrade.enabled)
 				return;
 			
 			// Show the team this upgrade is locked to, if it is.
 			char sTeamlock[128];
-			if((!IsClientInLockedTeam(param, upgrade) || upgrade[UPGR_teamlock] > 1 && g_hCVShowTeamlockNoticeOwnTeam.BoolValue) && upgrade[UPGR_teamlock] < GetTeamCount())
+			if((!IsClientInLockedTeam(param, upgrade) || upgrade.teamlock > 1 && g_hCVShowTeamlockNoticeOwnTeam.BoolValue) && upgrade.teamlock < GetTeamCount())
 			{
-				GetTeamName(upgrade[UPGR_teamlock], sTeamlock, sizeof(sTeamlock));
+				GetTeamName(upgrade.teamlock, sTeamlock, sizeof(sTeamlock));
 				Format(sTeamlock, sizeof(sTeamlock), " (%T)", "Is teamlocked", param, sTeamlock);
 			}
 			
 			char sTranslatedName[MAX_UPGRADE_NAME_LENGTH];
-			GetUpgradeTranslatedName(param, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
+			GetUpgradeTranslatedName(param, upgrade.index, sTranslatedName, sizeof(sTranslatedName));
 			
-			int iCurrentLevel = GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index]);
+			int iCurrentLevel = GetClientPurchasedUpgradeLevel(param, upgrade.index);
 			
-			if(iCurrentLevel >= upgrade[UPGR_maxLevel])
+			if(iCurrentLevel >= upgrade.maxLevel)
 			{
 				Format(buffer, maxlength, "%T", "RPG menu buy upgrade entry max level", param, sTranslatedName, iCurrentLevel, "Cost", sTeamlock);
 			}
 			// Optionally show the maxlevel of the upgrade
 			else if (g_hCVShowMaxLevelInMenu.BoolValue)
 			{
-				Format(buffer, maxlength, "%T", "RPG menu buy upgrade entry show max", param, sTranslatedName, iCurrentLevel+1, upgrade[UPGR_maxLevel], "Cost", GetUpgradeCost(upgrade[UPGR_index], iCurrentLevel+1), sTeamlock);
+				Format(buffer, maxlength, "%T", "RPG menu buy upgrade entry show max", param, sTranslatedName, iCurrentLevel+1, upgrade.maxLevel, "Cost", GetUpgradeCost(upgrade.index, iCurrentLevel+1), sTeamlock);
 			}
 			else
 			{
-				Format(buffer, maxlength, "%T", "RPG menu buy upgrade entry", param, sTranslatedName, iCurrentLevel+1, "Cost", GetUpgradeCost(upgrade[UPGR_index], iCurrentLevel+1), sTeamlock);
+				Format(buffer, maxlength, "%T", "RPG menu buy upgrade entry", param, sTranslatedName, iCurrentLevel+1, "Cost", GetUpgradeCost(upgrade.index, iCurrentLevel+1), sTeamlock);
 			}
 		}
 		case TopMenuAction_DrawOption:
@@ -225,15 +225,15 @@ public void TopMenu_HandleUpgrades(TopMenu topmenu, TopMenuAction action, TopMen
 			char sShortname[MAX_UPGRADE_SHORTNAME_LENGTH+20];
 			topmenu.GetObjName(object_id, sShortname, sizeof(sShortname));
 			
-			int upgrade[InternalUpgradeInfo];
+			InternalUpgradeInfo upgrade;
 			// Don't show invalid upgrades at all in the menu.
-			if(!GetUpgradeByShortname(sShortname[11], upgrade) || !IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled] || !HasAccessToUpgrade(param, upgrade))
+			if(!GetUpgradeByShortname(sShortname[11], upgrade) || !IsValidUpgrade(upgrade) || !upgrade.enabled || !HasAccessToUpgrade(param, upgrade))
 			{
 				buffer[0] = ITEMDRAW_IGNORE;
 				return;
 			}
 			
-			int iLevel = GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index]);
+			int iLevel = GetClientPurchasedUpgradeLevel(param, upgrade.index);
 			// The upgrade is teamlocked and the client is in the wrong team.
 			if(!IsClientInLockedTeam(param, upgrade))
 			{
@@ -241,7 +241,7 @@ public void TopMenu_HandleUpgrades(TopMenu topmenu, TopMenuAction action, TopMen
 			}
 			
 			// Don't let players buy upgrades they already maxed out.
-			if(iLevel >= upgrade[UPGR_maxLevel])
+			if(iLevel >= upgrade.maxLevel)
 				buffer[0] |= ITEMDRAW_DISABLED;
 		}
 		case TopMenuAction_SelectOption:
@@ -249,23 +249,23 @@ public void TopMenu_HandleUpgrades(TopMenu topmenu, TopMenuAction action, TopMen
 			char sShortname[MAX_UPGRADE_SHORTNAME_LENGTH+20];
 			topmenu.GetObjName(object_id, sShortname, sizeof(sShortname));
 			
-			int upgrade[InternalUpgradeInfo];
+			InternalUpgradeInfo upgrade;
 			
 			// Bad upgrade?
-			if(!GetUpgradeByShortname(sShortname[11], upgrade) || !IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled] || !HasAccessToUpgrade(param, upgrade))
+			if(!GetUpgradeByShortname(sShortname[11], upgrade) || !IsValidUpgrade(upgrade) || !upgrade.enabled || !HasAccessToUpgrade(param, upgrade))
 			{
 				g_hRPGTopMenu.Display(param, TopMenuPosition_LastCategory);
 				return;
 			}
 			
-			int iItemIndex = upgrade[UPGR_index];
+			int iItemIndex = upgrade.index;
 			int iItemLevel = GetClientPurchasedUpgradeLevel(param, iItemIndex);
 			int iCost = GetUpgradeCost(iItemIndex, iItemLevel+1);
 			
 			char sTranslatedName[MAX_UPGRADE_NAME_LENGTH];
-			GetUpgradeTranslatedName(param, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
+			GetUpgradeTranslatedName(param, upgrade.index, sTranslatedName, sizeof(sTranslatedName));
 			
-			if(iItemLevel >= upgrade[UPGR_maxLevel])
+			if(iItemLevel >= upgrade.maxLevel)
 				Client_PrintToChat(param, false, "%t", "Maximum level reached");
 			else if(GetClientCredits(param) < iCost)
 				Client_PrintToChat(param, false, "%t", "Not enough credits", sTranslatedName, iItemLevel+1, iCost);
@@ -280,7 +280,7 @@ public void TopMenu_HandleUpgrades(TopMenu topmenu, TopMenuAction action, TopMen
 						{
 							if(i != param && IsClientInGame(i) && !IsFakeClient(i))
 							{
-								GetUpgradeTranslatedName(i, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
+								GetUpgradeTranslatedName(i, upgrade.index, sTranslatedName, sizeof(sTranslatedName));
 								Client_PrintToChat(i, false, "%t", "Upgrade purchase notification", param, sTranslatedName, iItemLevel+1);
 							}
 						}
@@ -302,7 +302,7 @@ public void TopMenu_HandleSell(TopMenu topmenu, TopMenuAction action, TopMenuObj
 			char sShortname[MAX_UPGRADE_SHORTNAME_LENGTH+20];
 			topmenu.GetObjName(object_id, sShortname, sizeof(sShortname));
 			
-			int upgrade[InternalUpgradeInfo];
+			InternalUpgradeInfo upgrade;
 			if(!GetUpgradeByShortname(sShortname[8], upgrade))
 				return;
 			
@@ -311,28 +311,28 @@ public void TopMenu_HandleSell(TopMenu topmenu, TopMenuAction action, TopMenuObj
 
 			// Don't show the upgrade if it is disabled and players are not allowed to sell disabled upgrades.
 			// TODO: Show if upgrade is disabled?
-			if(!upgrade[UPGR_enabled] && (!g_hCVAllowSellDisabled.BoolValue || GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index]) <= 0))
+			if(!upgrade.enabled && (!g_hCVAllowSellDisabled.BoolValue || GetClientPurchasedUpgradeLevel(param, upgrade.index) <= 0))
 				return;
 			
 			// Show the team this upgrade is locked to, if it is.
 			char sTeamlock[128];
-			if((!IsClientInLockedTeam(param, upgrade) || upgrade[UPGR_teamlock] > 1 && g_hCVShowTeamlockNoticeOwnTeam.BoolValue) && upgrade[UPGR_teamlock] < GetTeamCount())
+			if((!IsClientInLockedTeam(param, upgrade) || upgrade.teamlock > 1 && g_hCVShowTeamlockNoticeOwnTeam.BoolValue) && upgrade.teamlock < GetTeamCount())
 			{
-				GetTeamName(upgrade[UPGR_teamlock], sTeamlock, sizeof(sTeamlock));
+				GetTeamName(upgrade.teamlock, sTeamlock, sizeof(sTeamlock));
 				Format(sTeamlock, sizeof(sTeamlock), " (%T)", "Is teamlocked", param, sTeamlock);
 			}
 			
 			char sTranslatedName[MAX_UPGRADE_NAME_LENGTH];
-			GetUpgradeTranslatedName(param, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
+			GetUpgradeTranslatedName(param, upgrade.index, sTranslatedName, sizeof(sTranslatedName));
 			
 			// Optionally show the maxlevel of the upgrade
 			if (g_hCVShowMaxLevelInMenu.BoolValue)
 			{
-				Format(buffer, maxlength, "%T", "RPG menu sell upgrade entry show max", param, sTranslatedName, GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index]), upgrade[UPGR_maxLevel], "Sale", GetUpgradeSale(upgrade[UPGR_index], GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index])), sTeamlock);
+				Format(buffer, maxlength, "%T", "RPG menu sell upgrade entry show max", param, sTranslatedName, GetClientPurchasedUpgradeLevel(param, upgrade.index), upgrade.maxLevel, "Sale", GetUpgradeSale(upgrade.index, GetClientPurchasedUpgradeLevel(param, upgrade.index)), sTeamlock);
 			}
 			else
 			{
-				Format(buffer, maxlength, "%T", "RPG menu sell upgrade entry", param, sTranslatedName, GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index]), "Sale", GetUpgradeSale(upgrade[UPGR_index], GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index])), sTeamlock);
+				Format(buffer, maxlength, "%T", "RPG menu sell upgrade entry", param, sTranslatedName, GetClientPurchasedUpgradeLevel(param, upgrade.index), "Sale", GetUpgradeSale(upgrade.index, GetClientPurchasedUpgradeLevel(param, upgrade.index)), sTeamlock);
 			}
 		}
 		case TopMenuAction_DrawOption:
@@ -340,7 +340,7 @@ public void TopMenu_HandleSell(TopMenu topmenu, TopMenuAction action, TopMenuObj
 			char sShortname[MAX_UPGRADE_SHORTNAME_LENGTH];
 			topmenu.GetObjName(object_id, sShortname, sizeof(sShortname));
 			
-			int upgrade[InternalUpgradeInfo];
+			InternalUpgradeInfo upgrade;
 			// Don't show invalid upgrades at all in the menu.
 			if(!GetUpgradeByShortname(sShortname[8], upgrade) || !IsValidUpgrade(upgrade))
 			{
@@ -348,9 +348,9 @@ public void TopMenu_HandleSell(TopMenu topmenu, TopMenuAction action, TopMenuObj
 				return;
 			}
 
-			int iCurrentLevel = GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index]);
+			int iCurrentLevel = GetClientPurchasedUpgradeLevel(param, upgrade.index);
 			// Don't show the upgrade if it is disabled and players are not allowed to sell disabled upgrades.
-			if(!upgrade[UPGR_enabled] && (!g_hCVAllowSellDisabled.BoolValue || iCurrentLevel <= 0))
+			if(!upgrade.enabled && (!g_hCVAllowSellDisabled.BoolValue || iCurrentLevel <= 0))
 				return;
 			
 			// Allow clients to sell upgrades they no longer have access to, but don't show them, if they never bought it.
@@ -375,7 +375,7 @@ public void TopMenu_HandleSell(TopMenu topmenu, TopMenuAction action, TopMenuObj
 			char sShortname[MAX_UPGRADE_SHORTNAME_LENGTH];
 			topmenu.GetObjName(object_id, sShortname, sizeof(sShortname));
 			
-			int upgrade[InternalUpgradeInfo];
+			InternalUpgradeInfo upgrade;
 			
 			// Bad upgrade?
 			if(!GetUpgradeByShortname(sShortname[8], upgrade) || !IsValidUpgrade(upgrade))
@@ -385,7 +385,7 @@ public void TopMenu_HandleSell(TopMenu topmenu, TopMenuAction action, TopMenuObj
 			}
 
 			// Don't allow selling the upgrade if it is disabled and players are not allowed to sell disabled upgrades.
-			if(!upgrade[UPGR_enabled] && (!g_hCVAllowSellDisabled.BoolValue || GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index]) <= 0))
+			if(!upgrade.enabled && (!g_hCVAllowSellDisabled.BoolValue || GetClientPurchasedUpgradeLevel(param, upgrade.index) <= 0))
 				return;
 			
 			Menu hMenu = new Menu(Menu_ConfirmSell, MENU_ACTIONS_DEFAULT|MenuAction_Display|MenuAction_DisplayItem);
@@ -394,7 +394,7 @@ public void TopMenu_HandleSell(TopMenu topmenu, TopMenuAction action, TopMenuObj
 			hMenu.SetTitle("credits_display");
 			
 			char sIndex[10];
-			IntToString(upgrade[UPGR_index], sIndex, sizeof(sIndex));
+			IntToString(upgrade.index, sIndex, sizeof(sIndex));
 			hMenu.AddItem(sIndex, "Yes");
 			hMenu.AddItem("no", "No");
 			
@@ -414,10 +414,10 @@ public int Menu_ConfirmSell(Menu menu, MenuAction action, int param1, int param2
 			return 0;
 		
 		int iItemIndex = StringToInt(sInfo);
-		int upgrade[InternalUpgradeInfo];
+		InternalUpgradeInfo upgrade;
 		GetUpgradeByIndex(iItemIndex, upgrade);
 		char sTranslatedName[MAX_UPGRADE_NAME_LENGTH];
-		GetUpgradeTranslatedName(param1, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
+		GetUpgradeTranslatedName(param1, upgrade.index, sTranslatedName, sizeof(sTranslatedName));
 		
 		if (SellClientUpgrade(param1, iItemIndex))
 			Client_PrintToChat(param1, false, "%t", "Upgrade sold", sTranslatedName, GetClientPurchasedUpgradeLevel(param1, iItemIndex));
@@ -469,32 +469,32 @@ public void TopMenu_HandleUpgradeSettings(TopMenu topmenu, TopMenuAction action,
 			char sShortname[MAX_UPGRADE_SHORTNAME_LENGTH];
 			topmenu.GetObjName(object_id, sShortname, sizeof(sShortname));
 			
-			int upgrade[InternalUpgradeInfo];
+			InternalUpgradeInfo upgrade;
 			if(!GetUpgradeByShortname(sShortname[16], upgrade))
 				return;
 			
-			if(!IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled])
+			if(!IsValidUpgrade(upgrade) || !upgrade.enabled)
 				return;
 			
 			// Show the team this upgrade is locked to, if it is.
 			char sTeamlock[128];
-			if((!IsClientInLockedTeam(param, upgrade) || upgrade[UPGR_teamlock] > 1 && g_hCVShowTeamlockNoticeOwnTeam.BoolValue) && upgrade[UPGR_teamlock] < GetTeamCount())
+			if((!IsClientInLockedTeam(param, upgrade) || upgrade.teamlock > 1 && g_hCVShowTeamlockNoticeOwnTeam.BoolValue) && upgrade.teamlock < GetTeamCount())
 			{
-				GetTeamName(upgrade[UPGR_teamlock], sTeamlock, sizeof(sTeamlock));
+				GetTeamName(upgrade.teamlock, sTeamlock, sizeof(sTeamlock));
 				Format(sTeamlock, sizeof(sTeamlock), " (%T)", "Is teamlocked", param, sTeamlock);
 			}
 			
-			int iPurchasedLevel = GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index]);
-			int iSelectedLevel = GetClientSelectedUpgradeLevel(param, upgrade[UPGR_index]);
+			int iPurchasedLevel = GetClientPurchasedUpgradeLevel(param, upgrade.index);
+			int iSelectedLevel = GetClientSelectedUpgradeLevel(param, upgrade.index);
 			
 			char sTranslatedName[MAX_UPGRADE_NAME_LENGTH];
-			GetUpgradeTranslatedName(param, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
+			GetUpgradeTranslatedName(param, upgrade.index, sTranslatedName, sizeof(sTranslatedName));
 			
 			char sBuffer[128];
 			if(!g_hCVDisableLevelSelection.BoolValue)
-				Format(sBuffer, sizeof(sBuffer), "%T", "RPG menu upgrade settings entry level selection", param, sTranslatedName, iSelectedLevel, iPurchasedLevel, IsClientUpgradeEnabled(param, upgrade[UPGR_index])?"On":"Off", sTeamlock);
+				Format(sBuffer, sizeof(sBuffer), "%T", "RPG menu upgrade settings entry level selection", param, sTranslatedName, iSelectedLevel, iPurchasedLevel, IsClientUpgradeEnabled(param, upgrade.index)?"On":"Off", sTeamlock);
 			else
-				Format(sBuffer, sizeof(sBuffer), "%T", "RPG menu upgrade settings entry", param, sTranslatedName, iSelectedLevel, IsClientUpgradeEnabled(param, upgrade[UPGR_index])?"On":"Off", sTeamlock);
+				Format(sBuffer, sizeof(sBuffer), "%T", "RPG menu upgrade settings entry", param, sTranslatedName, iSelectedLevel, IsClientUpgradeEnabled(param, upgrade.index)?"On":"Off", sTeamlock);
 			strcopy(buffer, maxlength, sBuffer);
 		}
 		case TopMenuAction_DrawOption:
@@ -502,15 +502,15 @@ public void TopMenu_HandleUpgradeSettings(TopMenu topmenu, TopMenuAction action,
 			char sShortname[MAX_UPGRADE_SHORTNAME_LENGTH];
 			topmenu.GetObjName(object_id, sShortname, sizeof(sShortname));
 			
-			int upgrade[InternalUpgradeInfo];
+			InternalUpgradeInfo upgrade;
 			// Don't show invalid upgrades at all in the menu.
-			if(!GetUpgradeByShortname(sShortname[16], upgrade) || !IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled])
+			if(!GetUpgradeByShortname(sShortname[16], upgrade) || !IsValidUpgrade(upgrade) || !upgrade.enabled)
 			{
 				buffer[0] = ITEMDRAW_IGNORE;
 				return;
 			}
 			
-			int iCurrentLevel = GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index]);
+			int iCurrentLevel = GetClientPurchasedUpgradeLevel(param, upgrade.index);
 			
 			// Allow clients to view upgrades they no longer have access to, but don't show them, if they never bought it.
 			if(!HasAccessToUpgrade(param, upgrade) && iCurrentLevel <= 0)
@@ -532,16 +532,16 @@ public void TopMenu_HandleUpgradeSettings(TopMenu topmenu, TopMenuAction action,
 			char sShortname[MAX_UPGRADE_SHORTNAME_LENGTH];
 			topmenu.GetObjName(object_id, sShortname, sizeof(sShortname));
 			
-			int upgrade[InternalUpgradeInfo];
+			InternalUpgradeInfo upgrade;
 			
 			// Bad upgrade?
-			if(!GetUpgradeByShortname(sShortname[16], upgrade) || !IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled])
+			if(!GetUpgradeByShortname(sShortname[16], upgrade) || !IsValidUpgrade(upgrade) || !upgrade.enabled)
 			{
 				g_hRPGTopMenu.Display(param, TopMenuPosition_LastCategory);
 				return;
 			}
 			
-			DisplayUpgradeSettingsMenu(param, upgrade[UPGR_index]);
+			DisplayUpgradeSettingsMenu(param, upgrade.index);
 		}
 	}
 }
@@ -555,40 +555,40 @@ void DisplayUpgradeSettingsMenu(int client, int iUpgradeIndex)
 	GetUpgradeTranslatedName(client, iUpgradeIndex, sTranslatedName, sizeof(sTranslatedName));
 	hMenu.SetTitle("%T\n-----\n%s\n", "Credits", client, GetClientCredits(client), sTranslatedName);
 	
-	int playerupgrade[PlayerUpgradeInfo];
+	PlayerUpgradeInfo playerupgrade;
 	GetPlayerUpgradeInfoByIndex(client, iUpgradeIndex, playerupgrade);
 	
 	char sBuffer[64];
-	Format(sBuffer, sizeof(sBuffer), "%T: %T", "Enabled", client, playerupgrade[PUI_enabled]?"On":"Off", client);
+	Format(sBuffer, sizeof(sBuffer), "%T: %T", "Enabled", client, playerupgrade.enabled?"On":"Off", client);
 	hMenu.AddItem("enable", sBuffer);
 	
 	if(!g_hCVDisableLevelSelection.BoolValue)
 	{
-		Format(sBuffer, sizeof(sBuffer), "%T: %d/%d", "Selected level", client, playerupgrade[PUI_selectedlevel], playerupgrade[PUI_purchasedlevel]);
+		Format(sBuffer, sizeof(sBuffer), "%T: %d/%d", "Selected level", client, playerupgrade.selectedlevel, playerupgrade.purchasedlevel);
 		hMenu.AddItem("", sBuffer, ITEMDRAW_DISABLED);
 		Format(sBuffer, sizeof(sBuffer), "%T", "Increase selected level", client);
-		hMenu.AddItem("incselect", sBuffer, playerupgrade[PUI_selectedlevel]<playerupgrade[PUI_purchasedlevel]?ITEMDRAW_DEFAULT:ITEMDRAW_DISABLED);
+		hMenu.AddItem("incselect", sBuffer, playerupgrade.selectedlevel<playerupgrade.purchasedlevel?ITEMDRAW_DEFAULT:ITEMDRAW_DISABLED);
 		Format(sBuffer, sizeof(sBuffer), "%T", "Decrease selected level", client);
-		hMenu.AddItem("decselect", sBuffer, playerupgrade[PUI_selectedlevel]>0?ITEMDRAW_DEFAULT:ITEMDRAW_DISABLED);
+		hMenu.AddItem("decselect", sBuffer, playerupgrade.selectedlevel>0?ITEMDRAW_DEFAULT:ITEMDRAW_DISABLED);
 	}
 	
-	int upgrade[InternalUpgradeInfo];
+	InternalUpgradeInfo upgrade;
 	GetUpgradeByIndex(iUpgradeIndex, upgrade);
 	
-	bool bHasVisuals = upgrade[UPGR_visualsConvar] != null && upgrade[UPGR_enableVisuals];
-	bool bHasSounds = upgrade[UPGR_soundsConvar] != null && upgrade[UPGR_enableSounds];
+	bool bHasVisuals = upgrade.visualsConvar != null && upgrade.enableVisuals;
+	bool bHasSounds = upgrade.soundsConvar != null && upgrade.enableSounds;
 	
 	if(bHasVisuals || bHasSounds)
 	{
 		hMenu.AddItem("", "", ITEMDRAW_SPACER);
 		if(bHasVisuals)
 		{
-			Format(sBuffer, sizeof(sBuffer), "%T: %T", "Visual effects", client, playerupgrade[PUI_visuals]?"On":"Off", client);
+			Format(sBuffer, sizeof(sBuffer), "%T: %T", "Visual effects", client, playerupgrade.visuals?"On":"Off", client);
 			hMenu.AddItem("visuals", sBuffer);
 		}
 		if(bHasSounds)
 		{
-			Format(sBuffer, sizeof(sBuffer), "%T: %T", "Sound effects", client, playerupgrade[PUI_sounds]?"On":"Off", client);
+			Format(sBuffer, sizeof(sBuffer), "%T: %T", "Sound effects", client, playerupgrade.sounds?"On":"Off", client);
 			hMenu.AddItem("sounds", sBuffer);
 		}
 	}
@@ -604,31 +604,31 @@ public int Menu_HandleUpgradeSettings(Menu menu, MenuAction action, int param1, 
 		char sInfo[16];
 		menu.GetItem(param2, sInfo, sizeof(sInfo));
 		
-		int playerupgrade[PlayerUpgradeInfo];
+		PlayerUpgradeInfo playerupgrade;
 		GetPlayerUpgradeInfoByIndex(param1, g_iSelectedSettingsUpgrade[param1], playerupgrade);
 		
 		if(StrEqual(sInfo, "enable"))
 		{
-			SetClientUpgradeEnabledStatus(param1, g_iSelectedSettingsUpgrade[param1], playerupgrade[PUI_enabled]?false:true);
+			SetClientUpgradeEnabledStatus(param1, g_iSelectedSettingsUpgrade[param1], playerupgrade.enabled?false:true);
 		}
 		else if(StrEqual(sInfo, "incselect"))
 		{
 			if(!g_hCVDisableLevelSelection.BoolValue)
-				SetClientSelectedUpgradeLevel(param1, g_iSelectedSettingsUpgrade[param1], playerupgrade[PUI_selectedlevel]+1);
+				SetClientSelectedUpgradeLevel(param1, g_iSelectedSettingsUpgrade[param1], playerupgrade.selectedlevel+1);
 		}
 		else if(StrEqual(sInfo, "decselect"))
 		{
-			if(playerupgrade[PUI_selectedlevel] > 0 && !g_hCVDisableLevelSelection.BoolValue)
-				SetClientSelectedUpgradeLevel(param1, g_iSelectedSettingsUpgrade[param1], playerupgrade[PUI_selectedlevel]-1);
+			if(playerupgrade.selectedlevel > 0 && !g_hCVDisableLevelSelection.BoolValue)
+				SetClientSelectedUpgradeLevel(param1, g_iSelectedSettingsUpgrade[param1], playerupgrade.selectedlevel-1);
 		}
 		else if(StrEqual(sInfo, "visuals"))
 		{
-			playerupgrade[PUI_visuals] = playerupgrade[PUI_visuals]?false:true;
+			playerupgrade.visuals = playerupgrade.visuals?false:true;
 			SavePlayerUpgradeInfo(param1, g_iSelectedSettingsUpgrade[param1], playerupgrade);
 		}
 		else if(StrEqual(sInfo, "sounds"))
 		{
-			playerupgrade[PUI_sounds] = playerupgrade[PUI_sounds]?false:true;
+			playerupgrade.sounds = playerupgrade.sounds?false:true;
 			SavePlayerUpgradeInfo(param1, g_iSelectedSettingsUpgrade[param1], playerupgrade);
 		}
 		
@@ -834,23 +834,23 @@ public void TopMenu_HandleHelp(TopMenu topmenu, TopMenuAction action, TopMenuObj
 			char sShortname[MAX_UPGRADE_SHORTNAME_LENGTH];
 			topmenu.GetObjName(object_id, sShortname, sizeof(sShortname));
 			
-			int upgrade[InternalUpgradeInfo];
+			InternalUpgradeInfo upgrade;
 			if(!GetUpgradeByShortname(sShortname[8], upgrade))
 				return;
 			
-			if(!IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled])
+			if(!IsValidUpgrade(upgrade) || !upgrade.enabled)
 				return;
 			
 			// Show the team this upgrade is locked to, if it is.
 			char sTeamlock[128];
-			if((!IsClientInLockedTeam(param, upgrade) || upgrade[UPGR_teamlock] > 1 && g_hCVShowTeamlockNoticeOwnTeam.BoolValue) && upgrade[UPGR_teamlock] < GetTeamCount())
+			if((!IsClientInLockedTeam(param, upgrade) || upgrade.teamlock > 1 && g_hCVShowTeamlockNoticeOwnTeam.BoolValue) && upgrade.teamlock < GetTeamCount())
 			{
-				GetTeamName(upgrade[UPGR_teamlock], sTeamlock, sizeof(sTeamlock));
+				GetTeamName(upgrade.teamlock, sTeamlock, sizeof(sTeamlock));
 				Format(sTeamlock, sizeof(sTeamlock), " (%T)", "Is teamlocked", param, sTeamlock);
 			}
 			
 			char sDescription[MAX_UPGRADE_DESCRIPTION_LENGTH];
-			GetUpgradeTranslatedName(param, upgrade[UPGR_index], sDescription, sizeof(sDescription));
+			GetUpgradeTranslatedName(param, upgrade.index, sDescription, sizeof(sDescription));
 			
 			Format(buffer, maxlength, "%s%s", sDescription, sTeamlock);
 		}
@@ -859,15 +859,15 @@ public void TopMenu_HandleHelp(TopMenu topmenu, TopMenuAction action, TopMenuObj
 			char sShortname[MAX_UPGRADE_SHORTNAME_LENGTH];
 			topmenu.GetObjName(object_id, sShortname, sizeof(sShortname));
 			
-			int upgrade[InternalUpgradeInfo];
+			InternalUpgradeInfo upgrade;
 			// Don't show invalid upgrades at all in the menu.
-			if(!GetUpgradeByShortname(sShortname[8], upgrade) || !IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled])
+			if(!GetUpgradeByShortname(sShortname[8], upgrade) || !IsValidUpgrade(upgrade) || !upgrade.enabled)
 			{
 				buffer[0] = ITEMDRAW_IGNORE;
 				return;
 			}
 			
-			int iCurrentLevel = GetClientPurchasedUpgradeLevel(param, upgrade[UPGR_index]);
+			int iCurrentLevel = GetClientPurchasedUpgradeLevel(param, upgrade.index);
 			
 			// Allow clients to read help about upgrades they no longer have access to, but don't show them, if they never bought it.
 			if(!HasAccessToUpgrade(param, upgrade) && iCurrentLevel <= 0)
@@ -889,18 +889,18 @@ public void TopMenu_HandleHelp(TopMenu topmenu, TopMenuAction action, TopMenuObj
 			char sShortname[MAX_UPGRADE_SHORTNAME_LENGTH];
 			topmenu.GetObjName(object_id, sShortname, sizeof(sShortname));
 			
-			int upgrade[InternalUpgradeInfo];
+			InternalUpgradeInfo upgrade;
 			
 			// Bad upgrade?
-			if(!GetUpgradeByShortname(sShortname[8], upgrade) || !IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled])
+			if(!GetUpgradeByShortname(sShortname[8], upgrade) || !IsValidUpgrade(upgrade) || !upgrade.enabled)
 			{
 				g_hRPGTopMenu.Display(param, TopMenuPosition_LastCategory);
 				return;
 			}
 			
 			char sTranslatedName[MAX_UPGRADE_NAME_LENGTH], sTranslatedDescription[MAX_UPGRADE_DESCRIPTION_LENGTH];
-			GetUpgradeTranslatedName(param, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
-			GetUpgradeTranslatedDescription(param, upgrade[UPGR_index], sTranslatedDescription, sizeof(sTranslatedDescription));
+			GetUpgradeTranslatedName(param, upgrade.index, sTranslatedName, sizeof(sTranslatedName));
+			GetUpgradeTranslatedDescription(param, upgrade.index, sTranslatedDescription, sizeof(sTranslatedDescription));
 			
 			Client_PrintToChat(param, false, "{OG}SM:RPG{N} > {G}%s{N}: %s", sTranslatedName, sTranslatedDescription);
 			
@@ -917,7 +917,8 @@ void DisplayOtherUpgradesMenu(int client, int targetClient)
 	hMenu.SetTitle("%N\n%T\n-----\n", targetClient, "Credits", client, GetClientCredits(targetClient));
 	
 	int iSize = GetUpgradeCount();
-	int upgrade[InternalUpgradeInfo], iCurrentLevel;
+	InternalUpgradeInfo upgrade;
+	int iCurrentLevel;
 	char sTranslatedName[MAX_UPGRADE_NAME_LENGTH], sLine[128], sIndex[8];
 	for(int i=0;i<iSize;i++)
 	{
@@ -925,19 +926,19 @@ void DisplayOtherUpgradesMenu(int client, int targetClient)
 		GetUpgradeByIndex(i, upgrade);
 		
 		// Don't show disabled items in the menu.
-		if(!IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled] || !HasAccessToUpgrade(targetClient, upgrade) || !IsClientInLockedTeam(targetClient, upgrade))
+		if(!IsValidUpgrade(upgrade) || !upgrade.enabled || !HasAccessToUpgrade(targetClient, upgrade) || !IsClientInLockedTeam(targetClient, upgrade))
 			continue;
 		
-		GetUpgradeTranslatedName(client, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
+		GetUpgradeTranslatedName(client, upgrade.index, sTranslatedName, sizeof(sTranslatedName));
 		
-		if(iCurrentLevel >= upgrade[UPGR_maxLevel])
+		if(iCurrentLevel >= upgrade.maxLevel)
 		{
 			Format(sLine, sizeof(sLine), "%T", "RPG menu other players upgrades entry max level", client, sTranslatedName, iCurrentLevel);
 		}
 		// Optionally show the maxlevel of the upgrade
 		else if (g_hCVShowMaxLevelInMenu.BoolValue)
 		{
-			Format(sLine, sizeof(sLine), "%T", "RPG menu other players upgrades entry show max", client, sTranslatedName, iCurrentLevel, upgrade[UPGR_maxLevel]);
+			Format(sLine, sizeof(sLine), "%T", "RPG menu other players upgrades entry show max", client, sTranslatedName, iCurrentLevel, upgrade.maxLevel);
 		}
 		else
 		{

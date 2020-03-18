@@ -38,13 +38,13 @@ ConVar g_hCVEnableAntiKnifeleveling;
 
 ConVar g_hCVDisableXPDuringWarmup;
 
-enum KnifeLeveling {
-	KL_Hits,
-	KL_LastAttack,
-	KL_FirstAttack
-};
+enum struct KnifeLeveling {
+	int hits;
+	int lastAttack;
+	int firstAttack;
+}
 
-int g_iKnifeDamage[MAXPLAYERS+1][MAXPLAYERS+1][KnifeLeveling];
+KnifeLeveling g_iKnifeDamage[MAXPLAYERS+1][MAXPLAYERS+1];
 bool g_bKnifeLeveled[MAXPLAYERS+1];
 Handle g_hKnifeLevelCooldown[MAXPLAYERS+1];
 int g_iKnifeLevelDetections[MAXPLAYERS+1];
@@ -141,13 +141,13 @@ public void OnClientDisconnect(int client)
 	
 	for(int i=1;i<=MaxClients;i++)
 	{
-		g_iKnifeDamage[client][i][KL_Hits] = 0;
-		g_iKnifeDamage[client][i][KL_LastAttack] = 0;
-		g_iKnifeDamage[client][i][KL_FirstAttack] = 0;
+		g_iKnifeDamage[client][i].hits = 0;
+		g_iKnifeDamage[client][i].lastAttack = 0;
+		g_iKnifeDamage[client][i].firstAttack = 0;
 		
-		g_iKnifeDamage[i][client][KL_Hits] = 0;
-		g_iKnifeDamage[i][client][KL_LastAttack] = 0;
-		g_iKnifeDamage[i][client][KL_FirstAttack] = 0;
+		g_iKnifeDamage[i][client].hits = 0;
+		g_iKnifeDamage[i][client].lastAttack = 0;
+		g_iKnifeDamage[i][client].firstAttack = 0;
 	}
 }
 
@@ -225,23 +225,23 @@ public void Event_OnPlayerHurt(Event event, const char[] error, bool dontBroadca
 	if(StrContains(sWeapon, "knife") != -1)
 	{
 		// If this guy didn't attack the other player for 30 seconds, reset his hit count.
-		if((GetTime() - g_iKnifeDamage[attacker][victim][KL_LastAttack]) > 30)
+		if((GetTime() - g_iKnifeDamage[attacker][victim].lastAttack) > 30)
 		{
 			//PrintToServer("%N didn't knife %N for at least 30 seconds. Resetting hit count.", attacker, victim);
-			g_iKnifeDamage[attacker][victim][KL_Hits] = 0;
+			g_iKnifeDamage[attacker][victim].hits = 0;
 		}
 		
 		// Remember this great moment of first strike!
-		if(g_iKnifeDamage[attacker][victim][KL_Hits] == 0)
-			g_iKnifeDamage[attacker][victim][KL_FirstAttack] = GetTime();
+		if(g_iKnifeDamage[attacker][victim].hits == 0)
+			g_iKnifeDamage[attacker][victim].firstAttack = GetTime();
 		
-		g_iKnifeDamage[attacker][victim][KL_Hits]++;
-		g_iKnifeDamage[attacker][victim][KL_LastAttack] = GetTime();
+		g_iKnifeDamage[attacker][victim].hits++;
+		g_iKnifeDamage[attacker][victim].lastAttack = GetTime();
 		
 		// Player attacked victim at least 5 times at least 10 seconds after the first attack
-		if(g_iKnifeDamage[attacker][victim][KL_Hits] > 5 && (g_iKnifeDamage[attacker][victim][KL_LastAttack] - g_iKnifeDamage[attacker][victim][KL_FirstAttack]) > 10)
+		if(g_iKnifeDamage[attacker][victim].hits > 5 && (g_iKnifeDamage[attacker][victim].lastAttack - g_iKnifeDamage[attacker][victim].firstAttack) > 10)
 		{
-			//PrintToServer("%N is knifeleveling on %N. hits %d, time since first attack: %d", attacker, victim, g_iKnifeDamage[attacker][victim][KL_Hits], (g_iKnifeDamage[attacker][victim][KL_LastAttack] - g_iKnifeDamage[attacker][victim][KL_FirstAttack]));
+			//PrintToServer("%N is knifeleveling on %N. hits %d, time since first attack: %d", attacker, victim, g_iKnifeDamage[attacker][victim].hits, (g_iKnifeDamage[attacker][victim].lastAttack - g_iKnifeDamage[attacker][victim].firstAttack));
 			if(g_hCVEnableAntiKnifeleveling.BoolValue && !g_bKnifeLeveled[attacker])
 			{
 				LogMessage("%L (lvl %d) is knifeleveling with %L (lvl %d).", attacker, SMRPG_GetClientLevel(attacker), victim, SMRPG_GetClientLevel(victim));
@@ -496,7 +496,6 @@ public void Event_OnVIPEscaped(Event event, const char[] error, bool dontBroadca
 // CS:GO Danger Zone winners.
 public Action UsrMsgHook_OnSurvivalStats(UserMsg msg_id, Protobuf msg, const int[] players, int playersNum, bool reliable, bool init)
 {
-#if SOURCEMOD_V_MINOR > 9
 	if(!SMRPG_IsEnabled())
 		return;
 
@@ -525,7 +524,6 @@ public Action UsrMsgHook_OnSurvivalStats(UserMsg msg_id, Protobuf msg, const int
 		// sending new usermessages during a usermessage hook.
 		RequestFrame(AddDangerZoneExperienceNextFrame, hPack);
 	}
-#endif
 }
 
 void AddDangerZoneExperienceNextFrame(DataPack hPack)

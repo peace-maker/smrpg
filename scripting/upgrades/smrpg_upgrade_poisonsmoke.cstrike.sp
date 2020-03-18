@@ -12,15 +12,15 @@
 
 #define UPGRADE_SHORTNAME "poisonsmoke"
 
-enum GrenadeInfo {
-	GR_userid,
-	GR_team,
-	GR_projectile,
-	GR_particle,
-	GR_light,
-	Handle:GR_removeTimer,
-	Handle:GR_damageTimer,
-};
+enum struct GrenadeInfo {
+	int userid;
+	int team;
+	int projectile;
+	int particle;
+	int light;
+	Handle removeTimer;
+	Handle damageTimer;
+}
 
 ArrayList g_hThrownGrenades;
 
@@ -58,7 +58,7 @@ public void OnPluginStart()
 {
 	LoadTranslations("smrpg_stock_upgrades.phrases");
 	
-	g_hThrownGrenades = new ArrayList(view_as<int>(GrenadeInfo));
+	g_hThrownGrenades = new ArrayList(sizeof(GrenadeInfo));
 	
 	// To change the weapon icon from some skull to a grenade!
 	HookEvent("player_death", Event_OnPlayerDeath, EventHookMode_Pre);
@@ -127,22 +127,23 @@ public Action Event_OnPlayerDeath(Event event, const char[] name, bool dontBroad
 public void Event_OnResetSmokes(Event event, const char[] name, bool dontBroadcast)
 {
 	int iSize = g_hThrownGrenades.Length;
-	int iGrenade[GrenadeInfo], iLight;
+	GrenadeInfo grenade;
+	int iLight;
 	for(int i=0;i<iSize;i++)
 	{
-		g_hThrownGrenades.GetArray(i, iGrenade[0], view_as<int>(GrenadeInfo));
+		g_hThrownGrenades.GetArray(i, grenade, sizeof(GrenadeInfo));
 		
-		if(iGrenade[GR_removeTimer] != null)
-			delete iGrenade[GR_removeTimer];
-		if(!g_bInCheckDamage && iGrenade[GR_damageTimer] != null)
+		if(grenade.removeTimer != null)
+			delete grenade.removeTimer;
+		if(!g_bInCheckDamage && grenade.damageTimer != null)
 		{
-			delete iGrenade[GR_damageTimer];
+			delete grenade.damageTimer;
 		}
 		
 		// Keep the color on round end and only remove it on round start.
 		if(StrEqual(name, "round_start"))
 		{
-			iLight = EntRefToEntIndex(iGrenade[GR_light]);
+			iLight = EntRefToEntIndex(grenade.light);
 			if(iLight != INVALID_ENT_REFERENCE && IsValidEntity(iLight))
 				AcceptEntityInput(iLight, "Kill");
 		}
@@ -195,15 +196,15 @@ public void Hook_OnSpawnProjectile(int entity)
 	if(!SMRPG_CanRunEffectOnClient(client))
 		return;
 	
-	int iGrenade[GrenadeInfo];
-	iGrenade[GR_userid] = GetClientUserId(client);
-	iGrenade[GR_team] = GetClientTeam(client);
-	iGrenade[GR_projectile] = EntIndexToEntRef(entity);
-	iGrenade[GR_particle] = INVALID_ENT_REFERENCE;
-	iGrenade[GR_light] = INVALID_ENT_REFERENCE;
-	iGrenade[GR_removeTimer] = null;
-	iGrenade[GR_damageTimer] = null;
-	g_hThrownGrenades.PushArray(iGrenade[0], view_as<int>(GrenadeInfo));
+	GrenadeInfo grenade;
+	grenade.userid = GetClientUserId(client);
+	grenade.team = GetClientTeam(client);
+	grenade.projectile = EntIndexToEntRef(entity);
+	grenade.particle = INVALID_ENT_REFERENCE;
+	grenade.light = INVALID_ENT_REFERENCE;
+	grenade.removeTimer = null;
+	grenade.damageTimer = null;
+	g_hThrownGrenades.PushArray(grenade, sizeof(GrenadeInfo));
 }
 
 // CS:S only!
@@ -213,38 +214,39 @@ public void Hook_OnSpawnParticles(int entity)
 	GetEntPropVector(entity, Prop_Send, "m_vecOrigin", fParticleOrigin);
 	
 	int iSize = g_hThrownGrenades.Length;
-	int iGrenade[GrenadeInfo], iProjectile;
+	GrenadeInfo grenade;
+	int iProjectile;
 	for(int i=0;i<iSize;i++)
 	{
-		g_hThrownGrenades.GetArray(i, iGrenade[0], view_as<int>(GrenadeInfo));
-		iProjectile = EntRefToEntIndex(iGrenade[GR_projectile]); // TODO: check for valid entity and remove entry, if light wasn't spawned already.
+		g_hThrownGrenades.GetArray(i, grenade, sizeof(GrenadeInfo));
+		iProjectile = EntRefToEntIndex(grenade.projectile); // TODO: check for valid entity and remove entry, if light wasn't spawned already.
 		GetEntPropVector(iProjectile, Prop_Send, "m_vecOrigin", fProjectileOrigin);
 		
 		// This is the grenade we're looking for.
 		if(fParticleOrigin[0] == fProjectileOrigin[0] && fParticleOrigin[1] == fProjectileOrigin[1] && fParticleOrigin[2] == fProjectileOrigin[2])
 		{
-			int client = GetClientOfUserId(iGrenade[GR_userid]);
+			int client = GetClientOfUserId(grenade.userid);
 			if(!client || !SMRPG_CanRunEffectOnClient(client) || !SMRPG_RunUpgradeEffect(client, UPGRADE_SHORTNAME))
 			{
 				g_hThrownGrenades.Erase(i);
 				break; // Some other plugin doesn't want this effect to run
 			}
 			
-			iGrenade[GR_particle] = EntIndexToEntRef(entity);
+			grenade.particle = EntIndexToEntRef(entity);
 			
 			float fFadeStartTime = GetEntPropFloat(entity, Prop_Send, "m_FadeStartTime");
 			float fFadeEndTime = GetEntPropFloat(entity, Prop_Send, "m_FadeEndTime");
 			
 			// Create the light, which colors the smoke.
-			int iEnt = CreateLightDynamic(entity, fParticleOrigin, iGrenade[GR_team], fFadeStartTime, fFadeEndTime);
-			iGrenade[GR_light] = EntIndexToEntRef(iEnt);
+			int iEnt = CreateLightDynamic(entity, fParticleOrigin, grenade.team, fFadeStartTime, fFadeEndTime);
+			grenade.light = EntIndexToEntRef(iEnt);
 			
 			// Stop dealing damage when the smoke starts to vanish.
-			iGrenade[GR_removeTimer] = CreateTimer(fFadeStartTime+(fFadeEndTime-fFadeStartTime)/2.5, Timer_StopDamage, iGrenade[GR_particle], TIMER_FLAG_NO_MAPCHANGE);
+			grenade.removeTimer = CreateTimer(fFadeStartTime+(fFadeEndTime-fFadeStartTime)/2.5, Timer_StopDamage, grenade.particle, TIMER_FLAG_NO_MAPCHANGE);
 			// Deal damage to anyone walking into the smoke
-			iGrenade[GR_damageTimer] = CreateTimer(g_hCVInterval.FloatValue, Timer_CheckDamage, iGrenade[GR_particle], TIMER_FLAG_NO_MAPCHANGE|TIMER_REPEAT);
+			grenade.damageTimer = CreateTimer(g_hCVInterval.FloatValue, Timer_CheckDamage, grenade.particle, TIMER_FLAG_NO_MAPCHANGE|TIMER_REPEAT);
 			
-			g_hThrownGrenades.SetArray(i, iGrenade[0], view_as<int>(GrenadeInfo));
+			g_hThrownGrenades.SetArray(i, grenade, sizeof(GrenadeInfo));
 			
 			break;
 		}
@@ -276,18 +278,18 @@ public Action Timer_StopDamage(Handle timer, any entityref)
 {
 	// Get the grenade array with this entity index
 	int iSize = g_hThrownGrenades.Length;
-	int iGrenade[GrenadeInfo];
+	GrenadeInfo grenade;
 	for(int i=0; i<iSize; i++)
 	{
-		g_hThrownGrenades.GetArray(i, iGrenade[0], view_as<int>(GrenadeInfo));
-		if(iGrenade[GR_light] == INVALID_ENT_REFERENCE)
+		g_hThrownGrenades.GetArray(i, grenade, sizeof(GrenadeInfo));
+		if(grenade.light == INVALID_ENT_REFERENCE)
 			continue;
 		
 		// This is the right grenade
 		// Remove it
-		if(iGrenade[GR_particle] == entityref)
+		if(grenade.particle == entityref)
 		{
-			delete iGrenade[GR_damageTimer];
+			delete grenade.damageTimer;
 			
 			g_hThrownGrenades.Erase(i);
 			break;
@@ -306,12 +308,12 @@ public Action Timer_CheckDamage(Handle timer, any entityref)
 	
 	// Get the grenade array with this entity index
 	int iSize = GetArraySize(g_hThrownGrenades);
-	int iGrenade[GrenadeInfo];
+	GrenadeInfo grenade;
 	bool bFound;
 	for(int i=0; i<iSize; i++)
 	{
-		g_hThrownGrenades.GetArray(i, iGrenade[0], view_as<int>(GrenadeInfo));
-		if(iGrenade[GR_particle] == entityref)
+		g_hThrownGrenades.GetArray(i, grenade, sizeof(GrenadeInfo));
+		if(grenade.particle == entityref)
 		{
 			bFound = true;
 			break;
@@ -323,7 +325,7 @@ public Action Timer_CheckDamage(Handle timer, any entityref)
 		return Plugin_Continue;
 	
 	// Don't do anything, if the client who's thrown the grenade left.
-	int client = GetClientOfUserId(iGrenade[GR_userid]);
+	int client = GetClientOfUserId(grenade.userid);
 	if(!client)
 		return Plugin_Continue;
 	
@@ -344,11 +346,11 @@ public Action Timer_CheckDamage(Handle timer, any entityref)
 	bool bIgnoreFriendlyFire = g_hCVIgnoreFriendlyFire.BoolValue;
 	for(int i=1;i<=MaxClients;i++)
 	{
-		if(IsClientInGame(i) && IsPlayerAlive(i) && !IsClientObserver(i) && (SMRPG_IsFFAEnabled() || (bFriendlyFire && !bIgnoreFriendlyFire || GetClientTeam(i) != iGrenade[GR_team])))
+		if(IsClientInGame(i) && IsPlayerAlive(i) && !IsClientObserver(i) && (SMRPG_IsFFAEnabled() || (bFriendlyFire && !bIgnoreFriendlyFire || GetClientTeam(i) != grenade.team)))
 		{
 			GetClientAbsOrigin(i, fPlayerOrigin);
 			if(GetVectorDistance(fParticleOrigin, fPlayerOrigin) <= 220)
-				SDKHooks_TakeDamage(i, iGrenade[GR_particle], client, fDamage, DMG_POISON, -1, NULL_VECTOR, fParticleOrigin);
+				SDKHooks_TakeDamage(i, grenade.particle, client, fDamage, DMG_POISON, -1, NULL_VECTOR, fParticleOrigin);
 		}
 	}
 	
@@ -414,9 +416,7 @@ stock bool SMRPG_CanRunEffectOnClient(int client)
 		return false;
 	
 	// The upgrade is disabled completely?
-	int upgrade[UpgradeInfo];
-	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
-	if(!upgrade[UI_enabled])
+	if(!SMRPG_IsUpgradeEnabled(UPGRADE_SHORTNAME))
 		return false;
 	
 	// Are bots allowed to use this upgrade?

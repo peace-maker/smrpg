@@ -94,9 +94,7 @@ public void ConVar_OnDisableImmunityAlphaChanged(ConVar convar, const char[] old
 		if(!SMRPG_IsEnabled())
 			return;
 	
-		int upgrade[UpgradeInfo];
-		SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
-		if(!upgrade[UI_enabled])
+		if(!SMRPG_IsUpgradeEnabled(UPGRADE_SHORTNAME))
 			return;
 		
 		convar.SetBool(true);
@@ -115,9 +113,7 @@ public void SMRPG_OnEnableStatusChanged(bool bEnabled)
 		return;
 
 	// Upgrade enabled too?
-	int upgrade[UpgradeInfo];
-	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
-	if(!upgrade[UI_enabled])
+	if(!SMRPG_IsUpgradeEnabled(UPGRADE_SHORTNAME))
 		return;
 	
 	// alpha change was ignored. OBEY!
@@ -139,9 +135,7 @@ public void SMRPG_OnUpgradeSettingsChanged(const char[] shortname)
 	if(!StrEqual(shortname, UPGRADE_SHORTNAME))
 		return;
 
-	int upgrade[UpgradeInfo];
-	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
-	if(!upgrade[UI_enabled])
+	if(!SMRPG_IsUpgradeEnabled(UPGRADE_SHORTNAME))
 		return;
 
 	if(!g_hCVIgnoreImmunity.BoolValue)
@@ -162,9 +156,7 @@ public void Event_OnPlayerSpawn(Event event, const char[] name, bool dontBroadca
 	if(!SMRPG_IsEnabled())
 		return;
 	
-	int upgrade[UpgradeInfo];
-	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
-	if(!upgrade[UI_enabled])
+	if(!SMRPG_IsUpgradeEnabled(UPGRADE_SHORTNAME))
 		return;
 	
 	// Are bots allowed to use this upgrade?
@@ -185,9 +177,7 @@ public void Hook_OnWeaponDropPost(int client, int weapon)
 	if(!SMRPG_IsEnabled())
 		return;
 	
-	int upgrade[UpgradeInfo];
-	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
-	if(!upgrade[UI_enabled])
+	if(!SMRPG_IsUpgradeEnabled(UPGRADE_SHORTNAME))
 		return;
 	
 	// Render dropped weapons visible again!
@@ -240,9 +230,7 @@ void SetVisibilities()
 	if(!SMRPG_IsEnabled())
 		return;
 	
-	int upgrade[UpgradeInfo];
-	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
-	if(!upgrade[UI_enabled])
+	if(!SMRPG_IsUpgradeEnabled(UPGRADE_SHORTNAME))
 		return;
 	
 	bool bIgnoreBots = SMRPG_IgnoreBots();
@@ -277,7 +265,7 @@ void SetClientVisibility(int client)
 	
 	int iLevel = SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME);
 	
-	int upgrade[UpgradeInfo];
+	UpgradeInfo upgrade;
 	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
 	
 	// Keep the minimum alpha in byte range
@@ -286,7 +274,7 @@ void SetClientVisibility(int client)
 		iMinimumAlpha = 120;
 	
 	// Each step brings the player's visibility more towards the minimum alpha.
-	int iStepSize = (255 - iMinimumAlpha) / upgrade[UI_maxLevel];
+	int iStepSize = (255 - iMinimumAlpha) / upgrade.maxLevel;
 	
 	// Render the player more invisible each level
 	int iAlpha = 255 - iLevel * iStepSize;
