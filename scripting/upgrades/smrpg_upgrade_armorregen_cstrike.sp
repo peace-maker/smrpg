@@ -122,7 +122,7 @@ public Action Timer_IncreaseArmor(Handle timer, any userid)
 		return Plugin_Continue;
 	
 	// Only change alive players.
-	if(!IsPlayerAlive(client) || IsClientObserver(client))
+	if(!IsClientInGame(client) || !IsPlayerAlive(client) || IsClientObserver(client))
 		return Plugin_Continue;
 	
 	// Player didn't buy this upgrade yet.
