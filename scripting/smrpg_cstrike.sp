@@ -119,7 +119,8 @@ public void OnPluginStart()
 	HookEvent("round_mvp", Event_OnRoundMVP);
 
 	UserMsg msgSurvivalStats = GetUserMessageId("SurvivalStats");
-	if(msgSurvivalStats != INVALID_MESSAGE_ID)
+	// SurvivalStats only available in CS:GO and "Protobuf.ReadInt64" was added in SourceMod 1.10.
+	if(msgSurvivalStats != INVALID_MESSAGE_ID && GetFeatureStatus(FeatureType_Native, "Protobuf.ReadInt64") == FeatureStatus_Available)
 		HookUserMessage(msgSurvivalStats, UsrMsgHook_OnSurvivalStats);
 }
 
@@ -485,6 +486,7 @@ public void Event_OnVIPEscaped(Event event, const char[] error, bool dontBroadca
 // CS:GO Danger Zone winners.
 public Action UsrMsgHook_OnSurvivalStats(UserMsg msg_id, Protobuf msg, const int[] players, int playersNum, bool reliable, bool init)
 {
+#if SOURCEMOD_V_MINOR > 9
 	if(!SMRPG_IsEnabled())
 		return;
 
@@ -513,6 +515,7 @@ public Action UsrMsgHook_OnSurvivalStats(UserMsg msg_id, Protobuf msg, const int
 		// sending new usermessages during a usermessage hook.
 		RequestFrame(AddDangerZoneExperienceNextFrame, hPack);
 	}
+#endif
 }
 
 void AddDangerZoneExperienceNextFrame(DataPack hPack)
@@ -553,7 +556,7 @@ void UpdateMVPLevel(int client)
 	CS_SetMVPCount(client, SMRPG_GetClientLevel(client));
 }
 
-int GetClientByAccountID(int iTargetAccountID)
+stock int GetClientByAccountID(int iTargetAccountID)
 {
 	for(int i=1;i<=MaxClients;i++)
 	{
@@ -630,7 +633,7 @@ stock void DebugLog(const char[] format, any ...)
 		hFile = OpenFile(sPath, "a");
 		iOpenTime = GetTime();
 	}
-	
+
 	// Flush the buffer.
 	if((strlen(sLog) + strlen(sBuffer) + 24) >= sizeof(sLog)-1)
 	{
@@ -638,7 +641,7 @@ stock void DebugLog(const char[] format, any ...)
 			hFile.WriteString(sLog, false);
 		sLog[0] = 0;
 	}
-	
+
 	char sDate[32];
 	FormatTime(sDate, sizeof(sDate), "%m/%d/%Y - %H:%M:%S: ");
 	StrCat(sLog, sizeof(sLog), sDate);
