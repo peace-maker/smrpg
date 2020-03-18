@@ -84,4 +84,25 @@
 		// 1: The amount of experience earned.
 		"de"			"{1} Exp. fürs Entkommen als VIP"
 	}
+	
+	"cs_dangerzone_place1"
+	{
+		// 1: The amount of experience earned.
+		"#format"	"{1:d}"
+		"de"			"{1} Exp. für den 1. Platz in Danger Zone"
+	}
+	
+	"cs_dangerzone_place2"
+	{
+		// 1: The amount of experience earned.
+		"#format"	"{1:d}"
+		"de"			"{1} Exp. für den 2. Platz in Danger Zone"
+	}
+	
+	"cs_dangerzone_place3"
+	{
+		// 1: The amount of experience earned.
+		"#format"	"{1:d}"
+		"de"			"{1} Exp. für den 3. Platz in Danger Zone"
+	}
 }

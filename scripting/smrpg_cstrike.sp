@@ -28,6 +28,8 @@ ConVar g_hCVExpVIPEscaped;
 ConVar g_hCVExpDominating;
 ConVar g_hCVExpRevenge;
 
+ConVar g_hCVExpDZPlace[3];
+
 ConVar g_hCVBotEarnExpObjective;
 
 ConVar g_hCVShowMVPLevel;
@@ -79,14 +81,18 @@ public void OnPluginStart()
 	
 	g_hCVExpHeadshot = AutoExecConfig_CreateConVar("smrpg_exp_headshot", "50.0", "Experience extra for a headshot", 0, true, 0.0);
 	
-	g_hCVExpBombPlanted = AutoExecConfig_CreateConVar("smrpg_exp_bombplanted", "0.15", "Experience multipled by the experience required and the team ratio given for planting the bomb", 0, true, 0.0);
-	g_hCVExpBombDefused = AutoExecConfig_CreateConVar("smrpg_exp_bombdefused", "0.30", "Experience multipled by the experience required and the team ratio given for defusing the bomb", 0, true, 0.0);
-	g_hCVExpBombExploded = AutoExecConfig_CreateConVar("smrpg_exp_bombexploded", "0.20", "Experience multipled by the experience required and the team ratio given to the bomb planter when it explodes", 0, true, 0.0);
-	g_hCVExpHostage = AutoExecConfig_CreateConVar("smrpg_exp_hostage", "0.10", "Experience multipled by the experience required and the team ratio for rescuing a hostage", 0, true, 0.0);
-	g_hCVExpVIPEscaped = AutoExecConfig_CreateConVar("smrpg_exp_vipescaped", "0.35", "Experience multipled by the experience required and the team ratio given to the vip when the vip escapes", 0, true, 0.0);
+	g_hCVExpBombPlanted = AutoExecConfig_CreateConVar("smrpg_exp_bombplanted", "0.15", "Experience multipled by the experience required for the player's next level and the team ratio given for planting the bomb", 0, true, 0.0);
+	g_hCVExpBombDefused = AutoExecConfig_CreateConVar("smrpg_exp_bombdefused", "0.30", "Experience multipled by the experience required for the player's next level and the team ratio given for defusing the bomb", 0, true, 0.0);
+	g_hCVExpBombExploded = AutoExecConfig_CreateConVar("smrpg_exp_bombexploded", "0.20", "Experience multipled by the experience required for the player's next level and the team ratio given to the bomb planter when it explodes", 0, true, 0.0);
+	g_hCVExpHostage = AutoExecConfig_CreateConVar("smrpg_exp_hostage", "0.10", "Experience multipled by the experience required for the player's next level and the team ratio for rescuing a hostage", 0, true, 0.0);
+	g_hCVExpVIPEscaped = AutoExecConfig_CreateConVar("smrpg_exp_vipescaped", "0.35", "Experience multipled by the experience required for the player's next level and the team ratio given to the vip when the vip escapes", 0, true, 0.0);
 	
 	g_hCVExpDominating = AutoExecConfig_CreateConVar("smrpg_exp_dominating", "5.0", "Experience for dominating an enemy multiplied by the victim's level.", 0, true, 0.0);
 	g_hCVExpRevenge = AutoExecConfig_CreateConVar("smrpg_exp_revenge", "8.0", "Experience for killing a dominating enemy in revenge multiplied by the attackers's level.", 0, true, 0.0);
+
+	g_hCVExpDZPlace[0] = AutoExecConfig_CreateConVar("smrpg_exp_dz_place_1", "10000", "Experience for first place in a Danger Zone match.", 0, true, 0.0);
+	g_hCVExpDZPlace[1] = AutoExecConfig_CreateConVar("smrpg_exp_dz_place_2", "7500", "Experience for second place in a Danger Zone match.", 0, true, 0.0);
+	g_hCVExpDZPlace[2] = AutoExecConfig_CreateConVar("smrpg_exp_dz_place_3", "5000", "Experience for third place in a Danger Zone match.", 0, true, 0.0);
 	
 	g_hCVBotEarnExpObjective = AutoExecConfig_CreateConVar("smrpg_bot_exp_objectives", "1", "Should bots earn experience for completing objectives (bomb, hostage, ..)?", 0, true, 0.0, true, 1.0);
 	
@@ -111,6 +117,10 @@ public void OnPluginStart()
 	
 	HookEvent("player_spawn", Event_OnPlayerSpawn);
 	HookEvent("round_mvp", Event_OnRoundMVP);
+
+	UserMsg msgSurvivalStats = GetUserMessageId("SurvivalStats");
+	if(msgSurvivalStats != INVALID_MESSAGE_ID)
+		HookUserMessage(msgSurvivalStats, UsrMsgHook_OnSurvivalStats);
 }
 
 public void OnAllPluginsLoaded()
@@ -472,6 +482,54 @@ public void Event_OnVIPEscaped(Event event, const char[] error, bool dontBroadca
 	Debug_AddClientExperience(client, RoundToCeil(float(SMRPG_LevelToExperience(SMRPG_GetClientLevel(client))) * g_hCVExpVIPEscaped.FloatValue * fTeamRatio), false, "cs_vipescaped");
 }
 
+// CS:GO Danger Zone winners.
+public Action UsrMsgHook_OnSurvivalStats(UserMsg msg_id, Protobuf msg, const int[] players, int playersNum, bool reliable, bool init)
+{
+	if(!SMRPG_IsEnabled())
+		return;
+
+	int xuid[2];
+	int userCount = msg.GetRepeatedFieldCount("users");
+	for(int i = 0; i < userCount; i++)
+	{
+		Protobuf placement = msg.ReadRepeatedMessage("users", i);
+		placement.ReadInt64("xuid", xuid);
+		int client = GetClientByAccountID(xuid[0]);
+		if(client == -1)
+			continue;
+
+		int place = placement.ReadInt("placement");
+		if(place > 3)
+			continue;
+
+		// TODO: Dynamically scale based on RPG level of competitors?
+		// Consider other players in their squad?
+		DataPack hPack = new DataPack();
+		hPack.WriteCell(GetClientUserId(client));
+		hPack.WriteCell(place);
+		hPack.Reset();
+
+		// Give experience on the next frame to avoid problems with
+		// sending new usermessages during a usermessage hook.
+		RequestFrame(AddDangerZoneExperienceNextFrame, hPack);
+	}
+}
+
+void AddDangerZoneExperienceNextFrame(DataPack hPack)
+{
+	hPack.Reset();
+	int client = GetClientOfUserId(hPack.ReadCell());
+	int place = hPack.ReadCell();
+	delete hPack;
+
+	if(!client)
+		return;
+
+	char sExperienceReason[32];
+	Format(sExperienceReason, sizeof(sExperienceReason), "cs_dangerzone_place%d", place);
+	Debug_AddClientExperience(client, g_hCVExpDZPlace[place - 1].IntValue, false, sExperienceReason);
+}
+
 public Action Timer_ResetKnifeLeveling(Handle timer, any userid)
 {
 	int client = GetClientOfUserId(userid);
@@ -493,6 +551,23 @@ void UpdateMVPLevel(int client)
 		return;
 	
 	CS_SetMVPCount(client, SMRPG_GetClientLevel(client));
+}
+
+int GetClientByAccountID(int iTargetAccountID)
+{
+	for(int i=1;i<=MaxClients;i++)
+	{
+		if (!IsClientConnected(i))
+			continue;
+
+		int iAccountID = GetSteamAccountID(i);
+		if(!iAccountID)
+			continue;
+
+		if(iTargetAccountID == iAccountID)
+			return i;
+	}
+	return -1;
 }
 
 // This stuff is leftover from balancing the experience on a deathmatch server.
