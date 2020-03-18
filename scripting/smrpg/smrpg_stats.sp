@@ -1052,15 +1052,14 @@ void DisplayNextPlayersInRanking(int client)
 	g_hDatabase.Query(SQL_GetNext10, sQuery, GetClientUserId(client));
 }
 
-#define ENUM_STRUCTS_SUCK_SIZE 5+(MAX_NAME_LENGTH+3/4)
-enum NextPlayersSorting {
-	NP_DBID,
-	NP_rank,
-	NP_level,
-	NP_exp,
-	NP_credits,
-	String:NP_name[MAX_NAME_LENGTH]
-};
+enum struct NextPlayersSorting {
+	int DBID;
+	int rank;
+	int level;
+	int exp;
+	int credits;
+	char name[MAX_NAME_LENGTH];
+}
 
 public void SQL_GetNext10(Database db, DBResultSet results, const char[] error, any userid)
 {
@@ -1077,7 +1076,8 @@ public void SQL_GetNext10(Database db, DBResultSet results, const char[] error, 
 	char sBuffer[128];
 	Format(sBuffer, sizeof(sBuffer), "%T\n-----\n", "Next ranked players", client);
 	
-	int iNextCache[20][ENUM_STRUCTS_SUCK_SIZE], iCount;
+	NextPlayersSorting nextCache[20];
+	int iCount;
 	
 	Panel hPanel = new Panel();
 	hPanel.SetTitle(sBuffer);
@@ -1087,12 +1087,12 @@ public void SQL_GetNext10(Database db, DBResultSet results, const char[] error, 
 		if(!results.FetchRow())
 			continue;
 		
-		results.FetchString(1, iNextCache[iCount][NP_name], MAX_NAME_LENGTH);
-		iNextCache[iCount][NP_DBID] = results.FetchInt(0);
-		iNextCache[iCount][NP_level] = results.FetchInt(2);
-		iNextCache[iCount][NP_exp] = results.FetchInt(3);
-		iNextCache[iCount][NP_credits] = results.FetchInt(4);
-		iNextCache[iCount][NP_rank] = results.FetchInt(5);
+		results.FetchString(1, nextCache[iCount].name, MAX_NAME_LENGTH);
+		nextCache[iCount].DBID = results.FetchInt(0);
+		nextCache[iCount].level = results.FetchInt(2);
+		nextCache[iCount].exp = results.FetchInt(3);
+		nextCache[iCount].credits = results.FetchInt(4);
+		nextCache[iCount].rank = results.FetchInt(5);
 		iCount++;
 	}
 	
@@ -1102,32 +1102,32 @@ public void SQL_GetNext10(Database db, DBResultSet results, const char[] error, 
 	int iLocalPlayer;
 	for(int i=0;i<iCount;i++)
 	{
-		iLocalPlayer = GetClientByPlayerID(iNextCache[i][NP_DBID]);
+		iLocalPlayer = GetClientByPlayerID(nextCache[i].DBID);
 		if(iLocalPlayer == -1)
 			continue;
 		
-		iNextCache[i][NP_level] = GetClientLevel(iLocalPlayer);
-		iNextCache[i][NP_exp] = GetClientExperience(iLocalPlayer);
-		iNextCache[i][NP_credits] = GetClientCredits(iLocalPlayer);
+		nextCache[i].level = GetClientLevel(iLocalPlayer);
+		nextCache[i].exp = GetClientExperience(iLocalPlayer);
+		nextCache[i].credits = GetClientCredits(iLocalPlayer);
 	}
 	
-	SortCustom2D(iNextCache, iCount, Sort2D_NextPlayers);
+	SortCustom2D(nextCache, iCount, Sort2D_NextPlayers);
 	
 	// Save the next rank as reference if the list is reordered with current data below
-	int iLastRank = iNextCache[0][NP_rank];
+	int iLastRank = nextCache[0].rank;
 	// Fix rank if ordering changed!
 	for(int i=0;i<iCount;i++)
 	{
-		iNextCache[i][NP_rank] = iLastRank--;
+		nextCache[i].rank = iLastRank--;
 	}
 	
 	int iNeeded = iCount > 10 ? 10 : iCount;
 	for(int i=0;i<iCount&&iNeeded>0;i++)
 	{
-		if(iNextCache[i][NP_level] < GetClientLevel(client) || (iNextCache[i][NP_level] == GetClientLevel(client) && iNextCache[i][NP_exp] < GetClientExperience(client)))
+		if(nextCache[i].level < GetClientLevel(client) || (nextCache[i].level == GetClientLevel(client) && nextCache[i].exp < GetClientExperience(client)))
 			continue;
 		
-		Format(sBuffer, sizeof(sBuffer), "%d. %s Lvl: %d Exp: %d Cr: %d", iNextCache[i][NP_rank], iNextCache[i][NP_name], iNextCache[i][NP_level], iNextCache[i][NP_exp], iNextCache[i][NP_credits]);
+		Format(sBuffer, sizeof(sBuffer), "%d. %s Lvl: %d Exp: %d Cr: %d", nextCache[i].rank, nextCache[i].name, nextCache[i].level, nextCache[i].exp, nextCache[i].credits);
 		hPanel.DrawText(sBuffer);
 		iNeeded--;
 	}
@@ -1142,10 +1142,10 @@ public void SQL_GetNext10(Database db, DBResultSet results, const char[] error, 
 // Sort players ascending by level and experience
 public int Sort2D_NextPlayers(int[] elem1, int[] elem2, const int[][] array, Handle hndl)
 {
-	if(elem1[NP_level] > elem2[NP_level])
+	if(elem1[NextPlayersSorting::level] > elem2[NextPlayersSorting::level])
 		return 1;
 	
-	if(elem1[NP_level] == elem2[NP_level] && elem1[NP_exp] > elem2[NP_exp])
+	if(elem1[NextPlayersSorting::level] == elem2[NextPlayersSorting::level] && elem1[NextPlayersSorting::exp] > elem2[NextPlayersSorting::exp])
 		return 1;
 	
 	return -1;
