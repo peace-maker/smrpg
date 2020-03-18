@@ -18,7 +18,7 @@ if [ ! -d "build" ]; then
 	cp -R ../scripting/ addons/sourcemod/
 
 	# get dependency libraries.
-	git clone -b transitional_syntax --single-branch https://github.com/bcserv/smlib.git
+	git clone https://github.com/bcserv/smlib.git
 	cp -R smlib/scripting/include/ addons/sourcemod/scripting/
 
 	git clone https://github.com/Impact123/AutoExecConfig.git
@@ -74,16 +74,16 @@ do
 	if [ "$f" != "smrpg_chattags.sp" ]; then
 		echo -e "\nCompiling $f..."
 		smxfile="`echo $f | sed -e 's/\.sp$/\.smx/'`"
-		./spcomp $f -o$PACKAGEDIR/plugins/$smxfile -E
+		./spcomp $f -o$PACKAGEDIR/plugins/$smxfile
 	fi
 done
 
 # compile both versions of chattags for both chat processors..
 echo -e "\nCompiling smrpg_chattags.sp for Chat Processor..."
-./spcomp smrpg_chattags.sp -o$PACKAGEDIR/plugins/smrpg_chattags_cp.smx -E
+./spcomp smrpg_chattags.sp -o$PACKAGEDIR/plugins/smrpg_chattags_cp.smx
 
 echo -e "\nCompiling smrpg_chattags.sp for Simple Chat Processor..."
-./spcomp smrpg_chattags.sp -o$PACKAGEDIR/plugins/smrpg_chattags_scp.smx -E USE_SIMPLE_PROCESSOR=
+./spcomp smrpg_chattags.sp -o$PACKAGEDIR/plugins/smrpg_chattags_scp.smx USE_SIMPLE_PROCESSOR=
 
 # compile all upgrades
 for f in upgrades/*.sp
@@ -92,7 +92,7 @@ do
 	if [ "$f" != "upgrades/smrpg_upgrade_example.sp" ]; then
 		echo -e "\nCompiling upgrade $f..."
 		smxfile="`echo $f | sed -e 's/\.sp$/\.smx/'`"
-		./spcomp $f -o$PACKAGEDIR/plugins/$smxfile -E
+		./spcomp $f -o$PACKAGEDIR/plugins/$smxfile
 	fi
 done
 
