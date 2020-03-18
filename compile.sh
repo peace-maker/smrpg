@@ -18,7 +18,7 @@ if [ ! -d "build" ]; then
 	cp -R ../scripting/ addons/sourcemod/
 
 	# get dependency libraries.
-	git clone https://github.com/bcserv/smlib.git
+	git clone -b transitional_syntax --single-branch https://github.com/bcserv/smlib.git
 	cp -R smlib/scripting/include/ addons/sourcemod/scripting/
 
 	git clone https://github.com/Impact123/AutoExecConfig.git

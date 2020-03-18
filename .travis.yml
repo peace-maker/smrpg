@@ -2,15 +2,12 @@ language: c
 dist: xenial
 
 env:
-    - SMVERSION=1.8
-    - SMVERSION=1.9
     - SMVERSION=1.10
     - SMVERSION=1.11
 
 matrix:
     fast_finish: true
     allow_failures:
-        - env: SMVERSION=1.10
         - env: SMVERSION=1.11
 
 before_install:
