@@ -14,6 +14,7 @@ bool g_bIsCSGO;
 
 ConVar g_hCVExpKillMax;
 ConVar g_hCVExpTeamwin;
+ConVar g_hCVExpNonObjectiveWin;
 
 ConVar g_hCVExpKillAssist;
 
@@ -77,6 +78,7 @@ public void OnPluginStart()
 	AutoExecConfig_SetCreateFile(true);
 	AutoExecConfig_SetPlugin(null);
 	
+	g_hCVExpNonObjectiveWin = AutoExecConfig_CreateConVar("smrpg_exp_non_objective_teamwin", "0", "Should the winning team get smrpg_exp_teamwin experience for other reasons than completing an objective like killing all players of the enemy team or a timeout?", 0, true, 0.0, true, 1.0);
 	g_hCVExpKillAssist = AutoExecConfig_CreateConVar("smrpg_exp_kill_assist", "10.0", "Experience for assisting in killing a player multiplied by the victim's level", 0, true, 0.0);
 	
 	g_hCVExpHeadshot = AutoExecConfig_CreateConVar("smrpg_exp_headshot", "50.0", "Experience extra for a headshot", 0, true, 0.0);
@@ -343,6 +345,8 @@ public void Event_OnPlayerDeath(Event event, const char[] error, bool dontBroadc
 	1   The VIP has escaped!
 	2   VIP has been assassinated!
 	6   The bomb has been defused!
+	7   Counter-Terrorists win! (smrpg_exp_non_objective_teamwin)
+	8   Terrorists win! (smrpg_exp_non_objective_teamwin)
 	10   All Hostages have been rescued!
 	11   Target has been saved!
 	12   Hostages have not been rescued!
@@ -363,6 +367,12 @@ public void Event_OnRoundEnd(Event event, const char[] error, bool dontBroadcast
 	{
 		case CSRoundEnd_TargetBombed, CSRoundEnd_VIPEscaped, CSRoundEnd_VIPKilled, CSRoundEnd_BombDefused, CSRoundEnd_HostagesRescued, CSRoundEnd_TargetSaved, CSRoundEnd_HostagesNotRescued:
 		{
+		}
+		case CSRoundEnd_CTWin, CSRoundEnd_TerroristWin:
+		{
+			// Only give experience for winning through other means than an objective if the admin wants this.
+			if (!g_hCVExpNonObjectiveWin.BoolValue)
+				return;
 		}
 		default:
 			return;
