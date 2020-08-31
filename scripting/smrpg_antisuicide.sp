@@ -135,7 +135,7 @@ public void Event_OnPlayerDeath(Event event, const char[] name, bool dontBroadca
  */
 public void Hook_OnTakeDamagePost(int victim, int attacker, int inflictor, float damage, int damagetype, int weapon, const float damageForce[3], const float damagePosition[3])
 {
-	if(victim <= 0 || victim > MaxClients || attacker <= 0 || attacker > MaxClients)
+	if(victim <= 0 || victim > MaxClients || attacker <= 0 || attacker > MaxClients || !IsClientInGame(attacker))
 		return;
 	
 	int eHitInfo[HitInfo], iIndex = -1;

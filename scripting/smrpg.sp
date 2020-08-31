@@ -480,7 +480,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 
 public void Hook_OnTakeDamagePost(int victim, int attacker, int inflictor, float damage, int damagetype, int weapon, const float damageForce[3], const float damagePosition[3])
 {
-	if(attacker <= 0 || attacker > MaxClients || victim <= 0 || victim > MaxClients)
+	if(attacker <= 0 || attacker > MaxClients || !IsClientInGame(attacker) || victim <= 0 || victim > MaxClients)
 		return;
 	
 	int iWeapon = inflictor;

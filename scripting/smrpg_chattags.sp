@@ -2,6 +2,8 @@
 #include <sourcemod>
 #include <smrpg>
 
+//#define USE_SIMPLE_PROCESSOR 1
+
 // Prefer chat processor if available..
 #if defined USE_SIMPLE_PROCESSOR
 // https://forums.alliedmods.net/showthread.php?t=198501
