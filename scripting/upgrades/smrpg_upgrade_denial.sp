@@ -301,6 +301,8 @@ bool GetRealWeaponClassname(int entity, char[] sClassname, int maxlen)
 		char sWeapon[32];
 		switch(iItemDefinitionIndex)
 		{
+			case 23:
+				sWeapon = "weapon_mp5sd";
 			case 60:
 				sWeapon = "weapon_m4a1_silencer";
 			case 61:
