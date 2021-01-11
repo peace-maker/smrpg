@@ -15,6 +15,7 @@
 // Config
 ConVar g_hCVDefaultSpeedIncrease;
 ConVar g_hCVDefaultDuration;
+ConVar g_hCVRequireGround;
 
 StringMap g_hWeaponConfig;
 
@@ -77,6 +78,7 @@ public void OnLibraryAdded(const char[] name)
 		
 		g_hCVDefaultSpeedIncrease = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_impulse_speed_inc", "0.2", "Speed increase for each level when player is damaged.", 0, true, 0.1);
 		g_hCVDefaultDuration = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_impulse_duration", "0.8", "Duration of Impulse's effect in seconds.", 0, true, 0.1);
+		g_hCVRequireGround = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_impulse_require_ground", "1", "Only apply the effect when the player stands on the ground when being shot?", 0, true, 0.0, true, 1.0);
 	}
 }
 
@@ -180,7 +182,7 @@ public void Hook_OnTakeDamagePost(int victim, int attacker, int inflictor, float
 	if(iLevel <= 0)
 		return;
 	
-	if(!(GetEntityFlags(victim) & FL_ONGROUND))
+	if(g_hCVRequireGround.BoolValue && !(GetEntityFlags(victim) & FL_ONGROUND))
 		return; //Player is in midair
 	
 	if(SMRPG_IsClientLaggedMovementChanged(victim, LMT_Faster, true))

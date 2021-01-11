@@ -1,7 +1,7 @@
 SM:RPG
 =====
 
-A modular generic RPG plugin for SourceMod 1.7+.
+A modular generic RPG plugin for SourceMod 1.10+.
 
 [![Build Status](https://travis-ci.org/peace-maker/smrpg.svg?branch=master)](https://travis-ci.org/peace-maker/smrpg)
 
