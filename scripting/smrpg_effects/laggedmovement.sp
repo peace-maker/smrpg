@@ -51,8 +51,8 @@ void ResetLaggedMovementClient(int client, bool bDisconnect)
 		if(g_ClientMovementState[client][MS_slower] > 0.0)
 			ResetSlowDown(client);
 	}
-	ClearHandle(g_hFastRestoreTimer[client]);
-	ClearHandle(g_hSlowRestoreTimer[client]);
+	delete g_hFastRestoreTimer[client];
+	delete g_hSlowRestoreTimer[client];
 	
 	g_ClientMovementState[client][MS_default] = 1.0;
 	g_ClientMovementState[client][MS_slower] = 0.0;
@@ -146,7 +146,7 @@ public int Native_ChangeClientLaggedMovement(Handle plugin, int numParams)
 		ApplyLaggedMovementValue(client);
 		
 		// Make sure we reset the speed after some time.
-		ClearHandle(g_hSlowRestoreTimer[client]);
+		delete g_hSlowRestoreTimer[client];
 		g_hSlowRestoreTimer[client] = CreateTimer(fTime, Timer_OnResetSlowdown, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
 		
 		// Inform that the speed was changed.
@@ -186,7 +186,7 @@ public int Native_ChangeClientLaggedMovement(Handle plugin, int numParams)
 		ApplyLaggedMovementValue(client);
 		
 		// Make sure we reset the speed after some time.
-		ClearHandle(g_hFastRestoreTimer[client]);
+		delete g_hFastRestoreTimer[client];
 		g_hFastRestoreTimer[client] = CreateTimer(fTime, Timer_OnResetSpeedup, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
 		
 		// Inform that the speed was changed.
@@ -355,6 +355,7 @@ void ResetSlowDown(int client)
 	// Reset the effect
 	g_ClientMovementState[client][MS_slower] = 0.0;
 	g_ClientMovementState[client][MS_lastSlowPlugin] = null;
+	delete g_hSlowRestoreTimer[client];
 	
 	ApplyLaggedMovementValue(client);
 	
@@ -369,6 +370,7 @@ void ResetSpeedUp(int client)
 	// Reset the effect
 	g_ClientMovementState[client][MS_faster] = 0.0;
 	g_ClientMovementState[client][MS_lastFastPlugin] = null;
+	delete g_hFastRestoreTimer[client];
 	
 	ApplyLaggedMovementValue(client);
 	
