@@ -140,22 +140,26 @@ native void SMRPG_ResetClientToDefaultColor(int client, bool bResetRed, bool bRe
  */
 enum LaggedMovementType {
 	LMT_Slower = 0, // Player was slowed down.
-	LMT_Faster // Player was sped up.
+	LMT_Faster,     // Player was sped up.
+	LMT_Default     // Player's default value was changed.
 };
 
 /**
  * Slow down or speed up the client for fTime seconds.
- * Default speed is 1.0 (100%). This native takes care for concurring slow downs vs. speed ups.
+ * This native takes care for concurring slow downs vs. speed ups.
  *
  * Example:
  * Plugin 1 sets the speed to 0.7, so wants to slow the player down by 30%.
  * Plugin 2 sets the speed to 1.2, so wants to speed the player up by 20%.
+ * The default speed is currently set to 1.0.
  * The effective speed is set to 1.0 - 0.3 + 0.2 = 0.9!
  * 
  * You can reset one part of the speed change using @see SMRPG_ResetClientLaggedMovement's LaggedMovementType.
  *
  * @param client             The client index.
- * @param fValue             The percent of the players maxspeed you want to set him to. Defaults to 1.0. To slow down by 20% set to 0.8, to speed up by 30% to 1.3 etc.
+ * @param fValue             The percent of the players maxspeed you want to set him to. Defaults to 1.0. 
+ *                           To slow down by 20% set to 0.8, to speed up by 30% to 1.3 etc. 
+ *                           This is only about the relative speed change, not the absolute value it is set to.
  * @param fTime              How long do you want to change the speed in seconds?
  * @return                   True if players speed was changed, false otherwise. Could return false if the client is already slowed down further by another plugin than you want to set it to.
  * @error                    Invalid client index, negative fValue, negative fTime or fValue == 1.0. Use SMRPG_ResetClientLaggedMovement to reset to 1.0.
@@ -164,11 +168,11 @@ native bool SMRPG_ChangeClientLaggedMovement(int client, float fValue, float fTi
 
 /**
  * Reset the previously changed speed of the player before the set time runs out.
- * You can reset the Slowdown or the speed up.
+ * You can reset the slow down or the speed up you set yourself or any other plugin might have set.
  * @see LaggedMovementType
  *
  * @param client             The client index.
- * @param type               The type of the speed change you want to reset. LMT_Slower or LMT_Faster, depending on how you changed it before.
+ * @param type               The type of the speed change you want to reset, depending on how you changed it before.
  * @param bForce             Force it to reset that speed, even if your plugin didn't last set it.
  * @return                   True if the speed of that type was reset, false otherwise.
  * @error                    Invalid client index.
@@ -179,12 +183,24 @@ native bool SMRPG_ResetClientLaggedMovement(int client, LaggedMovementType type,
  * Check whether a client has his speed changed up or down (or both).
  * 
  * @param client             The client index.
- * @param type               The type of the speed change to check for. LMT_Slower or LMT_Faster.
+ * @param type               The type of the speed change to check for.
  * @param bByMe              Set to true to only count changes done by your plugin or to false to also check for speed changes done by other plugins.
  * @return                   True if speed was changed, false otherwise.
  * @error                    Invalid client index.
  */
 native bool SMRPG_IsClientLaggedMovementChanged(int client, LaggedMovementType type, bool bByMe=false);
+
+/**
+ * Change the permanent default value for a client.
+ * Other changes are based on the value set here.
+ * The initial default speed is 1.0 (100%).
+ *
+ * @param client             The client index.
+ * @param fValue             The percent of the player's maxspeed you want the player to stay on by default.
+ * @return                   True if default speed was changed, false otherwise.
+ * @error                    Invalid client index, negative fValue,
+ */
+native bool SMRPG_SetClientDefaultLaggedMovement(int client, float fValue);
 
 /**
  * Called when a client is about to be frozen for fTime seconds.
@@ -238,8 +254,8 @@ forward void SMRPG_OnClientExtinguished(int client);
  * Called when the speed of a client is about to be changed for fTime seconds.
  *
  * @param client     The client index.
- * @param type       The type of the speed change. LMT_Faster or LMT_Slower.
- * @param &fTime     The time to change the speed for. You can change it and return Plugin_Changed.
+ * @param type       The type of the speed change.
+ * @param &fTime     The time to change the speed for. You can change it and return Plugin_Changed. Ignored for LMT_Default.
  * @return           >= Plugin_Handled to block, Plugin_Continue to allow the change of the speed.
  */
 forward Action SMRPG_OnClientLaggedMovementChange(int client, LaggedMovementType type, float &fTime);
@@ -248,8 +264,8 @@ forward Action SMRPG_OnClientLaggedMovementChange(int client, LaggedMovementType
  * Called after the speed of a client was changed.
  *
  * @param client     The client index.
- * @param type       The type of the speed change. LMT_Faster or LMT_Slower.
- * @param fTime      The time the speed is changed for.
+ * @param type       The type of the speed change.
+ * @param fTime      The time the speed is changed for. Ignored for LMT_Default.
  */
 forward void SMRPG_OnClientLaggedMovementChanged(int client, LaggedMovementType type, float fTime);
 
@@ -292,5 +308,6 @@ public void __pl_smrpg_effects_SetNTVOptional()
 	MarkNativeAsOptional("SMRPG_ChangeClientLaggedMovement");
 	MarkNativeAsOptional("SMRPG_ResetClientLaggedMovement");
 	MarkNativeAsOptional("SMRPG_IsClientLaggedMovementChanged");
+	MarkNativeAsOptional("SMRPG_SetClientDefaultLaggedMovement");
 }
 #endif

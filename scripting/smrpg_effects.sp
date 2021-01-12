@@ -79,7 +79,7 @@ public void OnClientDisconnect_Post(int client)
 	ResetRenderColorClient(client);
 	ResetFreezeClient(client);
 	ResetIgniteClient(client, true);
-	ResetLaggedMovementClient(client);
+	ResetLaggedMovementClient(client, true);
 }
 
 /**
@@ -94,7 +94,7 @@ public void Event_OnPlayerSpawn(Event event, const char[] error, bool dontBroadc
 	ResetFreezeClient(client);
 	ResetIgniteClient(client, false);
 	ApplyDefaultRenderColor(client);
-	ResetLaggedMovementClient(client);
+	ResetLaggedMovementClient(client, false);
 }
 
 public void Event_OnPlayerDeath(Event event, const char[] error, bool dontBroadcast)
@@ -105,7 +105,7 @@ public void Event_OnPlayerDeath(Event event, const char[] error, bool dontBroadc
 
 	ResetFreezeClient(client);
 	ResetIgniteClient(client, false);
-	ResetLaggedMovementClient(client);
+	ResetLaggedMovementClient(client, false);
 }
 
 /**

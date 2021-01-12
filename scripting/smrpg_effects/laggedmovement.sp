@@ -8,6 +8,7 @@ Handle g_hfwdOnClientLaggedMovementChanged;
 Handle g_hfwdOnClientLaggedMovementReset;
 
 enum MovementState {
+	Float:MS_default,
 	Float:MS_slower,
 	Float:MS_faster,
 	Handle:MS_lastSlowPlugin,
@@ -26,6 +27,7 @@ void RegisterLaggedMovementNatives()
 	CreateNative("SMRPG_ChangeClientLaggedMovement", Native_ChangeClientLaggedMovement);
 	CreateNative("SMRPG_ResetClientLaggedMovement", Native_ResetClientLaggedMovement);
 	CreateNative("SMRPG_IsClientLaggedMovementChanged", Native_IsClientLaggedMovementChanged);
+	CreateNative("SMRPG_SetClientDefaultLaggedMovement", Native_SetClientDefaultLaggedMovement);
 }
 
 void RegisterLaggedMovementForwards()
@@ -38,10 +40,12 @@ void RegisterLaggedMovementForwards()
 	g_hfwdOnClientLaggedMovementReset = CreateGlobalForward("SMRPG_OnClientLaggedMovementReset", ET_Ignore, Param_Cell, Param_Cell);
 }
 
-void ResetLaggedMovementClient(int client)
+void ResetLaggedMovementClient(int client, bool bDisconnect)
 {
 	if(IsClientInGame(client))
 	{
+		if (bDisconnect && g_ClientMovementState[client][MS_default] != 1.0)
+			ResetDefaultSpeed(client);
 		if(g_ClientMovementState[client][MS_faster] > 0.0)
 			ResetSpeedUp(client);
 		if(g_ClientMovementState[client][MS_slower] > 0.0)
@@ -50,6 +54,7 @@ void ResetLaggedMovementClient(int client)
 	ClearHandle(g_hFastRestoreTimer[client]);
 	ClearHandle(g_hSlowRestoreTimer[client]);
 	
+	g_ClientMovementState[client][MS_default] = 1.0;
 	g_ClientMovementState[client][MS_slower] = 0.0;
 	g_ClientMovementState[client][MS_faster] = 0.0;
 	g_ClientMovementState[client][MS_lastSlowPlugin] = null;
@@ -219,8 +224,7 @@ public int Native_ResetClientLaggedMovement(Handle plugin, int numParams)
 				return false;
 			
 			// Reset the speed.
-			g_ClientMovementState[client][MS_slower] = 0.0;
-			g_ClientMovementState[client][MS_lastSlowPlugin] = null;
+			ResetSlowDown(client);
 		}
 		case LMT_Faster:
 		{
@@ -233,16 +237,19 @@ public int Native_ResetClientLaggedMovement(Handle plugin, int numParams)
 				return false;
 			
 			// Reset the speed.
-			g_ClientMovementState[client][MS_faster] = 0.0;
-			g_ClientMovementState[client][MS_lastFastPlugin] = null;
+			ResetSpeedUp(client);
+		}
+		case LMT_Default:
+		{
+			if (g_ClientMovementState[client][MS_default] == 1.0)
+				return false;
+			ResetDefaultSpeed(client);
 		}
 		default:
 		{
 			return ThrowNativeError(SP_ERROR_NATIVE, "Unknown type %d", type);
 		}
 	}
-	
-	ApplyLaggedMovementValue(client);
 	
 	return true;
 }
@@ -280,12 +287,54 @@ public int Native_IsClientLaggedMovementChanged(Handle plugin, int numParams)
 			if(g_ClientMovementState[client][MS_lastFastPlugin] != plugin && bByMe)
 				return false;
 		}
+		case LMT_Default:
+		{
+			if(g_ClientMovementState[client][MS_default] == 1.0)
+				return false;
+		}
 		default:
 		{
 			return ThrowNativeError(SP_ERROR_NATIVE, "Unknown type %d", type);
 		}
 	}
 	
+	return true;
+}
+
+// native bool SMRPG_SetClientDefaultLaggedMovement(int client, float fValue);
+public int Native_SetClientDefaultLaggedMovement(Handle plugin, int numParams)
+{
+	int client = GetNativeCell(1);
+	
+	if(client <= 0 || client > MaxClients)
+		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d", client);
+	
+	float fValue = view_as<float>(GetNativeCell(2));
+	
+	if(fValue < 0.0)
+		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid negative value for m_flLaggedMovementValue: %f", fValue);
+
+	Action ret;
+	float fTimeDummy = 0.0;
+	Call_StartForward(g_hfwdOnClientLaggedMovementChange);
+	Call_PushCell(client);
+	Call_PushCell(LMT_Default);
+	Call_PushFloatRef(fTimeDummy);
+	Call_Finish(ret);
+	
+	if(ret >= Plugin_Handled)
+		return false;
+
+	g_ClientMovementState[client][MS_default] = fValue;
+	ApplyLaggedMovementValue(client);
+
+	// Inform that the speed was changed.
+	Call_StartForward(g_hfwdOnClientLaggedMovementChanged);
+	Call_PushCell(client);
+	Call_PushCell(LMT_Default);
+	Call_PushFloat(0.0);
+	Call_Finish();
+
 	return true;
 }
 
@@ -297,7 +346,7 @@ stock void ApplyLaggedMovementValue(int client)
 	float fSlow = g_ClientMovementState[client][MS_slower];
 	float fFast = g_ClientMovementState[client][MS_faster];
 	
-	float fValue = (1.0 - fSlow) + fFast;
+	float fValue = (g_ClientMovementState[client][MS_default] - fSlow) + fFast;
 	SetEntPropFloat(client, Prop_Send, "m_flLaggedMovementValue", fValue);
 }
 
@@ -326,5 +375,17 @@ void ResetSpeedUp(int client)
 	Call_StartForward(g_hfwdOnClientLaggedMovementReset);
 	Call_PushCell(client);
 	Call_PushCell(LMT_Faster);
+	Call_Finish();
+}
+
+void ResetDefaultSpeed(int client)
+{
+	g_ClientMovementState[client][MS_default] = 1.0;
+	
+	ApplyLaggedMovementValue(client);
+	
+	Call_StartForward(g_hfwdOnClientLaggedMovementReset);
+	Call_PushCell(client);
+	Call_PushCell(LMT_Default);
 	Call_Finish();
 }
