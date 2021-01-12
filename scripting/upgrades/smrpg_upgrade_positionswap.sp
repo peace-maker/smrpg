@@ -1,6 +1,6 @@
 /**
- * SM:RPG Mirror Damage Upgrade
- * Mirror some of the received damage back to the attacker.
+ * SM:RPG Position Swap Upgrade
+ * Gives you the chance to swap positions with your attacker.
  *
  * Based on the upgrade in THC:RPG by arsirc, thanks!
  */
@@ -14,17 +14,15 @@
 #pragma newdecls required
 #include <smrpg>
 
-#define UPGRADE_SHORTNAME "mirrordmg"
+#define UPGRADE_SHORTNAME "positionswap"
 
-ConVar g_hCVPercent;
-ConVar g_hCVAllowSuicide;
 ConVar g_hCVChance;
 
 public Plugin myinfo = 
 {
-	name = "SM:RPG Upgrade > Mirror Damage",
+	name = "SM:RPG Upgrade > Position Swap",
 	author = "Peace-Maker",
-	description = "Mirror Damage upgrade for SM:RPG. Mirror some of the received damage back to the attacker.",
+	description = "Position Swap upgrade for SM:RPG. Gives you the chance to swap positions with your attacker.",
 	version = SMRPG_VERSION,
 	url = "https://www.wcfan.de/"
 }
@@ -58,15 +56,13 @@ public void OnLibraryAdded(const char[] name)
 	if(StrEqual(name, "smrpg"))
 	{
 		// Register the upgrade type.
-		SMRPG_RegisterUpgradeType("Mirror Damage", UPGRADE_SHORTNAME, "Mirror some of the received damage back to the attacker.", 0, true, 5, 5, 10);
+		SMRPG_RegisterUpgradeType("Position Swap", UPGRADE_SHORTNAME, "Gives you the chance to swap positions with your attacker.", 0, true, 5, 20, 15);
 
 		// If you want to translate the upgrade name and description into the client languages, register this callback!
 		SMRPG_SetUpgradeTranslationCallback(UPGRADE_SHORTNAME, SMRPG_TranslateUpgrade);
 		
 		// Create your convars through the SM:RPG core. That way they are added to your upgrade's own config file in cfg/sourcemod/smrpg/smrpg_upgrade_example.cfg!
-		g_hCVPercent = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_mirrordmg_percent", "0.05", "Percentage of damage reflected to the attacker (multiplied by level).", _, true, 0.0);
-		g_hCVAllowSuicide = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_mirrordmg_allow_suicide", "0", "Can the attacker die from the mirrored damage?", _, true, 0.0, true, 1.0);
-		g_hCVChance = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_mirrordmg_chance", "1.0", "The chance that some damage of an attack is mirrored back to the attacker? E.g. 0.5 would be a 50% chance of reflecting some damage back.", _, true, 0.0, true, 1.0);
+		g_hCVChance = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_positionswap_chance", "0.05", "The chance that the position of the attacker and the victim are swapped (multiplied by level).", _, true, 0.0, true, 1.0);
 	}
 }
 
@@ -121,25 +117,19 @@ void Hook_OnTakeDamagePost(int victim, int attacker, int inflictor, float damage
 	if(iLevel <= 0)
 		return;
 
-	// Reflect only a certain percentage of all attacks back to the attacker.
-	if (Math_GetRandomFloat(0.0, 1.0) > g_hCVChance.FloatValue)
+	// Check if this attack allows the victim to swap places with the attacker.
+	if(Math_GetRandomFloat(0.0, 1.0) > g_hCVChance.FloatValue * iLevel)
 		return;
 	
 	// This calls the SMRPG_OnUpgradeEffect global forward where other plugins can stop you from applying your effect, if it conflicts with theirs.
 	// This also returns false, if the client doesn't have the required admin flags to use the upgrade, so no need to call SMRPG_CheckUpgradeAccess.
-	if(!SMRPG_RunUpgradeEffect(attacker, UPGRADE_SHORTNAME, victim))
+	if(!SMRPG_RunUpgradeEffect(victim, UPGRADE_SHORTNAME, attacker))
 		return; // Some other plugin doesn't want this effect to run
 
-	float fMirroredDamage = damage * iLevel * g_hCVPercent.FloatValue;
-	if(fMirroredDamage < GetClientHealth(attacker) || g_hCVAllowSuicide.BoolValue)
-	{
-		float fMirrorDamageForce[3], fMirrorDamagePosition[3];
-		fMirrorDamageForce = damageForce;
-		NegateVector(fMirrorDamageForce);
-		ScaleVector(fMirrorDamageForce, iLevel * g_hCVPercent.FloatValue);
-		GetClientEyePosition(victim, fMirrorDamagePosition);
-		SDKHooks_TakeDamage(attacker, victim, victim, fMirroredDamage, damagetype, INVALID_ENT_REFERENCE, fMirrorDamageForce, fMirrorDamagePosition);
-
-		// TODO: Some visual indication, that the attacker is hurting himself? Quick screen fade? Sound?
-	}
+	// Swap positions, but keep view angles and velocity at their original values.
+	float fVictimPosition[3], fAttackerPosition[3];
+	GetClientAbsOrigin(victim, fVictimPosition);
+	GetClientAbsOrigin(attacker, fAttackerPosition);
+	TeleportEntity(victim, fAttackerPosition, NULL_VECTOR, NULL_VECTOR);
+	TeleportEntity(attacker, fVictimPosition, NULL_VECTOR, NULL_VECTOR);
 }

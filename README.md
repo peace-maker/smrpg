@@ -97,6 +97,7 @@ See the available upgrade plugins for examples. You can use the [example upgrade
 * Medic - Heals team mates around you.
 * Mirror Damage - Mirror some of your received damage back to the attacker.
 * Poison Smoke (Counter-Strike: Source only) - Damages players inside the smoke of a smoke grenade.
+* Position Swap - Gives you the chance to swap positions with your attacker.
 * Reduced Fall Damage - Reduces the damage you take from falling from great heights.
 * Reduced Gravity - Reduces your gravity and lets you jump higher.
 * Resupply - Regenerates ammo every third second.
