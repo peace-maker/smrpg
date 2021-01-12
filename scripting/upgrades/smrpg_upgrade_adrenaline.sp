@@ -74,7 +74,7 @@ public void OnLibraryAdded(const char[] name)
 		
 		// Create your convars through the SM:RPG core. That way they are added to your upgrade's own config file in cfg/sourcemod/smrpg/smrpg_upgrade_example.cfg!
 		g_hCVSpeedIncrease = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_adrenaline_speed_inc", "0.05", "Speed increase for each level when a weapon is fired.", _, true, 0.1);
-		g_hCVEffectDuration = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_adrenaline_duration", "0.5", "Duration of in seconds.", 0, true, 0.1);
+		g_hCVEffectDuration = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_adrenaline_duration", "0.5", "Duration of the speed up in seconds.", 0, true, 0.1);
 		g_hCVOnHitEnemy = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_adrenaline_hit_enemy", "1", "Increase the speed (0) everytime the player shoots his weapon or (1) if the player hits an enemy?", 0, true, 0.0, true, 1.0);
 		g_hCVRequireGround = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_adrenaline_require_ground", "1", "Only apply the effect when the player stands on the ground while shooting?", 0, true, 0.0, true, 1.0);
 	}

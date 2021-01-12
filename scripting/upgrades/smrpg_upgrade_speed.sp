@@ -80,6 +80,19 @@ public void OnLibraryAdded(const char[] name)
 		g_SpeedMethod = view_as<SpeedMethod>(g_hCVSpeedMethod.IntValue);
 		g_hCVSpeedMethod.AddChangeHook(ConVar_OnSpeedMethodChanged);
 	}
+	else if(StrEqual(name, "smrpg_effects"))
+	{
+		if(g_SpeedMethod == SM_LaggedMovementValue)
+		{
+			for(int i=1;i<=MaxClients;i++)
+			{
+				if (!IsClientInGame(i))
+					continue;
+
+				ApplyLaggedMovementSpeedChange(i);
+			}
+		}
+	}
 }
 
 public void OnClientPutInServer(int client)
@@ -144,9 +157,6 @@ public void SMRPG_TranslateUpgrade(int client, const char[] shortname, Translati
 
 public void SMRPG_BuySell(int client, UpgradeQueryType type)
 {
-	if(!IsClientInGame(client))
-		return;
-	
 	if (g_SpeedMethod == SM_LaggedMovementValue)
 		ApplyLaggedMovementSpeedChange(client);
 }

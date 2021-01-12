@@ -343,6 +343,9 @@ public int Native_SetClientDefaultLaggedMovement(Handle plugin, int numParams)
  */
 stock void ApplyLaggedMovementValue(int client)
 {
+	if(!IsClientInGame(client))
+		return;
+
 	float fSlow = g_ClientMovementState[client][MS_slower];
 	float fFast = g_ClientMovementState[client][MS_faster];
 	
