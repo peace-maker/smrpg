@@ -309,4 +309,14 @@
 	{
 		"en"			"Increase your speed shortly when firing a weapon."
 	}
+	
+	"mirrordmg"
+	{
+		"en"			"Mirror Damage"
+	}
+	
+	"mirrordmg description"
+	{
+		"en"			"Mirror some of your received damage back to the attacker."
+	}
 }
