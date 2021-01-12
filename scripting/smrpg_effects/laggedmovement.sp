@@ -54,7 +54,8 @@ void ResetLaggedMovementClient(int client, bool bDisconnect)
 	delete g_hFastRestoreTimer[client];
 	delete g_hSlowRestoreTimer[client];
 	
-	g_ClientMovementState[client][MS_default] = 1.0;
+	if(bDisconnect)
+		g_ClientMovementState[client][MS_default] = 1.0;
 	g_ClientMovementState[client][MS_slower] = 0.0;
 	g_ClientMovementState[client][MS_faster] = 0.0;
 	g_ClientMovementState[client][MS_lastSlowPlugin] = null;
