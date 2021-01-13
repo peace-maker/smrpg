@@ -44,12 +44,17 @@ void ResetLaggedMovementClient(int client, bool bDisconnect)
 {
 	if(IsClientInGame(client))
 	{
-		if (bDisconnect && g_ClientMovementState[client][MS_default] != 1.0)
-			ResetDefaultSpeed(client);
 		if(g_ClientMovementState[client][MS_faster] > 0.0)
 			ResetSpeedUp(client);
 		if(g_ClientMovementState[client][MS_slower] > 0.0)
 			ResetSlowDown(client);
+		if(g_ClientMovementState[client][MS_default] != 1.0)
+		{
+			if(bDisconnect)
+				ResetDefaultSpeed(client);
+			else
+				ApplyLaggedMovementValue(client);
+		}
 	}
 	delete g_hFastRestoreTimer[client];
 	delete g_hSlowRestoreTimer[client];
