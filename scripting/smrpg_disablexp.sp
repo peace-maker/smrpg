@@ -184,6 +184,10 @@ void DisplayPlayerList(int client, int iPosition=0)
 	{
 		if(!IsClientInGame(i) || (bIgnoreBots && IsFakeClient(i)) || IsClientSourceTV(i) || IsClientReplay(i))
 			continue;
+
+		// Player is immune?
+		if (!CanUserTarget(client, i))
+			continue;
 		
 		if(!GetClientAuthId(i, AuthId_Engine, sAuth, sizeof(sAuth)))
 			sAuth[0] = 0;
