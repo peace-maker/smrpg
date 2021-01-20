@@ -65,7 +65,8 @@ public Action Cmd_ImportDatabase(int client, int args)
 		return Plugin_Handled;
 	}
 	
-	hNewDb.SetCharset("utf8");
+	if (!hNewDb.SetCharset("utf8mb4"))
+		hNewDb.SetCharset("utf8");
 	
 	// Make sure it's empty for now.
 	DBResultSet hResult = SQL_Query(hNewDb, "SELECT COUNT(*) FROM players");
@@ -100,10 +101,13 @@ public Action Cmd_ImportDatabase(int client, int args)
 		return Plugin_Handled;
 	}
 	
-	hOldDb.SetCharset("utf8");
+	if (!hOldDb.SetCharset("utf8mb4"))
+		hOldDb.SetCharset("utf8");
 	
 	// Get player count.
-	hResult = SQL_Query(hOldDb, "SELECT COUNT(*) FROM thc_rpg WHERE level >= %d", iMinimumLevel);
+	char sQuery[1024];
+	Format(sQuery, sizeof(sQuery), "SELECT COUNT(*) FROM thc_rpg WHERE level >= %d", iMinimumLevel);
+	hResult = SQL_Query(hOldDb, sQuery);
 	if (!hResult)
 	{
 		SQL_GetError(hOldDb, sError, sizeof(sError));
@@ -126,7 +130,7 @@ public Action Cmd_ImportDatabase(int client, int args)
 	
 	char sAuthId[64], sName[128];
 	int iXP, iLevel, iCredits, iAccountId;
-	char sEscapedName[257], sQuery[1024];
+	char sEscapedName[257];
 	
 	int iCurrentTime = GetTime();
 	
