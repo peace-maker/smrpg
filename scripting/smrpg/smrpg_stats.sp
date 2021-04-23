@@ -497,7 +497,7 @@ void ResetAFKPlayer(int client)
 	g_PlayerAFKInfo[client][AFK_startTime] = 0;
 	g_PlayerAFKInfo[client][AFK_spawnTime] = 0;
 	g_PlayerAFKInfo[client][AFK_deathTime] = 0;
-	Array_Copy(g_PlayerAFKInfo[client][AFK_lastPosition], view_as<float>({0.0,0.0,0.0}), 3);
+	Array_Copy(view_as<float>({0.0,0.0,0.0}), g_PlayerAFKInfo[client][AFK_lastPosition], 3);
 }
 
 // Spawn Protection handling
