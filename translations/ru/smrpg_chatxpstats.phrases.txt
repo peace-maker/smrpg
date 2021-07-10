@@ -2,26 +2,24 @@
 {
 	"Earned experience for kill"
 	{
-		// 1: Experience earned for killing a player.
-		// 2: Player name of victim.
-		"#format"		"{1:d},{2:N}"
-		"en"			"You earned {RB}{1}{G} experience for killing {N}{2}{G}."
+		// 1: Опыт, полученный за убийство игрока.
+		// 2: Имя игрока, ставшего жертвой.
+		"ru"			"Вы получили {RB}{1}{G} опыта за убийство {N}{2}{G}."
 	}
 
 	"Total earned experience during past life"
 	{
-		// 1: Experience earned during last life
-		"#format"		"{1:d}"
-		"en"			"You earned {RB}{1}{G} experience in total during your last life!"
+		// 1: Опыт, полученный в течение последней жизни
+		"ru"			"Вы получили {RB}{1}{G} опыта в общем в течение вашей последней жизни!"
 	}
 	
 	"Print xp for last kill in chat"
 	{
-		"en"			"Print earned experience for last kill in chat"
+		"ru"			"Выводить опыт, полученный за последнее убийство, в чате"
 	}
 
 	"Print total xp last life in chat"
 	{
-		"en"			"Print total experience earned during last life in chat"
+		"ru"			"Выводить общий опыт, полученный за последнюю жизнь в чате"
 	}
 }
