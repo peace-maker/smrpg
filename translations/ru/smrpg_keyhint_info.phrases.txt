@@ -1,0 +1,34 @@
+"Phrases"
+{
+	"RPG stats"
+	{
+		"ru"			"Статистика RPG"
+	}
+
+	"Show for other player"
+	{
+		// 1: Фраза "Статистика RPG"
+		// 2: Имя целевого клиента.
+		"ru"			"{1} для {2}"
+	}
+
+	"Player is AFK"
+	{
+		"ru"			"Игрок бездействует"
+	}
+
+	"Hide stats info panel"
+	{
+		"ru"			"Скрыть информационную панель статистики"
+	}
+
+	"Last Experience Short"
+	{
+		"ru"			"Последний опыт"
+	}
+
+	"Estimated time until levelup"
+	{
+		"ru"			"Повышение уровня через"
+	}
+}
