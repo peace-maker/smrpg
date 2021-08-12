@@ -13,10 +13,10 @@ jobs:
     strategy:
       matrix:
         sm-version: [ '1.10.x', '1.11.x' ]
-        experimental: [ false ]
         include:
           - sm-version: '1.10.x'
             sm-main-version: '1.10'
+            experimental: false
           - sm-version: '1.11.x'
             sm-main-version: '1.11'
             experimental: true
