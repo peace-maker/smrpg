@@ -106,7 +106,11 @@ public void Hook_OnTakeDamagePost(int victim, int attacker, int inflictor, float
 	int iWeapon = inflictor;
 	if(inflictor > 0 && inflictor <= MaxClients)
 		iWeapon = GetEntPropEnt(inflictor, Prop_Send, "m_hActiveWeapon");
-	
+
+	// Ignore fire damage.
+	if(damagetype & (DMG_BURN | DMG_DIRECT) == (DMG_BURN | DMG_DIRECT))
+		return;
+
 	if (iWeapon > 0 && IsValidEntity(iWeapon))
 	{
 		char sWeapon[64];

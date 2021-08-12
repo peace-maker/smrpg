@@ -1,0 +1,18 @@
+"Phrases"
+{
+	"Level Chat Tag"
+	{
+		// 1: Текущий RPG уровень игрока.
+		// Использует ColorVariables для кодов цветов.
+		// https://forums.alliedmods.net/showthread.php?t=267743
+		"ru"			"{olive}[УР. {1}] "
+	}
+	
+	"Rank Chat Tag"
+	{
+		// 1: Текущий RPG ранг игрока.
+		// Использует ColorVariables для кодов цветов
+		// https://forums.alliedmods.net/showthread.php?t=267743
+		"ru"			"{purple}[Ранг {1}] "
+	}
+}

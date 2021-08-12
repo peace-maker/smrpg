@@ -1,6 +1,7 @@
 #pragma semicolon 1
 #include <sourcemod>
 #include <sdktools>
+#include <smlib>
 
 #pragma newdecls required
 #include <smrpg>
@@ -10,6 +11,7 @@
 ConVar g_hCVIncrease;
 ConVar g_hCVIncreaseStart;
 ConVar g_hCVCustomAutoBHop;
+ConVar g_hCVBoostMethod;
 
 float g_fPreviousVelocity[MAXPLAYERS+1][3];
 float g_fJumpStartTime[MAXPLAYERS+1];
@@ -18,6 +20,14 @@ bool g_bPlayerJumped[MAXPLAYERS+1];
 int g_iFootstepCount[MAXPLAYERS+1];
 
 ConVar g_hCVAutoBunnyHopping;
+
+// Apply velocity change to:
+enum BoostMethod
+{
+	Boost_Absolute,   // m_vecAbsVelocity
+	Boost_Base,       // m_vecBaseVelocity
+	Boost_Local       // m_vecVelocity
+}
 
 public Plugin myinfo = 
 {
@@ -62,6 +72,7 @@ public void OnLibraryAdded(const char[] name)
 		g_hCVIncrease = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_ljump_inc", "0.10", "Percent of player's jump distance to increase per level.", 0, true, 0.01);
 		g_hCVIncreaseStart = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_ljump_incstart", "0.20", "Percent of player's initial jump distance to increase per level.", 0, true, 0.01);
 		g_hCVCustomAutoBHop = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_ljump_autobunnyhopping", "0", "Set to 1 if an auto bunnyhopping plugin is active and players can keep +jump pressed to bunnyhop, 0 otherwise.", 0, true, 0.00, true, 1.0);
+		g_hCVBoostMethod = SMRPG_CreateUpgradeConVar(UPGRADE_SHORTNAME, "smrpg_ljump_boost_method", "0", "How to apply the speed boost on jump? 0: Apply it to the player's absolute velocity. (default) 1: Apply it to the player's base velocity. (double boost) 2: Apply it to the player's local velocity. (best)", 0, true, 0.00, true, 2.0);
 	}
 }
 
@@ -193,8 +204,34 @@ void LJump_HasJumped(int client, float vVelocity[3])
 	float fIncrease = fMultiplicator * float(iLevel) + 1.0;
 	vVelocity[0] *= fIncrease;
 	vVelocity[1] *= fIncrease;
-	
-	TeleportEntity(client, NULL_VECTOR, NULL_VECTOR, vVelocity);
+
+	// Select which velocity to change.
+	// https://developer.valvesoftware.com/wiki/Velocity
+	// m_vecAbsVelocity = m_vecBaseVelocity + m_vecVelocity
+	// vVelocity comes from m_vecVelocity.
+	BoostMethod method = view_as<BoostMethod>(g_hCVBoostMethod.IntValue);
+	switch(method)
+	{
+		case Boost_Absolute:
+		{
+			// Overwrite m_vecAbsVelocity, so keep the vertical velocity as is.
+			TeleportEntity(client, NULL_VECTOR, NULL_VECTOR, vVelocity);
+		}
+		case Boost_Base:
+		{
+			// Change m_vecBaseVelocity, but only apply horizontal speed changes.
+			vVelocity[2] = 0.0;
+			Entity_SetBaseVelocity(client, vVelocity);
+			Entity_AddEFlags(client, EFL_DIRTY_ABSVELOCITY);
+		}
+		case Boost_Local:
+		{
+			// Change m_vecVelocity, so still obey whatever m_vecBaseVelocity is set to.
+			// This should be the default, but legacy code did it wrong and people are used to it.
+			Entity_SetLocalVelocity(client, vVelocity);
+			Entity_AddEFlags(client, EFL_DIRTY_ABSVELOCITY);
+		}
+	}
 }
 
 bool IsAutoBunnyhoppingEnabled()

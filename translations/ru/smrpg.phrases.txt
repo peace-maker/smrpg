@@ -2,88 +2,88 @@
 {
 	"Inform about plugin"
 	{
-		// 1: Running SM:RPG plugin version (e.g. 1.0)
-		"ru"			"Этот сервер работает в режиме SM:RPG v{1}."
+		// 1: Запущенная версия плагина SM:RPG (например: 1.0)
+		"ru"			"Этот сервер имеет SM:RPG вер. {1}."
 	}
 	
 	"Advertise rpgmenu command"
 	{
-		"ru"			"{G}Напишите \"{N}rpgmenu{G}\" для выбора опций."
+		"ru"			"{G}Напишите \"{N}rpgmenu{G}\", чтобы открыть меню."
 	}
 	
 	"Client level changed"
 	{
-		// 1: Name of the client which level has changed.
-		// 2: New rpg level of the client
-		"ru"			"{1} теперь имеет Уровень {2}."
+		// 1: Имя клиента, уровень которого изменился.
+		// 2: Новый rpg уровень клиента
+		"ru"			"{1} теперь {2} уровня."
 	}
 	
 	"You have new credits"
 	{
-		// 1: Total amount of credits the player currently has.
-		"ru"			"У Вас появились новые кредиты ({1} всего). Напишите \"rpgmenu\" для покупки Обновлений."
+		// 1: Общее количество кредитов, имеющихся у игрока на данный момент.
+		"ru"			"У вас появились новые кредиты (всего {1}). Напишите \"rpgmenu\" для покупки улучшений."
 	}
 	
-	//Newbie Text
+	//Текст для новичков
 	"Newbie instructions new level"
 	{
-		"ru"			"{G}Вы получили {N}новый Уровень{G}! Это означает, что Вы можете {N}купить навыки{G}, которые дадут Вам преимущество перед оппонентами."
+		"ru"			"{G}Вы получили {N}новый уровень{G}! Это означает, что вы можете {N}купить улучшения{G}, которые дадут вам преимущество перед оппонентами."
 	}
 	
 	"Newbie instructions use rpgmenu"
 	{
-		"ru"			"{G}Напишите \"{L}rpgmenu{G}\" в чате, или напишите это в консоли для вызова меню, в котором Вы сможете купить навыки."
+		"ru"			"{G}Напишите \"{L}rpgmenu{G}\" в чате, или напишите это в консоли для вызова меню, в котором вы сможете купить улучшения."
 	}
 	
-	//Experience Hintbox
+	//Окошко с подсказкой об опыте
 	"Experience Gained Hintbox"
 	{
-		// 1: Amount of experience the client just gained.
-		// 2: Total amount of experience the client currently has on his level.
-		// 3: Amount of experience needed to reach the next level.
-		"ru"			"Получено Опыта: {1}+\nКвота Опыта: {2}/{3}"
+		// 1: Количество опыта, который клиент только что получил.
+		// 2: Общее количество опыта, которое клиент в настоящее время имеет на своём уровне.
+		// 3: Количество опыта, необходимое для перехода на следующий уровень.
+		"ru"			"Получено опыта: {1}+\nКвота опыта: {2}/{3}"
 	}
 	
 	"rpgrank"
 	{
-		// 1: Name of the player whos rpgrank is being displayed.
-		// 2: RPG level of the player.
-		// 3: Current rpg rank of the player.
-		// 4: Total number of players ranked.
-		// 5: Amount of experience the player has on his level.
-		// 6: Amount of experience needed to reach the next level.
-		// 7: Amount of rpg credits of the player.
-		"ru"			"{1} имеет Уровень {2}, ранг {3}/{4} с {5}/{6} Опыта и {7} Кредитами"
+		// 1: Имя игрока, чей rpgrank отображается.
+		// 2: RPG уровень игрока.
+		// 3: Текущий rpg ранг игрока.
+		// 4: Общее количество игроков в рейтинге.
+		// 5: Количество опыта, которое игрок имеет на своём уровне.
+		// 6: Количество опыта, необходимое для перехода на следующий уровень.
+		// 7: Количество rpg кредитов игрока.
+		"ru"			"{1} имеет {2} уровень, {3}/{4} ранг с {5}/{6} опыта и {7} кредитами"
 	}
 	
 	"Top 10 Players"
 	{
-		"ru"			"Top 10 SM:RPG Игроков"
+		"ru"			"10 лучших SM:RPG игроков"
 	}
 	
 	"Next ranked players"
 	{
-		"ru"			"Следующая Ранг игроков"
+		"ru"			"Следующие по рейтингу игроки"
 	}
 	
 	"Player reached maxlevel"
 	{
-		// 1: Name of the player
-		// 2: Maximum level a player can reach.
-		"ru"			"{1} достиг максимального уровня {2} и рестартнулся."
+		// 1: Имя игрока
+		// 2: Максимальный уровень, которого может достичь игрок.
+		"ru"			"{1} достиг максимального {2} уровня и был сброшен."
 	}
 	
-	// Menu text
+	// Текст меню
 	"Level"
 	{
-		// 1: Current rpg level of the player.
+		// 1: Текущий rpg уровень игрока.
 		"ru"			"Уровень: {1}"
 	}
 	
 	"Experience short"
 	{
-		// 1: Current amount of experience of the player.
-		// 2: Experience required for next level.
+		// 1: Текущее количество опыта игрока.
+		// 2: Опыт, необходимый для следующего уровня.
 		"ru"			"Опыт: {1}/{2}"
 	}
 	
@@ -94,41 +94,41 @@
 	
 	"Credits"
 	{
-		// 1: Amount of credits the player has.
-		"ru"			"кредиты: {1}"
+		// 1: Количество кредитов, которыми располагает игрок.
+		"ru"			"Кредиты: {1}"
 	}
 	
 	"Rank"
 	{
-		// 1: Current rpg rank of the player.
-		// 2: Total amount of ranked players.
+		// 1: Текущий rpg ранг игрока.
+		// 2: Общее количество рейтинговых игроков.
 		"ru"			"Ранг: {1}/{2}"
 	}
 	
 	"Last reset"
 	{
-		// 1: date and time representation of the last time the stats were reset to 0 for this player
+		// 1: дата и время последнего сброса статистики на 0 для этого игрока
 		"ru"			"Последний сброс: {1}"
 	}
 	
 	"Experience Reason Other Client"
 	{
-		// 1: The amount of experience added to a client.
-		// 2: The reason this experience was added for
-		// 3: The name of the other client involved in the reason for this experience. (e.g. name of victim hurt)
-		"ru"			 "{1} exp. for \"{2}\" against {3}"
+		// 1: Количество опыта, добавляемое клиенту.
+		// 2: Причина, по которой этот опыт был добавлен
+		// 3: Имя другого клиента, вовлечённого в причину этого опыта. (например, имя пострадавшего)
+		"ru"			 "{1} опыта. за \"{2}\" против {3}"
 	}
 	
 	"Experience Reason General"
 	{
-		// 1: The amount of experience added to a client.
-		// 2: The reason this experience was added for
-		"ru"			 "{1} exp. for \"{2}\""
+		// 1: Количество опыта, добавляемое клиенту.
+		// 2: Причина, по которой этот опыт был добавлен
+		"ru"			 "{1} опыта. за \"{2}\""
 	}
 	
 	"Nothing to display"
 	{
-		"ru"			"Нет ничего, чтобы отобразить."
+		"ru"			"Ничего нет."
 	}
 	
 	"Cost"
@@ -143,99 +143,99 @@
 	
 	"Is teamlocked"
 	{
-		// 1: The team name of the team the upgrade is restricted to.
-		"ru"			"ТОЛЬКО {1} КОМАНДА!"
+		// 1: Название команды, для которой ограничено улучшение.
+		"ru"			"ТОЛЬКО ДЛЯ {1}!"
 	}
 	
 	"RPG menu buy upgrade entry max level"
 	{
-		// 1: Translated name of the upgrade.
-		// 2: Current level of the upgrade the player has purchased.
-		// 3: "Cost" phrase.
-		// 4: Optional " (Is teamlocked)" phrase if upgrade is locked to a team.
+		// 1: Переведённое название улучшения.
+		// 2: Текущий уровень улучшения, которое приобрёл игрок.
+		// 3: Фраза "цена".
+		// 4: Необязательная фраза "ТОЛЬКО ДЛЯ *НАЗВАНИЕ КОМАНДЫ*", если улучшение привязано к команде.
 		"ru"			"{1} [Ур:{2}|Макс]{4}"
 	}
 	
 	"RPG menu buy upgrade entry show max"
 	{
-		// 1: Translated name of the upgrade.
-		// 2: Next level of the upgrade the player wants to purchase.
-		// 3: Maximal level of the upgrade.
-		// 4: "Cost" phrase.
-		// 5: Upgrade cost for the next level.
-		// 6: Optional " (Is teamlocked)" phrase if upgrade is locked to a team.
+		// 1: Переведённое название улучшения.
+		// 2: Следующий уровень улучшения, который игрок хочет приобрести.
+		// 3: Максимальный уровень улучшения.
+		// 4: Фраза "цена".
+		// 5: Цена улучшения для следующего уровня.
+		// 6: Необязательная фраза "ТОЛЬКО ДЛЯ *НАЗВАНИЕ КОМАНДЫ*", если улучшение привязано к команде.
 		"ru"			"{1} [Ур:{2}из{3}|{4}:{5}]{6}"
 	}
 	
 	"RPG menu buy upgrade entry"
 	{
-		// 1: Translated name of the upgrade.
-		// 2: Next level of the upgrade the player wants to purchase.
-		// 3: "Cost" phrase.
-		// 4: Upgrade cost for the next level.
-		// 5: Optional " (Is teamlocked)" phrase if upgrade is locked to a team.
+		// 1: Переведённое название улучшения.
+		// 2: Следующий уровень улучшения, который игрок хочет приобрести.
+		// 3: Фраза "цена".
+		// 4: Цена улучшения для следующего уровня.
+		// 5: Необязательная фраза "ТОЛЬКО ДЛЯ *НАЗВАНИЕ КОМАНДЫ*", если улучшение привязано к команде.
 		"ru"			"{1} [Ур:{2}|{3}:{4}]{5}"
 	}
 	
 	"RPG menu sell upgrade entry show max"
 	{
-		// 1: Translated name of the upgrade.
-		// 2: Current level of the upgrade to be sold.
-		// 3: Maximal level of the upgrade.
-		// 4: "Sale" phrase.
-		// 5: Amount of credits player earns for selling the upgrade level.
-		// 6: Optional " (Is teamlocked)" phrase if upgrade is locked to a team.
+		// 1: Переведённое название улучшения.
+		// 2: Текущий уровень продаваемого улучшения.
+		// 3: Максимальный уровень улучшения.
+		// 4: Фраза "Продажа".
+		// 5: Количество кредитов, которые игрок получит за продажу уровня улучшения.
+		// 6: Необязательная фраза "ТОЛЬКО ДЛЯ *НАЗВАНИЕ КОМАНДЫ*", если улучшение привязано к команде.
 		"ru"			"{1} [Ур:{2}из{3}|{4}:{5}]{6}"
 	}
 	
 	"RPG menu sell upgrade entry"
 	{
-		// 1: Translated name of the upgrade.
-		// 2: Current level of the upgrade to be sold.
-		// 3: "Sale" phrase.
-		// 4: Amount of credits player earns for selling the upgrade level.
-		// 5: Optional " (Is teamlocked)" phrase if upgrade is locked to a team.
+		// 1: Переведённое название улучшения.
+		// 2: Текущий уровень продаваемого улучшения.
+		// 3: Фраза "Продажа".
+		// 4: Количество кредитов, которые игрок получит за продажу уровня улучшения.
+		// 5: Необязательная фраза "ТОЛЬКО ДЛЯ *НАЗВАНИЕ КОМАНДЫ*", если улучшение привязано к команде.
 		"ru"			"{1} [Ур:{2}|{3}:{4}]{5}"
 	}
 	
 	"RPG menu upgrade settings entry level selection"
 	{
-		// 1: Translated name of the upgrade.
-		// 2: Currently selected level of the upgrade (might be lower than purchased).
-		// 3: Purchased level of the upgrade.
-		// 4: "On" or "Off" phrase depending on if the player has the upgrade enabled.
-		// 5: Optional " (Is teamlocked)" phrase if upgrade is locked to a team.
+		// 1: Переведённое название улучшения.
+		// 2: Текущий выбранный уровень улучшения (может быть ниже, чем приобретённый).
+		// 3: Приобретённый уровень улучшения.
+		// 4: Фраза "Вкл" или "Выкл" в зависимости от того, включено ли улучшение для игрока.
+		// 5: Необязательная фраза "ТОЛЬКО ДЛЯ *НАЗВАНИЕ КОМАНДЫ*", если улучшение привязано к команде.
 		"ru"			"{1} Ур {2} из {3} [{4}]{5}"
 	}
 	
 	"RPG menu upgrade settings entry"
 	{
-		// 1: Translated name of the upgrade.
-		// 2: Purchased level of the upgrade.
-		// 3: "On" or "Off" phrase depending on if the player has the upgrade enabled.
-		// 4: Optional " (Is teamlocked)" phrase if upgrade is locked to a team.
+		// 1: Переведённое название улучшения.
+		// 2: Приобретённый уровень улучшения.
+		// 3: Фраза "Вкл" или "Выкл" в зависимости от того, включено ли улучшение для игрока.
+		// 4: Необязательная фраза "ТОЛЬКО ДЛЯ *НАЗВАНИЕ КОМАНДЫ*", если улучшение привязано к команде.
 		"ru"			"{1} Ур {2} [{3}]{4}"
 	}
 	
 	"RPG menu other players upgrades entry max level"
 	{
-		// 1: Translated name of the upgrade.
-		// 2: Purchased level of the upgrade.
+		// 1: Переведённое название улучшения.
+		// 2: Приобретённый уровень улучшения.
 		"ru"			"{1} Ур {2} Макс"
 	}
 	
 	"RPG menu other players upgrades entry show max"
 	{
-		// 1: Translated name of the upgrade.
-		// 2: Purchased level of the upgrade.
+		// 1: Переведённое название улучшения.
+		// 2: Приобретённый уровень улучшения.
 		// 3: Maximal level of the upgrade.
 		"ru"			"{1} Ур {2}/{3}"
 	}
 	
 	"RPG menu other players upgrades entry"
 	{
-		// 1: Translated name of the upgrade.
-		// 2: Purchased level of the upgrade.
+		// 1: Переведённое название улучшения.
+		// 2: Приобретённый уровень улучшения.
 		"ru"			"{1} Ур {2}"
 	}
 	
@@ -246,7 +246,7 @@
 	
 	"Playtime"
 	{
-		// 1: The time in hh:mm:ss the player is on the server since he joined.
+		// 1: Время в чч:мм:сс нахождения игрока на сервере с момента его присоединения.
 		"ru"			"Время сессии: {1}"
 	}
 	
@@ -270,7 +270,7 @@
 		"ru"			"Изменение ранга"
 	}
 	
-	// Menu Options
+	// Параметры меню
 	"Upgrades"
 	{
 		"ru"			"Покупка"
@@ -283,12 +283,12 @@
 	
 	"Upgrade Settings"
 	{
-		"ru"			"Настройка навыков"
+		"ru"			"Настройка улучшений"
 	}
 	
 	"Last Experience"
 	{
-		"ru"			"LOG Последнего опыта"
+		"ru"			"Журнал последнего опыта"
 	}
 	
 	"Stats"
@@ -298,7 +298,7 @@
 	
 	"Settings"
 	{
-		"ru"			"Установки"
+		"ru"			"Настройки"
 	}
 	
 	"Help"
@@ -308,25 +308,25 @@
 	
 	"Reset Stats"
 	{
-		"ru"			"Сброс Статистики"
+		"ru"			"Сброс статистики"
 	}
 	
 	"Show menu on levelup"
 	{
-		"ru"			"Показать RPG меню пры Levelup"
+		"ru"			"Показать RPG меню при повышении уровня"
 	}
 	
 	"Fade screen on levelup"
 	{
-		"ru"			"Вспышка на экране пры Levelup"
+		"ru"			"Вспышка на экране при повышении уровня"
 	}
 	
 	"Auto refresh panel"
 	{
-		"ru"			"Автоматическое обновление"
+		"ru"			"Автообновление панели"
 	}
 	
-	// Menu selection result
+	// Результат выбора в меню
 	"Stats have been reset"
 	{
 		"ru"			"Ваша статистика успешно обнулена."
@@ -334,40 +334,40 @@
 	
 	"Maximum level reached"
 	{
-		"ru"			"Вы достигли максимального уровня для этого предмета."
+		"ru"			"Вы достигли максимального уровня для этого улучшения."
 	}
 	
 	"Not enough credits"
 	{
-		// 1: The name of the upgrade the player wanted to buy.
-		// 2: The level of the upgrade the player wanted to buy.
-		// 3: The amount of credits this level of the upgrade costs.
-		"ru"			"У Вас недостаточно Кредитов для покупки {1} ур {2}. (Нужно {3} Кредитов)"
+		// 1: Название улучшения, которое игрок хотел купить.
+		// 2: Уровень улучшения, которое игрок хотел купить.
+		// 3: Количество кредитов, которое стоит этот уровень улучшения.
+		"ru"			"У вас недостаточно кредитов для покупки {1} ур {2}. (Нужно {3} кредитов)"
 	}
 	
 	"Upgrade bought"
 	{
-		// 1: The name of the upgrade the player just bought.
-		// 2: The new level of this upgrade.
-		"ru"			"{1} Уровень {2} успешно приобретён."
+		// 1: Название улучшения, которое игрок только что купил.
+		// 2: Новый уровень этого улучшения.
+		"ru"			"{1} {2} уровня успешно приобретено."
 	}
 	
 	"Upgrade purchase notification"
 	{
-		// 1: The name of the player who bought an upgrade.
-		// 2: The name of the upgrade the player just bought.
-		// 3: The new level of this upgrade.
-		"ru"			"{1} купленный {2} уровень {3}."
+		// 1: Имя игрока, купившего улучшение.
+		// 2: Название улучшения, которое игрок только что купил.
+		// 3: Новый уровень этого улучшения.
+		"ru"			"{1} купил {2} {3} уровня."
 	}
 	
 	"Upgrade sold"
 	{
-		// 1: The name of the upgrade the player just sold.
-		// 2: The new level of this upgrade.
-		"ru"			"{1} Уровень {2} был продан."
+		// 1: Название улучшения, которое игрок только что продал.
+		// 2: Новый уровень этого улучшения.
+		"ru"			"{1} {2} уровня был продан."
 	}
 	
-	//Menu Confirm
+	//Меню подтверждения
 	"Are you sure?"
 	{
 		"ru"			"Вы уверены?"
@@ -375,10 +375,10 @@
 	
 	"Confirm stats reset"
 	{
-		"ru"			"Внимание: Вы потеряете все Уровни, Кредиты и Опыт.\nОбнулить статистику?"
+		"ru"			"Внимание: Вы потеряете все уровни, кредиты и опыт.\nОбнулить статистику?"
 	}
 	
-	//Menu upgrade settings
+	//Настройки меню улучшения
 	"Enabled"
 	{
 		"ru"			"Включено"
@@ -410,10 +410,10 @@
 	}
 	
 	
-	// Admin menu
+	// Меню администратора
 	"Commands"
 	{
-		"ru"			"ADMIN"
+		"ru"			"АДМИН"
 	}
 	
 	"Manage players"
@@ -438,7 +438,7 @@
 	
 	"Manage upgrades"
 	{
-		"ru"			"Управление навыками"
+		"ru"			"Управление улучшениями"
 	}
 	
 	"Reset player"
@@ -448,14 +448,14 @@
 	
 	"Confirm reset player"
 	{
-		// 1: Name of the player to reset stats of.
-		"ru"			"Вы действительно хотите сбросить статистику и навыки {1}?"
+		// 1: Имя игрока, статистику которого нужно сбросить.
+		"ru"			"Вы действительно хотите сбросить статистику и улучшения {1}?"
 	}
 	
 	"Inform player reset"
 	{
-		// 1: Name of the player who's stats got reset.
-		"ru"			"{1} была полностю сброшена."
+		// 1: Имя игрока, статистика которого была сброшена.
+		"ru"			"Статистика {1} была полностью сброшена."
 	}
 	
 	"Change credits"
@@ -475,18 +475,18 @@
 	
 	"Manage player upgrades"
 	{
-		"ru"			"Управление навыками игрока"
+		"ru"			"Управление улучшениями игрока"
 	}
 	
 	"Give all upgrades free"
 	{
-		"ru"			"Дайть все обновления без каких-либо затрат"
+		"ru"			"Дать все улучшения без каких-либо затрат"
 	}
 	
 	"Adminflags hint"
 	{
-		// 1: The required admin flags like "ab" for that upgrade.
-		"ru"			" (adminflags: {1})"
+		// 1: Требуемые флаги администратора типа "ab" для этого обновления.
+		"ru"			" (флаги администратора: {1})"
 	}
 	
 	"Adminflags Admin Denied Warning"
@@ -496,69 +496,69 @@
 	
 	"Adminflags Admin Inform OK"
 	{
-		"ru"			"OK"
+		"ru"			"ОК"
 	}
 	
 	"Teamlock hint"
 	{
-		// 1: The team name this upgrade is locked to.
-		"ru"			" (teamlock: {1})"
+		// 1: Название команды, к которой привязано это улучшение.
+		"ru"			" (привязано к: {1})"
 	}
 	
 	"Admin player upgrades list item maxed"
 	{
-		// 1: Translated name of the upgrade.
-		// 2: Player's current purchased level of the upgrade.
-		// 3: Maximum level of the upgrade.
-		// 4: Optional required permissions ("Adminflags hint" phrase)
-		// 5: Optional locked team ("Teamlock hint" phrase)
+		// 1: Переведённое название улучшения.
+		// 2: Текущий приобретённый уровень улучшения игрока.
+		// 3: Максимальный уровень улучшения.
+		// 4: Необязательные необходимые разрешения (фраза "подсказка для флагов администратора")
+		// 5: Необязательная блокировка команды (фраза "подсказка для привязанной команды")
 		"ru"			"{1} Ур [Макс] {2}из{3}{4}{5}"
 	}
 	
 	"Admin player upgrades list item"
 	{
-		// 1: Translated name of the upgrade.
-		// 2: Player's current purchased level of the upgrade.
-		// 3: Maximum level of the upgrade.
-		// 4: Optional required permissions ("Adminflags hint" phrase)
-		// 5: Optional locked team ("Teamlock hint" phrase)
+		// 1: Переведённое название улучшения.
+		// 2: Текущий приобретённый уровень улучшения игрока.
+		// 3: Максимальный уровень улучшения.
+		// 4: Необязательные необходимые разрешения (фраза "подсказка для флагов администратора")
+		// 5: Необязательная блокировка команды (фраза "подсказка для привязанной команды")
 		"ru"			"{1} Ур {2}из{3}{4}{5}"
 	}
 	
 	"Confirm max all player upgrades"
 	{
-		// 1: The name of the player who's upgrades should be upgraded.
-		"ru"			"Вы действительно хотите установить все обновления до максимального ур {1}?"
+		// 1: Имя игрока, чьи улучшения должны быть обновлены.
+		"ru"			"Вы действительно хотите установить все улучшения до максимального ур {1}?"
 	}
 	
 	"Inform player upgrades maxed"
 	{
-		// 1: The name of the player who's upgrades got set to the maximal level.
-		"ru"			"{1} теперь имеет все навики по макс."
+		// 1: Имя игрока, чьи улучшения были установлены на максимальный уровень.
+		"ru"			"{1} теперь имеет все улучшения на макс."
 	}
 	
 	"Change player upgrade level"
 	{
-		// 1: Name of player who's upgrade level should be changed.
-		"ru"			"Изменение {1} навыка Уровень"
+		// 1: Имя игрока, уровень улучшения которого должен быть изменён.
+		"ru"			"Изменение уровня улучшения {1}"
 	}
 	
 	"Current player upgrade level"
 	{
-		// 1: Translated name of the upgrade.
-		// 2: Current purchased level of the upgrade.
-		// 3: Maximal level of the upgrade.
+		// 1: Переведённое название улучшения.
+		// 2: Текущий приобретённый уровень улучшения.
+		// 3: Максимальный уровень улучшения.
 		"ru"			"{1}: {2}/{3}"
 	}
 	
 	"Reset player upgrade level 0"
 	{
-		"ru"			"Сброс навыка до 0"
+		"ru"			"Сброс улучшения до 0"
 	}
 	
 	"Remove player upgrade level"
 	{
-		"ru"			"отнять уровень"
+		"ru"			"Отнять уровень"
 	}
 	
 	"Add player upgrade level"
@@ -573,7 +573,7 @@
 	
 	"Take player upgrade level full refund"
 	{
-		"ru"			"отнять уровень [без продажи]"
+		"ru"			"Отнять уровень и возместить затраты"
 	}
 	
 	"Force player sell upgrade level"
@@ -583,12 +583,12 @@
 	
 	"Take player upgrade level no refund"
 	{
-		"ru"			"отнять уровень"
+		"ru"			"Отнять уровень"
 	}
 	
 	"Give player upgrade level for free"
 	{
-		"ru"			"Дать уровень [без Покупки]"
+		"ru"			"Дать уровень [без покупки]"
 	}
 	
 	"Force player buy upgrade level"
@@ -598,100 +598,100 @@
 	
 	"Admin reset player upgrades notification"
 	{
-		// 1: Name of the player who got his upgrade reset.
-		// 2: Translated name of the upgrade which got reset.
-		// 3: Previous level of the upgrade before resetting.
-		// 4: New upgrade level after resetting (usually 0).
-		// 5: Returned credits for the bought upgrade levels. Full refund = same amount player payed for it.
-		"ru"			"Сброс {1} Навыка {2} с полным возмещением всех расходов. Уровня навыка изменен с {3} на {4} и игрок заработал {5} кредитов."
+		// 1: Имя игрока, которому сбросили улучшение.
+		// 2: Переведённое имя улучшения, которое было сброшено.
+		// 3: Предыдущий уровень улучшения перед сбросом.
+		// 4: Новый уровень улучшения после сброса (обычно 0).
+		// 5: Возврат кредитов за купленные уровни улучшения. Полный возврат = та же сумма, которую игрок заплатил за них.
+		"ru"			"Сброс улучшения {2} для {1} с полным возмещением. Уровень улучшения изменён с {3} на {4} и игрок заработал {5} кредитов."
 	}
 	
 	"Admin force buy insufficient funds"
 	{
-		// 1: Name of the player who was forced to buy the upgrade.
-		// 2: Translated name of the upgrade.
-		// 3: Current amount of credits the client has.
-		// 4: Cost for the next level of the upgrade.
-		"ru"			"{1} не достаточное количества кредитов для покупки {2} ({3}/{4})."
+		// 1: Имя игрока, который был вынужден купить улучшение.
+		// 2: Переведённое название улучшения.
+		// 3: Текущая сумма кредитов, имеющихся у клиента.
+		// 4: Стоимость для следующего уровня улучшения.
+		"ru"			"У {1} недостаточно кредитов для покупки {2} ({3}/{4})."
 	}
 	
 	"Upgrade short name"
 	{
-		// 1: Shortname of the upgrade (used in commands to reference it)
+		// 1: Сокращенное имя улучшения (используется в командах для ссылки на него)
 		"ru"			"Короткое имя: {1}"
 	}
 	
 	"Admin disable upgrade"
 	{
-		"ru"			"Отключить навык"
+		"ru"			"Отключить улучшение"
 	}
 	
 	"Admin enable upgrade"
 	{
-		"ru"			"Включить навык"
+		"ru"			"Включить улучшение"
 	}
 	
 	"Admin upgrade info maxlevel barrier"
 	{
-		// 1: Maximal level the upgrade can be set to / supports.
-		"ru"			"Макслевел барьер: {1}"
+		// 1: Максимальный уровень, на который может быть установлено / поддерживается улучшение.
+		"ru"			"Барьер максуровня: {1}"
 	}
 	
 	"Admin upgrade info maxlevel"
 	{
-		// 1: Current maximal level of the upgrade.
-		"ru"			"Макслевел: {1}"
+		// 1: Текущий максимальный уровень улучшения.
+		"ru"			"Максуровень: {1}"
 	}
 	
 	"Admin upgrade info cost"
 	{
-		// 1: Current upgrade starting cost.
-		"ru"			"Стоимость: {1}"
+		// 1: Текущая начальная стоимость улучшения.
+		"ru"			"Цена: {1}"
 	}
 	
 	"Admin upgrade info increase cost"
 	{
-		// 1: Current upgrade increasing cost.
-		"ru"			"Рост стоимости: {1}"
+		// 1: Текущее улучшение увеличивает свою стоимость.
+		"ru"			"Рост цены: {1}"
 	}
 	
 	"Admin upgrade info teamlock"
 	{
-		// 1: Team name of the team this upgrade is locked to.
-		"ru"			"Teamlock: {1}"
+		// 1: Название команды, для которой привязано это улучшение.
+		"ru"			"Привязано к: {1}"
 	}
 	
 	"Admin upgrade info visual effects"
 	{
-		// 1: Translated "On" or "Off"
-		"ru"			"Visual effects: {1}"
+		// 1: Переведённые "On" или "Off"
+		"ru"			"Визуальные эффекты: {1}"
 	}
 	
 	"Admin upgrade info sound effects"
 	{
-		// 1: Translated "On" or "Off"
-		"ru"			"Sound effects: {1}"
+		// 1: Переведённые "On" или "Off"
+		"ru"			"Звуковые эффекты: {1}"
 	}
 	
 	"Admin upgrades change maxlevel"
 	{
-		// 1: Current upgrade's maxlevel.
-		"ru"			"Изменить МАКСЛЕВЕЛ временно: {1}"
+		// 1: Максимальный уровень текущего улучшения.
+		"ru"			"Изменить максуровень временно: {1}"
 	}
 	
 	"Admin upgrades change start cost"
 	{
-		// 1: Current upgrade's start cost.
-		"ru"			"Изменить начальную стоить временно: {1}"
+		// 1: Начальная стоимость текущего улучшения.
+		"ru"			"Изменить начальную цену временно: {1}"
 	}
 	
 	"Admin upgrades change increasing cost"
 	{
-		// 1: Current upgrade's increasing cost.
+		// 1: Повышение стоимости текущего улучшения.
 		"ru"			"Изменить рост стоимости временно: {1}"
 	}
 	
-	// Command help
+	// Справка по командам
 	"rpgmenu short desc"
 	{
 		"ru"			"Открывает главное RPG меню"
@@ -699,12 +699,12 @@
 	
 	"rpgmenu desc"
 	{
-		"ru"			"Открывает главное RPG меню. Вы можете купить или продать обновления, просматривать статистику, посмотреть список команд и изменить другие настройки."
+		"ru"			"Открывает главное RPG меню. Вы можете купить или продать улучшения, просматривать статистику, посмотреть список команд и изменить другие настройки."
 	}
 	
 	"rpgmenu advert"
 	{
-		"ru"			"Введите {N}rpgmenu{G}, чтобы открыть главное RPG меню."
+		"ru"			"Напишите {N}rpgmenu{G}, чтобы открыть главное RPG меню."
 	}
 	
 	"rpgrank short desc"
@@ -714,42 +714,42 @@
 	
 	"rpgrank desc"
 	{
-		"ru"			"Показывает ваш ранг или ранг указаного человека. Используйте: {N}rpgrank [name|#steamid|#userid]"
+		"ru"			"Показывает ваш ранг или ранг указаного человека. Используйте: {N}rpgrank [имя|#steamid|#userid]"
 	}
 	
 	"rpgrank advert"
 	{
-		"ru"			"Введите {N}rpgrank{G} чтобы посмотреть свою статистику или {N}rpgrank <имя игрока>{G}, чтобы отобразить статистику других игроков."
+		"ru"			"Напишите {N}rpgrank{G}, чтобы посмотреть свою статистику или {N}rpgrank <имя игрока>{G}, чтобы отобразить статистику других игроков."
 	}
 	
 	"rpginfo short desc"
 	{
-		"ru"			"Показывает, приобретенные навыки указаного человека"
+		"ru"			"Показать приобретённые улучшения указаного человека"
 	}
 	
 	"rpginfo desc"
 	{
-		"ru"			"Показывает, приобретенные навыки указаного человека. Используйте: {N}rpginfo <name|#steamid|#userid>"
+		"ru"			"Показать приобретённые улучшения указаного человека. Используйте: {N}rpginfo <имя|#steamid|#userid>"
 	}
 	
 	"rpginfo advert"
 	{
-		"ru"			"Введите {N}rpginfo <имя игрока>{G}, чтобы посмотреть какие навыки купил другой игрок."
+		"ru"			"Напишите {N}rpginfo <имя игрока>{G}, чтобы посмотреть, какие улучшения купил другой игрок."
 	}
 	
 	"rpgtop10 short desc"
 	{
-		"ru"			"Показать SM:RPG top 10"
+		"ru"			"Показать 10 лучших игроков SM:RPG"
 	}
 	
 	"rpgtop10 desc"
 	{
-		"ru"			"Показать RPG топ 10 лучших игроков на этом сервере."
+		"ru"			"Показать 10 лучших игроков RPG на этом сервере."
 	}
 	
 	"rpgtop10 advert"
 	{
-		"ru"			"Введите {N}rpgtop10{G}, чтобы посмотреть топ-10 RPG игроков на этом сервере."
+		"ru"			"Напишите {N}rpgtop10{G}, чтобы посмотреть 10 лучших игроков RPG на этом сервере."
 	}
 	
 	"rpgnext short desc"
@@ -764,7 +764,7 @@
 	
 	"rpgnext advert"
 	{
-		"ru"			"Введите {N}rpgnext{G} для просмотра списка игроков, которые прямо перед вами в рейтинге."
+		"ru"			"Напишите {N}rpgnext{G} для просмотра списка игроков, которые прямо перед вами в рейтинге."
 	}
 	
 	"rpgsession short desc"
@@ -779,22 +779,22 @@
 	
 	"rpgsession advert"
 	{
-		"ru"			"Введите {N}rpgsession{G}, чтобы посмотреть,изменения вашей статистики в текущей сессии."
+		"ru"			"Напишите {N}rpgsession{G}, чтобы посмотреть изменения вашей статистики в текущей сессии."
 	}
 	
 	"rpghelp short desc"
 	{
-		"ru"			"Показать справку об навыках"
+		"ru"			"Показать справку об улучшениях"
 	}
 	
 	"rpghelp desc"
 	{
-		"ru"			"Показать меню справки, где вы получите подробные описания об различных доступных РПГ навыковах."
+		"ru"			"Показать меню справки, где вы получите подробные описания об различных доступных RPG улучшениях."
 	}
 	
 	"rpghelp advert"
 	{
-		"ru"			"Введите {N}rpghelp{G}, чтобы получить подробное описание того, что делают навыки."
+		"ru"			"Напишите {N}rpghelp{G}, чтобы получить подробное описание того, что делают улучшения."
 	}
 	
 	"rpgexp short desc"
@@ -804,12 +804,12 @@
 	
 	"rpgexp desc"
 	{
-		"ru"			"Показывает количество и причины получения последнего опыта которого вы заработали."
+		"ru"			"Показывает количество и причины получения последнего опыта, которого вы заработали."
 	}
 	
 	"rpgexp advert"
 	{
-		// 1: Value of smrpg_lastexperience_count. The amount of experience saved in the array.
-		"ru"			"Введите {N}rpgexp{G}, чтобы увидеть список последних {1} причин и количества опыта которого вы заработали."
+		// 1: Значение smrpg_lastexperience_count. Количество опыта, сохранённого в массиве.
+		"ru"			"Напишите {N}rpgexp{G}, чтобы увидеть список последних {1} причин и количества опыта которого вы заработали."
 	}
 }

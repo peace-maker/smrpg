@@ -2,7 +2,7 @@
 {
   "Don't give yourself a gift"
   {
-    "en"  "There is no point in giving yourself a gift.."
+    "en"  "There is no point in giving yourself a gift."
   }
   "Need at least 1 credit"
   {
