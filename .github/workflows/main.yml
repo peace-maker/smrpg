@@ -80,8 +80,8 @@ jobs:
       - name: Compile plugins
         shell: bash
         env:
-          PACKAGE_PATH: ${{ env.GITHUB_WORKSPACE }}/package
-          INCLUDE_PATHS: -i${{ env.GITHUB_WORKSPACE }}/smlib/scripting/include -i${{ env.GITHUB_WORKSPACE }}/AutoExecConfig -i${{ env.GITHUB_WORKSPACE }}/DHooks2/sourcemod/scripting/include -i${{ env.GITHUB_WORKSPACE }}/Chat-Processor/scripting/include -i${{ env.GITHUB_WORKSPACE }}/simple-chat-processor/scripting/include -i${{ env.GITHUB_WORKSPACE }}/ColorVariables/addons/sourcemod/scripting/includes -i${{ env.GITHUB_WORKSPACE }}/mapzonelib/scripting/include
+          PACKAGE_PATH: ${{ github.workspace }}/package
+          INCLUDE_PATHS: -i${{ github.workspace }}/smlib/scripting/include -i${{ github.workspace }}/AutoExecConfig -i${{ github.workspace }}/DHooks2/sourcemod/scripting/include -i${{ github.workspace }}/Chat-Processor/scripting/include -i${{ github.workspace }}/simple-chat-processor/scripting/include -i${{ github.workspace }}/ColorVariables/addons/sourcemod/scripting/includes -i${{ github.workspace }}/mapzonelib/scripting/include
         run: |
           cd smrpg/scripting
 
