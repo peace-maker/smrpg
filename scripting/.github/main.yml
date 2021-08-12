@@ -1,0 +1,124 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        sm-version: [ '1.10.x', '1.11.x' ]
+        experimental: [ false ]
+        include:
+          - sm-version: '1.10.x'
+            sm-main-version: '1.10'
+          - sm-version: '1.11.x'
+            sm-main-version: '1.11'
+            experimental: true
+      fail-fast: false
+
+    continue-on-error: ${{ matrix.experimental }}
+    name: SM version ${{ matrix.sm-version }}
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          path: smrpg
+
+      - name: Setup SP
+        uses: rumblefrog/setup-sp@v1.0.1
+        with:
+          version: ${{ matrix.sm-version }}
+
+      # Checkout all dependencies
+      - uses: actions/checkout@v2
+        with:
+          repository: bcserv/smlib
+          ref: transitional_syntax
+          path: smlib
+      - uses: actions/checkout@v2
+        with:
+          repository: Impact123/AutoExecConfig
+          path: AutoExecConfig
+      - uses: actions/checkout@v2
+        with:
+          repository: Drifter321/DHooks2
+          path: DHooks2
+      - uses: actions/checkout@v2
+        with:
+          repository: Drixevel/Chat-Processor
+          path: Chat-Processor
+      - uses: actions/checkout@v2
+        with:
+          repository: minimoney1/simple-chat-processor
+          path: simple-chat-processor
+      - uses: actions/checkout@v2
+        with:
+          repository: KissLick/ColorVariables
+          path: ColorVariables
+      - uses: actions/checkout@v2
+        with:
+          repository: peace-maker/mapzonelib
+          path: mapzonelib
+        
+      - name: Setup package structure
+        shell: bash
+        run: |
+          mkdir -p package/plugins/upgrades
+          cp -R smrpg/configs package
+          cp -R smrpg/gamedata/ package/
+          cp -R smrpg/scripting/ package/
+          cp -R smrpg/translations/ package/
+
+          GITREVCOUNT=$(cd smrpg;git rev-list --count HEAD)
+          echo "GITREVCOUNT=$GITREVCOUNT" >> $GITHUB_ENV
+          echo -e "#if defined _smrpg_version_included\n#endinput\n#endif\n#define _smrpg_version_included\n\n" > smrpg/scripting/include/smrpg/smrpg_autoversion.inc
+          echo -e "#define SMRPG_VERSION \"1.0-$GITREVCOUNT\"\n" >> smrpg/scripting/include/smrpg/smrpg_autoversion.inc
+      
+      - name: Compile plugins
+        shell: bash
+        env:
+          PACKAGE_PATH: ${{ env.GITHUB_WORKSPACE }}/package
+          INCLUDE_PATHS: -i${{ env.GITHUB_WORKSPACE }}/smlib/scripting/include -i${{ env.GITHUB_WORKSPACE }}/AutoExecConfig -i${{ env.GITHUB_WORKSPACE }}/DHooks2/sourcemod/scripting/include -i${{ env.GITHUB_WORKSPACE }}/Chat-Processor/scripting/include -i${{ env.GITHUB_WORKSPACE }}/simple-chat-processor/scripting/include -i${{ env.GITHUB_WORKSPACE }}/ColorVariables/addons/sourcemod/scripting/includes -i${{ env.GITHUB_WORKSPACE }}/mapzonelib/scripting/include
+        run: |
+          cd smrpg/scripting
+
+          # compile base plugins
+          for f in *.sp
+          do
+            if [ "$f" != "smrpg_chattags.sp" ]; then
+              echo -e "\nCompiling $f..."
+              smxfile="`echo $f | sed -e 's/\.sp$/\.smx/'`"
+              spcomp $INCLUDE_PATHS $f -o$PACKAGE_PATH/plugins/$smxfile
+            fi
+          done
+
+          # compile both versions of chattags for both chat processors..
+          echo -e "\nCompiling smrpg_chattags.sp for Chat Processor..."
+          spcomp $INCLUDE_PATHS smrpg_chattags.sp -o$PACKAGE_PATH/plugins/smrpg_chattags_cp.smx
+
+          echo -e "\nCompiling smrpg_chattags.sp for Simple Chat Processor..."
+          spcomp $INCLUDE_PATHS smrpg_chattags.sp -o$PACKAGE_PATH/plugins/smrpg_chattags_scp.smx USE_SIMPLE_PROCESSOR=
+
+          # compile all upgrades
+          for f in upgrades/*.sp
+          do
+            # skip the skeleton
+            if [ "$f" != "upgrades/smrpg_upgrade_example.sp" ]; then
+              echo -e "\nCompiling upgrade $f..."
+              smxfile="`echo $f | sed -e 's/\.sp$/\.smx/'`"
+              spcomp $INCLUDE_PATHS $f -o$PACKAGE_PATH/plugins/$smxfile
+            fi
+          done
+
+          rm include/smrpg/smrpg_autoversion.inc
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: smrpg-rev${{ env.GITREVCOUNT }}-sm${{ matrix.sm-main-version }}
+          path: package
