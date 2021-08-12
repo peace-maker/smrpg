@@ -148,11 +148,11 @@ public void SQL_OnConnect(Database db, const char[] error, any data)
 	// This is probably empty since no upgrades could have registered yet, but well..
 	// Add all columns for currently loaded upgrades.
 	int iSize = GetUpgradeCount();
-	int upgrade[InternalUpgradeInfo];
+	InternalUpgradeInfo upgrade;
 	for(int i=0;i<iSize;i++)
 	{
 		GetUpgradeByIndex(i, upgrade);
-		if(!IsValidUpgrade(upgrade) || upgrade[UPGR_databaseId] != -1 || upgrade[UPGR_databaseLoading])
+		if(!IsValidUpgrade(upgrade) || upgrade.databaseId != -1 || upgrade.databaseLoading)
 			continue;
 		CheckUpgradeDatabaseEntry(upgrade);
 	}
@@ -183,20 +183,20 @@ public Action Timer_ReconnectDatabase(Handle timer)
 	return Plugin_Stop;
 }
 
-void CheckUpgradeDatabaseEntry(int upgrade[InternalUpgradeInfo])
+void CheckUpgradeDatabaseEntry(InternalUpgradeInfo upgrade)
 {
 	if(!g_hDatabase)
 		return;
 	
-	upgrade[UPGR_databaseLoading] = true;
+	upgrade.databaseLoading = true;
 	SaveUpgradeConfig(upgrade);
 	
 	char sQuery[512];
 	// Check if that's a completely new upgrade
 	char sShortNameEscaped[MAX_UPGRADE_SHORTNAME_LENGTH*2+1];
-	g_hDatabase.Escape(upgrade[UPGR_shortName], sShortNameEscaped, sizeof(sShortNameEscaped));
+	g_hDatabase.Escape(upgrade.shortName, sShortNameEscaped, sizeof(sShortNameEscaped));
 	Format(sQuery, sizeof(sQuery), "SELECT upgrade_id FROM %s WHERE shortname = \"%s\";", TBL_UPGRADES, sShortNameEscaped);
-	g_hDatabase.Query(SQL_GetUpgradeInfo, sQuery, upgrade[UPGR_index]);
+	g_hDatabase.Query(SQL_GetUpgradeInfo, sQuery, upgrade.index);
 }
 
 void CheckDatabaseVersion()
@@ -606,20 +606,20 @@ public void SQL_GetUpgradeInfo(Database db, DBResultSet results, const char[] er
 		return;
 	}
 	
-	int upgrade[InternalUpgradeInfo];
+	InternalUpgradeInfo upgrade;
 	GetUpgradeByIndex(index, upgrade);
 	
 	char sQuery[256];
 	// This is a new upgrade!
 	if(!results.RowCount || !results.FetchRow())
 	{
-		Format(sQuery, sizeof(sQuery), "INSERT INTO %s (shortname, date_added) VALUES (\"%s\", %d);", TBL_UPGRADES, upgrade[UPGR_shortName], GetTime());
+		Format(sQuery, sizeof(sQuery), "INSERT INTO %s (shortname, date_added) VALUES (\"%s\", %d);", TBL_UPGRADES, upgrade.shortName, GetTime());
 		g_hDatabase.Query(SQL_InsertNewUpgrade, sQuery, index);
 		return;
 	}
 	
-	upgrade[UPGR_databaseLoading] = false;
-	upgrade[UPGR_databaseId] = results.FetchInt(0);
+	upgrade.databaseLoading = false;
+	upgrade.databaseId = results.FetchInt(0);
 	SaveUpgradeConfig(upgrade);
 	
 	// Load the data for all connected players
@@ -627,7 +627,7 @@ public void SQL_GetUpgradeInfo(Database db, DBResultSet results, const char[] er
 	{
 		if(IsClientInGame(i) && IsClientAuthorized(i) && GetClientDatabaseId(i) != -1)
 		{
-			Format(sQuery, sizeof(sQuery), "SELECT upgrade_id, purchasedlevel, selectedlevel, enabled, visuals, sounds FROM %s WHERE player_id = %d AND upgrade_id = %d", TBL_PLAYERUPGRADES, GetClientDatabaseId(i), upgrade[UPGR_databaseId]);
+			Format(sQuery, sizeof(sQuery), "SELECT upgrade_id, purchasedlevel, selectedlevel, enabled, visuals, sounds FROM %s WHERE player_id = %d AND upgrade_id = %d", TBL_PLAYERUPGRADES, GetClientDatabaseId(i), upgrade.databaseId);
 			g_hDatabase.Query(SQL_GetPlayerUpgrades, sQuery, GetClientUserId(i));
 		}
 	}
@@ -641,11 +641,11 @@ public void SQL_InsertNewUpgrade(Database db, DBResultSet results, const char[] 
 		return;
 	}
 	
-	int upgrade[InternalUpgradeInfo];
+	InternalUpgradeInfo upgrade;
 	GetUpgradeByIndex(index, upgrade);
 	
-	upgrade[UPGR_databaseLoading] = false;
-	upgrade[UPGR_databaseId] = results.InsertId;
+	upgrade.databaseLoading = false;
+	upgrade.databaseId = results.InsertId;
 	SaveUpgradeConfig(upgrade);
 }
 

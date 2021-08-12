@@ -479,7 +479,8 @@ void ShowPlayerUpgradeManageMenu(int client)
 	}
 	
 	int iSize = GetUpgradeCount();
-	int upgrade[InternalUpgradeInfo], iCurrentLevel;
+	InternalUpgradeInfo upgrade;
+	int iCurrentLevel;
 	char sTranslatedName[MAX_UPGRADE_NAME_LENGTH], sLine[128], sIndex[8], sPermissions[30], sTeamlock[32];
 	for(int i=0;i<iSize;i++)
 	{
@@ -487,18 +488,18 @@ void ShowPlayerUpgradeManageMenu(int client)
 		GetUpgradeByIndex(i, upgrade);
 		
 		// Don't show disabled items in the menu.
-		if(!IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled])
+		if(!IsValidUpgrade(upgrade) || !upgrade.enabled)
 			continue;
 		
-		GetUpgradeTranslatedName(client, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
+		GetUpgradeTranslatedName(client, upgrade.index, sTranslatedName, sizeof(sTranslatedName));
 		
 		sPermissions[0] = 0;
 		sTeamlock[0] = 0;
 		
 		// Print the required adminflags in a readable way
-		if(upgrade[UPGR_adminFlag] > 0)
+		if(upgrade.adminFlag > 0)
 		{
-			GetAdminFlagStringFromBits(upgrade[UPGR_adminFlag], sPermissions, sizeof(sPermissions));
+			GetAdminFlagStringFromBits(upgrade.adminFlag, sPermissions, sizeof(sPermissions));
 			Format(sPermissions, sizeof(sPermissions), "%T", "Adminflags hint", client, sPermissions);
 		}
 		
@@ -506,24 +507,24 @@ void ShowPlayerUpgradeManageMenu(int client)
 		if(!HasAccessToUpgrade(g_iCurrentMenuTarget[client], upgrade))
 			Format(sPermissions, sizeof(sPermissions), "%s %T", sPermissions, "Adminflags Admin Denied Warning", client);
 		// Or if there are some permission restrictions specified, show the player is able to use it.
-		else if(upgrade[UPGR_adminFlag] > 0)
+		else if(upgrade.adminFlag > 0)
 			Format(sPermissions, sizeof(sPermissions), "%s %T", sPermissions, "Adminflags Admin Inform OK", client);
 		
 		// Print the required team
-		if(upgrade[UPGR_teamlock] > 1 && upgrade[UPGR_teamlock] < GetTeamCount())
+		if(upgrade.teamlock > 1 && upgrade.teamlock < GetTeamCount())
 		{
-			GetTeamName(upgrade[UPGR_teamlock], sTeamlock, sizeof(sTeamlock));
+			GetTeamName(upgrade.teamlock, sTeamlock, sizeof(sTeamlock));
 			Format(sTeamlock, sizeof(sTeamlock), "%T", "Teamlock hint", client, sTeamlock);
 		}
 		
 		IntToString(i, sIndex, sizeof(sIndex));
-		if(iCurrentLevel >= upgrade[UPGR_maxLevel])
+		if(iCurrentLevel >= upgrade.maxLevel)
 		{
-			Format(sLine, sizeof(sLine), "%T", "Admin player upgrades list item maxed", client, sTranslatedName, iCurrentLevel, upgrade[UPGR_maxLevel], sPermissions, sTeamlock);
+			Format(sLine, sizeof(sLine), "%T", "Admin player upgrades list item maxed", client, sTranslatedName, iCurrentLevel, upgrade.maxLevel, sPermissions, sTeamlock);
 		}
 		else
 		{
-			Format(sLine, sizeof(sLine), "%T", "Admin player upgrades list item", client, sTranslatedName, iCurrentLevel, upgrade[UPGR_maxLevel], sPermissions, sTeamlock);
+			Format(sLine, sizeof(sLine), "%T", "Admin player upgrades list item", client, sTranslatedName, iCurrentLevel, upgrade.maxLevel, sPermissions, sTeamlock);
 		}
 		
 		hMenu.AddItem(sIndex, sLine);
@@ -601,15 +602,15 @@ public int Menu_HandlePlayerGiveAllConfirm(Menu menu, MenuAction action, int par
 		}
 		
 		int iSize = GetUpgradeCount();
-		int upgrade[InternalUpgradeInfo];
+		InternalUpgradeInfo upgrade;
 		for(int i=0;i<iSize;i++)
 		{
 			GetUpgradeByIndex(i, upgrade);
-			if(!IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled])
+			if(!IsValidUpgrade(upgrade) || !upgrade.enabled)
 				continue;
 			
-			SetClientPurchasedUpgradeLevel(g_iCurrentMenuTarget[param1], i, upgrade[UPGR_maxLevel]);
-			SetClientSelectedUpgradeLevel(g_iCurrentMenuTarget[param1], i, upgrade[UPGR_maxLevel]);
+			SetClientPurchasedUpgradeLevel(g_iCurrentMenuTarget[param1], i, upgrade.maxLevel);
+			SetClientSelectedUpgradeLevel(g_iCurrentMenuTarget[param1], i, upgrade.maxLevel);
 		}
 		
 		LogAction(param1, g_iCurrentMenuTarget[param1], "%L set all upgrades of %L to the maximal level at no charge.", param1, g_iCurrentMenuTarget[param1]);
@@ -636,11 +637,11 @@ public int Menu_HandlePlayerGiveAllConfirm(Menu menu, MenuAction action, int par
 void ShowPlayerUpgradeLevelMenu(int client)
 {
 	int iItemIndex = g_iCurrentUpgradeTarget[client];
-	int upgrade[InternalUpgradeInfo];
+	InternalUpgradeInfo upgrade;
 	GetUpgradeByIndex(iItemIndex, upgrade);
 	
 	// Bad upgrade?
-	if(!IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled])
+	if(!IsValidUpgrade(upgrade) || !upgrade.enabled)
 	{
 		g_iCurrentUpgradeTarget[client] = -1;
 		ShowPlayerUpgradeManageMenu(client);
@@ -648,11 +649,11 @@ void ShowPlayerUpgradeLevelMenu(int client)
 	}
 	
 	char sTranslatedName[MAX_UPGRADE_NAME_LENGTH];
-	GetUpgradeTranslatedName(client, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
+	GetUpgradeTranslatedName(client, upgrade.index, sTranslatedName, sizeof(sTranslatedName));
 	
 	Menu hMenu = new Menu(Menu_HandlePlayerUpgradeLevelChange);
 	hMenu.ExitBackButton = true;
-	hMenu.SetTitle("%T\n%T", "Change player upgrade level", client, g_iCurrentMenuTarget[client], "Current player upgrade level", client, sTranslatedName, GetClientPurchasedUpgradeLevel(g_iCurrentMenuTarget[client], iItemIndex), upgrade[UPGR_maxLevel]);
+	hMenu.SetTitle("%T\n%T", "Change player upgrade level", client, g_iCurrentMenuTarget[client], "Current player upgrade level", client, sTranslatedName, GetClientPurchasedUpgradeLevel(g_iCurrentMenuTarget[client], iItemIndex), upgrade.maxLevel);
 	
 	char sBuffer[256];
 	if (CheckCommandAccess(client, "smrpg_takeupgrade", ADMFLAG_ROOT)
@@ -702,12 +703,12 @@ public int Menu_HandlePlayerUpgradeLevelChange(Menu menu, MenuAction action, int
 		char sInfo[32];
 		menu.GetItem(param2, sInfo, sizeof(sInfo));
 		
-		int upgrade[InternalUpgradeInfo];
+		InternalUpgradeInfo upgrade;
 		int iItemIndex = g_iCurrentUpgradeTarget[param1];
 		GetUpgradeByIndex(iItemIndex, upgrade);
 		
 		// Bad upgrade?
-		if(!IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled])
+		if(!IsValidUpgrade(upgrade) || !upgrade.enabled)
 		{
 			g_iCurrentUpgradeTarget[param1] = -1;
 			ShowPlayerUpgradeManageMenu(param1);
@@ -740,11 +741,11 @@ public int Menu_HandlePlayerUpgradeLevelChange(Menu menu, MenuAction action, int
 void ShowPlayerUpgradeLevelRemoveMenu(int client)
 {
 	int iItemIndex = g_iCurrentUpgradeTarget[client];
-	int upgrade[InternalUpgradeInfo];
+	InternalUpgradeInfo upgrade;
 	GetUpgradeByIndex(iItemIndex, upgrade);
 	
 	// Bad upgrade?
-	if(!IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled])
+	if(!IsValidUpgrade(upgrade) || !upgrade.enabled)
 	{
 		g_iCurrentUpgradeTarget[client] = -1;
 		ShowPlayerUpgradeManageMenu(client);
@@ -752,7 +753,7 @@ void ShowPlayerUpgradeLevelRemoveMenu(int client)
 	}
 	
 	char sTranslatedName[MAX_UPGRADE_NAME_LENGTH];
-	GetUpgradeTranslatedName(client, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
+	GetUpgradeTranslatedName(client, upgrade.index, sTranslatedName, sizeof(sTranslatedName));
 	
 	Menu hMenu = new Menu(Menu_HandlePlayerUpgradeLevelRemove);
 	hMenu.ExitBackButton = true;
@@ -762,7 +763,7 @@ void ShowPlayerUpgradeLevelRemoveMenu(int client)
 		Format(sBuffer, sizeof(sBuffer), "%T", "Reset player upgrade level 0", client);
 	else
 		Format(sBuffer, sizeof(sBuffer), "%T", "Remove player upgrade level", client);
-	hMenu.SetTitle("%T\n%s\n%T", "Change player upgrade level", client, g_iCurrentMenuTarget[client], sBuffer, "Current player upgrade level", client, sTranslatedName, GetClientPurchasedUpgradeLevel(g_iCurrentMenuTarget[client], iItemIndex), upgrade[UPGR_maxLevel]);
+	hMenu.SetTitle("%T\n%s\n%T", "Change player upgrade level", client, g_iCurrentMenuTarget[client], sBuffer, "Current player upgrade level", client, sTranslatedName, GetClientPurchasedUpgradeLevel(g_iCurrentMenuTarget[client], iItemIndex), upgrade.maxLevel);
 	
 	
 	if (CheckCommandAccess(client, "smrpg_setupgradelvl", ADMFLAG_ROOT))
@@ -808,12 +809,12 @@ public int Menu_HandlePlayerUpgradeLevelRemove(Menu menu, MenuAction action, int
 		char sInfo[32];
 		menu.GetItem(param2, sInfo, sizeof(sInfo));
 		
-		int upgrade[InternalUpgradeInfo];
+		InternalUpgradeInfo upgrade;
 		int iUpgradeIndex = g_iCurrentUpgradeTarget[param1];
 		GetUpgradeByIndex(iUpgradeIndex, upgrade);
 		
 		// Bad upgrade?
-		if(!IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled])
+		if(!IsValidUpgrade(upgrade) || !upgrade.enabled)
 		{
 			g_iCurrentUpgradeTarget[param1] = -1;
 			ShowPlayerUpgradeManageMenu(param1);
@@ -835,7 +836,7 @@ public int Menu_HandlePlayerUpgradeLevelRemove(Menu menu, MenuAction action, int
 					iCreditsReturned += GetUpgradeCost(iUpgradeIndex, GetClientPurchasedUpgradeLevel(iTarget, iUpgradeIndex)+1);
 					SetClientCredits(iTarget, GetClientCredits(iTarget) + GetUpgradeCost(iUpgradeIndex, GetClientPurchasedUpgradeLevel(iTarget, iUpgradeIndex)+1));
 				}
-				LogAction(param1, iTarget, "%L reset upgrade %s of %L with full refund of all upgrade costs. Upgrade level changed from %d to %d and player earned %d credits.", param1, upgrade[UPGR_name], iTarget, iOldLevel, GetClientPurchasedUpgradeLevel(iTarget, iUpgradeIndex), iCreditsReturned);
+				LogAction(param1, iTarget, "%L reset upgrade %s of %L with full refund of all upgrade costs. Upgrade level changed from %d to %d and player earned %d credits.", param1, upgrade.name, iTarget, iOldLevel, GetClientPurchasedUpgradeLevel(iTarget, iUpgradeIndex), iCreditsReturned);
 			}
 			else if(StrEqual(sInfo, "forcesell"))
 			{
@@ -844,18 +845,18 @@ public int Menu_HandlePlayerUpgradeLevelRemove(Menu menu, MenuAction action, int
 					iCreditsReturned += GetUpgradeSale(iUpgradeIndex, iOldLevel);
 					iOldLevel--;
 				}
-				LogAction(param1, iTarget, "%L forced %L to sell all levels of upgrade %s. Upgrade level changed from %d to %d and player earned %d credits.", param1, iTarget, upgrade[UPGR_name], iOldLevel, GetClientPurchasedUpgradeLevel(iTarget, iUpgradeIndex), iCreditsReturned);
+				LogAction(param1, iTarget, "%L forced %L to sell all levels of upgrade %s. Upgrade level changed from %d to %d and player earned %d credits.", param1, iTarget, upgrade.name, iOldLevel, GetClientPurchasedUpgradeLevel(iTarget, iUpgradeIndex), iCreditsReturned);
 			}
 			else if(StrEqual(sInfo, "norefund"))
 			{
 				while(TakeClientUpgrade(iTarget, iUpgradeIndex))
 				{
 				}
-				LogAction(param1, iTarget, "%L reset upgrade %s of %L with no refund. Upgrade level changed from %d to %d.", param1, upgrade[UPGR_name], iTarget, iOldLevel, GetClientPurchasedUpgradeLevel(iTarget, iUpgradeIndex));
+				LogAction(param1, iTarget, "%L reset upgrade %s of %L with no refund. Upgrade level changed from %d to %d.", param1, upgrade.name, iTarget, iOldLevel, GetClientPurchasedUpgradeLevel(iTarget, iUpgradeIndex));
 			}
 
 			char sTranslatedName[MAX_UPGRADE_NAME_LENGTH];
-			GetUpgradeTranslatedName(param1, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
+			GetUpgradeTranslatedName(param1, upgrade.index, sTranslatedName, sizeof(sTranslatedName));
 			Client_PrintToChat(param1, false, "{OG}SM:RPG{N} > {G}%T", "Admin reset player upgrades notification", param1, iTarget, sTranslatedName, iOldLevel, GetClientPurchasedUpgradeLevel(iTarget, iUpgradeIndex), iCreditsReturned);
 		}
 		else if (g_iClientUpgradeChangeMode[param1] == UpgradeChange_Remove)
@@ -867,14 +868,14 @@ public int Menu_HandlePlayerUpgradeLevelRemove(Menu menu, MenuAction action, int
 					// Full refund
 					int iCosts = GetUpgradeCost(iUpgradeIndex, GetClientPurchasedUpgradeLevel(iTarget, iUpgradeIndex)+1);
 					SetClientCredits(iTarget, GetClientCredits(iTarget) + iCosts);
-					LogAction(param1, iTarget, "%L took one level of upgrade %s from %L with full refund of the costs. Upgrade level changed from %d to %d and player got %d credits.", param1, upgrade[UPGR_name], iTarget, iOldLevel, GetClientPurchasedUpgradeLevel(iTarget, iUpgradeIndex), iCosts);
+					LogAction(param1, iTarget, "%L took one level of upgrade %s from %L with full refund of the costs. Upgrade level changed from %d to %d and player got %d credits.", param1, upgrade.name, iTarget, iOldLevel, GetClientPurchasedUpgradeLevel(iTarget, iUpgradeIndex), iCosts);
 				}
 			}
 			else if(StrEqual(sInfo, "forcesell"))
 			{
 				if(SellClientUpgrade(iTarget, iUpgradeIndex))
 				{
-					LogAction(param1, iTarget, "%L forced %L to sell one level of upgrade %s. Upgrade level changed from %d to %d and player got %d credits..", param1, iTarget, upgrade[UPGR_name], iOldLevel, GetClientPurchasedUpgradeLevel(iTarget, iUpgradeIndex), GetUpgradeSale(iUpgradeIndex, iOldLevel));
+					LogAction(param1, iTarget, "%L forced %L to sell one level of upgrade %s. Upgrade level changed from %d to %d and player got %d credits..", param1, iTarget, upgrade.name, iOldLevel, GetClientPurchasedUpgradeLevel(iTarget, iUpgradeIndex), GetUpgradeSale(iUpgradeIndex, iOldLevel));
 				}
 			}
 			else if(StrEqual(sInfo, "norefund"))
@@ -884,7 +885,7 @@ public int Menu_HandlePlayerUpgradeLevelRemove(Menu menu, MenuAction action, int
 					// Full refund
 					int iCosts = GetUpgradeCost(iUpgradeIndex, GetClientPurchasedUpgradeLevel(iTarget, iUpgradeIndex)+1);
 					SetClientCredits(iTarget, GetClientCredits(iTarget) + iCosts);
-					LogAction(param1, iTarget, "%L took one level of upgrade %s from %L with full refund of the costs. Upgrade level changed from %d to %d and player got %d credits.", param1, upgrade[UPGR_name], iTarget, iOldLevel, GetClientPurchasedUpgradeLevel(iTarget, iUpgradeIndex), iCosts);
+					LogAction(param1, iTarget, "%L took one level of upgrade %s from %L with full refund of the costs. Upgrade level changed from %d to %d and player got %d credits.", param1, upgrade.name, iTarget, iOldLevel, GetClientPurchasedUpgradeLevel(iTarget, iUpgradeIndex), iCosts);
 				}
 			}
 		}
@@ -896,11 +897,11 @@ public int Menu_HandlePlayerUpgradeLevelRemove(Menu menu, MenuAction action, int
 void ShowPlayerUpgradeLevelAddMenu(int client)
 {
 	int iItemIndex = g_iCurrentUpgradeTarget[client];
-	int upgrade[InternalUpgradeInfo];
+	InternalUpgradeInfo upgrade;
 	GetUpgradeByIndex(iItemIndex, upgrade);
 	
 	// Bad upgrade?
-	if(!IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled])
+	if(!IsValidUpgrade(upgrade) || !upgrade.enabled)
 	{
 		g_iCurrentUpgradeTarget[client] = -1;
 		ShowPlayerUpgradeManageMenu(client);
@@ -908,7 +909,7 @@ void ShowPlayerUpgradeLevelAddMenu(int client)
 	}
 	
 	char sTranslatedName[MAX_UPGRADE_NAME_LENGTH];
-	GetUpgradeTranslatedName(client, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
+	GetUpgradeTranslatedName(client, upgrade.index, sTranslatedName, sizeof(sTranslatedName));
 	
 	Menu hMenu = new Menu(Menu_HandlePlayerUpgradeLevelAdd);
 	hMenu.ExitBackButton = true;
@@ -918,7 +919,7 @@ void ShowPlayerUpgradeLevelAddMenu(int client)
 		Format(sBuffer, sizeof(sBuffer), "%T", "Add player upgrade level", client);
 	else
 		Format(sBuffer, sizeof(sBuffer), "%T", "Set player upgrade level to max", client);
-	hMenu.SetTitle("%T\n%s\n%T", "Change player upgrade level", client, g_iCurrentMenuTarget[client], sBuffer, "Current player upgrade level", client, sTranslatedName, GetClientPurchasedUpgradeLevel(g_iCurrentMenuTarget[client], iItemIndex), upgrade[UPGR_maxLevel]);
+	hMenu.SetTitle("%T\n%s\n%T", "Change player upgrade level", client, g_iCurrentMenuTarget[client], sBuffer, "Current player upgrade level", client, sTranslatedName, GetClientPurchasedUpgradeLevel(g_iCurrentMenuTarget[client], iItemIndex), upgrade.maxLevel);
 	
 	
 	if (CheckCommandAccess(client, "smrpg_giveupgrade", ADMFLAG_ROOT) || CheckCommandAccess(client, "smrpg_setupgradelvl", ADMFLAG_ROOT))
@@ -959,12 +960,12 @@ public int Menu_HandlePlayerUpgradeLevelAdd(Menu menu, MenuAction action, int pa
 		char sInfo[32];
 		menu.GetItem(param2, sInfo, sizeof(sInfo));
 		
-		int upgrade[InternalUpgradeInfo];
+		InternalUpgradeInfo upgrade;
 		int iUpgradeIndex = g_iCurrentUpgradeTarget[param1];
 		GetUpgradeByIndex(iUpgradeIndex, upgrade);
 		
 		// Bad upgrade?
-		if(!IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled])
+		if(!IsValidUpgrade(upgrade) || !upgrade.enabled)
 		{
 			g_iCurrentUpgradeTarget[param1] = -1;
 			ShowPlayerUpgradeManageMenu(param1);
@@ -982,14 +983,14 @@ public int Menu_HandlePlayerUpgradeLevelAdd(Menu menu, MenuAction action, int pa
 				while(GiveClientUpgrade(iTarget, iUpgradeIndex))
 				{
 				}
-				LogAction(param1, iTarget, "%L gave %L the maximal level of upgrade %s at no charge. Upgrade level changed from %d to %d.", param1, iTarget, upgrade[UPGR_name], iOldLevel, GetClientPurchasedUpgradeLevel(iTarget, iUpgradeIndex));
+				LogAction(param1, iTarget, "%L gave %L the maximal level of upgrade %s at no charge. Upgrade level changed from %d to %d.", param1, iTarget, upgrade.name, iOldLevel, GetClientPurchasedUpgradeLevel(iTarget, iUpgradeIndex));
 			}
 			else if(StrEqual(sInfo, "forcebuy"))
 			{
 				while(BuyClientUpgrade(iTarget, iUpgradeIndex))
 				{
 				}
-				LogAction(param1, iTarget, "%L forced %L to buy as many levels of upgrade %s he can afford. Upgrade level changed from %d to %d and player earned %d credits.", param1, iTarget, upgrade[UPGR_name], iOldLevel, GetClientPurchasedUpgradeLevel(iTarget, iUpgradeIndex));
+				LogAction(param1, iTarget, "%L forced %L to buy as many levels of upgrade %s he can afford. Upgrade level changed from %d to %d and player earned %d credits.", param1, iTarget, upgrade.name, iOldLevel, GetClientPurchasedUpgradeLevel(iTarget, iUpgradeIndex));
 			}
 		}
 		else if (g_iClientUpgradeChangeMode[param1] == UpgradeChange_Add)
@@ -997,7 +998,7 @@ public int Menu_HandlePlayerUpgradeLevelAdd(Menu menu, MenuAction action, int pa
 			if(StrEqual(sInfo, "givefree"))
 			{
 				GiveClientUpgrade(iTarget, iUpgradeIndex);
-				LogAction(param1, iTarget, "%L gave %L one level of upgrade %s at no charge. Upgrade level changed from %d to %d.", param1, iTarget, upgrade[UPGR_name], iOldLevel, GetClientPurchasedUpgradeLevel(iTarget, iUpgradeIndex));
+				LogAction(param1, iTarget, "%L gave %L one level of upgrade %s at no charge. Upgrade level changed from %d to %d.", param1, iTarget, upgrade.name, iOldLevel, GetClientPurchasedUpgradeLevel(iTarget, iUpgradeIndex));
 			}
 			else if(StrEqual(sInfo, "forcebuy"))
 			{
@@ -1005,14 +1006,14 @@ public int Menu_HandlePlayerUpgradeLevelAdd(Menu menu, MenuAction action, int pa
 				if(iCost > GetClientCredits(iTarget))
 				{
 					char sTranslatedName[MAX_UPGRADE_NAME_LENGTH];
-					GetUpgradeTranslatedName(param1, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
+					GetUpgradeTranslatedName(param1, upgrade.index, sTranslatedName, sizeof(sTranslatedName));
 
 					Client_PrintToChat(param1, false, "{OG}SM:RPG{N} > {G}%T", "Admin force buy insufficient funds", param1, iTarget, sTranslatedName, GetClientCredits(iTarget), iCost);
 				}
 				else
 				{
 					BuyClientUpgrade(iTarget, iUpgradeIndex);
-					LogAction(param1, iTarget, "%L forced %L to buy one level of upgrade %s. Upgrade level changed from %d to %d.", param1, iTarget, upgrade[UPGR_name], iOldLevel, GetClientPurchasedUpgradeLevel(iTarget, iUpgradeIndex));
+					LogAction(param1, iTarget, "%L forced %L to buy one level of upgrade %s. Upgrade level changed from %d to %d.", param1, iTarget, upgrade.name, iOldLevel, GetClientPurchasedUpgradeLevel(iTarget, iUpgradeIndex));
 				}
 			}
 		}
@@ -1054,7 +1055,7 @@ void ShowUpgradeListMenu(int client)
 	hMenu.SetTitle("SM:RPG > %T", "Manage upgrades", client);
 	
 	int iSize = GetUpgradeCount();
-	int upgrade[InternalUpgradeInfo];
+	InternalUpgradeInfo upgrade;
 	char sTranslatedName[MAX_UPGRADE_NAME_LENGTH], sIndex[8];
 	for(int i=0;i<iSize;i++)
 	{
@@ -1064,7 +1065,7 @@ void ShowUpgradeListMenu(int client)
 		if(!IsValidUpgrade(upgrade))
 			continue;
 		
-		GetUpgradeTranslatedName(client, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
+		GetUpgradeTranslatedName(client, upgrade.index, sTranslatedName, sizeof(sTranslatedName));
 		
 		IntToString(i, sIndex, sizeof(sIndex));
 		hMenu.AddItem(sIndex, sTranslatedName);
@@ -1104,7 +1105,7 @@ public int Menu_HandleSelectUpgrade(Menu menu, MenuAction action, int param1, in
 
 void ShowUpgradeManageMenu(int client)
 {
-	int upgrade[InternalUpgradeInfo];
+	InternalUpgradeInfo upgrade;
 	int iItemIndex = g_iCurrentUpgradeTarget[client];
 	GetUpgradeByIndex(iItemIndex, upgrade);
 	
@@ -1117,14 +1118,14 @@ void ShowUpgradeManageMenu(int client)
 	}
 	
 	char sTranslatedName[MAX_UPGRADE_NAME_LENGTH];
-	GetUpgradeTranslatedName(client, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
+	GetUpgradeTranslatedName(client, upgrade.index, sTranslatedName, sizeof(sTranslatedName));
 	
 	Menu hMenu = new Menu(Menu_HandleUpgradeDetails);
 	hMenu.ExitBackButton = true;
-	hMenu.SetTitle("%T > %s\n%T", "Manage upgrades", client, sTranslatedName, "Upgrade short name", client, upgrade[UPGR_shortName]);
+	hMenu.SetTitle("%T > %s\n%T", "Manage upgrades", client, sTranslatedName, "Upgrade short name", client, upgrade.shortName);
 	
 	char sBuffer[256];
-	if(upgrade[UPGR_enabled])
+	if(upgrade.enabled)
 		Format(sBuffer, sizeof(sBuffer), "%T", "Admin disable upgrade", client);
 	else
 		Format(sBuffer, sizeof(sBuffer), "%T", "Admin enable upgrade", client);
@@ -1132,36 +1133,36 @@ void ShowUpgradeManageMenu(int client)
 	
 	if(!g_hCVIgnoreLevelBarrier.BoolValue)
 	{
-		Format(sBuffer, sizeof(sBuffer), "%T", "Admin upgrade info maxlevel barrier", client, upgrade[UPGR_maxLevelBarrier]);
+		Format(sBuffer, sizeof(sBuffer), "%T", "Admin upgrade info maxlevel barrier", client, upgrade.maxLevelBarrier);
 		hMenu.AddItem("", sBuffer, ITEMDRAW_DISABLED);
 	}
 	
-	Format(sBuffer, sizeof(sBuffer), "%T", "Admin upgrade info maxlevel", client, upgrade[UPGR_maxLevel]);
+	Format(sBuffer, sizeof(sBuffer), "%T", "Admin upgrade info maxlevel", client, upgrade.maxLevel);
 	hMenu.AddItem("maxlevel", sBuffer);
 	
-	Format(sBuffer, sizeof(sBuffer), "%T", "Admin upgrade info cost", client, upgrade[UPGR_startCost]);
+	Format(sBuffer, sizeof(sBuffer), "%T", "Admin upgrade info cost", client, upgrade.startCost);
 	hMenu.AddItem("cost", sBuffer);
 	
-	Format(sBuffer, sizeof(sBuffer), "%T", "Admin upgrade info increase cost", client, upgrade[UPGR_incCost]);
+	Format(sBuffer, sizeof(sBuffer), "%T", "Admin upgrade info increase cost", client, upgrade.incCost);
 	hMenu.AddItem("icost", sBuffer);
 	
 	char sTeamlock[128] = "None";
-	if(upgrade[UPGR_teamlock] >= 1 && upgrade[UPGR_teamlock] < GetTeamCount())
+	if(upgrade.teamlock >= 1 && upgrade.teamlock < GetTeamCount())
 	{
-		GetTeamName(upgrade[UPGR_teamlock], sTeamlock, sizeof(sTeamlock));
+		GetTeamName(upgrade.teamlock, sTeamlock, sizeof(sTeamlock));
 	}
 	Format(sBuffer, sizeof(sBuffer), "%T", "Admin upgrade info teamlock", client, sTeamlock);
 	hMenu.AddItem("teamlock", sBuffer);
 	
-	if(upgrade[UPGR_visualsConvar] != null)
+	if(upgrade.visualsConvar != null)
 	{
-		Format(sBuffer, sizeof(sBuffer), "%T", "Admin upgrade info visual effects", client, upgrade[UPGR_enableVisuals]?"On":"Off");
+		Format(sBuffer, sizeof(sBuffer), "%T", "Admin upgrade info visual effects", client, upgrade.enableVisuals?"On":"Off");
 		hMenu.AddItem("visuals", sBuffer);
 	}
 	
-	if(upgrade[UPGR_soundsConvar] != null)
+	if(upgrade.soundsConvar != null)
 	{
-		Format(sBuffer, sizeof(sBuffer), "%T", "Admin upgrade info sound effects", client, upgrade[UPGR_enableSounds]?"On":"Off");
+		Format(sBuffer, sizeof(sBuffer), "%T", "Admin upgrade info sound effects", client, upgrade.enableSounds?"On":"Off");
 		hMenu.AddItem("sounds", sBuffer);
 	}
 	
@@ -1184,7 +1185,7 @@ public int Menu_HandleUpgradeDetails(Menu menu, MenuAction action, int param1, i
 	}
 	else if(action == MenuAction_Select)
 	{
-		int upgrade[InternalUpgradeInfo];
+		InternalUpgradeInfo upgrade;
 		GetUpgradeByIndex(g_iCurrentUpgradeTarget[param1], upgrade);
 	
 		// Bad upgrade?
@@ -1200,15 +1201,15 @@ public int Menu_HandleUpgradeDetails(Menu menu, MenuAction action, int param1, i
 		
 		if(StrEqual(sInfo, "enable"))
 		{
-			if(upgrade[UPGR_enabled])
+			if(upgrade.enabled)
 			{
-				upgrade[UPGR_enableConvar].SetBool(false);
-				LogAction(param1, -1, "%L disabled upgrade %s temporarily.", param1, upgrade[UPGR_name]);
+				upgrade.enableConvar.SetBool(false);
+				LogAction(param1, -1, "%L disabled upgrade %s temporarily.", param1, upgrade.name);
 			}
 			else
 			{
-				upgrade[UPGR_enableConvar].SetBool(true);
-				LogAction(param1, -1, "%L enabled upgrade %s temporarily.", param1, upgrade[UPGR_name]);
+				upgrade.enableConvar.SetBool(true);
+				LogAction(param1, -1, "%L enabled upgrade %s temporarily.", param1, upgrade.name);
 			}
 			ShowUpgradeManageMenu(param1);
 		}
@@ -1226,7 +1227,7 @@ public int Menu_HandleUpgradeDetails(Menu menu, MenuAction action, int param1, i
 		}
 		else if(StrEqual(sInfo, "teamlock"))
 		{
-			int iTeamlock = upgrade[UPGR_teamlock];
+			int iTeamlock = upgrade.teamlock;
 			iTeamlock++;
 			if(iTeamlock <= 1)
 				iTeamlock = 2; // Skip the spectator team..
@@ -1238,35 +1239,35 @@ public int Menu_HandleUpgradeDetails(Menu menu, MenuAction action, int param1, i
 			if(iTeamlock > 1)
 				GetTeamName(iTeamlock, sTeam, sizeof(sTeam));
 			
-			upgrade[UPGR_teamlockConvar].SetInt(iTeamlock);
-			LogAction(param1, -1, "%L toggled the teamlock on upgrade %s temporarily to restrict to team \"%s\".", param1, upgrade[UPGR_name], sTeam);
+			upgrade.teamlockConvar.SetInt(iTeamlock);
+			LogAction(param1, -1, "%L toggled the teamlock on upgrade %s temporarily to restrict to team \"%s\".", param1, upgrade.name, sTeam);
 			ShowUpgradeManageMenu(param1);
 		}
 		else if(StrEqual(sInfo, "visuals"))
 		{
-			if(upgrade[UPGR_enableVisuals])
+			if(upgrade.enableVisuals)
 			{
-				upgrade[UPGR_visualsConvar].SetBool(false);
-				LogAction(param1, -1, "%L disabled upgrade %s's visual effects temporarily.", param1, upgrade[UPGR_name]);
+				upgrade.visualsConvar.SetBool(false);
+				LogAction(param1, -1, "%L disabled upgrade %s's visual effects temporarily.", param1, upgrade.name);
 			}
 			else
 			{
-				upgrade[UPGR_visualsConvar].SetBool(true);
-				LogAction(param1, -1, "%L enabled upgrade %s's visual effects temporarily.", param1, upgrade[UPGR_name]);
+				upgrade.visualsConvar.SetBool(true);
+				LogAction(param1, -1, "%L enabled upgrade %s's visual effects temporarily.", param1, upgrade.name);
 			}
 			ShowUpgradeManageMenu(param1);
 		}
 		else if(StrEqual(sInfo, "sounds"))
 		{
-			if(upgrade[UPGR_enableSounds])
+			if(upgrade.enableSounds)
 			{
-				upgrade[UPGR_soundsConvar].SetBool(false);
-				LogAction(param1, -1, "%L disabled upgrade %s's sound effects temporarily.", param1, upgrade[UPGR_name]);
+				upgrade.soundsConvar.SetBool(false);
+				LogAction(param1, -1, "%L disabled upgrade %s's sound effects temporarily.", param1, upgrade.name);
 			}
 			else
 			{
-				upgrade[UPGR_soundsConvar].SetBool(true);
-				LogAction(param1, -1, "%L enabled upgrade %s's sound effects temporarily.", param1, upgrade[UPGR_name]);
+				upgrade.soundsConvar.SetBool(true);
+				LogAction(param1, -1, "%L enabled upgrade %s's sound effects temporarily.", param1, upgrade.name);
 			}
 			ShowUpgradeManageMenu(param1);
 		}
@@ -1275,7 +1276,7 @@ public int Menu_HandleUpgradeDetails(Menu menu, MenuAction action, int param1, i
 
 void ShowUpgradePropertyChangeMenu(int client, ChangeUpgradeProperty prop)
 {
-	int upgrade[InternalUpgradeInfo];
+	InternalUpgradeInfo upgrade;
 	int iItemIndex = g_iCurrentUpgradeTarget[client];
 	GetUpgradeByIndex(iItemIndex, upgrade);
 	
@@ -1289,26 +1290,26 @@ void ShowUpgradePropertyChangeMenu(int client, ChangeUpgradeProperty prop)
 	}
 	
 	char sTranslatedName[MAX_UPGRADE_NAME_LENGTH];
-	GetUpgradeTranslatedName(client, upgrade[UPGR_index], sTranslatedName, sizeof(sTranslatedName));
+	GetUpgradeTranslatedName(client, upgrade.index, sTranslatedName, sizeof(sTranslatedName));
 	
 	Menu hMenu = new Menu(Menu_HandlePropertyChange);
 	hMenu.ExitBackButton = true;
 	
 	char sBuffer[512];
-	Format(sBuffer, sizeof(sBuffer), "%T > %s\n%T\n", "Manage upgrades", client, sTranslatedName, "Upgrade short name", client, upgrade[UPGR_shortName]);
+	Format(sBuffer, sizeof(sBuffer), "%T > %s\n%T\n", "Manage upgrades", client, sTranslatedName, "Upgrade short name", client, upgrade.shortName);
 	switch(prop)
 	{
 		case ChangeProp_Maxlevel:
 		{
-			Format(sBuffer, sizeof(sBuffer), "%s%T", sBuffer, "Admin upgrades change maxlevel", client, upgrade[UPGR_maxLevel]);
+			Format(sBuffer, sizeof(sBuffer), "%s%T", sBuffer, "Admin upgrades change maxlevel", client, upgrade.maxLevel);
 		}
 		case ChangeProp_Cost:
 		{
-			Format(sBuffer, sizeof(sBuffer), "%s%T", sBuffer, "Admin upgrades change start cost", client, upgrade[UPGR_startCost]);
+			Format(sBuffer, sizeof(sBuffer), "%s%T", sBuffer, "Admin upgrades change start cost", client, upgrade.startCost);
 		}
 		case ChangeProp_Icost:
 		{
-			Format(sBuffer, sizeof(sBuffer), "%s%T", sBuffer, "Admin upgrades change increasing cost", client, upgrade[UPGR_incCost]);
+			Format(sBuffer, sizeof(sBuffer), "%s%T", sBuffer, "Admin upgrades change increasing cost", client, upgrade.incCost);
 		}
 	}
 	
@@ -1345,7 +1346,7 @@ public int Menu_HandlePropertyChange(Menu menu, MenuAction action, int param1, i
 	}
 	else if(action == MenuAction_Select)
 	{
-		int upgrade[InternalUpgradeInfo];
+		InternalUpgradeInfo upgrade;
 		GetUpgradeByIndex(g_iCurrentUpgradeTarget[param1], upgrade);
 	
 		// Bad upgrade?
@@ -1365,30 +1366,30 @@ public int Menu_HandlePropertyChange(Menu menu, MenuAction action, int param1, i
 		{
 			case ChangeProp_Maxlevel:
 			{
-				int iValue = upgrade[UPGR_maxLevel] + iChange;
-				int iMaxLevelBarrier = upgrade[UPGR_maxLevelBarrier];
+				int iValue = upgrade.maxLevel + iChange;
+				int iMaxLevelBarrier = upgrade.maxLevelBarrier;
 				if(iValue > 0 && (iMaxLevelBarrier <= 0 || iValue <= iMaxLevelBarrier || g_hCVIgnoreLevelBarrier.BoolValue))
 				{
-					upgrade[UPGR_maxLevelConvar].SetInt(iValue);
-					LogAction(param1, -1, "%L changed maxlevel of upgrade %s temporarily from %d to %d.", param1, upgrade[UPGR_name], upgrade[UPGR_maxLevel], iValue);
+					upgrade.maxLevelConvar.SetInt(iValue);
+					LogAction(param1, -1, "%L changed maxlevel of upgrade %s temporarily from %d to %d.", param1, upgrade.name, upgrade.maxLevel, iValue);
 				}
 			}
 			case ChangeProp_Cost:
 			{
-				int iValue = upgrade[UPGR_startCost] + iChange;
+				int iValue = upgrade.startCost + iChange;
 				if(iValue >= 0)
 				{
-					upgrade[UPGR_startCostConvar].SetInt(iValue);
-					LogAction(param1, -1, "%L changed start costs of upgrade %s temporarily from %d to %d.", param1, upgrade[UPGR_name], upgrade[UPGR_startCost], iValue);
+					upgrade.startCostConvar.SetInt(iValue);
+					LogAction(param1, -1, "%L changed start costs of upgrade %s temporarily from %d to %d.", param1, upgrade.name, upgrade.startCost, iValue);
 				}
 			}
 			case ChangeProp_Icost:
 			{
-				int iValue = upgrade[UPGR_incCost] + iChange;
+				int iValue = upgrade.incCost + iChange;
 				if(iValue > 0)
 				{
-					upgrade[UPGR_incCostConvar].SetInt(iValue);
-					LogAction(param1, -1, "%L changed increasing costs of upgrade %s temporarily from %d to %d.", param1, upgrade[UPGR_name], upgrade[UPGR_incCost], iValue);
+					upgrade.incCostConvar.SetInt(iValue);
+					LogAction(param1, -1, "%L changed increasing costs of upgrade %s temporarily from %d to %d.", param1, upgrade.name, upgrade.incCost, iValue);
 				}
 			}
 		}

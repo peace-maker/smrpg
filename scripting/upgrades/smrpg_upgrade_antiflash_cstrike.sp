@@ -97,9 +97,7 @@ public void Event_OnPlayerBlind(Event event, const char[] name, bool dontBroadca
 		return;
 	
 	// The upgrade is disabled completely?
-	int upgrade[UpgradeInfo];
-	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
-	if(!upgrade[UI_enabled])
+	if(!SMRPG_IsUpgradeEnabled(UPGRADE_SHORTNAME))
 		return;
 	
 	// Are bots allowed to use this upgrade?

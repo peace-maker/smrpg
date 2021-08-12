@@ -469,7 +469,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 	{
 		// Reset his afk timer when he uses a weapon.
 		if(buttons & (IN_ATTACK|IN_ATTACK2))
-			g_PlayerAFKInfo[client][AFK_startTime] = 0;
+			g_PlayerAFKInfo[client].startTime = 0;
 		
 		// Remove spawn protection if the player presses any buttons.
 		if(buttons > 0)
@@ -506,7 +506,7 @@ public void Event_OnPlayerSpawn(Event event, const char[] error, bool dontBroadc
 		return;
 	
 	// Save the spawn time so we don't count the new spawn position as if the player moved himself
-	g_PlayerAFKInfo[client][AFK_spawnTime] = GetTime();
+	g_PlayerAFKInfo[client].spawnTime = GetTime();
 	// Protect him and don't give any experience to actions against him until he presses some button.
 	g_bPlayerSpawnProtected[client] = true;
 }
@@ -520,7 +520,7 @@ public void Event_OnPlayerDeath(Event event, const char[] error, bool dontBroadc
 		return;
 	
 	// Save when the player died.
-	g_PlayerAFKInfo[victim][AFK_deathTime] = GetTime();
+	g_PlayerAFKInfo[victim].deathTime = GetTime();
 	
 	if(attacker <= 0)
 		return;

@@ -220,9 +220,9 @@ public void Hook_OnWeaponDropPost(int client, int weapon)
 	if(!SMRPG_IsEnabled())
 		return;
 	
-	int upgrade[UpgradeInfo];
+	UpgradeInfo upgrade;
 	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
-	if(!upgrade[UI_enabled])
+	if(!upgrade.enabled)
 		return;
 	
 	// Restore the original game's default maxclip1, if the weapon currently has more ammo loaded.
@@ -278,9 +278,7 @@ public Action Hook_OnReload(int weapon)
 	if(!SMRPG_IsEnabled())
 		return Plugin_Continue;
 	
-	int upgrade[UpgradeInfo];
-	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
-	if(!upgrade[UI_enabled])
+	if(!SMRPG_IsUpgradeEnabled(UPGRADE_SHORTNAME))
 		return Plugin_Continue;
 	
 	// Are bots allowed to use this upgrade?
@@ -333,9 +331,7 @@ public void Hook_OnReloadPost(int weapon, bool bSuccessful)
 	if(!SMRPG_IsEnabled())
 		return;
 	
-	int upgrade[UpgradeInfo];
-	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
-	if(!upgrade[UI_enabled])
+	if(!SMRPG_IsUpgradeEnabled(UPGRADE_SHORTNAME))
 		return;
 	
 	// Are bots allowed to use this upgrade?
@@ -632,9 +628,7 @@ bool IsUpgradeActive(int client)
 	if(!SMRPG_IsEnabled())
 		return false;
 	
-	int upgrade[UpgradeInfo];
-	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
-	if(!upgrade[UI_enabled])
+	if(!SMRPG_IsUpgradeEnabled(UPGRADE_SHORTNAME))
 		return false;
 	
 	// Are bots allowed to use this upgrade?

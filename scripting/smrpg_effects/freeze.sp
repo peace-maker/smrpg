@@ -14,11 +14,11 @@ Handle g_hFreezePlugin[MAXPLAYERS+1];
 float g_fLimitDamage[MAXPLAYERS+1];
 char g_sUpgradeName[MAXPLAYERS+1][MAX_UPGRADE_SHORTNAME_LENGTH];
 
-enum DamageReductionConfig
+enum struct DamageReductionConfig
 {
-	DRC_MaxDamage,
-	Float:DRC_DmgReduction
-};
+	int maxDamage;
+	float dmgReduction;
+}
 
 StringMap g_hDamageReductionConfig;
 
@@ -118,19 +118,19 @@ Action Freeze_OnTakeDamage(int victim, int &attacker, int &inflictor, float &dam
 	// Get the invidiual setting for this weapon
 	// or the default values for this upgrade, if there is no special setting for the weapon.
 	Action ret = Plugin_Continue;
-	int iDamageReduction[DamageReductionConfig];
-	if(GetDamageReductionConfigForWeapon(sWeapon, g_sUpgradeName[victim], iDamageReduction)
-	|| GetDamageReductionConfigForWeapon("#default", g_sUpgradeName[victim], iDamageReduction))
+	DamageReductionConfig damageReduction;
+	if(GetDamageReductionConfigForWeapon(sWeapon, g_sUpgradeName[victim], damageReduction)
+	|| GetDamageReductionConfigForWeapon("#default", g_sUpgradeName[victim], damageReduction))
 	{
-		//PrintToServer("Weapon config for weapon %s in %s: max_damage: %d, dmg_reduction: %f", sWeapon, g_sUpgradeName[victim], iDamageReduction[DRC_MaxDamage], iDamageReduction[DRC_DmgReduction]);
+		//PrintToServer("Weapon config for weapon %s in %s: max_damage: %d, dmg_reduction: %f", sWeapon, g_sUpgradeName[victim], damageReduction.maxDamage, damageReduction.dmgReduction);
 		// Only use this value, if it was set in the config.
-		if(iDamageReduction[DRC_MaxDamage] >= 0)
-			fLimitDamage = float(iDamageReduction[DRC_MaxDamage]);
+		if(damageReduction.maxDamage >= 0)
+			fLimitDamage = float(damageReduction.maxDamage);
 		
 		// Reduce the damage by x percent.
-		if(iDamageReduction[DRC_DmgReduction] > 0.0)
+		if(damageReduction.dmgReduction > 0.0)
 		{
-			float fReduction = damage * iDamageReduction[DRC_DmgReduction];
+			float fReduction = damage * damageReduction.dmgReduction;
 			damage -= fReduction;
 			ret = Plugin_Changed;
 			
@@ -325,10 +325,10 @@ bool ReadLimitDamageConfig()
 		return true;
 	}
 	
-	int iDamageReduction[DamageReductionConfig];
+	DamageReductionConfig damageReduction;
 	char sWeapon[64], sUpgradeShortname[MAX_UPGRADE_SHORTNAME_LENGTH];
 	StringMap hSubUpgradeMap;
-	int iDefaultSetting[DamageReductionConfig], iBaseUpgradeDefault[DamageReductionConfig], iWeaponDefault[DamageReductionConfig];
+	DamageReductionConfig defaultSetting, baseUpgradeDefault, weaponDefault;
 	do
 	{
 		hKV.GetSectionName(sWeapon, sizeof(sWeapon));
@@ -343,17 +343,17 @@ bool ReadLimitDamageConfig()
 		}
 		
 		// Check the global #default
-		if(!GetDamageReductionConfigForWeapon("#default", "#default", iDefaultSetting))
+		if(!GetDamageReductionConfigForWeapon("#default", "#default", defaultSetting))
 		{
-			iDefaultSetting[DRC_MaxDamage] = -1;
-			iDefaultSetting[DRC_DmgReduction] = -1.0;
+			defaultSetting.maxDamage = -1;
+			defaultSetting.dmgReduction = -1.0;
 		}
 		
 		// Load this current weapon's default section
-		if(!hSubUpgradeMap.GetArray("#default", iWeaponDefault[0], view_as<int>(DamageReductionConfig)))
+		if(!hSubUpgradeMap.GetArray("#default", weaponDefault, sizeof(DamageReductionConfig)))
 		{
-			iWeaponDefault[DRC_MaxDamage] = -1;
-			iWeaponDefault[DRC_DmgReduction] = -1.0;
+			weaponDefault.maxDamage = -1;
+			weaponDefault.dmgReduction = -1.0;
 		}
 		
 		do
@@ -361,38 +361,38 @@ bool ReadLimitDamageConfig()
 			hKV.GetSectionName(sUpgradeShortname, sizeof(sUpgradeShortname));
 			// Load the global default section for this upgrade.
 			if(StrEqual(sUpgradeShortname, "#default", false)
-			|| !GetDamageReductionConfigForWeapon("#default", sUpgradeShortname, iBaseUpgradeDefault))
+			|| !GetDamageReductionConfigForWeapon("#default", sUpgradeShortname, baseUpgradeDefault))
 			{
-				iBaseUpgradeDefault[DRC_MaxDamage] = -1;
-				iBaseUpgradeDefault[DRC_DmgReduction] = -1.0;
+				baseUpgradeDefault.maxDamage = -1;
+				baseUpgradeDefault.dmgReduction = -1.0;
 			}
 			// Use the global default, if there is some value unset in this global upgrade setting.
-			MergeDamageReductionValues(iBaseUpgradeDefault, iDefaultSetting);
+			MergeDamageReductionValues(baseUpgradeDefault, defaultSetting);
 			
 			// Always prefer the #default section of the current weapon.
-			if(iWeaponDefault[DRC_MaxDamage] >= 0)
-				iBaseUpgradeDefault[DRC_MaxDamage] = iWeaponDefault[DRC_MaxDamage];
-			if(iWeaponDefault[DRC_DmgReduction] >= 0.0)
-				iBaseUpgradeDefault[DRC_DmgReduction] = iWeaponDefault[DRC_DmgReduction];
+			if(weaponDefault.maxDamage >= 0)
+				baseUpgradeDefault.maxDamage = weaponDefault.maxDamage;
+			if(weaponDefault.dmgReduction >= 0.0)
+				baseUpgradeDefault.dmgReduction = weaponDefault.dmgReduction;
 			
-			iDamageReduction[DRC_MaxDamage] = hKV.GetNum("max_damage", -1);
-			iDamageReduction[DRC_DmgReduction] = hKV.GetFloat("dmg_reduction", -1.0);
+			damageReduction.maxDamage = hKV.GetNum("max_damage", -1);
+			damageReduction.dmgReduction = hKV.GetFloat("dmg_reduction", -1.0);
 			// Can't reduce 100%!
-			if(iDamageReduction[DRC_DmgReduction] > 1.0)
+			if(damageReduction.dmgReduction > 1.0)
 			{
-				LogError("Invalid \"dmg_reduction\" setting (%f) in upgrade \"%s\" section of weapon \"%s\" in freeze_limit_damage.cfg. Can't be higher than 1.0. Ignoring.", iDamageReduction[DRC_DmgReduction], sUpgradeShortname, sWeapon);
-				iDamageReduction[DRC_DmgReduction] = -1.0;
+				LogError("Invalid \"dmg_reduction\" setting (%f) in upgrade \"%s\" section of weapon \"%s\" in freeze_limit_damage.cfg. Can't be higher than 1.0. Ignoring.", damageReduction.dmgReduction, sUpgradeShortname, sWeapon);
+				damageReduction.dmgReduction = -1.0;
 			}
 			
 			// Use default, if a value is not set in this upgrade's section.
 			if (!StrEqual(sUpgradeShortname, "#default", false))
-				MergeDamageReductionValues(iDamageReduction, iBaseUpgradeDefault);
+				MergeDamageReductionValues(damageReduction, baseUpgradeDefault);
 			else
-				iWeaponDefault = iDamageReduction;
+				weaponDefault = damageReduction;
 			
-			//PrintToServer("Parsed weapon \"%s\" for upgrade \"%s\": max_damage: %d, dmg_reduction: %f (base defaults: max_damage: %d, dmg_reduction: %f)", sWeapon, sUpgradeShortname, iDamageReduction[DRC_MaxDamage], iDamageReduction[DRC_DmgReduction], iBaseUpgradeDefault[DRC_MaxDamage], iBaseUpgradeDefault[DRC_DmgReduction]);
+			//PrintToServer("Parsed weapon \"%s\" for upgrade \"%s\": max_damage: %d, dmg_reduction: %f (base defaults: max_damage: %d, dmg_reduction: %f)", sWeapon, sUpgradeShortname, damageReduction.maxDamage, damageReduction.dmgReduction, baseUpgradeDefault.maxDamage, baseUpgradeDefault.dmgReduction);
 			
-			hSubUpgradeMap.SetArray(sUpgradeShortname, iDamageReduction[0], view_as<int>(DamageReductionConfig), true);
+			hSubUpgradeMap.SetArray(sUpgradeShortname, damageReduction, sizeof(DamageReductionConfig), true);
 			
 		} while(hKV.GotoNextKey());
 		
@@ -407,17 +407,17 @@ bool ReadLimitDamageConfig()
 }
 
 // Use the value of the baseconfig if there is no value set in the current config.
-void MergeDamageReductionValues(int iCurrentConfig[DamageReductionConfig], const int iBaseConfig[DamageReductionConfig])
+void MergeDamageReductionValues(DamageReductionConfig currentConfig, const DamageReductionConfig baseConfig)
 {
-	if(iCurrentConfig[DRC_MaxDamage] < 0)
-		iCurrentConfig[DRC_MaxDamage] = iBaseConfig[DRC_MaxDamage];
-	if(iCurrentConfig[DRC_DmgReduction] < 0.0)
-		iCurrentConfig[DRC_DmgReduction] = iBaseConfig[DRC_DmgReduction];
+	if(currentConfig.maxDamage < 0)
+		currentConfig.maxDamage = baseConfig.maxDamage;
+	if(currentConfig.dmgReduction < 0.0)
+		currentConfig.dmgReduction = baseConfig.dmgReduction;
 }
 
 // Find the DamageReductionConfig of the weapon for an upgrade.
 // Use the #default section of the weapon if there is no extra config for the upgrade.
-bool GetDamageReductionConfigForWeapon(const char[] sWeapon, const char[] sShortname, int iDamageReduction[DamageReductionConfig])
+bool GetDamageReductionConfigForWeapon(const char[] sWeapon, const char[] sShortname, DamageReductionConfig damageReduction)
 {
 	// No section for this weapon?
 	StringMap hSubUpgradeMap;
@@ -425,9 +425,9 @@ bool GetDamageReductionConfigForWeapon(const char[] sWeapon, const char[] sShort
 		return false;
 	
 	// Special settings for this upgrade?
-	if(hSubUpgradeMap.GetArray(sShortname, iDamageReduction[0], view_as<int>(DamageReductionConfig)))
+	if(hSubUpgradeMap.GetArray(sShortname, damageReduction, sizeof(DamageReductionConfig)))
 		return true;
 	
 	// Get at least the default values for this weapon.
-	return hSubUpgradeMap.GetArray("#default", iDamageReduction[0], view_as<int>(DamageReductionConfig));
+	return hSubUpgradeMap.GetArray("#default", damageReduction, sizeof(DamageReductionConfig));
 }

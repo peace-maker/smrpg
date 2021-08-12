@@ -8,14 +8,14 @@
 
 #define MAX_BAN_REASON_LENGTH 256
 
-enum BanInfo
+enum struct BanInfo
 {
-	BanInfo_DatabaseId,
-	BanInfo_AccountId,
-	BanInfo_Time,
-	BanInfo_StartTime,
-	String:BanInfo_Reason[MAX_BAN_REASON_LENGTH]
-};
+	int databaseId;
+	int accountId;
+	int time;
+	int startTime;
+	char reason[MAX_BAN_REASON_LENGTH];
+}
 StringMap g_hBans;
 bool g_bClientBanned[MAXPLAYERS+1];
 int g_iClientBanNotificationCount[MAXPLAYERS+1];
@@ -62,8 +62,8 @@ public void OnPluginStart()
 
 public void OnClientAuthorized(int client, const char[] auth)
 {
-	int iBanInfo[BanInfo];
-	if (GetClientBanInfo(client, iBanInfo))
+	BanInfo banInfo;
+	if (GetClientBanInfo(client, banInfo))
 		g_bClientBanned[client] = true;
 }
 
@@ -474,19 +474,19 @@ public void SQL_LoadBans(Database db, DBResultSet results, const char[] error, a
 	// Remove any bans in our cache. The database always takes higher priority.
 	g_hBans.Clear();
 
-	int iBanInfo[BanInfo];
+	BanInfo banInfo;
 	char sAccountId[64];
 	// SELECT ban_id, steamid, start, length, reason
 	while(results.FetchRow())
 	{
-		iBanInfo[BanInfo_DatabaseId] = results.FetchInt(0);
-		iBanInfo[BanInfo_AccountId] = results.FetchInt(1);
-		iBanInfo[BanInfo_StartTime] = results.FetchInt(2);
-		iBanInfo[BanInfo_Time] = results.FetchInt(3);
-		results.FetchString(4, iBanInfo[BanInfo_Reason], MAX_BAN_REASON_LENGTH);
+		banInfo.databaseId = results.FetchInt(0);
+		banInfo.accountId = results.FetchInt(1);
+		banInfo.startTime = results.FetchInt(2);
+		banInfo.time = results.FetchInt(3);
+		results.FetchString(4, banInfo.reason, MAX_BAN_REASON_LENGTH);
 
-		IntToString(iBanInfo[BanInfo_AccountId], sAccountId, sizeof(sAccountId));
-		g_hBans.SetArray(sAccountId, iBanInfo[0], view_as<int>(BanInfo));
+		IntToString(banInfo.accountId, sAccountId, sizeof(sAccountId));
+		g_hBans.SetArray(sAccountId, banInfo, sizeof(BanInfo));
 	}
 
 	// Check if any connected player is banned.
@@ -495,7 +495,7 @@ public void SQL_LoadBans(Database db, DBResultSet results, const char[] error, a
 		if (!IsClientInGame(i) || IsFakeClient(i) || !IsClientAuthorized(i))
 			continue;
 
-		if (GetClientBanInfo(i, iBanInfo))
+		if (GetClientBanInfo(i, banInfo))
 			g_bClientBanned[i] = true;
 	}
 }
@@ -512,14 +512,14 @@ public void SQL_InsertBan(Database db, DBResultSet results, const char[] error, 
 	IntToString(iAccountId, sAccountId, sizeof(sAccountId));
 
 	// See if this is a new ban and we need to save the ban_id.
-	int iBanInfo[BanInfo];
-	g_hBans.GetArray(sAccountId, iBanInfo[0], view_as<int>(BanInfo));
-	if (iBanInfo[BanInfo_DatabaseId] != -1)
+	BanInfo banInfo;
+	g_hBans.GetArray(sAccountId, banInfo, sizeof(BanInfo));
+	if (banInfo.databaseId != -1)
 		return;
 
 	// Remember the ban id of the ban in the database.
-	iBanInfo[BanInfo_DatabaseId] = results.InsertId;
-	g_hBans.SetArray(sAccountId, iBanInfo[0], view_as<int>(BanInfo));
+	banInfo.databaseId = results.InsertId;
+	g_hBans.SetArray(sAccountId, banInfo, sizeof(BanInfo));
 }
 
 /**
@@ -527,25 +527,25 @@ public void SQL_InsertBan(Database db, DBResultSet results, const char[] error, 
  */
 void BanClientFromRPG(int client, int iTarget, int iTime, const char[] sReason)
 {
-	int iBanInfo[BanInfo];
-	iBanInfo[BanInfo_DatabaseId] = -1;
+	BanInfo banInfo;
+	banInfo.databaseId = -1;
 	// Don't touch the start time of the ban, if the player is currently banned already.
 	// Only change the length of the ban.
-	iBanInfo[BanInfo_StartTime] = GetTime();
+	banInfo.startTime = GetTime();
 
 	if (IsClientBanned(iTarget))
 	{
-		GetClientBanInfo(iTarget, iBanInfo);
-		Client_PrintToChat(client, false, "{OG}SM:RPG{N} > {G}%t", "Already banned, change length", iTarget, iBanInfo[BanInfo_Time], iTime, iBanInfo[BanInfo_Reason]);
+		GetClientBanInfo(iTarget, banInfo);
+		Client_PrintToChat(client, false, "{OG}SM:RPG{N} > {G}%t", "Already banned, change length", iTarget, banInfo.time, iTime, banInfo.reason);
 	}
 
-	iBanInfo[BanInfo_AccountId] = GetSteamAccountID(iTarget);
-	iBanInfo[BanInfo_Time] = iTime;
-	strcopy(iBanInfo[BanInfo_Reason], MAX_BAN_REASON_LENGTH, sReason);
+	banInfo.accountId = GetSteamAccountID(iTarget);
+	banInfo.time = iTime;
+	strcopy(banInfo.reason, MAX_BAN_REASON_LENGTH, sReason);
 
 	char sAccountId[64];
-	IntToString(iBanInfo[BanInfo_AccountId], sAccountId, sizeof(sAccountId));
-	g_hBans.SetArray(sAccountId, iBanInfo[0], view_as<int>(BanInfo));
+	IntToString(banInfo.accountId, sAccountId, sizeof(sAccountId));
+	g_hBans.SetArray(sAccountId, banInfo, sizeof(BanInfo));
 	g_bClientBanned[iTarget] = true;
 
 	LogAction(client, iTarget, "%L banned %L from RPG features (time %d) (reason \"%s\")", client, iTarget, iTime, sReason);
@@ -563,21 +563,21 @@ void BanClientFromRPG(int client, int iTarget, int iTime, const char[] sReason)
 		char sQuery[1024], sName[MAX_NAME_LENGTH], sEscapedName[MAX_NAME_LENGTH*2+1], sEscapedReason[MAX_BAN_REASON_LENGTH*2+1];
 		GetClientName(iTarget, sName, sizeof(sName));
 		g_hDatabase.Escape(sName, sEscapedName, sizeof(sEscapedName));
-		g_hDatabase.Escape(iBanInfo[BanInfo_Reason], sEscapedReason, sizeof(sEscapedReason));
+		g_hDatabase.Escape(banInfo.reason, sEscapedReason, sizeof(sEscapedReason));
 
 		// New ban
-		if (iBanInfo[BanInfo_DatabaseId] == -1)
-			Format(sQuery, sizeof(sQuery), "INSERT INTO `%s` (name, steamid, start, length, reason) VALUES ('%s', %d, %d, %d, '%s')", TBL_BANS, sEscapedName, iBanInfo[BanInfo_AccountId], iBanInfo[BanInfo_StartTime], iBanInfo[BanInfo_Time], sEscapedReason);
+		if (banInfo.databaseId == -1)
+			Format(sQuery, sizeof(sQuery), "INSERT INTO `%s` (name, steamid, start, length, reason) VALUES ('%s', %d, %d, %d, '%s')", TBL_BANS, sEscapedName, banInfo.accountId, banInfo.startTime, banInfo.time, sEscapedReason);
 		else
-			Format(sQuery, sizeof(sQuery), "INSERT INTO `%s` (ban_id, name, steamid, start, length, reason) VALUES (%d, '%s', %d, %d, %d, '%s') ON DUPLICATE KEY UPDATE name=VALUES(name), steamid=VALUES(steamid), start=VALUES(start), length=VALUES(length), reason=VALUES(reason)", TBL_BANS, iBanInfo[BanInfo_DatabaseId], sEscapedName, iBanInfo[BanInfo_AccountId], iBanInfo[BanInfo_StartTime], iBanInfo[BanInfo_Time], sEscapedReason);
-		g_hDatabase.Query(SQL_InsertBan, sQuery, iBanInfo[BanInfo_AccountId]);
+			Format(sQuery, sizeof(sQuery), "INSERT INTO `%s` (ban_id, name, steamid, start, length, reason) VALUES (%d, '%s', %d, %d, %d, '%s') ON DUPLICATE KEY UPDATE name=VALUES(name), steamid=VALUES(steamid), start=VALUES(start), length=VALUES(length), reason=VALUES(reason)", TBL_BANS, banInfo.databaseId, sEscapedName, banInfo.accountId, banInfo.startTime, banInfo.time, sEscapedReason);
+		g_hDatabase.Query(SQL_InsertBan, sQuery, banInfo.accountId);
 	}
 }
 
 void AdminUnbanClientFromRPG(int client, int target)
 {
-	int iBanInfo[BanInfo];
-	GetClientBanInfo(target, iBanInfo);
+	BanInfo banInfo;
+	GetClientBanInfo(target, banInfo);
 
 	UnbanClientFromRPG(target);
 
@@ -585,10 +585,10 @@ void AdminUnbanClientFromRPG(int client, int target)
 	{
 		Client_PrintToChat(client, false, "{OG}SM:RPG{N} > {G}No database connection available. The player might still be banned when the database comes back.");
 	}
-	else if (iBanInfo[BanInfo_DatabaseId] > 0)
+	else if (banInfo.databaseId > 0)
 	{
 		char sQuery[512];
-		Format(sQuery, sizeof(sQuery), "UPDATE `%s` SET unban_time = %d WHERE ban_id = %d", TBL_BANS, GetTime(), iBanInfo[BanInfo_DatabaseId]);
+		Format(sQuery, sizeof(sQuery), "UPDATE `%s` SET unban_time = %d WHERE ban_id = %d", TBL_BANS, GetTime(), banInfo.databaseId);
 		g_hDatabase.Query(SQL_LogError, sQuery);
 	}
 }
@@ -608,30 +608,30 @@ bool IsClientBanned(int client)
 	if (!g_bClientBanned[client])
 		return false;
 
-	int iBanInfo[BanInfo];
-	if (!GetClientBanInfo(client, iBanInfo))
+	BanInfo banInfo;
+	if (!GetClientBanInfo(client, banInfo))
 		return false;
 
 	// Permanent ban.
-	if (!iBanInfo[BanInfo_Time])
+	if (!banInfo.time)
 		return true;
 
 	// Make sure the ban still ends in the future.
-	bool bBanStillValid = (iBanInfo[BanInfo_StartTime] + iBanInfo[BanInfo_Time]*60) > GetTime();
+	bool bBanStillValid = (banInfo.startTime + banInfo.time*60) > GetTime();
 	if (!bBanStillValid)
 		UnbanClientFromRPG(client);
 
 	return bBanStillValid;
 }
 
-bool GetClientBanInfo(int client, int iBanInfo[BanInfo])
+bool GetClientBanInfo(int client, BanInfo banInfo)
 {
 	char sAccountId[64];
 	sAccountId = GetClientAccountIDString(client);
 	if (!sAccountId[0])
 		return false;
 
-	return g_hBans.GetArray(sAccountId, iBanInfo[0], view_as<int>(BanInfo));
+	return g_hBans.GetArray(sAccountId, banInfo, sizeof(BanInfo));
 }
 
 char GetClientAccountIDString(int client)

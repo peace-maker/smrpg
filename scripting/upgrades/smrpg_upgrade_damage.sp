@@ -11,10 +11,10 @@
 ConVar g_hCVDefaultPercent;
 ConVar g_hCVDefaultMaxDamage;
 
-enum WeaponConfig {
-	Float:Weapon_DamageInc,
-	Float:Weapon_MaxIncrease
-};
+enum struct WeaponConfig {
+	float damageInc;
+	float maxIncrease;
+}
 
 StringMap g_hWeaponDamage;
 
@@ -102,9 +102,7 @@ public Action Hook_OnTakeDamage(int victim, int &attacker, int &inflictor, float
 	if(!SMRPG_IsEnabled())
 		return Plugin_Continue;
 	
-	int upgrade[UpgradeInfo];
-	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
-	if(!upgrade[UI_enabled])
+	if(!SMRPG_IsUpgradeEnabled(UPGRADE_SHORTNAME))
 		return Plugin_Continue;
 	
 	// Are bots allowed to use this upgrade?
@@ -171,15 +169,15 @@ bool LoadWeaponConfig()
 	char sWeapon[64];
 	if(hKV.GotoFirstSubKey(false))
 	{
-		int eInfo[WeaponConfig];
+		WeaponConfig info;
 		do
 		{
 			hKV.GetSectionName(sWeapon, sizeof(sWeapon));
 			
-			eInfo[Weapon_DamageInc] = hKV.GetFloat("dmg_increase", -1.0);
-			eInfo[Weapon_MaxIncrease] = hKV.GetFloat("max_additional_dmg", -1.0);
+			info.damageInc = hKV.GetFloat("dmg_increase", -1.0);
+			info.maxIncrease = hKV.GetFloat("max_additional_dmg", -1.0);
 			
-			g_hWeaponDamage.SetArray(sWeapon, eInfo[0], view_as<int>(WeaponConfig));
+			g_hWeaponDamage.SetArray(sWeapon, info, sizeof(WeaponConfig));
 			
 		} while (hKV.GotoNextKey());
 	}
@@ -190,11 +188,11 @@ bool LoadWeaponConfig()
 
 float GetWeaponDamageIncreasePercent(const char[] sWeapon)
 {
-	int eInfo[WeaponConfig];
-	if (g_hWeaponDamage.GetArray(sWeapon, eInfo[0], view_as<int>(WeaponConfig)))
+	WeaponConfig info;
+	if (g_hWeaponDamage.GetArray(sWeapon, info, sizeof(WeaponConfig)))
 	{
-		if (eInfo[Weapon_DamageInc] >= 0.0)
-			return eInfo[Weapon_DamageInc];
+		if (info.damageInc >= 0.0)
+			return info.damageInc;
 	}
 	
 	// Just use the default value
@@ -203,11 +201,11 @@ float GetWeaponDamageIncreasePercent(const char[] sWeapon)
 
 float GetWeaponMaxAdditionalDamage(const char[] sWeapon)
 {
-	int eInfo[WeaponConfig];
-	if (g_hWeaponDamage.GetArray(sWeapon, eInfo[0], view_as<int>(WeaponConfig)))
+	WeaponConfig info;
+	if (g_hWeaponDamage.GetArray(sWeapon, info, sizeof(WeaponConfig)))
 	{
-		if (eInfo[Weapon_MaxIncrease] >= 0.0)
-			return eInfo[Weapon_MaxIncrease];
+		if (info.maxIncrease >= 0.0)
+			return info.maxIncrease;
 	}
 	
 	// Just use the default value

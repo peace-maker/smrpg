@@ -7,8 +7,6 @@ env:
 
 matrix:
     fast_finish: true
-    allow_failures:
-        - env: SMVERSION=1.11
 
 before_install:
     - sudo apt-get update

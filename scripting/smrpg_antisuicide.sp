@@ -9,11 +9,11 @@
 ConVar g_hCVLastAttackSince;
 ConVar g_hCVExpPunish;
 
-enum HitInfo {
-	HI_attacker,
-	Float:HI_damage,
-	HI_lastattack
-};
+enum struct HitInfo {
+	int attacker;
+	float damage;
+	int lastattack;
+}
 
 ArrayList g_hHitInfo[MAXPLAYERS+1];
 
@@ -54,15 +54,13 @@ public void ConVar_VersionChanged(ConVar convar, const char[] oldValue, const ch
  */
 public void OnClientPutInServer(int client)
 {
-	g_hHitInfo[client] = new ArrayList(view_as<int>(HitInfo));
+	g_hHitInfo[client] = new ArrayList(sizeof(HitInfo));
 	SDKHook(client, SDKHook_OnTakeDamagePost, Hook_OnTakeDamagePost);
 }
 
 public void OnClientDisconnect_Post(int client)
 {
-	if(g_hHitInfo[client] != null)
-		CloseHandle(g_hHitInfo[client]);
-	g_hHitInfo[client] = null;
+	delete g_hHitInfo[client];
 }
 
 
@@ -104,18 +102,18 @@ public void Event_OnPlayerDeath(Event event, const char[] name, bool dontBroadca
 	// Find the attacker, who did the most damage
 	SortADTArrayCustom(g_hHitInfo[victim], ADT_SortHitInfoByDamage);
 	
-	int eHitInfo[HitInfo];
-	g_hHitInfo[victim].GetArray(0, eHitInfo[0], view_as<int>(HitInfo));
+	HitInfo hitInfo;
+	g_hHitInfo[victim].GetArray(0, hitInfo, sizeof(HitInfo));
 	
 	// TODO: Give regular kill experience to last attacker.
 	
 	// Take some exp from the selfkiller
 	SortADTArrayCustom(g_hHitInfo[victim], ADT_SortHitInfoByAttacktime);
-	g_hHitInfo[victim].GetArray(0, eHitInfo[0], view_as<int>(HitInfo));
+	g_hHitInfo[victim].GetArray(0, hitInfo, sizeof(HitInfo));
 	
 	// Make sure he got attacked not long ago and might prevented that attacker from earning experience for a kill.
 	int iLastAttackSince = g_hCVLastAttackSince.IntValue;
-	if(iLastAttackSince == 0 || (GetTime() - eHitInfo[HI_lastattack]) < iLastAttackSince)
+	if(iLastAttackSince == 0 || (GetTime() - hitInfo.lastattack) < iLastAttackSince)
 	{
 		int iNeededExp = SMRPG_LevelToExperience(SMRPG_GetClientLevel(victim));
 		int iReducedExp = RoundToCeil(iNeededExp * g_hCVExpPunish.FloatValue);
@@ -138,33 +136,34 @@ public void Hook_OnTakeDamagePost(int victim, int attacker, int inflictor, float
 	if(victim <= 0 || victim > MaxClients || attacker <= 0 || attacker > MaxClients || !IsClientInGame(attacker))
 		return;
 	
-	int eHitInfo[HitInfo], iIndex = -1;
+	HitInfo hitInfo;
+	int iIndex = -1;
 	int iSize = g_hHitInfo[victim].Length;
 	for(int i=0;i<iSize;i++)
 	{
-		g_hHitInfo[victim].GetArray(i, eHitInfo[0], view_as<int>(HitInfo));
+		g_hHitInfo[victim].GetArray(i, hitInfo, sizeof(HitInfo));
 		// Search the old hitinfo of this attacker
-		if(eHitInfo[HI_attacker] != attacker)
+		if(hitInfo.attacker != attacker)
 			continue;
 		
 		iIndex = i;
 		break;
 	}
 	
-	eHitInfo[HI_attacker] = attacker;
-	eHitInfo[HI_lastattack] = GetTime();
+	hitInfo.attacker = attacker;
+	hitInfo.lastattack = GetTime();
 	
 	// First time the attacker attacked this player?
 	if(iIndex == -1)
 	{
-		eHitInfo[HI_damage] = damage;
-		g_hHitInfo[victim].PushArray(eHitInfo[0], view_as<int>(HitInfo));
+		hitInfo.damage = damage;
+		g_hHitInfo[victim].PushArray(hitInfo, sizeof(HitInfo));
 	}
 	// Already damaged him before.
 	else
 	{
-		eHitInfo[HI_damage] += damage;
-		g_hHitInfo[victim].SetArray(iIndex, eHitInfo[0], view_as<int>(HitInfo));
+		hitInfo.damage += damage;
+		g_hHitInfo[victim].SetArray(iIndex, hitInfo, sizeof(HitInfo));
 	}
 }
 
@@ -173,20 +172,20 @@ public void Hook_OnTakeDamagePost(int victim, int attacker, int inflictor, float
  */
 public int ADT_SortHitInfoByDamage(int index1, int index2, Handle array, Handle hndl)
 {
-	int eHitInfo1[HitInfo], eHitInfo2[HitInfo];
+	HitInfo hitInfo1, hitInfo2;
 	ArrayList arrayList = view_as<ArrayList>(array);
-	arrayList.GetArray(index1, eHitInfo1[0], view_as<int>(HitInfo));
-	arrayList.GetArray(index2, eHitInfo2[0], view_as<int>(HitInfo));
+	arrayList.GetArray(index1, hitInfo1, sizeof(HitInfo));
+	arrayList.GetArray(index2, hitInfo2, sizeof(HitInfo));
 	
-	return RoundToCeil(eHitInfo2[HI_damage] - eHitInfo1[HI_damage]);
+	return RoundToCeil(hitInfo2.damage - hitInfo1.damage);
 }
 
 public int ADT_SortHitInfoByAttacktime(int index1, int index2, Handle array, Handle hndl)
 {
-	int eHitInfo1[HitInfo], eHitInfo2[HitInfo];
+	HitInfo hitInfo1, hitInfo2;
 	ArrayList arrayList = view_as<ArrayList>(array);
-	arrayList.GetArray(index1, eHitInfo1[0], view_as<int>(HitInfo));
-	arrayList.GetArray(index2, eHitInfo2[0], view_as<int>(HitInfo));
+	arrayList.GetArray(index1, hitInfo1, sizeof(HitInfo));
+	arrayList.GetArray(index2, hitInfo2, sizeof(HitInfo));
 	
-	return eHitInfo2[HI_lastattack] - eHitInfo1[HI_lastattack];
+	return hitInfo2.lastattack - hitInfo1.lastattack;
 }

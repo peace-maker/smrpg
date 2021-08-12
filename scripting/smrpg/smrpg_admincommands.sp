@@ -58,18 +58,18 @@ public Action Cmd_PlayerInfo(int client, int args)
 	ReplyToCommand(client, "SM:RPG: ----------");
 	ReplyToCommand(client, "SM:RPG %N: ", iTarget);
 	
-	int playerInfo[PlayerInfo];
+	PlayerInfo playerInfo;
 	GetClientRPGInfo(iTarget, playerInfo);
 	
 	char sSteamID[64];
 	GetClientAuthId(iTarget, AuthId_Engine, sSteamID, sizeof(sSteamID));
-	ReplyToCommand(client, "SM:RPG Info: Index: %d, UserID: %d, SteamID: %s, Database ID: %d, AFK: %d", iTarget, GetClientUserId(iTarget), sSteamID, playerInfo[PLR_dbId], IsClientAFK(iTarget));
+	ReplyToCommand(client, "SM:RPG Info: Index: %d, UserID: %d, SteamID: %s, Database ID: %d, AFK: %d", iTarget, GetClientUserId(iTarget), sSteamID, playerInfo.dbId, IsClientAFK(iTarget));
 	
 	ReplyToCommand(client, "SM:RPG Stats: Level: %d, Experience: %d/%d, Credits: %d, Rank: %d/%d", GetClientLevel(iTarget), GetClientExperience(iTarget), Stats_LvlToExp(GetClientLevel(iTarget)), GetClientCredits(iTarget), GetClientRank(iTarget), GetRankCount());
 	
 	ReplyToCommand(client, "SM:RPG Upgrades: ");
 	int iSize = GetUpgradeCount();
-	int upgrade[InternalUpgradeInfo];
+	InternalUpgradeInfo upgrade;
 	char sPermission[30];
 	for(int i=0;i<iSize;i++)
 	{
@@ -78,17 +78,17 @@ public Action Cmd_PlayerInfo(int client, int args)
 			continue;
 		
 		sPermission[0] = 0;
-		if(upgrade[UPGR_adminFlag] > 0)
+		if(upgrade.adminFlag > 0)
 		{
-			GetAdminFlagStringFromBits(upgrade[UPGR_adminFlag], sPermission, sizeof(sPermission));
+			GetAdminFlagStringFromBits(upgrade.adminFlag, sPermission, sizeof(sPermission));
 			Format(sPermission, sizeof(sPermission), " (admflag: %s)", sPermission);
 		}
 		
 		if(!HasAccessToUpgrade(iTarget, upgrade))
 			Format(sPermission, sizeof(sPermission), " NO ACCESS:");
-		else if(upgrade[UPGR_adminFlag] > 0)
+		else if(upgrade.adminFlag > 0)
 			Format(sPermission, sizeof(sPermission), " OK:");
-		ReplyToCommand(client, "SM:RPG - %s%s Level %d (Selected %d)", upgrade[UPGR_name], sPermission, GetClientPurchasedUpgradeLevel(iTarget, i), GetClientSelectedUpgradeLevel(iTarget, i));
+		ReplyToCommand(client, "SM:RPG - %s%s Level %d (Selected %d)", upgrade.name, sPermission, GetClientPurchasedUpgradeLevel(iTarget, i), GetClientSelectedUpgradeLevel(iTarget, i));
 	}
 	ReplyToCommand(client, "SM:RPG: ----------");
 	
@@ -654,7 +654,7 @@ public Action Cmd_ListUpgrades(int client, int args)
 {
 	int iSize = GetUpgradeCount();
 	ReplyToCommand(client, "There are %d upgrades registered.", iSize);
-	int upgrade[InternalUpgradeInfo];
+	InternalUpgradeInfo upgrade;
 	int iUnavailableCount;
 	char sPluginFile[64], sPermissions[30];
 	for(int i=0;i<iSize;i++)
@@ -666,10 +666,10 @@ public Action Cmd_ListUpgrades(int client, int args)
 			continue;
 		}
 		
-		GetPluginFilename(upgrade[UPGR_plugin], sPluginFile, sizeof(sPluginFile));
-		GetAdminFlagStringFromBits(upgrade[UPGR_adminFlag], sPermissions, sizeof(sPermissions));
+		GetPluginFilename(upgrade.plugin, sPluginFile, sizeof(sPluginFile));
+		GetAdminFlagStringFromBits(upgrade.adminFlag, sPermissions, sizeof(sPermissions));
 		
-		ReplyToCommand(client, "%d. [%s] %s (%s). Maxlevel: %d, maxlevel barrier: %d, start cost: %d, increasing cost: %d, adminflag: %s, plugin: %s", i-iUnavailableCount, (upgrade[UPGR_enabled] ? "ON" : "OFF"), upgrade[UPGR_name], upgrade[UPGR_shortName], upgrade[UPGR_maxLevel], upgrade[UPGR_maxLevelBarrier], upgrade[UPGR_startCost], upgrade[UPGR_incCost], sPermissions, sPluginFile);
+		ReplyToCommand(client, "%d. [%s] %s (%s). Maxlevel: %d, maxlevel barrier: %d, start cost: %d, increasing cost: %d, adminflag: %s, plugin: %s", i-iUnavailableCount, (upgrade.enabled ? "ON" : "OFF"), upgrade.name, upgrade.shortName, upgrade.maxLevel, upgrade.maxLevelBarrier, upgrade.startCost, upgrade.incCost, sPermissions, sPluginFile);
 	}
 	if(iUnavailableCount > 0)
 	{
@@ -696,7 +696,7 @@ public Action Cmd_SetUpgradeLvl(int client, int args)
 	GetCmdArg(2, sUpgrade, sizeof(sUpgrade));
 	TrimString(sUpgrade);
 	StripQuotes(sUpgrade);
-	int upgrade[InternalUpgradeInfo];
+	InternalUpgradeInfo upgrade;
 	if(!GetUpgradeByShortname(sUpgrade, upgrade) || !IsValidUpgrade(upgrade))
 	{
 		ReplyToCommand(client, "SM:RPG: There is no upgrade with name \"%s\".", sUpgrade);
@@ -709,8 +709,8 @@ public Action Cmd_SetUpgradeLvl(int client, int args)
 	
 	// Make sure we're not over the maxlevel
 	int iLevel = StringToInt(sLevel);
-	if(StrEqual(sLevel, "max", false) || iLevel > upgrade[UPGR_maxLevel])
-		iLevel = upgrade[UPGR_maxLevel];
+	if(StrEqual(sLevel, "max", false) || iLevel > upgrade.maxLevel)
+		iLevel = upgrade.maxLevel;
 	
 	if(iLevel < 0)
 	{
@@ -718,7 +718,7 @@ public Action Cmd_SetUpgradeLvl(int client, int args)
 		return Plugin_Handled;
 	}
 	
-	int iIndex = upgrade[UPGR_index];
+	int iIndex = upgrade.index;
 	
 	char sTargetName[MAX_TARGET_LENGTH];
 	int iTargetList[MAXPLAYERS], iTargetCount;
@@ -762,17 +762,17 @@ public Action Cmd_SetUpgradeLvl(int client, int args)
 			}
 		}
 		
-		LogAction(client, iTargetList[i], "%L set %L level of upgrade %s from %d to %d at no charge.", client, iTargetList[i], upgrade[UPGR_name], iLastOldUpgradeLevel, GetClientPurchasedUpgradeLevel(iTargetList[i], iIndex));
+		LogAction(client, iTargetList[i], "%L set %L level of upgrade %s from %d to %d at no charge.", client, iTargetList[i], upgrade.name, iLastOldUpgradeLevel, GetClientPurchasedUpgradeLevel(iTargetList[i], iIndex));
 	}
 	
 	if(tn_is_ml)
 	{
-		LogAction(client, -1, "%L set level of upgrade %s to %d for %T (%d players).", client, upgrade[UPGR_name], iLevel, sTargetName, LANG_SERVER, iTargetCount);
-		ReplyToCommand(client, "SM:RPG setupgradelvl: Set level upgrade %s to %d for %t (%d players).", upgrade[UPGR_name], iLevel, sTargetName, iTargetCount);
+		LogAction(client, -1, "%L set level of upgrade %s to %d for %T (%d players).", client, upgrade.name, iLevel, sTargetName, LANG_SERVER, iTargetCount);
+		ReplyToCommand(client, "SM:RPG setupgradelvl: Set level upgrade %s to %d for %t (%d players).", upgrade.name, iLevel, sTargetName, iTargetCount);
 	}
 	else
 	{
-		ReplyToCommand(client, "SM:RPG setupgradelvl: %N now has %s level %d (previously level %d)", iTargetList[0], upgrade[UPGR_name], GetClientPurchasedUpgradeLevel(iTargetList[0], iIndex), iLastOldUpgradeLevel);
+		ReplyToCommand(client, "SM:RPG setupgradelvl: %N now has %s level %d (previously level %d)", iTargetList[0], upgrade.name, GetClientPurchasedUpgradeLevel(iTargetList[0], iIndex), iLastOldUpgradeLevel);
 	}
 	
 	return Plugin_Handled;
@@ -794,14 +794,14 @@ public Action Cmd_GiveUpgrade(int client, int args)
 	GetCmdArg(2, sUpgrade, sizeof(sUpgrade));
 	TrimString(sUpgrade);
 	StripQuotes(sUpgrade);
-	int upgrade[InternalUpgradeInfo];
+	InternalUpgradeInfo upgrade;
 	if(!GetUpgradeByShortname(sUpgrade, upgrade) || !IsValidUpgrade(upgrade))
 	{
 		ReplyToCommand(client, "SM:RPG giveupgrade: There is no upgrade with name \"%s\".", sUpgrade);
 		return Plugin_Handled;
 	}
 	
-	int iIndex = upgrade[UPGR_index];
+	int iIndex = upgrade.index;
 	
 	char sTargetName[MAX_TARGET_LENGTH];
 	int iTargetList[MAXPLAYERS], iTargetCount;
@@ -826,7 +826,7 @@ public Action Cmd_GiveUpgrade(int client, int args)
 	{
 		iLastOldUpgradeLevel = GetClientPurchasedUpgradeLevel(iTargetList[i], iIndex);
 		
-		if(iLastOldUpgradeLevel >= upgrade[UPGR_maxLevel])
+		if(iLastOldUpgradeLevel >= upgrade.maxLevel)
 		{
 			iCountAlreadyMaxed++;
 			continue;
@@ -838,13 +838,13 @@ public Action Cmd_GiveUpgrade(int client, int args)
 			continue;
 		}
 		
-		LogAction(client, iTargetList[i], "%L gave %L a level of upgrade %s at no charge. It changed from level %d to %d.", client, iTargetList[i], upgrade[UPGR_name], iLastOldUpgradeLevel, GetClientPurchasedUpgradeLevel(iTargetList[i], iIndex));
+		LogAction(client, iTargetList[i], "%L gave %L a level of upgrade %s at no charge. It changed from level %d to %d.", client, iTargetList[i], upgrade.name, iLastOldUpgradeLevel, GetClientPurchasedUpgradeLevel(iTargetList[i], iIndex));
 	}
 	
 	if(tn_is_ml)
 	{
-		LogAction(client, -1, "%L gave a level of upgrade %s to %T (%d players).", client, upgrade[UPGR_name], sTargetName, LANG_SERVER, iTargetCount);
-		ReplyToCommand(client, "SM:RPG giveupgrade: Gave a level of upgrade %s to %t (%d players).", upgrade[UPGR_name], sTargetName, iTargetCount);
+		LogAction(client, -1, "%L gave a level of upgrade %s to %T (%d players).", client, upgrade.name, sTargetName, LANG_SERVER, iTargetCount);
+		ReplyToCommand(client, "SM:RPG giveupgrade: Gave a level of upgrade %s to %t (%d players).", upgrade.name, sTargetName, iTargetCount);
 		if(iCountAlreadyMaxed > 0)
 			ReplyToCommand(client, "SM:RPG giveupgrade: %d players already had it on max.", iCountAlreadyMaxed);
 		if(iFailedCount > 0)
@@ -861,11 +861,11 @@ public Action Cmd_GiveUpgrade(int client, int args)
 	else
 	{
 		if(iCountAlreadyMaxed > 0)
-			ReplyToCommand(client, "SM:RPG giveupgrade: %N has the maximum level for %s (level %d)", iTargetList[0], upgrade[UPGR_name], iLastOldUpgradeLevel);
+			ReplyToCommand(client, "SM:RPG giveupgrade: %N has the maximum level for %s (level %d)", iTargetList[0], upgrade.name, iLastOldUpgradeLevel);
 		else if(iFailedCount > 0)
-			ReplyToCommand(client, "SM:RPG giveupgrade: Tried to give %N a level for upgrade %s, but it refused to level up.", iTargetList[0], upgrade[UPGR_name]);
+			ReplyToCommand(client, "SM:RPG giveupgrade: Tried to give %N a level for upgrade %s, but it refused to level up.", iTargetList[0], upgrade.name);
 		else
-			ReplyToCommand(client, "SM:RPG giveupgrade: %N now has %s level %d (previously level %d)", iTargetList[0], upgrade[UPGR_name], GetClientPurchasedUpgradeLevel(iTargetList[0], iIndex), iLastOldUpgradeLevel);
+			ReplyToCommand(client, "SM:RPG giveupgrade: %N now has %s level %d (previously level %d)", iTargetList[0], upgrade.name, GetClientPurchasedUpgradeLevel(iTargetList[0], iIndex), iLastOldUpgradeLevel);
 	}
 	
 	return Plugin_Handled;
@@ -900,19 +900,19 @@ public Action Cmd_GiveAll(int client, int args)
 	}
 	
 	int iSize = GetUpgradeCount();
-	int upgrade[InternalUpgradeInfo];
+	InternalUpgradeInfo upgrade;
 	for(int i=0;i<iTargetCount;i++)
 	{
 		// Run through all upgrades
 		for(int u=0;u<iSize;u++)
 		{
 			GetUpgradeByIndex(u, upgrade);
-			if(!IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled])
+			if(!IsValidUpgrade(upgrade) || !upgrade.enabled)
 				continue;
 			
 			// TODO: Obey adminflags and bot restrictions!
-			SetClientPurchasedUpgradeLevel(iTargetList[i], u, upgrade[UPGR_maxLevel]);
-			SetClientSelectedUpgradeLevel(iTargetList[i], u, upgrade[UPGR_maxLevel]);
+			SetClientPurchasedUpgradeLevel(iTargetList[i], u, upgrade.maxLevel);
+			SetClientSelectedUpgradeLevel(iTargetList[i], u, upgrade.maxLevel);
 		}
 		
 		LogAction(client, iTargetList[i], "%L set all upgrades of %L to the maximal level at no charge.", client, iTargetList[i]);
@@ -947,7 +947,7 @@ public Action Cmd_TakeUpgrade(int client, int args)
 	GetCmdArg(2, sUpgrade, sizeof(sUpgrade));
 	TrimString(sUpgrade);
 	StripQuotes(sUpgrade);
-	int upgrade[InternalUpgradeInfo];
+	InternalUpgradeInfo upgrade;
 	if(!GetUpgradeByShortname(sUpgrade, upgrade) || !IsValidUpgrade(upgrade))
 	{
 		ReplyToCommand(client, "SM:RPG takeupgrade: There is no upgrade with shortname \"%s\".", sUpgrade);
@@ -970,7 +970,7 @@ public Action Cmd_TakeUpgrade(int client, int args)
 		return Plugin_Handled;
 	}
 	
-	int iIndex = upgrade[UPGR_index];
+	int iIndex = upgrade.index;
 	
 	int iLastOldUpgradeLevel;
 	int iCountDontOwn;
@@ -992,13 +992,13 @@ public Action Cmd_TakeUpgrade(int client, int args)
 			continue;
 		}
 		
-		LogAction(client, iTargetList[i], "%L took a level of upgrade %s from %L with no refund. Changed upgrade level from %d to %d.", client, upgrade[UPGR_name], iTargetList[i], iLastOldUpgradeLevel, GetClientPurchasedUpgradeLevel(iTargetList[i], iIndex));
+		LogAction(client, iTargetList[i], "%L took a level of upgrade %s from %L with no refund. Changed upgrade level from %d to %d.", client, upgrade.name, iTargetList[i], iLastOldUpgradeLevel, GetClientPurchasedUpgradeLevel(iTargetList[i], iIndex));
 	}
 	
 	if(tn_is_ml)
 	{
-		LogAction(client, -1, "%L took a level of upgrade %s from %T (%d players).", client, upgrade[UPGR_name], sTargetName, LANG_SERVER, iTargetCount);
-		ReplyToCommand(client, "SM:RPG takeupgrade: Took a level of upgrade %s from %t (%d players).", upgrade[UPGR_name], sTargetName, iTargetCount);
+		LogAction(client, -1, "%L took a level of upgrade %s from %T (%d players).", client, upgrade.name, sTargetName, LANG_SERVER, iTargetCount);
+		ReplyToCommand(client, "SM:RPG takeupgrade: Took a level of upgrade %s from %t (%d players).", upgrade.name, sTargetName, iTargetCount);
 		if(iCountDontOwn > 0)
 			ReplyToCommand(client, "SM:RPG takeupgrade: %d players didn't own the upgrade at all.", iCountDontOwn);
 		if(iFailedCount > 0)
@@ -1015,11 +1015,11 @@ public Action Cmd_TakeUpgrade(int client, int args)
 	else
 	{
 		if(iCountDontOwn > 0)
-			ReplyToCommand(client, "SM:RPG takeupgrade: %N doesn't have upgrade %s.", iTargetList[0], upgrade[UPGR_name]);
+			ReplyToCommand(client, "SM:RPG takeupgrade: %N doesn't have upgrade %s.", iTargetList[0], upgrade.name);
 		else if(iFailedCount > 0)
-			ReplyToCommand(client, "SM:RPG takeupgrade: Tried to take a level of upgrade %s from %N, but it refused to level down.", upgrade[UPGR_name], iTargetList[0]);
+			ReplyToCommand(client, "SM:RPG takeupgrade: Tried to take a level of upgrade %s from %N, but it refused to level down.", upgrade.name, iTargetList[0]);
 		else
-			ReplyToCommand(client, "SM:RPG takeupgrade: %N now has %s level %d (previously level %d)", iTargetList[0], upgrade[UPGR_name], GetClientPurchasedUpgradeLevel(iTargetList[0], iIndex), iLastOldUpgradeLevel);
+			ReplyToCommand(client, "SM:RPG takeupgrade: %N now has %s level %d (previously level %d)", iTargetList[0], upgrade.name, GetClientPurchasedUpgradeLevel(iTargetList[0], iIndex), iLastOldUpgradeLevel);
 	}
 	
 	return Plugin_Handled;
@@ -1041,7 +1041,7 @@ public Action Cmd_BuyUpgrade(int client, int args)
 	GetCmdArg(2, sUpgrade, sizeof(sUpgrade));
 	TrimString(sUpgrade);
 	StripQuotes(sUpgrade);
-	int upgrade[InternalUpgradeInfo];
+	InternalUpgradeInfo upgrade;
 	if(!GetUpgradeByShortname(sUpgrade, upgrade) || !IsValidUpgrade(upgrade))
 	{
 		ReplyToCommand(client, "SM:RPG buyupgrade: There is no upgrade with shortname \"%s\".", sUpgrade);
@@ -1064,7 +1064,7 @@ public Action Cmd_BuyUpgrade(int client, int args)
 		return Plugin_Handled;
 	}
 	
-	int iIndex = upgrade[UPGR_index];
+	int iIndex = upgrade.index;
 	
 	int iLastOldUpgradeLevel;
 	int iCountAlreadyMaxed;
@@ -1075,7 +1075,7 @@ public Action Cmd_BuyUpgrade(int client, int args)
 		iLastOldUpgradeLevel = GetClientPurchasedUpgradeLevel(iTargetList[i], iIndex);
 		
 		// Already has the maximum level, don't need to buy another one.
-		if(iLastOldUpgradeLevel >= upgrade[UPGR_maxLevel])
+		if(iLastOldUpgradeLevel >= upgrade.maxLevel)
 		{
 			iCountAlreadyMaxed++;
 			continue;
@@ -1096,13 +1096,13 @@ public Action Cmd_BuyUpgrade(int client, int args)
 			continue;
 		}
 		
-		LogAction(client, iTargetList[i], "%L forced %L to buy a level of upgrade %s. The upgrade level changed from %d to %d", client, iTargetList[i], upgrade[UPGR_name], iLastOldUpgradeLevel, GetClientPurchasedUpgradeLevel(iTargetList[i], iIndex));
+		LogAction(client, iTargetList[i], "%L forced %L to buy a level of upgrade %s. The upgrade level changed from %d to %d", client, iTargetList[i], upgrade.name, iLastOldUpgradeLevel, GetClientPurchasedUpgradeLevel(iTargetList[i], iIndex));
 	}
 	
 	if(tn_is_ml)
 	{
-		LogAction(client, -1, "%L forced %T (%d players) to buy a level of upgrade %s.", client, sTargetName, LANG_SERVER, iTargetCount, upgrade[UPGR_name]);
-		ReplyToCommand(client, "SM:RPG buyupgrade: Made %t (%d players) buy a level of upgrade %s.", sTargetName, iTargetCount, upgrade[UPGR_name]);
+		LogAction(client, -1, "%L forced %T (%d players) to buy a level of upgrade %s.", client, sTargetName, LANG_SERVER, iTargetCount, upgrade.name);
+		ReplyToCommand(client, "SM:RPG buyupgrade: Made %t (%d players) buy a level of upgrade %s.", sTargetName, iTargetCount, upgrade.name);
 		if(iCountAlreadyMaxed > 0)
 			ReplyToCommand(client, "SM:RPG buyupgrade: %d players already had the upgrade at the maximal level.", iCountAlreadyMaxed);
 		if(iPoorCount > 0)
@@ -1129,13 +1129,13 @@ public Action Cmd_BuyUpgrade(int client, int args)
 	else
 	{
 		if(iCountAlreadyMaxed > 0)
-			ReplyToCommand(client, "SM:RPG buyupgrade: %N has the maximum level for %s (level %d).", iTargetList[0], upgrade[UPGR_name], iLastOldUpgradeLevel);
+			ReplyToCommand(client, "SM:RPG buyupgrade: %N has the maximum level for %s (level %d).", iTargetList[0], upgrade.name, iLastOldUpgradeLevel);
 		else if(iPoorCount > 0)
-			ReplyToCommand(client, "SM:RPG buyupgrade: %N doesn't have enough credits to purchase %s (%d/%d).", iTargetList[0], upgrade[UPGR_name], GetClientCredits(iTargetList[0]), GetUpgradeCost(iIndex, iLastOldUpgradeLevel));
+			ReplyToCommand(client, "SM:RPG buyupgrade: %N doesn't have enough credits to purchase %s (%d/%d).", iTargetList[0], upgrade.name, GetClientCredits(iTargetList[0]), GetUpgradeCost(iIndex, iLastOldUpgradeLevel));
 		else if(iFailedCount > 0)
-			ReplyToCommand(client, "SM:RPG buyupgrade: Tried to make %N buy a level of upgrade %s, but it refused to level up.", iTargetList[0], upgrade[UPGR_name]);
+			ReplyToCommand(client, "SM:RPG buyupgrade: Tried to make %N buy a level of upgrade %s, but it refused to level up.", iTargetList[0], upgrade.name);
 		else
-			ReplyToCommand(client, "SM:RPG buyupgrade: %N now has %s level %d (previously level %d).", iTargetList[0], upgrade[UPGR_name], GetClientPurchasedUpgradeLevel(iTargetList[0], iIndex), iLastOldUpgradeLevel);
+			ReplyToCommand(client, "SM:RPG buyupgrade: %N now has %s level %d (previously level %d).", iTargetList[0], upgrade.name, GetClientPurchasedUpgradeLevel(iTargetList[0], iIndex), iLastOldUpgradeLevel);
 	}
 	
 	return Plugin_Handled;
@@ -1157,7 +1157,7 @@ public Action Cmd_SellUpgrade(int client, int args)
 	GetCmdArg(2, sUpgrade, sizeof(sUpgrade));
 	TrimString(sUpgrade);
 	StripQuotes(sUpgrade);
-	int upgrade[InternalUpgradeInfo];
+	InternalUpgradeInfo upgrade;
 	if(!GetUpgradeByShortname(sUpgrade, upgrade) || !IsValidUpgrade(upgrade))
 	{
 		ReplyToCommand(client, "SM:RPG sellupgrade: There is no upgrade with name \"%s\".", sUpgrade);
@@ -1180,7 +1180,7 @@ public Action Cmd_SellUpgrade(int client, int args)
 		return Plugin_Handled;
 	}
 	
-	int iIndex = upgrade[UPGR_index];
+	int iIndex = upgrade.index;
 	
 	int iLastOldUpgradeLevel;
 	int iCountDontOwn;
@@ -1206,13 +1206,13 @@ public Action Cmd_SellUpgrade(int client, int args)
 		int iUpgradeCosts = GetUpgradeCost(iIndex, iLastOldUpgradeLevel);
 		SetClientCredits(iTargetList[i], GetClientCredits(iTargetList[i]) + iUpgradeCosts);
 		
-		LogAction(client, iTargetList[i], "%L forced %L to sell a level of upgrade %s with full refund of the costs. The upgrade level changed from %d to %d and he received %d credits.", client, iTargetList[i], upgrade[UPGR_name], iLastOldUpgradeLevel, GetClientPurchasedUpgradeLevel(iTargetList[i], iIndex), iUpgradeCosts);
+		LogAction(client, iTargetList[i], "%L forced %L to sell a level of upgrade %s with full refund of the costs. The upgrade level changed from %d to %d and he received %d credits.", client, iTargetList[i], upgrade.name, iLastOldUpgradeLevel, GetClientPurchasedUpgradeLevel(iTargetList[i], iIndex), iUpgradeCosts);
 	}
 	
 	if(tn_is_ml)
 	{
-		LogAction(client, -1, "%L forced %T (%d players) to sell a level of upgrade %s with full refund.", client, sTargetName, LANG_SERVER, iTargetCount, upgrade[UPGR_name]);
-		ReplyToCommand(client, "SM:RPG sellupgrade: Forced %t (%d players) to sell a level of upgrade %s with full refund.", sTargetName, iTargetCount, upgrade[UPGR_name]);
+		LogAction(client, -1, "%L forced %T (%d players) to sell a level of upgrade %s with full refund.", client, sTargetName, LANG_SERVER, iTargetCount, upgrade.name);
+		ReplyToCommand(client, "SM:RPG sellupgrade: Forced %t (%d players) to sell a level of upgrade %s with full refund.", sTargetName, iTargetCount, upgrade.name);
 		if(iCountDontOwn > 0)
 			ReplyToCommand(client, "SM:RPG sellupgrade: %d players didn't own the upgrade at all.", iCountDontOwn);
 		if(iFailedCount > 0)
@@ -1229,11 +1229,11 @@ public Action Cmd_SellUpgrade(int client, int args)
 	else
 	{
 		if(iCountDontOwn > 0)
-			ReplyToCommand(client, "SM:RPG sellupgrade: %N doesn't have upgrade %s.", iTargetList[0], upgrade[UPGR_name]);
+			ReplyToCommand(client, "SM:RPG sellupgrade: %N doesn't have upgrade %s.", iTargetList[0], upgrade.name);
 		else if(iFailedCount > 0)
-			ReplyToCommand(client, "SM:RPG sellupgrade: Tried to force %N to sell a level of upgrade %s with full refund, but it refused to level down.", iTargetList[0], upgrade[UPGR_name]);
+			ReplyToCommand(client, "SM:RPG sellupgrade: Tried to force %N to sell a level of upgrade %s with full refund, but it refused to level down.", iTargetList[0], upgrade.name);
 		else
-			ReplyToCommand(client, "SM:RPG sellupgrade: %N sold one level of upgrade %s with full refund, is now on level %d (previously level %d) and received %d credits.", iTargetList[0], upgrade[UPGR_name], GetClientPurchasedUpgradeLevel(iTargetList[0], iIndex), iLastOldUpgradeLevel, GetUpgradeCost(iIndex, iLastOldUpgradeLevel));
+			ReplyToCommand(client, "SM:RPG sellupgrade: %N sold one level of upgrade %s with full refund, is now on level %d (previously level %d) and received %d credits.", iTargetList[0], upgrade.name, GetClientPurchasedUpgradeLevel(iTargetList[0], iIndex), iLastOldUpgradeLevel, GetUpgradeCost(iIndex, iLastOldUpgradeLevel));
 	}
 	
 	return Plugin_Handled;
@@ -1268,7 +1268,7 @@ public Action Cmd_SellAll(int client, int args)
 	}
 	
 	int iSize = GetUpgradeCount();
-	int upgrade[InternalUpgradeInfo];
+	InternalUpgradeInfo upgrade;
 	int iLastCreditsReturned;
 	for(int i=0;i<iTargetCount;i++)
 	{
@@ -1276,7 +1276,7 @@ public Action Cmd_SellAll(int client, int args)
 		for(int u=0;u<iSize;u++)
 		{
 			GetUpgradeByIndex(u, upgrade);
-			if(!IsValidUpgrade(upgrade) || !upgrade[UPGR_enabled])
+			if(!IsValidUpgrade(upgrade) || !upgrade.enabled)
 				continue;
 			
 			while(GetClientPurchasedUpgradeLevel(iTargetList[i], u) > 0)
@@ -1377,14 +1377,14 @@ public Action Cmd_DBMassSell(int client, int args)
 	GetCmdArg(1, sUpgrade, sizeof(sUpgrade));
 	TrimString(sUpgrade);
 	StripQuotes(sUpgrade);
-	int upgrade[InternalUpgradeInfo];
+	InternalUpgradeInfo upgrade;
 	if(!GetUpgradeByShortname(sUpgrade, upgrade) || !IsValidUpgrade(upgrade))
 	{
 		ReplyToCommand(client, "SM:RPG: There is no upgrade with name \"%s\" loaded.", sUpgrade);
 		return Plugin_Handled;
 	}
 	
-	int iIndex = upgrade[UPGR_index];
+	int iIndex = upgrade.index;
 	
 	// Handle players ingame
 	int iOldLevel;
@@ -1411,7 +1411,7 @@ public Action Cmd_DBMassSell(int client, int args)
 	hData.WriteCell(iIndex);
 	
 	char sQuery[128];
-	Format(sQuery, sizeof(sQuery), "SELECT player_id, purchasedlevel FROM %s WHERE upgrade_id = %d AND purchasedlevel > 0", TBL_PLAYERUPGRADES, upgrade[UPGR_databaseId]);
+	Format(sQuery, sizeof(sQuery), "SELECT player_id, purchasedlevel FROM %s WHERE upgrade_id = %d AND purchasedlevel > 0", TBL_PLAYERUPGRADES, upgrade.databaseId);
 	g_hDatabase.Query(SQL_MassDeleteItem, sQuery, hData);
 	
 	return Plugin_Handled;
@@ -1497,7 +1497,7 @@ public void SQL_CheckDeletePlayer(Database db, DBResultSet results, const char[]
 		g_hDatabase.Query(SQL_DoNothing, sQuery);
 		
 		if(iTarget != -1)
-			g_iPlayerInfo[iTarget][PLR_dbId] = -1;
+			g_iPlayerInfo[iTarget].dbId = -1;
 		
 		char sName[64];
 		results.FetchString(1, sName, sizeof(sName));
@@ -1530,12 +1530,12 @@ public void SQL_MassDeleteItem(Database db, DBResultSet results, const char[] er
 	int iIndex = data.ReadCell();
 	delete data;
 	
-	int upgrade[InternalUpgradeInfo];
+	InternalUpgradeInfo upgrade;
 	GetUpgradeByIndex(iIndex, upgrade);
 	
 	if(results == null)
 	{
-		LogAction(client, -1, "%L tried to mass sell upgrade \"%s\", but the select query failed. It might have been reset on some players ingame though!", client, upgrade[UPGR_name]);
+		LogAction(client, -1, "%L tried to mass sell upgrade \"%s\", but the select query failed. It might have been reset on some players ingame though!", client, upgrade.name);
 		LogError("Error during mass deletion of item (%s)", error);
 		return;
 	}
@@ -1544,8 +1544,8 @@ public void SQL_MassDeleteItem(Database db, DBResultSet results, const char[] er
 	{
 		if(client == 0 || IsClientInGame(client))
 		{
-			LogAction(client, -1, "%L tried to mass sell upgrade \"%s\", but nobody has the upgrade purchased at any level.", client, upgrade[UPGR_name]);
-			ReplyToCommand(client, "SM:RPG db_mass_sell: Nobody has the Upgrade '%s' purchased at any level.", upgrade[UPGR_name]);
+			LogAction(client, -1, "%L tried to mass sell upgrade \"%s\", but nobody has the upgrade purchased at any level.", client, upgrade.name);
+			ReplyToCommand(client, "SM:RPG db_mass_sell: Nobody has the Upgrade '%s' purchased at any level.", upgrade.name);
 		}
 		return;
 	}
@@ -1573,13 +1573,13 @@ public void SQL_MassDeleteItem(Database db, DBResultSet results, const char[] er
 			iOldLevel = results.FetchInt(1);
 			if(iOldLevel < 0)
 			{
-				DebugMsg("Negative level for upgrade %s in database for player %d!", upgrade[UPGR_name], iPlayerID);
+				DebugMsg("Negative level for upgrade %s in database for player %d!", upgrade.name, iPlayerID);
 				iOldLevel = 0;
 			}
-			if(iOldLevel > upgrade[UPGR_maxLevel])
+			if(iOldLevel > upgrade.maxLevel)
 			{
-				DebugMsg("Upgrade level higher than max level of upgrade %s for player %d!", upgrade[UPGR_name], iPlayerID);
-				iOldLevel = upgrade[UPGR_maxLevel];
+				DebugMsg("Upgrade level higher than max level of upgrade %s for player %d!", upgrade.name, iPlayerID);
+				iOldLevel = upgrade.maxLevel;
 			}
 			
 			iAddCredits = 0;
@@ -1593,20 +1593,20 @@ public void SQL_MassDeleteItem(Database db, DBResultSet results, const char[] er
 		g_hDatabase.Execute(hTransaction, _, SQLTxn_LogFailure);
 		
 		// Reset all players to upgrade level 0
-		Format(sQuery, sizeof(sQuery), "UPDATE %s SET purchasedlevel = 0, selectedlevel = 0 WHERE upgrade_id = %d", TBL_PLAYERUPGRADES, upgrade[UPGR_databaseId]);
+		Format(sQuery, sizeof(sQuery), "UPDATE %s SET purchasedlevel = 0, selectedlevel = 0 WHERE upgrade_id = %d", TBL_PLAYERUPGRADES, upgrade.databaseId);
 		g_hDatabase.Query(SQL_DoNothing, sQuery);
 		
 		if(client == 0 || IsClientInGame(client))
 		{
-			LogAction(client, -1, "%L mass sold upgrade \"%s\" on all players with full costs refunded. %d players in the database have been refunded their credits.", client, upgrade[UPGR_name], results.RowCount);
-			ReplyToCommand(client, "SM:RPG db_mass_sell: All (%d) players in the database with Upgrade '%s' have been refunded their credits", results.RowCount, upgrade[UPGR_name]);
+			LogAction(client, -1, "%L mass sold upgrade \"%s\" on all players with full costs refunded. %d players in the database have been refunded their credits.", client, upgrade.name, results.RowCount);
+			ReplyToCommand(client, "SM:RPG db_mass_sell: All (%d) players in the database with Upgrade '%s' have been refunded their credits", results.RowCount, upgrade.name);
 		}
 	}
 	else
 	{
 		if(client == 0 || IsClientInGame(client))
 		{
-			LogAction(client, -1, "%L tried to mass sell upgrade \"%s\", but data saving is disabled (smrpg_save_data 0). It might have been reset on some players ingame though!", client, upgrade[UPGR_name]);
+			LogAction(client, -1, "%L tried to mass sell upgrade \"%s\", but data saving is disabled (smrpg_save_data 0). It might have been reset on some players ingame though!", client, upgrade.name);
 			ReplyToCommand(client, "SM:RPG db_mass_sell: Notice: smrpg_save_data is set to '0', command had no effect");
 		}
 	}
@@ -1694,7 +1694,7 @@ public void SQL_PrintUpgradeUsage(Database db, DBResultSet results, const char[]
 		return;
 	}
 
-	int upgrade[InternalUpgradeInfo];
+	InternalUpgradeInfo upgrade;
 	ReplySource oldSource = SetCmdReplySource(source);
 	while(results.MoreRows)
 	{

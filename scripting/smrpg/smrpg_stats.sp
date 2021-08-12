@@ -10,42 +10,42 @@ int g_iNextCacheUpdate[MAXPLAYERS+1];
 int g_iCachedRankCount = 0;
 int g_iNextCacheCountUpdate;
 
-enum SessionStats {
-	SS_JoinTime,
-	SS_JoinLevel,
-	SS_JoinExperience,
-	SS_JoinCredits,
-	SS_JoinRank,
-	bool:SS_WantsAutoUpdate,
-	bool:SS_WantsMenuOpen,
-	bool:SS_OKToClose,
-	ArrayList:SS_LastExperience
-};
+enum struct SessionStats {
+	int joinTime;
+	int joinLevel;
+	int joinExperience;
+	int joinCredits;
+	int joinRank;
+	bool wantsAutoUpdate;
+	bool wantsMenuOpen;
+	bool okToClose;
+	ArrayList lastExperience;
+}
 
-int g_iPlayerSessionStartStats[MAXPLAYERS+1][SessionStats];
+SessionStats g_iPlayerSessionStartStats[MAXPLAYERS+1];
 bool g_bBackToStatsMenu[MAXPLAYERS+1];
 
 Handle g_hfwdOnAddExperience;
 Handle g_hfwdOnAddExperiencePost;
 
 // AFK Handling
-enum AFKInfo {
-	Float:AFK_lastPosition[3],
-	AFK_startTime,
-	AFK_spawnTime,
-	AFK_deathTime
+enum struct AFKInfo {
+	float lastPosition[3];
+	int startTime;
+	int spawnTime;
+	int deathTime;
 }
-int g_PlayerAFKInfo[MAXPLAYERS+1][AFKInfo];
+AFKInfo g_PlayerAFKInfo[MAXPLAYERS+1];
 bool g_bPlayerSpawnProtected[MAXPLAYERS+1];
 
 // Individual weapon experience settings
 StringMap g_hWeaponExperience;
 
-enum WeaponExperienceContainer {
-	Float:WXP_Damage,
-	Float:WXP_Kill,
-	Float:WXP_Bonus
-};
+enum struct WeaponExperienceContainer {
+	float damage;
+	float kill;
+	float bonus;
+}
 
 void RegisterStatsNatives()
 {
@@ -438,40 +438,40 @@ public Action Timer_CheckAFKPlayers(Handle timer)
 			GetClientAbsOrigin(i, fOrigin);
 			
 			// See if the player just spawned..
-			if(g_PlayerAFKInfo[i][AFK_spawnTime] > 0)
+			if(g_PlayerAFKInfo[i].spawnTime > 0)
 			{
-				int iDifference = GetTime() - g_PlayerAFKInfo[i][AFK_spawnTime];
+				int iDifference = GetTime() - g_PlayerAFKInfo[i].spawnTime;
 				// The player spawned 2 seconds ago. He's now ready to be checked for being afk again.
 				if(iDifference > 2)
 				{
-					g_PlayerAFKInfo[i][AFK_spawnTime] = 0;
-					if(g_PlayerAFKInfo[i][AFK_startTime] > 0)
-						g_PlayerAFKInfo[i][AFK_startTime] += iDifference;
-					Array_Copy(fOrigin, g_PlayerAFKInfo[i][AFK_lastPosition], 3);
+					g_PlayerAFKInfo[i].spawnTime = 0;
+					if(g_PlayerAFKInfo[i].startTime > 0)
+						g_PlayerAFKInfo[i].startTime += iDifference;
+					Array_Copy(fOrigin, g_PlayerAFKInfo[i].lastPosition, 3);
 				}
 				continue;
 			}
 			
 			// See if we need to subtract some time while he was dead.
-			if(g_PlayerAFKInfo[i][AFK_deathTime] > 0)
+			if(g_PlayerAFKInfo[i].deathTime > 0)
 			{
-				if(g_PlayerAFKInfo[i][AFK_startTime] > 0)
-					g_PlayerAFKInfo[i][AFK_startTime] += GetTime() - g_PlayerAFKInfo[i][AFK_deathTime];
-				g_PlayerAFKInfo[i][AFK_deathTime] = 0;
+				if(g_PlayerAFKInfo[i].startTime > 0)
+					g_PlayerAFKInfo[i].startTime += GetTime() - g_PlayerAFKInfo[i].deathTime;
+				g_PlayerAFKInfo[i].deathTime = 0;
 			}
 			
-			Array_Copy(g_PlayerAFKInfo[i][AFK_lastPosition], fLastPosition, 3);
+			Array_Copy(g_PlayerAFKInfo[i].lastPosition, fLastPosition, 3);
 			if(Math_VectorsEqual(fOrigin, fLastPosition, 1.0))
 			{
-				if(g_PlayerAFKInfo[i][AFK_startTime] == 0)
-					g_PlayerAFKInfo[i][AFK_startTime] = GetTime();
+				if(g_PlayerAFKInfo[i].startTime == 0)
+					g_PlayerAFKInfo[i].startTime = GetTime();
 			}
 			else
 			{
-				g_PlayerAFKInfo[i][AFK_startTime] = 0;
+				g_PlayerAFKInfo[i].startTime = 0;
 			}
 			
-			Array_Copy(fOrigin, g_PlayerAFKInfo[i][AFK_lastPosition], 3);
+			Array_Copy(fOrigin, g_PlayerAFKInfo[i].lastPosition, 3);
 		}
 	}
 	
@@ -480,24 +480,24 @@ public Action Timer_CheckAFKPlayers(Handle timer)
 
 bool IsClientAFK(int client)
 {
-	if(g_PlayerAFKInfo[client][AFK_startTime] == 0)
+	if(g_PlayerAFKInfo[client].startTime == 0)
 		return false;
 	
 	int iAFKTime = g_hCVAFKTime.IntValue;
 	if(iAFKTime <= 0)
 		return false;
 	
-	if((GetTime() - g_PlayerAFKInfo[client][AFK_startTime]) > iAFKTime)
+	if((GetTime() - g_PlayerAFKInfo[client].startTime) > iAFKTime)
 		return true;
 	return false;
 }
 
 void ResetAFKPlayer(int client)
 {
-	g_PlayerAFKInfo[client][AFK_startTime] = 0;
-	g_PlayerAFKInfo[client][AFK_spawnTime] = 0;
-	g_PlayerAFKInfo[client][AFK_deathTime] = 0;
-	Array_Copy(view_as<float>({0.0,0.0,0.0}), g_PlayerAFKInfo[client][AFK_lastPosition], 3);
+	g_PlayerAFKInfo[client].startTime = 0;
+	g_PlayerAFKInfo[client].spawnTime = 0;
+	g_PlayerAFKInfo[client].deathTime = 0;
+	Array_Copy(view_as<float>({0.0,0.0,0.0}), g_PlayerAFKInfo[client].lastPosition, 3);
 }
 
 // Spawn Protection handling
@@ -660,45 +660,45 @@ public int Native_GetWeaponExperience(Handle plugin, int numParams)
 // rpgsession handling
 void InitPlayerSessionStartStats(int client)
 {
-	g_iPlayerSessionStartStats[client][SS_JoinTime] = GetTime();
-	g_iPlayerSessionStartStats[client][SS_JoinLevel] = GetClientLevel(client);
-	g_iPlayerSessionStartStats[client][SS_JoinExperience] = GetClientExperience(client);
-	g_iPlayerSessionStartStats[client][SS_JoinCredits] = GetClientCredits(client);
-	g_iPlayerSessionStartStats[client][SS_JoinRank] = -1;
-	g_iPlayerSessionStartStats[client][SS_WantsAutoUpdate] = false;
-	g_iPlayerSessionStartStats[client][SS_WantsMenuOpen] = false;
-	g_iPlayerSessionStartStats[client][SS_OKToClose] = false;
+	g_iPlayerSessionStartStats[client].joinTime = GetTime();
+	g_iPlayerSessionStartStats[client].joinLevel = GetClientLevel(client);
+	g_iPlayerSessionStartStats[client].joinExperience = GetClientExperience(client);
+	g_iPlayerSessionStartStats[client].joinCredits = GetClientCredits(client);
+	g_iPlayerSessionStartStats[client].joinRank = -1;
+	g_iPlayerSessionStartStats[client].wantsAutoUpdate = false;
+	g_iPlayerSessionStartStats[client].wantsMenuOpen = false;
+	g_iPlayerSessionStartStats[client].okToClose = false;
 	
 	ArrayList hLastExperience = new ArrayList(ByteCountToCells(256));
 	hLastExperience.Resize(g_hCVLastExperienceCount.IntValue);
 	hLastExperience.SetString(0, "");
-	g_iPlayerSessionStartStats[client][SS_LastExperience] = hLastExperience;
+	g_iPlayerSessionStartStats[client].lastExperience = hLastExperience;
 }
 
 void ResetPlayerSessionStats(int client)
 {
-	g_iPlayerSessionStartStats[client][SS_JoinTime] = 0;
-	g_iPlayerSessionStartStats[client][SS_JoinLevel] = 0;
-	g_iPlayerSessionStartStats[client][SS_JoinExperience] = 0;
-	g_iPlayerSessionStartStats[client][SS_JoinCredits] = 0;
-	g_iPlayerSessionStartStats[client][SS_JoinRank] = -1;
-	g_iPlayerSessionStartStats[client][SS_WantsAutoUpdate] = false;
-	g_iPlayerSessionStartStats[client][SS_WantsMenuOpen] = false;
-	g_iPlayerSessionStartStats[client][SS_OKToClose] = false;
-	ClearHandle(g_iPlayerSessionStartStats[client][SS_LastExperience]);
+	g_iPlayerSessionStartStats[client].joinTime = 0;
+	g_iPlayerSessionStartStats[client].joinLevel = 0;
+	g_iPlayerSessionStartStats[client].joinExperience = 0;
+	g_iPlayerSessionStartStats[client].joinCredits = 0;
+	g_iPlayerSessionStartStats[client].joinRank = -1;
+	g_iPlayerSessionStartStats[client].wantsAutoUpdate = false;
+	g_iPlayerSessionStartStats[client].wantsMenuOpen = false;
+	g_iPlayerSessionStartStats[client].okToClose = false;
+	ClearHandle(g_iPlayerSessionStartStats[client].lastExperience);
 }
 
 // Use our own forward to initialize the session info :)
 public void SMRPG_OnClientLoaded(int client)
 {
 	// Only set it once and leave it that way until he really disconnects.
-	if(g_iPlayerSessionStartStats[client][SS_JoinTime] == 0)
+	if(g_iPlayerSessionStartStats[client].joinTime == 0)
 		InitPlayerSessionStartStats(client);
 }
 
 void InsertSessionExperienceString(int client, const char[] sExperience)
 {
-	ArrayList hLastExperience = g_iPlayerSessionStartStats[client][SS_LastExperience];
+	ArrayList hLastExperience = g_iPlayerSessionStartStats[client].lastExperience;
 	// Not loaded yet..
 	if(hLastExperience == null)
 		return;
@@ -713,8 +713,8 @@ public void ConVar_LastExperienceCountChanged(ConVar convar, const char[] oldVal
 	// Apply the new size immediately.
 	for(int i=1;i<=MaxClients;i++)
 	{
-		if(g_iPlayerSessionStartStats[i][SS_JoinTime] > 0)
-			g_iPlayerSessionStartStats[i][SS_LastExperience].Resize(convar.IntValue);
+		if(g_iPlayerSessionStartStats[i].joinTime > 0)
+			g_iPlayerSessionStartStats[i].lastExperience.Resize(convar.IntValue);
 	}
 }
 
@@ -728,7 +728,7 @@ public Action Timer_UpdateSessionMenus(Handle timer)
 	for(int i=1;i<=MaxClients;i++)
 	{
 		// Refresh the contents of the menu here.
-		if(IsClientInGame(i) && !IsFakeClient(i) && g_iPlayerSessionStartStats[i][SS_WantsMenuOpen] && g_iPlayerSessionStartStats[i][SS_WantsAutoUpdate])
+		if(IsClientInGame(i) && !IsFakeClient(i) && g_iPlayerSessionStartStats[i].wantsMenuOpen && g_iPlayerSessionStartStats[i].wantsAutoUpdate)
 			DisplaySessionStatsMenu(i);
 	}
 	
@@ -755,38 +755,38 @@ void DisplaySessionStatsMenu(int client)
 	Format(sBuffer, sizeof(sBuffer), "%T", "Session", client);
 	hPanel.DrawItem(sBuffer);
 	
-	SecondsToString(sBuffer, sizeof(sBuffer), GetTime()-g_iPlayerSessionStartStats[client][SS_JoinTime], false);
+	SecondsToString(sBuffer, sizeof(sBuffer), GetTime()-g_iPlayerSessionStartStats[client].joinTime, false);
 	Format(sBuffer, sizeof(sBuffer), "  %T", "Playtime", client, sBuffer);
 	hPanel.DrawText(sBuffer);
 	
-	int iChangedLevels = GetClientLevel(client) - g_iPlayerSessionStartStats[client][SS_JoinLevel];
+	int iChangedLevels = GetClientLevel(client) - g_iPlayerSessionStartStats[client].joinLevel;
 	Format(sBuffer, sizeof(sBuffer), "  %T: %s%d", "Changed level", client, iChangedLevels>0?"+":"", iChangedLevels);
 	hPanel.DrawText(sBuffer);
 	
 	// Need to calculate the total earned experience.
-	int iEarnedExperience = GetClientExperience(client) - g_iPlayerSessionStartStats[client][SS_JoinExperience];
+	int iEarnedExperience = GetClientExperience(client) - g_iPlayerSessionStartStats[client].joinExperience;
 	for(int i=0;i<iChangedLevels;i++)
 	{
-		iEarnedExperience += Stats_LvlToExp(g_iPlayerSessionStartStats[client][SS_JoinLevel]+i);
+		iEarnedExperience += Stats_LvlToExp(g_iPlayerSessionStartStats[client].joinLevel+i);
 	}
 	
 	Format(sBuffer, sizeof(sBuffer), "  %T: %s%d", "Changed experience", client, iEarnedExperience>0?"+":"", iEarnedExperience);
 	hPanel.DrawText(sBuffer);
 	
-	int iBuffer = GetClientCredits(client) - g_iPlayerSessionStartStats[client][SS_JoinCredits];
+	int iBuffer = GetClientCredits(client) - g_iPlayerSessionStartStats[client].joinCredits;
 	Format(sBuffer, sizeof(sBuffer), "  %T: %s%d", "Changed credits", client, iBuffer>0?"+":"", iBuffer);
 	hPanel.DrawText(sBuffer);
 	
-	if(g_iPlayerSessionStartStats[client][SS_JoinRank] != -1)
+	if(g_iPlayerSessionStartStats[client].joinRank != -1)
 	{
-		iBuffer = g_iPlayerSessionStartStats[client][SS_JoinRank] - GetClientRank(client);
+		iBuffer = g_iPlayerSessionStartStats[client].joinRank - GetClientRank(client);
 		Format(sBuffer, sizeof(sBuffer), "  %T: %s%d", "Changed rank", client, iBuffer>0?"+":"", iBuffer);
 		hPanel.DrawText(sBuffer);
 	}
 	
 	hPanel.DrawItem("", ITEMDRAW_SPACER);
 	
-	Format(sBuffer, sizeof(sBuffer), "%T: %T", "Auto refresh panel", client, (g_iPlayerSessionStartStats[client][SS_WantsAutoUpdate]?"Yes":"No"), client);
+	Format(sBuffer, sizeof(sBuffer), "%T: %T", "Auto refresh panel", client, (g_iPlayerSessionStartStats[client].wantsAutoUpdate?"Yes":"No"), client);
 	hPanel.DrawItem(sBuffer);
 	
 	Format(sBuffer, sizeof(sBuffer), "%T", "Last Experience", client);
@@ -798,9 +798,9 @@ void DisplaySessionStatsMenu(int client)
 	// If the old menu is currently displaying (callback was not called yet) we don't want it to stay closed when we display it again.
 	// So we set OKToClose to true, so it doesn't set WantsMenuOpen to false as if the menu was closed by an interrupting menu.
 	// That way the menu stays open and is refreshed every second while staying closed if the player closes it or some other menu is displayed over it.
-	if(g_iPlayerSessionStartStats[client][SS_WantsMenuOpen])
-		g_iPlayerSessionStartStats[client][SS_OKToClose] = true;
-	g_iPlayerSessionStartStats[client][SS_WantsMenuOpen] = true;
+	if(g_iPlayerSessionStartStats[client].wantsMenuOpen)
+		g_iPlayerSessionStartStats[client].okToClose = true;
+	g_iPlayerSessionStartStats[client].wantsMenuOpen = true;
 	
 	hPanel.Send(client, Panel_HandleSessionMenu, MENU_TIME_FOREVER);
 	delete hPanel;
@@ -810,13 +810,13 @@ public int Panel_HandleSessionMenu(Menu menu, MenuAction action, int param1, int
 {
 	if(action == MenuAction_Select)
 	{
-		g_iPlayerSessionStartStats[param1][SS_WantsMenuOpen] = false;
-		g_iPlayerSessionStartStats[param1][SS_OKToClose] = false;
+		g_iPlayerSessionStartStats[param1].wantsMenuOpen = false;
+		g_iPlayerSessionStartStats[param1].okToClose = false;
 		
 		// Toggle the auto update
 		if(param2 == 4)
 		{
-			g_iPlayerSessionStartStats[param1][SS_WantsAutoUpdate] = !g_iPlayerSessionStartStats[param1][SS_WantsAutoUpdate];
+			g_iPlayerSessionStartStats[param1].wantsAutoUpdate = !g_iPlayerSessionStartStats[param1].wantsAutoUpdate;
 			DisplaySessionStatsMenu(param1);
 			return;
 		}
@@ -828,15 +828,15 @@ public int Panel_HandleSessionMenu(Menu menu, MenuAction action, int param1, int
 	else if(action == MenuAction_Cancel)
 	{
 		
-		if(!g_iPlayerSessionStartStats[param1][SS_OKToClose])
-			g_iPlayerSessionStartStats[param1][SS_WantsMenuOpen] = false;
-		g_iPlayerSessionStartStats[param1][SS_OKToClose] = false;
+		if(!g_iPlayerSessionStartStats[param1].okToClose)
+			g_iPlayerSessionStartStats[param1].wantsMenuOpen = false;
+		g_iPlayerSessionStartStats[param1].okToClose = false;
 	}
 }
 
 void DisplaySessionLastExperienceMenu(int client, bool bBackToStatsMenu)
 {
-	ArrayList hLastExperience = g_iPlayerSessionStartStats[client][SS_LastExperience];
+	ArrayList hLastExperience = g_iPlayerSessionStartStats[client].lastExperience;
 	// Player not loaded yet.
 	if(hLastExperience == null)
 		return;
@@ -932,8 +932,8 @@ public void SQL_GetClientRank(Database db, DBResultSet results, const char[] err
 	g_iCachedRank[client] = results.FetchInt(0) + 1; // +1 since the query returns the count, not the rank
 	
 	// Save the first time we fetch the rank for him.
-	if(g_iPlayerSessionStartStats[client][SS_JoinRank] == -1)
-		g_iPlayerSessionStartStats[client][SS_JoinRank] = g_iCachedRank[client];
+	if(g_iPlayerSessionStartStats[client].joinRank == -1)
+		g_iPlayerSessionStartStats[client].joinRank = g_iCachedRank[client];
 }
 
 void UpdateRankCount()
@@ -972,13 +972,13 @@ public void SQL_GetRankCount(Database db, DBResultSet results, const char[] erro
 	
 	g_iCachedRankCount = results.FetchInt(0);
 	
-	int info[PlayerInfo];
+	PlayerInfo info;
 	for(int i=1;i<=MaxClients;i++)
 	{
 		if(IsClientInGame(i) && !IsFakeClient(i))
 		{
 			GetClientRPGInfo(i, info);
-			if(info[PLR_dbId] < 0)
+			if(info.dbId < 0)
 				g_iCachedRankCount++; /* accounts for players not saved in the db */
 		}
 	}
@@ -1052,15 +1052,14 @@ void DisplayNextPlayersInRanking(int client)
 	g_hDatabase.Query(SQL_GetNext10, sQuery, GetClientUserId(client));
 }
 
-#define ENUM_STRUCTS_SUCK_SIZE 5+(MAX_NAME_LENGTH+3/4)
-enum NextPlayersSorting {
-	NP_DBID,
-	NP_rank,
-	NP_level,
-	NP_exp,
-	NP_credits,
-	String:NP_name[MAX_NAME_LENGTH]
-};
+enum struct NextPlayersSorting {
+	int DBID;
+	int rank;
+	int level;
+	int exp;
+	int credits;
+	char name[MAX_NAME_LENGTH];
+}
 
 public void SQL_GetNext10(Database db, DBResultSet results, const char[] error, any userid)
 {
@@ -1077,7 +1076,8 @@ public void SQL_GetNext10(Database db, DBResultSet results, const char[] error, 
 	char sBuffer[128];
 	Format(sBuffer, sizeof(sBuffer), "%T\n-----\n", "Next ranked players", client);
 	
-	int iNextCache[20][ENUM_STRUCTS_SUCK_SIZE], iCount;
+	NextPlayersSorting nextCache[20];
+	int iCount;
 	
 	Panel hPanel = new Panel();
 	hPanel.SetTitle(sBuffer);
@@ -1087,12 +1087,12 @@ public void SQL_GetNext10(Database db, DBResultSet results, const char[] error, 
 		if(!results.FetchRow())
 			continue;
 		
-		results.FetchString(1, iNextCache[iCount][NP_name], MAX_NAME_LENGTH);
-		iNextCache[iCount][NP_DBID] = results.FetchInt(0);
-		iNextCache[iCount][NP_level] = results.FetchInt(2);
-		iNextCache[iCount][NP_exp] = results.FetchInt(3);
-		iNextCache[iCount][NP_credits] = results.FetchInt(4);
-		iNextCache[iCount][NP_rank] = results.FetchInt(5);
+		results.FetchString(1, nextCache[iCount].name, MAX_NAME_LENGTH);
+		nextCache[iCount].DBID = results.FetchInt(0);
+		nextCache[iCount].level = results.FetchInt(2);
+		nextCache[iCount].exp = results.FetchInt(3);
+		nextCache[iCount].credits = results.FetchInt(4);
+		nextCache[iCount].rank = results.FetchInt(5);
 		iCount++;
 	}
 	
@@ -1102,32 +1102,32 @@ public void SQL_GetNext10(Database db, DBResultSet results, const char[] error, 
 	int iLocalPlayer;
 	for(int i=0;i<iCount;i++)
 	{
-		iLocalPlayer = GetClientByPlayerID(iNextCache[i][NP_DBID]);
+		iLocalPlayer = GetClientByPlayerID(nextCache[i].DBID);
 		if(iLocalPlayer == -1)
 			continue;
 		
-		iNextCache[i][NP_level] = GetClientLevel(iLocalPlayer);
-		iNextCache[i][NP_exp] = GetClientExperience(iLocalPlayer);
-		iNextCache[i][NP_credits] = GetClientCredits(iLocalPlayer);
+		nextCache[i].level = GetClientLevel(iLocalPlayer);
+		nextCache[i].exp = GetClientExperience(iLocalPlayer);
+		nextCache[i].credits = GetClientCredits(iLocalPlayer);
 	}
 	
-	SortCustom2D(iNextCache, iCount, Sort2D_NextPlayers);
+	SortCustom2D(nextCache, iCount, Sort2D_NextPlayers);
 	
 	// Save the next rank as reference if the list is reordered with current data below
-	int iLastRank = iNextCache[0][NP_rank];
+	int iLastRank = nextCache[0].rank;
 	// Fix rank if ordering changed!
 	for(int i=0;i<iCount;i++)
 	{
-		iNextCache[i][NP_rank] = iLastRank--;
+		nextCache[i].rank = iLastRank--;
 	}
 	
 	int iNeeded = iCount > 10 ? 10 : iCount;
 	for(int i=0;i<iCount&&iNeeded>0;i++)
 	{
-		if(iNextCache[i][NP_level] < GetClientLevel(client) || (iNextCache[i][NP_level] == GetClientLevel(client) && iNextCache[i][NP_exp] < GetClientExperience(client)))
+		if(nextCache[i].level < GetClientLevel(client) || (nextCache[i].level == GetClientLevel(client) && nextCache[i].exp < GetClientExperience(client)))
 			continue;
 		
-		Format(sBuffer, sizeof(sBuffer), "%d. %s Lvl: %d Exp: %d Cr: %d", iNextCache[i][NP_rank], iNextCache[i][NP_name], iNextCache[i][NP_level], iNextCache[i][NP_exp], iNextCache[i][NP_credits]);
+		Format(sBuffer, sizeof(sBuffer), "%d. %s Lvl: %d Exp: %d Cr: %d", nextCache[i].rank, nextCache[i].name, nextCache[i].level, nextCache[i].exp, nextCache[i].credits);
 		hPanel.DrawText(sBuffer);
 		iNeeded--;
 	}
@@ -1142,10 +1142,10 @@ public void SQL_GetNext10(Database db, DBResultSet results, const char[] error, 
 // Sort players ascending by level and experience
 public int Sort2D_NextPlayers(int[] elem1, int[] elem2, const int[][] array, Handle hndl)
 {
-	if(elem1[NP_level] > elem2[NP_level])
+	if(elem1[NextPlayersSorting::level] > elem2[NextPlayersSorting::level])
 		return 1;
 	
-	if(elem1[NP_level] == elem2[NP_level] && elem1[NP_exp] > elem2[NP_exp])
+	if(elem1[NextPlayersSorting::level] == elem2[NextPlayersSorting::level] && elem1[NextPlayersSorting::exp] > elem2[NextPlayersSorting::exp])
 		return 1;
 	
 	return -1;
@@ -1184,16 +1184,16 @@ bool ReadWeaponExperienceConfig()
 	}
 	
 	char sWeapon[64];
-	int iWeaponExperience[WeaponExperienceContainer];
+	WeaponExperienceContainer weaponExperience;
 	do {
 		hKV.GetSectionName(sWeapon, sizeof(sWeapon));
 		RemovePrefixFromString("weapon_", sWeapon, sWeapon, sizeof(sWeapon));
 	
-		iWeaponExperience[WXP_Damage] = hKV.GetFloat("exp_damage", -1.0);
-		iWeaponExperience[WXP_Kill] = hKV.GetFloat("exp_kill", -1.0);
-		iWeaponExperience[WXP_Bonus] = hKV.GetFloat("exp_bonus", -1.0);
+		weaponExperience.damage = hKV.GetFloat("exp_damage", -1.0);
+		weaponExperience.kill = hKV.GetFloat("exp_kill", -1.0);
+		weaponExperience.bonus = hKV.GetFloat("exp_bonus", -1.0);
 		
-		g_hWeaponExperience.SetArray(sWeapon, iWeaponExperience[0], view_as<int>(WeaponExperienceContainer));
+		g_hWeaponExperience.SetArray(sWeapon, weaponExperience, sizeof(WeaponExperienceContainer));
 		
 	} while(hKV.GotoNextKey());
 	
@@ -1203,25 +1203,36 @@ bool ReadWeaponExperienceConfig()
 
 float GetWeaponExperience(const char[] sWeapon, WeaponExperienceType type)
 {
-	int iWeaponExperience[WeaponExperienceContainer];
-	iWeaponExperience[WXP_Damage] = -1.0;
-	iWeaponExperience[WXP_Kill] = -1.0;
-	iWeaponExperience[WXP_Bonus] = -1.0;
+	WeaponExperienceContainer weaponExperience;
+	weaponExperience.damage = -1.0;
+	weaponExperience.kill = -1.0;
+	weaponExperience.bonus = -1.0;
 	
 	char sBuffer[64];
 	RemovePrefixFromString("weapon_", sWeapon, sBuffer, sizeof(sBuffer));
 	// We default back to the convar values, if this fails.
-	g_hWeaponExperience.GetArray(sBuffer, iWeaponExperience[0], view_as<int>(WeaponExperienceContainer));
+	g_hWeaponExperience.GetArray(sBuffer, weaponExperience, sizeof(WeaponExperienceContainer));
 	
 	// Fall back to default convar values, if unset or invalid.
-	if(iWeaponExperience[WXP_Damage] < 0.0)
-		iWeaponExperience[WXP_Damage] = g_hCVExpDamage.FloatValue;
-	if(iWeaponExperience[WXP_Kill] < 0.0)
-		iWeaponExperience[WXP_Kill] = g_hCVExpKill.FloatValue;
-	if(iWeaponExperience[WXP_Bonus] < 0.0)
-		iWeaponExperience[WXP_Bonus] = g_hCVExpKillBonus.FloatValue;
+	if(weaponExperience.damage < 0.0)
+		weaponExperience.damage = g_hCVExpDamage.FloatValue;
+	if(weaponExperience.kill < 0.0)
+		weaponExperience.kill = g_hCVExpKill.FloatValue;
+	if(weaponExperience.bonus < 0.0)
+		weaponExperience.bonus = g_hCVExpKillBonus.FloatValue;
 	
-	return view_as<float>(iWeaponExperience[type]);
+	switch(WeaponExperience_Damage)
+	{
+		case WeaponExperience_Damage:
+			return weaponExperience.damage;
+		case WeaponExperience_Kill:
+			return weaponExperience.kill;
+		case WeaponExperience_Bonus:
+			return weaponExperience.bonus;
+		default:
+			ThrowError("Unknown WeaponExperienceType: %d", type);
+	}
+	return 0.0;
 }
 
 /**

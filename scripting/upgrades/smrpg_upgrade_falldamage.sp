@@ -100,9 +100,7 @@ public Action Hook_OnTakeDamage(int victim, int &attacker, int &inflictor, float
 		return Plugin_Continue;
 	
 	// The upgrade is disabled completely?
-	int upgrade[UpgradeInfo];
-	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
-	if(!upgrade[UI_enabled])
+	if(!SMRPG_IsUpgradeEnabled(UPGRADE_SHORTNAME))
 		return Plugin_Continue;
 	
 	// Are bots allowed to use this upgrade?

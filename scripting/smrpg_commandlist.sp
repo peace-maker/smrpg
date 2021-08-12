@@ -14,11 +14,11 @@
 
 ConVar g_hCVCommandAdvertInterval;
 
-enum RPGCommand {
-	Handle:c_plugin,
-	String:c_command[MAX_COMMAND_NAME_LENGTH],
-	Function:c_callback,
-	TopMenuObject:c_topmenuobject
+enum struct RPGCommand {
+	Handle plugin;
+	char command[MAX_COMMAND_NAME_LENGTH];
+	Function callback;
+	TopMenuObject topmenuobject;
 }
 
 ArrayList g_hCommandList;
@@ -68,7 +68,7 @@ public void OnPluginStart()
 	LoadTranslations("smrpg.phrases");
 	LoadTranslations("smrpg_commandlist.phrases");
 	
-	g_hCommandList = new ArrayList(view_as<int>(RPGCommand));
+	g_hCommandList = new ArrayList(sizeof(RPGCommand));
 	
 	g_hCVCommandAdvertInterval = CreateConVar("smrpg_commandadvert_interval", "300", "Show the description of an available commmand in chat every x seconds. (0 = disabled)", 0, true, 0.0);
 	g_hCVCommandAdvertInterval.AddChangeHook(ConVar_AdvertIntervalChanged);
@@ -145,14 +145,14 @@ public void SMRPG_OnRPGMenuReady(TopMenu topmenu)
 	}
 	
 	int iSize = g_hCommandList.Length;
-	int iCommand[RPGCommand];
+	RPGCommand command;
 	char sCommandName[MAX_COMMAND_NAME_LENGTH+10];
 	for(int i=0;i<iSize;i++)
 	{
-		g_hCommandList.GetArray(i, iCommand[0], view_as<int>(RPGCommand));
+		g_hCommandList.GetArray(i, command, sizeof(RPGCommand));
 		
-		Format(sCommandName, sizeof(sCommandName), "rpgcmd_%s", iCommand[c_command]);
-		iCommand[c_topmenuobject] = g_hRPGMenu.AddItem(sCommandName, TopMenu_CommandItemHandler, g_TopMenuCommands);
+		Format(sCommandName, sizeof(sCommandName), "rpgcmd_%s", command.command);
+		command.topmenuobject = g_hRPGMenu.AddItem(sCommandName, TopMenu_CommandItemHandler, g_TopMenuCommands);
 	}
 }
 
@@ -181,31 +181,31 @@ public void TopMenu_CommandItemHandler(TopMenu topmenu, TopMenuAction action, To
 			char sCommandName[MAX_COMMAND_NAME_LENGTH+10];
 			topmenu.GetObjName(object_id, sCommandName, sizeof(sCommandName));
 			
-			int iCommand[RPGCommand];
-			if(!GetCommandByName(sCommandName[7], iCommand))
+			RPGCommand command;
+			if(!GetCommandByName(sCommandName[7], command))
 				return;
 		
 			char sShortDescription[64];
-			if(!GetCommandTranslation(param, iCommand[c_command], CommandTranslationType_ShortDescription, sShortDescription, sizeof(sShortDescription)))
+			if(!GetCommandTranslation(param, command.command, CommandTranslationType_ShortDescription, sShortDescription, sizeof(sShortDescription)))
 				return;
 			
-			Format(buffer, maxlength, "%s: %s", iCommand[c_command], sShortDescription);
+			Format(buffer, maxlength, "%s: %s", command.command, sShortDescription);
 		}
 		case TopMenuAction_SelectOption:
 		{
 			char sCommandName[MAX_COMMAND_NAME_LENGTH+10];
 			topmenu.GetObjName(object_id, sCommandName, sizeof(sCommandName));
 			
-			int iCommand[RPGCommand];
-			if(!GetCommandByName(sCommandName[7], iCommand))
+			RPGCommand command;
+			if(!GetCommandByName(sCommandName[7], command))
 			{
 				g_hRPGMenu.Display(param, TopMenuPosition_LastCategory);
 				return;
 			}
 			
 			char sDescription[256];
-			if(GetCommandTranslation(param, iCommand[c_command], CommandTranslationType_Description, sDescription, sizeof(sDescription)))
-				Client_PrintToChat(param, false, "{OG}SM:RPG{N} > {G}%s{N}: %s", iCommand[c_command], sDescription);
+			if(GetCommandTranslation(param, command.command, CommandTranslationType_Description, sDescription, sizeof(sDescription)))
+				Client_PrintToChat(param, false, "{OG}SM:RPG{N} > {G}%s{N}: %s", command.command, sDescription);
 			
 			g_hRPGMenu.Display(param, TopMenuPosition_LastCategory);
 		}
@@ -214,8 +214,8 @@ public void TopMenu_CommandItemHandler(TopMenu topmenu, TopMenuAction action, To
 			char sCommandName[MAX_COMMAND_NAME_LENGTH+10];
 			topmenu.GetObjName(object_id, sCommandName, sizeof(sCommandName));
 			
-			int iCommand[RPGCommand];
-			if(!GetCommandByName(sCommandName[7], iCommand) || !IsValidPlugin(iCommand[c_plugin]))
+			RPGCommand command;
+			if(!GetCommandByName(sCommandName[7], command) || !IsValidPlugin(command.plugin))
 			{
 				buffer[0] = ITEMDRAW_IGNORE;
 			}
@@ -253,23 +253,23 @@ public int Native_RegisterCommand(Handle plugin, int numParams)
 	GetNativeString(1, sCommand, sizeof(sCommand));
 	Function iCallback = GetNativeFunction(2);
 	
-	int iCommand[RPGCommand];
+	RPGCommand command;
 	int iSize = g_hCommandList.Length;
 	for(int i=0;i<iSize;i++)
 	{
-		g_hCommandList.GetArray(i, iCommand[0], view_as<int>(RPGCommand));
-		if(StrEqual(sCommand, iCommand[c_command], false))
+		g_hCommandList.GetArray(i, command, sizeof(RPGCommand));
+		if(StrEqual(sCommand, command.command, false))
 		{
 			// This command was registered by a different plugin..
-			if(plugin != iCommand[c_plugin])
+			if(plugin != command.plugin)
 			{
 				ThrowNativeError(SP_ERROR_NATIVE, "RPG command \"%s\" is already registered by a different plugin!", sCommand);
 			}
 			// This plugin already registered this command. maybe it wants to update the callback function?
 			else
 			{
-				iCommand[c_callback] = iCallback;
-				g_hCommandList.SetArray(i, iCommand[0], view_as<int>(RPGCommand));
+				command.callback = iCallback;
+				g_hCommandList.SetArray(i, command, sizeof(RPGCommand));
 			}
 			// We're done here already.
 			return;
@@ -277,15 +277,15 @@ public int Native_RegisterCommand(Handle plugin, int numParams)
 	}
 	
 	// Fill the struct with the passed info.
-	iCommand[c_plugin] = plugin;
-	strcopy(iCommand[c_command], MAX_COMMAND_NAME_LENGTH, sCommand);
-	iCommand[c_callback] = iCallback;
+	command.plugin = plugin;
+	command.command = sCommand;
+	command.callback = iCallback;
 	
 	char sCommandName[MAX_COMMAND_NAME_LENGTH+10];
-	Format(sCommandName, sizeof(sCommandName), "rpgcmd_%s", iCommand[c_command]);
+	Format(sCommandName, sizeof(sCommandName), "rpgcmd_%s", command.command);
 	if(g_hRPGMenu != null && g_TopMenuCommands != INVALID_TOPMENUOBJECT)
-		iCommand[c_topmenuobject] = g_hRPGMenu.AddItem(sCommandName, TopMenu_CommandItemHandler, g_TopMenuCommands);
-	g_hCommandList.PushArray(iCommand[0], view_as<int>(RPGCommand));
+		command.topmenuobject = g_hRPGMenu.AddItem(sCommandName, TopMenu_CommandItemHandler, g_TopMenuCommands);
+	g_hCommandList.PushArray(command, sizeof(RPGCommand));
 }
 
 // native void SMRPG_UnregisterCommand(const char[] command);
@@ -294,16 +294,16 @@ public int Native_UnregisterCommand(Handle plugin, int numParams)
 	char sCommand[MAX_COMMAND_NAME_LENGTH];
 	GetNativeString(1, sCommand, sizeof(sCommand));
 	
-	int iCommand[RPGCommand];
+	RPGCommand command;
 	int iSize = g_hCommandList.Length;
 	for(int i=0;i<iSize;i++)
 	{
-		g_hCommandList.GetArray(i, iCommand[0], view_as<int>(RPGCommand));
+		g_hCommandList.GetArray(i, command, sizeof(RPGCommand));
 		// Found the command and it was registered by this plugin?
-		if(StrEqual(sCommand, iCommand[c_command], false) && plugin == iCommand[c_plugin])
+		if(StrEqual(sCommand, command.command, false) && plugin == command.plugin)
 		{
-			if(iCommand[c_topmenuobject] != INVALID_TOPMENUOBJECT && g_hRPGMenu != null && g_TopMenuCommands != INVALID_TOPMENUOBJECT)
-				g_hRPGMenu.Remove(iCommand[c_topmenuobject]);
+			if(command.topmenuobject != INVALID_TOPMENUOBJECT && g_hRPGMenu != null && g_TopMenuCommands != INVALID_TOPMENUOBJECT)
+				g_hRPGMenu.Remove(command.topmenuobject);
 			g_hCommandList.Erase(i);
 			return;
 		}
@@ -330,7 +330,7 @@ public Action Timer_ShowCommandAdvert(Handle timer)
 	if(!SMRPG_IsEnabled())
 		return Plugin_Continue;
 	
-	int iCommand[RPGCommand];
+	RPGCommand command;
 	char sText[512];
 	int iSentMessages, iTriedCommands;
 	do
@@ -343,7 +343,7 @@ public Action Timer_ShowCommandAdvert(Handle timer)
 		if(g_iLastAdvertizedCommand >= iNumCommands)
 			g_iLastAdvertizedCommand = 0;
 		
-		g_hCommandList.GetArray(g_iLastAdvertizedCommand, iCommand[0], view_as<int>(RPGCommand));
+		g_hCommandList.GetArray(g_iLastAdvertizedCommand, command, sizeof(RPGCommand));
 		
 		for(int client=1;client<=MaxClients;client++)
 		{
@@ -355,7 +355,7 @@ public Action Timer_ShowCommandAdvert(Handle timer)
 				continue;
 			
 			// That command doesn't have an advert text?
-			if(!GetCommandTranslation(client, iCommand[c_command], CommandTranslationType_Advert, sText, sizeof(sText)))
+			if(!GetCommandTranslation(client, command.command, CommandTranslationType_Advert, sText, sizeof(sText)))
 				continue;
 			
 			Client_PrintToChat(client, false, "{OG}SM:RPG{N} > {G}%s", sText);
@@ -388,18 +388,18 @@ public void ConVar_AdvertIntervalChanged(ConVar convar, const char[] oldValue, c
 /**
  * Helpers
  */
-bool GetCommandByName(const char[] sCommand, int iCommand[RPGCommand])
+bool GetCommandByName(const char[] sCommand, RPGCommand command)
 {
 	int iSize = g_hCommandList.Length;
 	for(int i=0;i<iSize;i++)
 	{
-		g_hCommandList.GetArray(i, iCommand[0], view_as<int>(RPGCommand));
-		if(StrEqual(sCommand, iCommand[c_command], false))
+		g_hCommandList.GetArray(i, command, sizeof(RPGCommand));
+		if(StrEqual(sCommand, command.command, false))
 			return true;
 	}
-	iCommand[c_plugin] = null;
-	iCommand[c_command][0] = '\0';
-	iCommand[c_callback] = INVALID_FUNCTION;
+	command.plugin = null;
+	command.command[0] = '\0';
+	command.callback = INVALID_FUNCTION;
 	return false;
 }
 
@@ -407,15 +407,15 @@ bool GetCommandTranslation(int client, const char[] sCommand, CommandTranslation
 {
 	buffer[0] = '\0';
 	
-	int iCommand[RPGCommand];
-	if(!GetCommandByName(sCommand, iCommand))
+	RPGCommand command;
+	if(!GetCommandByName(sCommand, command))
 		return false;
 	
-	if(!IsValidPlugin(iCommand[c_plugin]))
+	if(!IsValidPlugin(command.plugin))
 		return false;
 	
 	Action iRet;
-	Call_StartFunction(iCommand[c_plugin], iCommand[c_callback]);
+	Call_StartFunction(command.plugin, command.callback);
 	Call_PushCell(client);
 	Call_PushString(sCommand);
 	Call_PushCell(type);

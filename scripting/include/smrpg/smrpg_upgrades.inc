@@ -262,20 +262,20 @@ native bool SMRPG_UpgradeExists(const char[] shortname);
 /**
  * Detailed upgrade info of some upgrade.
  */
-enum UpgradeInfo
+enum struct UpgradeInfo
 {
-	bool:UI_enabled, // upgrade enabled?
-	UI_maxLevelBarrier, // upper limit of maxlevel setting. Can't set maxlevel higher than that.
-	UI_maxLevel, // Maximal level a player can get for this upgrade
-	UI_startCost, // The amount of credits the first level costs
-	UI_incCost, // The amount of credits each level costs more
-	UI_adminFlag, // The admin flag(s) (ADMFLAG_*) this upgrade is restricted to. (See SMRPG_CheckUpgradeAccess and SMRPG_RunUpgradeEffect)
-	UI_teamlock, // The team this upgrade is restricted to. 0 = Disabled, 2 = RED/Terrorist team, 3 = BLU/Counter-Terrorist team
-	String:UI_name[MAX_UPGRADE_NAME_LENGTH], // Upgrade readable name as given when registering the upgrade.
-	String:UI_shortName[MAX_UPGRADE_SHORTNAME_LENGTH], // shortname used as unique identifier in all commands and database
-	String:UI_description[MAX_UPGRADE_DESCRIPTION_LENGTH], // Upgrade description as given when registering the upgrade.
-	UI_startLevel // Initial level of upgrade when players first join the server.
-};
+	bool enabled; // upgrade enabled?
+	int maxLevelBarrier; // upper limit of maxlevel setting. Can't set maxlevel higher than that.
+	int maxLevel; // Maximal level a player can get for this upgrade
+	int startCost; // The amount of credits the first level costs
+	int incCost; // The amount of credits each level costs more
+	int adminFlag; // The admin flag(s) (ADMFLAG_*) this upgrade is restricted to. (See SMRPG_CheckUpgradeAccess and SMRPG_RunUpgradeEffect)
+	int teamlock; // The team this upgrade is restricted to. 0 = Disabled, 2 = RED/Terrorist team, 3 = BLU/Counter-Terrorist team
+	char name[MAX_UPGRADE_NAME_LENGTH]; // Upgrade readable name as given when registering the upgrade.
+	char shortName[MAX_UPGRADE_SHORTNAME_LENGTH]; // shortname used as unique identifier in all commands and database
+	char description[MAX_UPGRADE_DESCRIPTION_LENGTH]; // Upgrade description as given when registering the upgrade.
+	int startLevel; // Initial level of upgrade when players first join the server.
+}
 
 /**
  * Get the UpgradeInfo of an upgrade.
@@ -285,7 +285,21 @@ enum UpgradeInfo
  * @param size           The size of the buffer array.
  * @error Unkown upgrade shortname.
  */
-native void SMRPG_GetUpgradeInfo(const char[] shortname, upgrade[UpgradeInfo], int size=view_as<int>(UpgradeInfo));
+native void SMRPG_GetUpgradeInfo(const char[] shortname, any upgrade[sizeof(UpgradeInfo)], int size=sizeof(UpgradeInfo));
+
+/**
+ * Returns if an upgrade is enabled or disabled.
+ *
+ * @param shortname      The shortname of the upgrade to check.
+ * @return               True if upgrade is enabled, false otherwise.
+ * @error Unknown upgrade shortname.
+ */
+stock bool SMRPG_IsUpgradeEnabled(const char[] shortname)
+{
+	UpgradeInfo upgrade;
+	SMRPG_GetUpgradeInfo(shortname, upgrade);
+	return upgrade.enabled;
+}
 
 /**
  * Ask the plugin controlling an upgrade to remove all active effects from a client.
