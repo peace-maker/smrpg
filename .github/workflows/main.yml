@@ -53,10 +53,7 @@ jobs:
         with:
           repository: Drixevel/Chat-Processor
           path: Chat-Processor
-      - uses: actions/checkout@v2
-        with:
-          repository: minimoney1/simple-chat-processor
-          path: simple-chat-processor
+      - run: git clone https://bitbucket.org/minimoney1/simple-chat-processor.git
       - uses: actions/checkout@v2
         with:
           repository: KissLick/ColorVariables
