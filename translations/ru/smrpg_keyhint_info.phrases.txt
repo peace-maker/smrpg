@@ -24,7 +24,7 @@
 
 	"Last Experience Short"
 	{
-		"ru"			"Последний опыт"
+		"ru"			"Последний полученный опыт"
 	}
 
 	"Estimated time until levelup"
