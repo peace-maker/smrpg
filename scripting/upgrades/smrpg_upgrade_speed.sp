@@ -171,9 +171,7 @@ float GetClientSpeedIncrease(int client)
 		return 0.0;
 	
 	// Upgrade enabled?
-	int upgrade[UpgradeInfo];
-	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
-	if(!upgrade[UI_enabled])
+	if(!SMRPG_IsUpgradeEnabled(UPGRADE_SHORTNAME))
 		return 0.0;
 	
 	int iLevel = SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME);

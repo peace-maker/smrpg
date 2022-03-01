@@ -181,9 +181,7 @@ void ApplyGravity(int client, bool bIgnoreNullLevel = false)
 		return;
 	
 	// The upgrade is disabled completely?
-	int upgrade[UpgradeInfo];
-	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
-	if(!upgrade[UI_enabled])
+	if(!SMRPG_IsUpgradeEnabled(UPGRADE_SHORTNAME))
 		return;
 	
 	// Are bots allowed to use this upgrade?
@@ -212,8 +210,7 @@ void ApplyGravity(int client, bool bIgnoreNullLevel = false)
 // Also make sure it's reset, when the upgrade is disabled.
 stock void CheckGravity(bool bForceDisable)
 {
-	int upgrade[UpgradeInfo];
-	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
+	bool bEnabled = SMRPG_IsUpgradeEnabled(UPGRADE_SHORTNAME);
 	
 	for(int i=1;i<=MaxClients;i++)
 	{
@@ -221,7 +218,7 @@ stock void CheckGravity(bool bForceDisable)
 			continue;
 		
 		// We got disabled? :(
-		if(bForceDisable || !upgrade[UI_enabled])
+		if(bForceDisable || !bEnabled)
 		{
 			// Are bots allowed to use this upgrade?
 			if(IsFakeClient(i) && SMRPG_IgnoreBots())

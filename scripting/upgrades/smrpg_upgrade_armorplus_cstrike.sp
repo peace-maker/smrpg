@@ -122,9 +122,6 @@ public void SMRPG_BuySell(int client, UpgradeQueryType type)
 	if(IsFakeClient(client) && SMRPG_IgnoreBots())
 		return;
 	
-	int upgrade[UpgradeInfo];
-	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
-	
 	int iArmor = GetClientArmor(client);
 	int iMaxArmor = GetClientMaxArmor(client);
 	
@@ -167,9 +164,7 @@ int GetClientMaxArmor(int client)
 	if(!SMRPG_IsEnabled())
 		return iDefaultMaxArmor;
 	
-	int upgrade[UpgradeInfo];
-	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
-	if(!upgrade[UI_enabled])
+	if(!SMRPG_IsUpgradeEnabled(UPGRADE_SHORTNAME))
 		return iDefaultMaxArmor;
 	
 	// Are bots allowed to use this upgrade?

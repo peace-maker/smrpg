@@ -108,9 +108,7 @@ public void Hook_OnPostThink(int client)
 			return;
 
 		// The upgrade is disabled completely?
-		int upgrade[UpgradeInfo];
-		SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
-		if(!upgrade[UI_enabled])
+		if(!SMRPG_IsUpgradeEnabled(UPGRADE_SHORTNAME))
 			return;
 
 		// Are bots allowed to use this upgrade?

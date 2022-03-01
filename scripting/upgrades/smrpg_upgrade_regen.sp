@@ -100,9 +100,7 @@ public Action Timer_IncreaseHealth(Handle timer, any userid)
 	if(!SMRPG_IsEnabled())
 		return Plugin_Continue;
 	
-	int upgrade[UpgradeInfo];
-	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
-	if(!upgrade[UI_enabled])
+	if(!SMRPG_IsUpgradeEnabled(UPGRADE_SHORTNAME))
 		return Plugin_Continue;
 	
 	// Are bots allowed to use this upgrade?

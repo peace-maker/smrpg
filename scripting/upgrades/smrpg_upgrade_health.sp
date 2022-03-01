@@ -71,9 +71,7 @@ public void Event_OnPlayerSpawn(Event event, const char[] name, bool dontBroadca
 	if(!SMRPG_IsEnabled())
 		return;
 	
-	int upgrade[UpgradeInfo];
-	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
-	if(!upgrade[UI_enabled])
+	if(!SMRPG_IsUpgradeEnabled(UPGRADE_SHORTNAME))
 		return;
 	
 	// Are bots allowed to use this upgrade?
@@ -160,9 +158,7 @@ int GetClientMaxHealth(int client)
 	if(!SMRPG_IsEnabled())
 		return iDefaultMaxHealth;
 	
-	int upgrade[UpgradeInfo];
-	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
-	if(!upgrade[UI_enabled])
+	if(!SMRPG_IsUpgradeEnabled(UPGRADE_SHORTNAME))
 		return iDefaultMaxHealth;
 	
 	// Are bots allowed to use this upgrade?
