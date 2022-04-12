@@ -99,9 +99,7 @@ public bool SMRPG_ActiveQuery(int client)
 {
 	// If this is a passive effect, it's always active, if the player got at least level 1.
 	// If it's an active effect (like a short speed boost) add a check for the effect as well.
-	int upgrade[UpgradeInfo];
-	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
-	return SMRPG_IsEnabled() && upgrade[UI_enabled] && SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME) > 0;
+	return SMRPG_IsEnabled() && SMRPG_IsUpgradeEnabled(UPGRADE_SHORTNAME) && SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME) > 0;
 }
 
 // Some plugin wants this effect to end?

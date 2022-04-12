@@ -120,7 +120,7 @@ native void SMRPG_SetUpgradeBuySellCallback(const char[] shortname, SMRPG_Upgrad
  * with all the necassary checks.
  * It defaults to something like
  *
- * return SMRPG_IsEnabled() && upgrade[UI_enabled] && SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME) > 0;
+ * return SMRPG_IsEnabled() && SMRPG_IsUpgradeEnabled(UPGRADE_SHORTNAME) && SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME) > 0;
  *
  * If your upgrade adds an effect in reaction to some event, like adding speed when hit,
  * you should register this query callback and return whether the client is currently
@@ -370,11 +370,11 @@ native int SMRPG_GetClientPurchasedUpgradeLevel(int client, const char[] shortna
  */
 stock bool SMRPG_IsClientUpgradeMaxed(int client, const char[] shortname)
 {
-  new upgrade[UpgradeInfo];
+  UpgradeInfo upgrade;
   SMRPG_GetUpgradeInfo(shortname, upgrade);
   
   new iCurrentLevel = SMRPG_GetClientPurchasedUpgradeLevel(client, shortname);
-  if(iCurrentLevel >= upgrade[UI_maxLevel])
+  if(iCurrentLevel >= upgrade.maxLevel)
     return true;
   return false;
 }

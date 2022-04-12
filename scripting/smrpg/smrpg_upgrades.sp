@@ -406,7 +406,7 @@ public int Native_UpgradeExists(Handle plugin, int numParams)
 	return IsValidUpgrade(upgrade);
 }
 
-// native SMRPG_GetUpgradeInfo(const char[] shortname, upgrade[UpgradeInfo]);
+// native SMRPG_GetUpgradeInfo(const char[] shortname, UpgradeInfo upgrade);
 public int Native_GetUpgradeInfo(Handle plugin, int numParams)
 {
 	int len;
