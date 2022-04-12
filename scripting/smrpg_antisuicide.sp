@@ -38,6 +38,7 @@ public void OnPluginStart()
 	g_hCVLastAttackSince = CreateConVar("smrpg_antiselfkill_lastattack", "10", "Only take experience, if the selfkiller got attacked by someone in the last x seconds.", _, true, 0.0);
 	g_hCVExpPunish = CreateConVar("smrpg_antiselfkill_exppunish", "0.1", "Take x% of the experience required for the next level.", _, true, 0.0, true, 1.0);
 	
+	LoadTranslations("smrpg_antisuicide.phrases");
 	AutoExecConfig();
 	
 	HookEvent("player_death", Event_OnPlayerDeath);
@@ -121,7 +122,7 @@ public void Event_OnPlayerDeath(Event event, const char[] name, bool dontBroadca
 		if(iReducedExp > iExp)
 			iReducedExp = iExp;
 		SMRPG_SetClientExperience(victim, iExp - iReducedExp);
-		Client_PrintToChatAll(false, "{OG}SM:RPG{N} > %N{G} lost {RB}%d experience{G} for suiciding during battle.", victim, iReducedExp);
+		Client_PrintToChatAll(false, "{OG}SM:RPG{N} > %t", "Player lost experience for suicide", victim, iReducedExp);
 		LogMessage("%L lost %d experience for suiciding. (now %d/%d)", victim, iReducedExp, SMRPG_GetClientExperience(victim), iNeededExp);
 	}
 	
