@@ -343,6 +343,7 @@ public Action Timer_CalculateEstimatedLevelupTime(Handle timer)
 		
 		g_fExperienceAverage[client] = float(iTotalExp)/float(iCount);
 	}
+	return Plugin_Continue;
 }
 
 public void SMRPG_OnAddExperiencePost(int client, const char[] reason, int iExperience, int other)
@@ -436,7 +437,7 @@ void SecondsToString(char[] sBuffer, int iLength, int iSecs, bool bTextual = tru
 	}
 }
 
-int GetHUDColor()
+int[] GetHUDColor()
 {
 	int iColor[4];
 	
@@ -451,7 +452,7 @@ int GetHUDColor()
 	return iColor;
 }
 
-float GetHUDPosition()
+float[] GetHUDPosition()
 {
 	float fPosition[2];
 	

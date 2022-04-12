@@ -497,7 +497,7 @@ public void Event_OnVIPEscaped(Event event, const char[] error, bool dontBroadca
 public Action UsrMsgHook_OnSurvivalStats(UserMsg msg_id, Protobuf msg, const int[] players, int playersNum, bool reliable, bool init)
 {
 	if(!SMRPG_IsEnabled())
-		return;
+		return Plugin_Continue;
 
 	int xuid[2];
 	int userCount = msg.GetRepeatedFieldCount("users");
@@ -524,6 +524,7 @@ public Action UsrMsgHook_OnSurvivalStats(UserMsg msg_id, Protobuf msg, const int
 		// sending new usermessages during a usermessage hook.
 		RequestFrame(AddDangerZoneExperienceNextFrame, hPack);
 	}
+	return Plugin_Continue;
 }
 
 void AddDangerZoneExperienceNextFrame(DataPack hPack)

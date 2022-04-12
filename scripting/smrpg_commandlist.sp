@@ -263,16 +263,14 @@ public int Native_RegisterCommand(Handle plugin, int numParams)
 			// This command was registered by a different plugin..
 			if(plugin != command.plugin)
 			{
-				ThrowNativeError(SP_ERROR_NATIVE, "RPG command \"%s\" is already registered by a different plugin!", sCommand);
+				return ThrowNativeError(SP_ERROR_NATIVE, "RPG command \"%s\" is already registered by a different plugin!", sCommand);
 			}
 			// This plugin already registered this command. maybe it wants to update the callback function?
-			else
-			{
-				command.callback = iCallback;
-				g_hCommandList.SetArray(i, command, sizeof(RPGCommand));
-			}
+			command.callback = iCallback;
+			g_hCommandList.SetArray(i, command, sizeof(RPGCommand));
+			
 			// We're done here already.
-			return;
+			return 0;
 		}
 	}
 	
@@ -286,6 +284,7 @@ public int Native_RegisterCommand(Handle plugin, int numParams)
 	if(g_hRPGMenu != null && g_TopMenuCommands != INVALID_TOPMENUOBJECT)
 		command.topmenuobject = g_hRPGMenu.AddItem(sCommandName, TopMenu_CommandItemHandler, g_TopMenuCommands);
 	g_hCommandList.PushArray(command, sizeof(RPGCommand));
+	return 0;
 }
 
 // native void SMRPG_UnregisterCommand(const char[] command);
@@ -305,11 +304,12 @@ public int Native_UnregisterCommand(Handle plugin, int numParams)
 			if(command.topmenuobject != INVALID_TOPMENUOBJECT && g_hRPGMenu != null && g_TopMenuCommands != INVALID_TOPMENUOBJECT)
 				g_hRPGMenu.Remove(command.topmenuobject);
 			g_hCommandList.Erase(i);
-			return;
+			return 0;
 		}
 	}
 	
-	//ThrowNativeError(SP_ERROR_NATIVE, "There is no command \"%s\" registered by this plugin.", sCommand);
+	//return ThrowNativeError(SP_ERROR_NATIVE, "There is no command \"%s\" registered by this plugin.", sCommand);
+	return 0;
 }
 
 /**

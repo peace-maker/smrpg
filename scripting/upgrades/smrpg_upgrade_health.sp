@@ -22,6 +22,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 {
 	RegPluginLibrary("smrpg_health");
 	CreateNative("SMRPG_Health_GetClientMaxHealthEx", Native_GetMaxHealth);
+	return APLRes_Success;
 }
 
 public void OnPluginStart()

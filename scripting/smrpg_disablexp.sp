@@ -128,6 +128,7 @@ public Action Cmd_ListDisabledExp(int client, int args)
 		
 		ReplyToCommand(client, "SM:RPG > %N <%s>: %s", i, sAuth, (g_bDisableExperience[i]?"Disabled":"Enabled"));
 	}
+	return Plugin_Handled;
 }
 
 public Action SMRPG_OnAddExperience(int client, const char[] reason, int &iExperience, int other)
@@ -226,4 +227,5 @@ public int Menu_HandlePlayerlist(Menu menu, MenuAction action, int param1, int p
 		
 		DisplayPlayerList(param1, GetMenuSelectionPosition());
 	}
+	return 0;
 }
