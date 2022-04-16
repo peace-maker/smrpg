@@ -40,6 +40,11 @@ void RegisterLaggedMovementForwards()
 	g_hfwdOnClientLaggedMovementReset = CreateGlobalForward("SMRPG_OnClientLaggedMovementReset", ET_Ignore, Param_Cell, Param_Cell);
 }
 
+void InitLaggedMovementClient(int client)
+{
+	g_ClientMovementState[client].base = 1.0;
+}
+
 void ResetLaggedMovementClient(int client, bool bDisconnect)
 {
 	if(IsClientInGame(client))
