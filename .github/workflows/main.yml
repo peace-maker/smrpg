@@ -114,6 +114,23 @@ jobs:
           done
 
           rm include/smrpg/smrpg_autoversion.inc
+      
+      - name: Upload build
+        if: github.event_name == 'push' && github.ref_type == 'branch' && github.ref_name == 'master'
+        env:
+          DROPURL: ${{ secrets.DROPURL }}
+          UPLOADKEY: ${{ secrets.UPLOADKEY }}
+          SMVERSION: ${{ matrix.sm-main-version }}
+        shell: bash
+        run: |
+          ARCHIVE=smrpg-rev$GITREVCOUNT.tar.gz
+          cd package
+          tar -zcvf ../$ARCHIVE *
+          cd ..
+
+          if [ ! -z "$DROPURL" ]; then
+            curl -F "sm=$SMVERSION" -F "key=$UPLOADKEY" -F "drop=@$ARCHIVE" $DROPURL
+          fi
 
       - uses: actions/upload-artifact@v2
         with:
