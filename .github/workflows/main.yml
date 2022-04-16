@@ -25,7 +25,7 @@ jobs:
     continue-on-error: ${{ matrix.experimental }}
     name: SM version ${{ matrix.sm-version }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0
           path: smrpg
@@ -36,30 +36,30 @@ jobs:
           version: ${{ matrix.sm-version }}
 
       # Checkout all dependencies
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           repository: bcserv/smlib
           ref: transitional_syntax
           path: smlib
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           repository: Impact123/AutoExecConfig
           path: AutoExecConfig
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           repository: Drifter321/DHooks2
           path: DHooks2
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           repository: Drixevel/Chat-Processor
           path: Chat-Processor
       - run: git clone https://bitbucket.org/minimoney1/simple-chat-processor.git
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           repository: peace-maker/ColorVariables
           ref: sm111
           path: ColorVariables
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           repository: peace-maker/mapzonelib
           path: mapzonelib
