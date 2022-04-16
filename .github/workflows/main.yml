@@ -56,7 +56,8 @@ jobs:
       - run: git clone https://bitbucket.org/minimoney1/simple-chat-processor.git
       - uses: actions/checkout@v2
         with:
-          repository: KissLick/ColorVariables
+          repository: peace-maker/ColorVariables
+          ref: sm111
           path: ColorVariables
       - uses: actions/checkout@v2
         with:
@@ -81,7 +82,7 @@ jobs:
         shell: bash
         env:
           PACKAGE_PATH: ${{ github.workspace }}/package
-          INCLUDE_PATHS: -i${{ github.workspace }}/smrpg/scripting/include -i${{ github.workspace }}/smlib/scripting/include -i${{ github.workspace }}/AutoExecConfig -i${{ github.workspace }}/DHooks2/sourcemod/scripting/include -i${{ github.workspace }}/Chat-Processor/scripting/include -i${{ github.workspace }}/simple-chat-processor/scripting/include -i${{ github.workspace }}/ColorVariables/addons/sourcemod/scripting/includes -i${{ github.workspace }}/mapzonelib/scripting/include
+          INCLUDE_PATHS: -i${{ github.workspace }}/smrpg/scripting/include -i${{ github.workspace }}/smlib/scripting/include -i${{ github.workspace }}/AutoExecConfig -i${{ github.workspace }}/DHooks2/sourcemod/scripting/include -i${{ github.workspace }}/Chat-Processor/scripting/include -i${{ github.workspace }}/simple-chat-processor/scripting/include -i${{ github.workspace }}/ColorVariables/addons/sourcemod/scripting/include -i${{ github.workspace }}/mapzonelib/scripting/include
         run: |
           cd smrpg/scripting
 
