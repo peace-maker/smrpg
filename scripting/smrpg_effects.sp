@@ -57,6 +57,8 @@ public void OnPluginStart()
 	// Account for late loading
 	for(int i=1;i<=MaxClients;i++)
 	{
+		if(IsClientConnected(i))
+			OnClientConnected(i);
 		if(IsClientInGame(i))
 			OnClientPutInServer(i);
 	}
@@ -66,6 +68,11 @@ public void OnMapStart()
 {
 	PrecacheFreezeSounds();
 	ReadLimitDamageConfig();
+}
+
+public void OnClientConnected(int client)
+{
+	InitLaggedMovementClient(client);
 }
 
 public void OnClientPutInServer(int client)

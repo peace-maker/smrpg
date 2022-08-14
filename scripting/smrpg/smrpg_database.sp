@@ -568,21 +568,23 @@ public int Native_FlushDatabase(Handle plugin, int numParams)
 {
 	// Flush all info into the database. This handles smrpg_save_data and smrpg_enable
 	SaveAllPlayers();
+	return 0;
 }
 
 public int Native_CheckDatabaseConnection(Handle plugin, int numParams)
 {
 	if(!g_hDatabase)
-		return;
+		return 0;
 
 	// Call the global forward callback ONLY in the calling plugin.
 	Function funOnDatabaseConnected = GetFunctionByName(plugin, "SMRPG_OnDatabaseConnected");
 	if(funOnDatabaseConnected == INVALID_FUNCTION)
-		return;
+		return 0;
 
 	Call_StartFunction(plugin, funOnDatabaseConnected);
 	Call_PushCell(g_hDatabase);
 	Call_Finish();
+	return 0;
 }
 
 public void SQL_DoNothing(Database db, DBResultSet results, const char[] error, any data)

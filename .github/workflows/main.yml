@@ -25,7 +25,7 @@ jobs:
     continue-on-error: ${{ matrix.experimental }}
     name: SM version ${{ matrix.sm-version }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0
           path: smrpg
@@ -36,29 +36,30 @@ jobs:
           version: ${{ matrix.sm-version }}
 
       # Checkout all dependencies
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           repository: bcserv/smlib
           ref: transitional_syntax
           path: smlib
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           repository: Impact123/AutoExecConfig
           path: AutoExecConfig
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           repository: Drifter321/DHooks2
           path: DHooks2
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           repository: Drixevel/Chat-Processor
           path: Chat-Processor
       - run: git clone https://bitbucket.org/minimoney1/simple-chat-processor.git
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
-          repository: KissLick/ColorVariables
+          repository: peace-maker/ColorVariables
+          ref: sm111
           path: ColorVariables
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           repository: peace-maker/mapzonelib
           path: mapzonelib
@@ -81,7 +82,7 @@ jobs:
         shell: bash
         env:
           PACKAGE_PATH: ${{ github.workspace }}/package
-          INCLUDE_PATHS: -i${{ github.workspace }}/smrpg/scripting/include -i${{ github.workspace }}/smlib/scripting/include -i${{ github.workspace }}/AutoExecConfig -i${{ github.workspace }}/DHooks2/sourcemod/scripting/include -i${{ github.workspace }}/Chat-Processor/scripting/include -i${{ github.workspace }}/simple-chat-processor/scripting/include -i${{ github.workspace }}/ColorVariables/addons/sourcemod/scripting/includes -i${{ github.workspace }}/mapzonelib/scripting/include
+          INCLUDE_PATHS: -i${{ github.workspace }}/smrpg/scripting/include -i${{ github.workspace }}/smlib/scripting/include -i${{ github.workspace }}/AutoExecConfig -i${{ github.workspace }}/DHooks2/sourcemod/scripting/include -i${{ github.workspace }}/ColorVariables/addons/sourcemod/scripting/include -i${{ github.workspace }}/Chat-Processor/scripting/include -i${{ github.workspace }}/simple-chat-processor/scripting/include -i${{ github.workspace }}/mapzonelib/scripting/include
         run: |
           cd smrpg/scripting
 
@@ -91,16 +92,16 @@ jobs:
             if [ "$f" != "smrpg_chattags.sp" ]; then
               echo -e "\nCompiling $f..."
               smxfile="`echo $f | sed -e 's/\.sp$/\.smx/'`"
-              spcomp $INCLUDE_PATHS $f -o$PACKAGE_PATH/plugins/$smxfile
+              spcomp -E $INCLUDE_PATHS $f -o$PACKAGE_PATH/plugins/$smxfile
             fi
           done
 
           # compile both versions of chattags for both chat processors..
           echo -e "\nCompiling smrpg_chattags.sp for Chat Processor..."
-          spcomp $INCLUDE_PATHS smrpg_chattags.sp -o$PACKAGE_PATH/plugins/smrpg_chattags_cp.smx
+          spcomp -E $INCLUDE_PATHS smrpg_chattags.sp -o$PACKAGE_PATH/plugins/smrpg_chattags_cp.smx
 
           echo -e "\nCompiling smrpg_chattags.sp for Simple Chat Processor..."
-          spcomp $INCLUDE_PATHS smrpg_chattags.sp -o$PACKAGE_PATH/plugins/smrpg_chattags_scp.smx USE_SIMPLE_PROCESSOR=
+          spcomp -E $INCLUDE_PATHS smrpg_chattags.sp -o$PACKAGE_PATH/plugins/smrpg_chattags_scp.smx USE_SIMPLE_PROCESSOR=
 
           # compile all upgrades
           for f in upgrades/*.sp
@@ -109,11 +110,28 @@ jobs:
             if [ "$f" != "upgrades/smrpg_upgrade_example.sp" ]; then
               echo -e "\nCompiling upgrade $f..."
               smxfile="`echo $f | sed -e 's/\.sp$/\.smx/'`"
-              spcomp $INCLUDE_PATHS $f -o$PACKAGE_PATH/plugins/$smxfile
+              spcomp -E $INCLUDE_PATHS $f -o$PACKAGE_PATH/plugins/$smxfile
             fi
           done
 
           rm include/smrpg/smrpg_autoversion.inc
+      
+      - name: Upload build
+        if: github.event_name == 'push' && github.ref_type == 'branch' && github.ref_name == 'master'
+        env:
+          DROPURL: ${{ secrets.DROPURL }}
+          UPLOADKEY: ${{ secrets.UPLOADKEY }}
+          SMVERSION: ${{ matrix.sm-main-version }}
+        shell: bash
+        run: |
+          ARCHIVE=smrpg-rev$GITREVCOUNT.tar.gz
+          cd package
+          tar -zcvf ../$ARCHIVE *
+          cd ..
+
+          if [ ! -z "$DROPURL" ]; then
+            curl -F "sm=$SMVERSION" -F "key=$UPLOADKEY" -F "drop=@$ARCHIVE" $DROPURL
+          fi
 
       - uses: actions/upload-artifact@v2
         with:

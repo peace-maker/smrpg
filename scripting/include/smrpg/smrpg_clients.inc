@@ -4,6 +4,7 @@
 #define _smrpg_clients_included
 
 #include <smrpg>
+#include <sdktools>
 
 /**
  * Gets a client's current RPG level.

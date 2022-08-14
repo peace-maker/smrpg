@@ -644,6 +644,7 @@ public int Menu_HandleUpgradeSettings(Menu menu, MenuAction action, int param1, 
 	{
 		delete menu;
 	}
+	return 0;
 }
 
 void DisplayStatsMenu(int client)
@@ -703,7 +704,7 @@ public void TopMenu_HandleStats(TopMenu topmenu, TopMenuAction action, TopMenuOb
 				DisplaySessionLastExperienceMenu(param, true);
 			}
 		}
-	}	
+	}
 }
 
 void DisplaySettingsMenu(int client)
@@ -759,7 +760,7 @@ public void TopMenu_HandleSettings(TopMenu topmenu, TopMenuAction action, TopMen
 				g_hRPGTopMenu.Display(param, TopMenuPosition_LastCategory);
 			}
 		}
-	}	
+	}
 }
 
 public int Menu_ConfirmResetStats(Menu menu, MenuAction action, int param1, int param2)
@@ -958,6 +959,7 @@ public int Menu_HandleOtherUpgrades(Menu menu, MenuAction action, int param1, in
 	{
 		delete menu;
 	}
+	return 0;
 }
 
 // Helper functions to access those pubvars before they are declared..

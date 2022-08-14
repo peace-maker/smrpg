@@ -3,7 +3,6 @@
 	"Inform about plugin"
 	{
 		// 1: Running SM:RPG plugin version (e.g. 1.0)
-		"#format" "{1:s}"
 		"chi"			"这台服务器正在运行SM:RPG插件 版本号为：{1}."
 	}
 	
@@ -16,14 +15,12 @@
 	{
 		// 1: Name of the client which level has changed.
 		// 2: New rpg level of the client
-		"#format"	"{1:N},{2:d}"
 		"chi"			"{1} 现在的等级为 {2}."
 	}
 	
 	"You have new credits"
 	{
 		// 1: Total amount of credits the player currently has.
-		"#format"	"{1:d}"
 		"chi"			"你获得了点数，你现在一共有 ({1} 点). 输入 \"rpgmenu\" 来购买升级."
 	}
 	
@@ -44,7 +41,6 @@
 		// 1: Amount of experience the client just gained.
 		// 2: Total amount of experience the client currently has on his level.
 		// 3: Amount of experience needed to reach the next level.
-		"#format"	"{1:d},{2:d},{3:d}"
 		"chi"			"获得的经验: {1}+\n 经验配额: {2}/{3}"
 	}
 	
@@ -57,7 +53,6 @@
 		// 5: Amount of experience the player has on his level.
 		// 6: Amount of experience needed to reach the next level.
 		// 7: Amount of rpg credits of the player.
-		"#format"	"{1:N},{2:d},{3:d},{4:d},{5:d},{6:d},{7:d}"
 		"chi"			"{1} 级 {2}, ranked {3}/{4} 和 {5}/{6} 经验 {7} 点数"
 	}
 	
@@ -75,7 +70,6 @@
 	{
 		// 1: Name of the player
 		// 2: Maximum level a player can reach.
-		"#format"	"{1:N},{2:d}"
 		"chi"			"{1} 达到最高水平，为： {2} 然后将会重置等级."
 	}
 	
@@ -83,7 +77,6 @@
 	"Level"
 	{
 		// 1: Current rpg level of the player.
-		"#format" "{1:d}"
 		"chi"			"等级: {1}"
 	}
 	
@@ -91,7 +84,6 @@
 	{
 		// 1: Current amount of experience of the player.
 		// 2: Experience required for next level.
-		"#format" "{1:d},{2:d}"
 		"chi"			"经验: {1}/{2}"
 	}
 	
@@ -103,7 +95,6 @@
 	"Credits"
 	{
 		// 1: Amount of credits the player has.
-		"#format" "{1:d}"
 		"chi"			"点数: {1}"
 	}
 	
@@ -111,14 +102,12 @@
 	{
 		// 1: Current rpg rank of the player.
 		// 2: Total amount of ranked players.
-		"#format" "{1:d},{2:d}"
 		"chi"			"排行榜: {1}/{2}"
 	}
 	
 	"Last reset"
 	{
 		// 1: date and time representation of the last time the stats were reset to 0 for this player
-		"#format"	"{1:s}"
 		"chi"			"上次重置: {1}"
 	}
 	
@@ -127,7 +116,6 @@
 		// 1: The amount of experience added to a client.
 		// 2: The reason this experience was added for
 		// 3: The name of the other client involved in the reason for this experience. (e.g. name of victim hurt)
-		"#format"	"{1:d},{2:s},{3:N}"
 		"chi"			 "{1} exp. for \"{2}\" against {3}"
 	}
 	
@@ -135,7 +123,6 @@
 	{
 		// 1: The amount of experience added to a client.
 		// 2: The reason this experience was added for
-		"#format"	"{1:d},{2:s}"
 		"chi"			 "{1} exp. for \"{2}\""
 	}
 	
@@ -157,7 +144,6 @@
 	"Is teamlocked"
 	{
 		// 1: The team name of the team the upgrade is restricted to.
-		"#format"		"{1:s}"
 		"chi"			" 只有 {1} 才能使用"
 	}
 	
@@ -167,7 +153,6 @@
 		// 2: Current level of the upgrade the player has purchased.
 		// 3: "Cost" phrase.
 		// 4: Optional " (Is teamlocked)" phrase if upgrade is locked to a team.
-		"#format"	"{1:s},{2:d},{3:t},{4:s}"
 		"chi"			"{1} Lvl {2} MAX [{3}: MAX]{4}"
 	}
 	
@@ -179,7 +164,6 @@
 		// 4: "Cost" phrase.
 		// 5: Upgrade cost for the next level.
 		// 6: Optional " (Is teamlocked)" phrase if upgrade is locked to a team.
-		"#format"	"{1:s},{2:d},{3:d},{4:t},{5:d},{6:s}"
 		"chi"			"{1} Lvl {2}/{3} [{4}: {5}]{6}"
 	}
 	
@@ -190,7 +174,6 @@
 		// 3: "Cost" phrase.
 		// 4: Upgrade cost for the next level.
 		// 5: Optional " (Is teamlocked)" phrase if upgrade is locked to a team.
-		"#format"	"{1:s},{2:d},{3:t},{4:d},{5:s}"
 		"chi"			"{1} Lvl {2} [{3}: {4}]{5}"
 	}
 	
@@ -202,7 +185,6 @@
 		// 4: "Sale" phrase.
 		// 5: Amount of credits player earns for selling the upgrade level.
 		// 6: Optional " (Is teamlocked)" phrase if upgrade is locked to a team.
-		"#format"	"{1:s},{2:d},{3:d},{4:t},{5:d},{6:s}"
 		"chi"			"{1} Lvl {2}/{3} [{4}: {5}]{6}"
 	}
 	
@@ -213,7 +195,6 @@
 		// 3: "Sale" phrase.
 		// 4: Amount of credits player earns for selling the upgrade level.
 		// 5: Optional " (Is teamlocked)" phrase if upgrade is locked to a team.
-		"#format"	"{1:s},{2:d},{3:t},{4:d},{5:s}"
 		"chi"			"{1} Lvl {2} [{3}: {4}]{5}"
 	}
 	
@@ -224,7 +205,6 @@
 		// 3: Purchased level of the upgrade.
 		// 4: "On" or "Off" phrase depending on if the player has the upgrade enabled.
 		// 5: Optional " (Is teamlocked)" phrase if upgrade is locked to a team.
-		"#format"	"{1:s},{2:d},{3:d},{4:t},{5:s}"
 		"chi"			"{1} Lvl {2}/{3} [{4}]{5}"
 	}
 	
@@ -234,7 +214,6 @@
 		// 2: Purchased level of the upgrade.
 		// 3: "On" or "Off" phrase depending on if the player has the upgrade enabled.
 		// 4: Optional " (Is teamlocked)" phrase if upgrade is locked to a team.
-		"#format"	"{1:s},{2:d},{3:t},{4:s}"
 		"chi"			"{1} Lvl {2} [{3}]{4}"
 	}
 	
@@ -242,7 +221,6 @@
 	{
 		// 1: Translated name of the upgrade.
 		// 2: Purchased level of the upgrade.
-		"#format"	"{1:s},{2:d}"
 		"chi"			"{1} Lvl {2} MAX"
 	}
 	
@@ -251,7 +229,6 @@
 		// 1: Translated name of the upgrade.
 		// 2: Purchased level of the upgrade.
 		// 3: Maximal level of the upgrade.
-		"#format"	"{1:s},{2:d},{3:d}"
 		"chi"			"{1} Lvl {2}/{3}"
 	}
 	
@@ -259,7 +236,6 @@
 	{
 		// 1: Translated name of the upgrade.
 		// 2: Purchased level of the upgrade.
-		"#format"	"{1:s},{2:d}"
 		"chi"			"{1} Lvl {2}"
 	}
 	
@@ -271,7 +247,6 @@
 	"Playtime"
 	{
 		// 1: The time in hh:mm:ss the player is on the server since he joined.
-		"#format" "{1:s}"
 		"chi"			"玩家 游玩时间: {1}"
 	}
 	
@@ -372,7 +347,6 @@
 		// 1: The name of the upgrade the player wanted to buy.
 		// 2: The level of the upgrade the player wanted to buy.
 		// 3: The amount of credits this level of the upgrade costs.
-		"#format"	"{1:s},{2:d},{3:d}"
 		"chi"			"你没有足够的点数来购买 {1} 级别 {2} 的升级. (需要 {3} 点)"
 	}
 	
@@ -380,7 +354,6 @@
 	{
 		// 1: The name of the upgrade the player just bought.
 		// 2: The new level of this upgrade.
-		"#format"	"{1:s},{2:d}"
 		"chi"			"{1} 级 {2} 成功购买."
 	}
 	
@@ -389,7 +362,6 @@
 		// 1: The name of the player who bought an upgrade.
 		// 2: The name of the upgrade the player just bought.
 		// 3: The new level of this upgrade.
-		"#format"	"{1:N},{2:s},{3:d}"
 		"chi"			"{1} 已购买 {2} 级 {3}."
 	}
 	
@@ -397,7 +369,6 @@
 	{
 		// 1: The name of the upgrade the player just sold.
 		// 2: The new level of this upgrade.
-		"#format"	"{1:s},{2:d}"
 		"chi"			"{1} 级 {2} 已经被出售."
 	}
 	
@@ -483,14 +454,12 @@
 	"Confirm reset player"
 	{
 		// 1: Name of the player to reset stats of.
-		"#format"	"{1:N}"
 		"chi"			"Do you really want to reset the stats and upgrades of {1}?"
 	}
 	
 	"Inform player reset"
 	{
 		// 1: Name of the player who's stats got reset.
-		"#format"	"{1:N}"
 		"chi"			"{1}'s stats have been permanently reset."
 	}
 	
@@ -522,7 +491,6 @@
 	"Adminflags hint"
 	{
 		// 1: The required admin flags like "ab" for that upgrade.
-		"#format"	"{1:s}"
 		"chi"			" (adminflags: {1})"
 	}
 	
@@ -539,7 +507,6 @@
 	"Teamlock hint"
 	{
 		// 1: The team name this upgrade is locked to.
-		"#format"	"{1:s}"
 		"chi"			" (teamlock: {1})"
 	}
 	
@@ -550,7 +517,6 @@
 		// 3: Maximum level of the upgrade.
 		// 4: Optional required permissions ("Adminflags hint" phrase)
 		// 5: Optional locked team ("Teamlock hint" phrase)
-		"#format"	"{1:s},{2:d},{3:d},{4:s},{5:s}"
 		"chi"			"{1} Lvl MAX {2}/{3}{4}{5}"
 	}
 	
@@ -561,28 +527,24 @@
 		// 3: Maximum level of the upgrade.
 		// 4: Optional required permissions ("Adminflags hint" phrase)
 		// 5: Optional locked team ("Teamlock hint" phrase)
-		"#format"	"{1:s},{2:d},{3:d},{4:s},{5:s}"
 		"chi"			"{1} Lvl {2}/{3}{4}{5}"
 	}
 	
 	"Confirm max all player upgrades"
 	{
 		// 1: The name of the player who's upgrades should be upgraded.
-		"#format"	"{1:N}"
 		"chi"			"Do you really want to set all upgrades to the maximal level for {1}?"
 	}
 	
 	"Inform player upgrades maxed"
 	{
 		// 1: The name of the player who's upgrades got set to the maximal level.
-		"#format"	"{1:N}"
 		"chi"			"{1} now has all upgrades on max."
 	}
 	
 	"Change player upgrade level"
 	{
 		// 1: Name of player who's upgrade level should be changed.
-		"#format"	"{1:N}"
 		"chi"			"Change {1}'s upgrade level"
 	}
 	
@@ -591,7 +553,6 @@
 		// 1: Translated name of the upgrade.
 		// 2: Current purchased level of the upgrade.
 		// 3: Maximal level of the upgrade.
-		"#format"	"{1:s},{2:d},{3:d}"
 		"chi"			"{1}: {2}/{3}"
 	}
 	
@@ -647,7 +608,6 @@
 		// 3: Previous level of the upgrade before resetting.
 		// 4: New upgrade level after resetting (usually 0).
 		// 5: Returned credits for the bought upgrade levels. Full refund = same amount player payed for it.
-		"#format"	"{1:N},{2:s},{3:d},{4:d},{5:d}"
 		"chi"			"Reset {1}'s upgrade {2} with full refund of all upgrade costs. Upgrade level changed from {3} to {4} and the player earned {5} credits."
 	}
 	
@@ -657,14 +617,12 @@
 		// 2: Translated name of the upgrade.
 		// 3: Current amount of credits the client has.
 		// 4: Cost for the next level of the upgrade.
-		"#format"	"{1:N},{2:s},{3:d},{4:d}"
 		"chi"			"{1} doesn't have enough credits to purchase {2} ({3}/{4})"
 	}
 	
 	"Upgrade short name"
 	{
 		// 1: Shortname of the upgrade (used in commands to reference it)
-		"#format"	"{1:s}"
 		"chi"			"Short name: {1}"
 	}
 	
@@ -681,70 +639,60 @@
 	"Admin upgrade info maxlevel barrier"
 	{
 		// 1: Maximal level the upgrade can be set to / supports.
-		"#format"	"{1:d}"
 		"chi"			"Maxlevel barrier: {1}"
 	}
 	
 	"Admin upgrade info maxlevel"
 	{
 		// 1: Current maximal level of the upgrade.
-		"#format"	"{1:d}"
 		"chi"			"Maxlevel: {1}"
 	}
 	
 	"Admin upgrade info cost"
 	{
 		// 1: Current upgrade starting cost.
-		"#format"	"{1:d}"
 		"chi"			"Cost: {1}"
 	}
 	
 	"Admin upgrade info increase cost"
 	{
 		// 1: Current upgrade increasing cost.
-		"#format"	"{1:d}"
 		"chi"			"Increase cost: {1}"
 	}
 	
 	"Admin upgrade info teamlock"
 	{
 		// 1: Team name of the team this upgrade is locked to.
-		"#format"	"{1:s}"
 		"chi"			"Teamlock: {1}"
 	}
 	
 	"Admin upgrade info visual effects"
 	{
 		// 1: Translated "On" or "Off"
-		"#format"	"{1:t}"
 		"chi"			"Visual effects: {1}"
 	}
 	
 	"Admin upgrade info sound effects"
 	{
 		// 1: Translated "On" or "Off"
-		"#format"	"{1:t}"
 		"chi"			"Sound effects: {1}"
 	}
 	
 	"Admin upgrades change maxlevel"
 	{
 		// 1: Current upgrade's maxlevel.
-		"#format"	"{1:d}"
 		"chi"			"Change maxlevel temporarily: {1}"
 	}
 	
 	"Admin upgrades change start cost"
 	{
 		// 1: Current upgrade's start cost.
-		"#format"	"{1:d}"
 		"chi"			"Change start cost temporarily: {1}"
 	}
 	
 	"Admin upgrades change increasing cost"
 	{
 		// 1: Current upgrade's increasing cost.
-		"#format"	"{1:d}"
 		"chi"			"Change increasing cost temporarily: {1}"
 	}
 	
@@ -868,7 +816,6 @@
 	"rpgexp advert"
 	{
 		// 1: Value of smrpg_lastexperience_count. The amount of experience saved in the array.
-		"#format" "{1:d}"
 		"chi"			"输入 {N}rpgexp{G} 查看最新列表 {1} 您获得的经验的原因和数量。"
 	}
 }

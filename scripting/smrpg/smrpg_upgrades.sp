@@ -337,11 +337,11 @@ public int Native_UnregisterUpgradeType(Handle plugin, int numParams)
 			Call_PushString(sShortName);
 			Call_Finish();
 			
-			return;
+			return 0;
 		}
 	}
 	
-	ThrowNativeError(SP_ERROR_NATIVE, "No upgrade named \"%s\" loaded.", sShortName);
+	return ThrowNativeError(SP_ERROR_NATIVE, "No upgrade named \"%s\" loaded.", sShortName);
 }
 
 // native ConVar SMRPG_CreateUpgradeConVar(const char[] shortname, const char[] name, const char[] defaultValue, const char[] description="", flags=0, bool hasMin=false, float min=0.0, bool hasMax=false, float max=0.0);
@@ -406,7 +406,7 @@ public int Native_UpgradeExists(Handle plugin, int numParams)
 	return IsValidUpgrade(upgrade);
 }
 
-// native SMRPG_GetUpgradeInfo(const char[] shortname, upgrade[UpgradeInfo]);
+// native SMRPG_GetUpgradeInfo(const char[] shortname, UpgradeInfo upgrade);
 public int Native_GetUpgradeInfo(Handle plugin, int numParams)
 {
 	int len;
@@ -536,8 +536,7 @@ public int Native_SetUpgradeDefaultCosmeticEffect(Handle plugin, int numParams)
 	InternalUpgradeInfo upgrade;
 	if(!GetUpgradeByShortname(sShortName, upgrade) || !IsValidUpgrade(upgrade))
 	{
-		ThrowNativeError(SP_ERROR_NATIVE, "No upgrade named \"%s\" loaded.", sShortName);
-		return;
+		return ThrowNativeError(SP_ERROR_NATIVE, "No upgrade named \"%s\" loaded.", sShortName);
 	}
 	
 	SMRPG_FX iFX = view_as<SMRPG_FX>(GetNativeCell(2));
@@ -573,6 +572,7 @@ public int Native_SetUpgradeDefaultCosmeticEffect(Handle plugin, int numParams)
 	}
 	
 	SaveUpgradeConfig(upgrade);
+	return 0;
 }
 
 // native SMRPG_ResetUpgradeEffectOnClient(int client, const char[] shortname);

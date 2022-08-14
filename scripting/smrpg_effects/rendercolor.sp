@@ -248,7 +248,7 @@ public int Native_ResetClientToDefaultColor(Handle plugin, int numParams)
 	return 0;
 }
 
-stock int Help_ResetClientToDefaultColor(Handle hPlugin, int client, bool bResetRed, bool bResetGreen, bool bResetBlue, bool bResetAlpha, bool bForceReset=false)
+stock void Help_ResetClientToDefaultColor(Handle hPlugin, int client, bool bResetRed, bool bResetGreen, bool bResetBlue, bool bResetAlpha, bool bForceReset=false)
 {
 	bool bResetChannel[4];
 	bResetChannel[0] = bResetRed;

@@ -325,13 +325,14 @@ public int Menu_HandlePlayerlist(Menu menu, MenuAction action, int param1, int p
 		{
 			PrintToChat(param1, "%t", "Player no longer available");
 			DisplayPlayerList(param1);
-			return;
+			return 0;
 		}
 
 		g_iClientBanTargetUserId[param1] = iUserId;
 		
 		DisplayBanTimeMenu(param1);
 	}
+	return 0;
 }
 
 void DisplayBanTimeMenu(int client)
@@ -382,13 +383,14 @@ public int Menu_HandleBanTimeList(Menu menu, MenuAction action, int param1, int 
 		{
 			PrintToChat(param1, "%t", "Player no longer available");
 			DisplayPlayerList(param1);
-			return;
+			return 0;
 		}
 
 		g_iClientBanLengthMinutes[param1] = iMinutes;
 		
 		DisplayBanReasonMenu(param1);
 	}
+	return 0;
 }
 
 void DisplayBanReasonMenu(int client)
@@ -443,13 +445,14 @@ public int Menu_HandleBanReasonList(Menu menu, MenuAction action, int param1, in
 			g_iClientBanLengthMinutes[param1] = 0;
 			PrintToChat(param1, "%t", "Player no longer available");
 			DisplayPlayerList(param1);
-			return;
+			return 0;
 		}
 
 		BanClientFromRPG(param1, iTarget, g_iClientBanLengthMinutes[param1], sReason);
 		g_iClientBanTargetUserId[param1] = 0;
 		g_iClientBanLengthMinutes[param1] = 0;
 	}
+	return 0;
 }
 
 /**
@@ -634,7 +637,7 @@ bool GetClientBanInfo(int client, BanInfo banInfo)
 	return g_hBans.GetArray(sAccountId, banInfo, sizeof(BanInfo));
 }
 
-char GetClientAccountIDString(int client)
+char[] GetClientAccountIDString(int client)
 {
 	char sAccountId[64];
 

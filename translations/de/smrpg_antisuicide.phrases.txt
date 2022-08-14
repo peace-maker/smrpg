@@ -1,0 +1,9 @@
+"Phrases"
+{
+  "Player lost experience for suicide"
+  {
+    // 1: The name of the player who suicided during battle.
+    // 2: The amount of experience removed.
+    "de"  "{1}{G} hat wegen Selbstmords während eines Kampfes {RB}{2} Erfahrung{G} verloren."
+  }
+}

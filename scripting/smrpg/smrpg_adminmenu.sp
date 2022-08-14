@@ -122,12 +122,13 @@ public int Menu_HandlePlayerList(Menu menu, MenuAction action, int param1, int p
 		if(!iTarget)
 		{
 			ShowPlayerListMenu(param1);
-			return;
+			return 0;
 		}
 		
 		g_iCurrentMenuTarget[param1] = iTarget;
 		ShowPlayerDetailMenu(param1);
 	}
+	return 0;
 }
 
 void ShowPlayerDetailMenu(int client)
@@ -199,6 +200,7 @@ public int Menu_HandlePlayerDetails(Menu menu, MenuAction action, int param1, in
 			hMenu.Display(param1, MENU_TIME_FOREVER);
 		}
 	}
+	return 0;
 }
 
 public int Menu_HandlePlayerResetConfirm(Menu menu, MenuAction action, int param1, int param2)
@@ -304,6 +306,7 @@ public int Menu_HandlePlayerStats(Menu menu, MenuAction action, int param1, int 
 			ShowPlayerLevelManageMenu(param1);
 		}
 	}
+	return 0;
 }
 
 void ShowPlayerCreditsManageMenu(int client)
@@ -349,6 +352,7 @@ public int Menu_HandlePlayerChangeCredits(Menu menu, MenuAction action, int para
 		LogAction(param1, g_iCurrentMenuTarget[param1], "%L changed credits of %L by %d from %d to %d.", param1, g_iCurrentMenuTarget[param1], iAmount, iOldCredits, GetClientCredits(g_iCurrentMenuTarget[param1]));
 		ShowPlayerCreditsManageMenu(param1);
 	}
+	return 0;
 }
 
 void ShowPlayerExperienceManageMenu(int client)
@@ -403,6 +407,7 @@ public int Menu_HandlePlayerChangeExperience(Menu menu, MenuAction action, int p
 			LogAction(param1, g_iCurrentMenuTarget[param1], "%L changed experience of %L by %d. He is now Level %d and has %d/%d Experience (previously Level %d with %d/%d Experience)", param1, g_iCurrentMenuTarget[param1], iAmount, GetClientLevel(g_iCurrentMenuTarget[param1]), GetClientExperience(g_iCurrentMenuTarget[param1]), Stats_LvlToExp(GetClientLevel(g_iCurrentMenuTarget[param1])), iOldLevel, iOldExperience, Stats_LvlToExp(iOldLevel));
 		ShowPlayerExperienceManageMenu(param1);
 	}
+	return 0;
 }
 
 void ShowPlayerLevelManageMenu(int client)
@@ -460,6 +465,7 @@ public int Menu_HandlePlayerChangeLevel(Menu menu, MenuAction action, int param1
 		LogAction(param1, g_iCurrentMenuTarget[param1], "%L changed level of %L by %d from %d to %d.", param1, g_iCurrentMenuTarget[param1], iAmount, iOldLevel, GetClientLevel(g_iCurrentMenuTarget[param1]));
 		ShowPlayerLevelManageMenu(param1);
 	}
+	return 0;
 }
 
 void ShowPlayerUpgradeManageMenu(int client)
@@ -564,7 +570,7 @@ public int Menu_HandlePlayerUpgradeSelect(Menu menu, MenuAction action, int para
 			hMenu.AddItem("yes", "Yes");
 			hMenu.AddItem("no", "No");
 			hMenu.Display(param1, MENU_TIME_FOREVER);
-			return;
+			return 0;
 		}
 		
 		int iItemIndex = StringToInt(sInfo);
@@ -572,6 +578,7 @@ public int Menu_HandlePlayerUpgradeSelect(Menu menu, MenuAction action, int para
 		g_iCurrentUpgradeTarget[param1] = iItemIndex;
 		ShowPlayerUpgradeLevelMenu(param1);
 	}
+	return 0;
 }
 
 public int Menu_HandlePlayerGiveAllConfirm(Menu menu, MenuAction action, int param1, int param2)
@@ -712,7 +719,7 @@ public int Menu_HandlePlayerUpgradeLevelChange(Menu menu, MenuAction action, int
 		{
 			g_iCurrentUpgradeTarget[param1] = -1;
 			ShowPlayerUpgradeManageMenu(param1);
-			return;
+			return 0;
 		}
 
 		if(StrEqual(sInfo, "reset"))
@@ -736,6 +743,7 @@ public int Menu_HandlePlayerUpgradeLevelChange(Menu menu, MenuAction action, int
 			ShowPlayerUpgradeLevelAddMenu(param1);
 		}
 	}
+	return 0;
 }
 
 void ShowPlayerUpgradeLevelRemoveMenu(int client)
@@ -818,7 +826,7 @@ public int Menu_HandlePlayerUpgradeLevelRemove(Menu menu, MenuAction action, int
 		{
 			g_iCurrentUpgradeTarget[param1] = -1;
 			ShowPlayerUpgradeManageMenu(param1);
-			return;
+			return 0;
 		}
 		
 		int iTarget = g_iCurrentMenuTarget[param1];
@@ -892,6 +900,7 @@ public int Menu_HandlePlayerUpgradeLevelRemove(Menu menu, MenuAction action, int
 		
 		ShowPlayerUpgradeLevelRemoveMenu(param1);
 	}
+	return 0;
 }
 
 void ShowPlayerUpgradeLevelAddMenu(int client)
@@ -969,7 +978,7 @@ public int Menu_HandlePlayerUpgradeLevelAdd(Menu menu, MenuAction action, int pa
 		{
 			g_iCurrentUpgradeTarget[param1] = -1;
 			ShowPlayerUpgradeManageMenu(param1);
-			return;
+			return 0;
 		}
 		
 		int iTarget = g_iCurrentMenuTarget[param1];
@@ -1020,6 +1029,7 @@ public int Menu_HandlePlayerUpgradeLevelAdd(Menu menu, MenuAction action, int pa
 		
 		ShowPlayerUpgradeLevelAddMenu(param1);
 	}
+	return 0;
 }
 
 // client disconnected. Reset all open admin menus so we don't try to change stuff on a different user out of a sudden.
@@ -1101,6 +1111,7 @@ public int Menu_HandleSelectUpgrade(Menu menu, MenuAction action, int param1, in
 		g_iCurrentUpgradeTarget[param1] = iItemIndex;
 		ShowUpgradeManageMenu(param1);
 	}
+	return 0;
 }
 
 void ShowUpgradeManageMenu(int client)
@@ -1193,7 +1204,7 @@ public int Menu_HandleUpgradeDetails(Menu menu, MenuAction action, int param1, i
 		{
 			g_iCurrentUpgradeTarget[param1] = -1;
 			ShowUpgradeListMenu(param1);
-			return;
+			return 0;
 		}
 		
 		char sInfo[32];
@@ -1272,6 +1283,7 @@ public int Menu_HandleUpgradeDetails(Menu menu, MenuAction action, int param1, i
 			ShowUpgradeManageMenu(param1);
 		}
 	}
+	return 0;
 }
 
 void ShowUpgradePropertyChangeMenu(int client, ChangeUpgradeProperty prop)
@@ -1355,7 +1367,7 @@ public int Menu_HandlePropertyChange(Menu menu, MenuAction action, int param1, i
 			g_iCurrentUpgradeTarget[param1] = -1;
 			g_iClientChangesProperty[param1] = ChangeProp_None;
 			ShowUpgradeListMenu(param1);
-			return;
+			return 0;
 		}
 		
 		char sInfo[32];
@@ -1396,4 +1408,5 @@ public int Menu_HandlePropertyChange(Menu menu, MenuAction action, int param1, i
 		
 		ShowUpgradePropertyChangeMenu(param1, g_iClientChangesProperty[param1]);
 	}
+	return 0;
 }

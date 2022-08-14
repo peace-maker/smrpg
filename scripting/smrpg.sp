@@ -123,6 +123,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	RegisterTopMenuNatives();
 	RegisterSettingsNatives();
 	RegisterDatabaseNatives();
+	return APLRes_Success;
 }
 
 public void OnPluginStart()

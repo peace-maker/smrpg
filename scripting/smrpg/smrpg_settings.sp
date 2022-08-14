@@ -97,4 +97,5 @@ public int Native_SetSetting(Handle plugin, int numParams)
 	GetNativeString(1, sKey, sizeof(sKey));
 	GetNativeString(2, sValue, sizeof(sValue));
 	SetSetting(sKey, sValue);
+	return 0;
 }

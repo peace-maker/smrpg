@@ -625,6 +625,7 @@ public int Native_GetTop10Players(Handle plugin, int numParams)
 	char sQuery[128];
 	Format(sQuery, sizeof(sQuery), "SELECT name, level, experience, credits FROM %s ORDER BY level DESC, experience DESC LIMIT 10", TBL_PLAYERS);
 	g_hDatabase.Query(SQL_GetTop10Native, sQuery, hData);
+	return 0;
 }
 
 public void SQL_GetTop10Native(Database db, DBResultSet results, const char[] error, DataPack data)
@@ -818,7 +819,7 @@ public int Panel_HandleSessionMenu(Menu menu, MenuAction action, int param1, int
 		{
 			g_iPlayerSessionStartStats[param1].wantsAutoUpdate = !g_iPlayerSessionStartStats[param1].wantsAutoUpdate;
 			DisplaySessionStatsMenu(param1);
-			return;
+			return 0;
 		}
 		else if(param2 == 5)
 		{
@@ -832,6 +833,7 @@ public int Panel_HandleSessionMenu(Menu menu, MenuAction action, int param1, int
 			g_iPlayerSessionStartStats[param1].wantsMenuOpen = false;
 		g_iPlayerSessionStartStats[param1].okToClose = false;
 	}
+	return 0;
 }
 
 void DisplaySessionLastExperienceMenu(int client, bool bBackToStatsMenu)
@@ -880,6 +882,7 @@ public int Menu_HandleLastExperience(Menu menu, MenuAction action, int param1, i
 		else
 			DisplaySessionStatsMenu(param1);
 	}
+	return 0;
 }
 
 /*	//////////////////////////////////////
@@ -1040,6 +1043,7 @@ public void SQL_GetTop10(Database db, DBResultSet results, const char[] error, a
 
 public int Panel_DoNothing(Menu menu, MenuAction action, int param1, int param2)
 {
+	return 0;
 }
 
 void DisplayNextPlayersInRanking(int client)
