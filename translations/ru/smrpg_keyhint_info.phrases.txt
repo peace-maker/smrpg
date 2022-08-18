@@ -9,7 +9,7 @@
 	{
 		// 1: Фраза "Статистика RPG"
 		// 2: Имя целевого клиента.
-		"ru"			"{1} для {2}"
+		"ru"			"{1} игрока: {2}"
 	}
 
 	"Player is AFK"
@@ -24,7 +24,7 @@
 
 	"Last Experience Short"
 	{
-		"ru"			"Последний опыт"
+		"ru"			"Посл. получен. опыт"
 	}
 
 	"Estimated time until levelup"
