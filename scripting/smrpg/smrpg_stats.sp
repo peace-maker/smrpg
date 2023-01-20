@@ -1225,7 +1225,7 @@ float GetWeaponExperience(const char[] sWeapon, WeaponExperienceType type)
 	if(weaponExperience.bonus < 0.0)
 		weaponExperience.bonus = g_hCVExpKillBonus.FloatValue;
 	
-	switch(WeaponExperience_Damage)
+	switch(type)
 	{
 		case WeaponExperience_Damage:
 			return weaponExperience.damage;
