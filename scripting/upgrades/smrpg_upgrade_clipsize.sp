@@ -63,10 +63,11 @@ public void OnPluginStart()
 		}
 		
 		int iEntities = GetMaxEntities();
-		char sClassname[64], iClipIncrease;
+		char sClassname[64];
+		float fClipIncrease;
 		for(int i=MaxClients+1;i<=iEntities;i++)
 		{
-			if(IsValidEntity(i) && GetEntityClassname(i, sClassname, sizeof(sClassname)) && g_hWeaponTrie.GetValue(sClassname, iClipIncrease))
+			if(IsValidEntity(i) && GetEntityClassname(i, sClassname, sizeof(sClassname)) && g_hWeaponTrie.GetValue(sClassname, fClipIncrease))
 			{
 				SDKHook(i, SDKHook_Reload, Hook_OnReload);
 				SDKHook(i, SDKHook_ReloadPost, Hook_OnReloadPost);
@@ -103,8 +104,8 @@ public void OnEntityCreated(int entity, const char[] classname)
 	if(entity >= 2048)
 		return;
 	
-	int iClipIncrease;
-	if(g_hWeaponTrie.GetValue(classname, iClipIncrease))
+	float fClipIncrease;
+	if(g_hWeaponTrie.GetValue(classname, fClipIncrease))
 		SDKHook(entity, SDKHook_SpawnPost, Hook_OnSpawnPost);
 }
 
@@ -137,7 +138,8 @@ public void SMRPG_BuySell(int client, UpgradeQueryType type)
 	if(!client || !IsClientInGame(client))
 		return;
 	
-	int iClipIncrease, iNewMaxClip, iClip1, iAmmoCount;
+	int iNewMaxClip, iClip1, iAmmoCount;
+	float fClipIncrease;
 	char sWeapon[64];
 	
 	int iLevel = SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME);
@@ -147,10 +149,10 @@ public void SMRPG_BuySell(int client, UpgradeQueryType type)
 			continue;
 		
 		GetEntityClassname(iWeapon, sWeapon, sizeof(sWeapon));
-		if(!g_hWeaponTrie.GetValue(sWeapon, iClipIncrease))
+		if(!g_hWeaponTrie.GetValue(sWeapon, fClipIncrease))
 			continue;
 		
-		iNewMaxClip = g_iGameMaxClip1[iWeapon]+iClipIncrease*iLevel;
+		iNewMaxClip = g_iGameMaxClip1[iWeapon]+RoundToFloor(fClipIncrease*iLevel);
 		iClip1 = Weapon_GetPrimaryClip(iWeapon);
 		
 		iAmmoCount = 0;
@@ -163,7 +165,7 @@ public void SMRPG_BuySell(int client, UpgradeQueryType type)
 				int iIncrease = iNewMaxClip - iClip1;
 				
 				// Make sure we set the clip to the new size right away as a visual effect, if the player currently has a full clip.
-				if(iClip1 == (iNewMaxClip-iClipIncrease))
+				if(iClip1 == g_iGameMaxClip1[iWeapon]+RoundToFloor(fClipIncrease*(iLevel-1)))
 				{
 					// Player doesn't have enough ammo for a whole reload, see how much we can add
 					if(iAmmoCount < iIncrease)
@@ -269,10 +271,10 @@ public Action Hook_OnReload(int weapon)
 	if(client <= 0)
 		return Plugin_Continue;
 	
-	int iClipIncrease;
+	float fClipIncrease;
 	char sWeapon[64];
 	GetEntityClassname(weapon, sWeapon, sizeof(sWeapon));
-	if(!g_hWeaponTrie.GetValue(sWeapon, iClipIncrease))
+	if(!g_hWeaponTrie.GetValue(sWeapon, fClipIncrease))
 		return Plugin_Continue;
 	
 	if(!SMRPG_IsEnabled())
@@ -292,9 +294,9 @@ public Action Hook_OnReload(int weapon)
 	if(!SMRPG_RunUpgradeEffect(client, UPGRADE_SHORTNAME))
 		return Plugin_Continue; // Some other plugin doesn't want this effect to run
 	
-	iClipIncrease *= iLevel;
+	fClipIncrease *= iLevel;
 	
-	int iNewMaxClip = g_iGameMaxClip1[weapon]+iClipIncrease;
+	int iNewMaxClip = g_iGameMaxClip1[weapon]+RoundToFloor(fClipIncrease);
 	
 	// Don't reload if we're at the new virtual max clipsize!
 	int iClip1 = Weapon_GetPrimaryClip(weapon);
@@ -411,17 +413,18 @@ public Action Timer_SetEquipAmmo(Handle timer, any weapon)
 	if (Weapon_GetPrimaryClip(weapon) != g_iGameMaxClip1[weapon])
 		return Plugin_Stop;
 	
-	int iClipIncrease;
+	float fClipIncrease;
 	char sWeapon[64];
 	GetEntityClassname(weapon, sWeapon, sizeof(sWeapon));
-	if(!g_hWeaponTrie.GetValue(sWeapon, iClipIncrease))
+	if(!g_hWeaponTrie.GetValue(sWeapon, fClipIncrease))
 		return Plugin_Stop;
 	
 	int iLevel = SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME);
 	if(iLevel <= 0)
 		return Plugin_Stop;
 	
-	iClipIncrease *= iLevel;
+	fClipIncrease *= iLevel;
+	int iClipIncrease = RoundToFloor(fClipIncrease);
 	
 	int iAmmoCount;
 	GetClientWeaponReserveAmmo(client, weapon, iAmmoCount);
@@ -495,19 +498,19 @@ public Action Timer_CheckReloadFinish(Handle timer, DataPack data)
 			return Plugin_Stop;
 		
 		// Get the weapon's clip increase from the config file
-		int iClipIncrease;
+		float fClipIncrease;
 		char sWeapon[64];
 		GetEntityClassname(weapon, sWeapon, sizeof(sWeapon));
-		if(!g_hWeaponTrie.GetValue(sWeapon, iClipIncrease))
+		if(!g_hWeaponTrie.GetValue(sWeapon, fClipIncrease))
 			return Plugin_Continue;
 		
 		int iLevel = SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME);
 		if(iLevel <= 0)
 			return Plugin_Continue;
 		
-		iClipIncrease *= iLevel;
+		fClipIncrease *= iLevel;
 		
-		int iNewMaxClip = g_iGameMaxClip1[weapon]+iClipIncrease;
+		int iNewMaxClip = g_iGameMaxClip1[weapon]+RoundToFloor(fClipIncrease);
 		
 		// How many bullets do we need to add to match the new virtual max clipsize?
 		int iIncrease = iNewMaxClip - iClip1;
@@ -551,7 +554,8 @@ public Action Timer_SetWeaponsClips(Handle timer, any userid)
 	if(!client)
 		return Plugin_Stop;
 	
-	int iClipIncrease, iNewMaxClip, iClip1, iAmmoCount;
+	int iNewMaxClip, iClip1, iAmmoCount;
+	float fClipIncrease;
 	char sWeapon[64];
 	
 	int iLevel = SMRPG_GetClientUpgradeLevel(client, UPGRADE_SHORTNAME);
@@ -561,12 +565,12 @@ public Action Timer_SetWeaponsClips(Handle timer, any userid)
 			continue;
 		
 		GetEntityClassname(iWeapon, sWeapon, sizeof(sWeapon));
-		if(!g_hWeaponTrie.GetValue(sWeapon, iClipIncrease))
+		if(!g_hWeaponTrie.GetValue(sWeapon, fClipIncrease))
 			continue;
 		
-		iClipIncrease *= iLevel;
+		fClipIncrease *= iLevel;
 		
-		iNewMaxClip = g_iGameMaxClip1[iWeapon]+iClipIncrease;
+		iNewMaxClip = g_iGameMaxClip1[iWeapon]+RoundToFloor(fClipIncrease);
 		iClip1 = Weapon_GetPrimaryClip(iWeapon);
 		
 		if(iClip1 == g_iGameMaxClip1[iWeapon])
@@ -607,15 +611,16 @@ bool LoadWeaponAmmoConfig()
 		return false;
 	}
 	
-	char sWeapon[64], iClipIncrease;
+	char sWeapon[64];
+	float fClipIncrease;
 	if(hKV.GotoFirstSubKey(false))
 	{
 		do
 		{
 			hKV.GetSectionName(sWeapon, sizeof(sWeapon));
-			iClipIncrease = hKV.GetNum(NULL_STRING, 0);
+			fClipIncrease = hKV.GetFloat(NULL_STRING, 0.0);
 			
-			g_hWeaponTrie.SetValue(sWeapon, iClipIncrease);
+			g_hWeaponTrie.SetValue(sWeapon, fClipIncrease);
 			
 		} while (hKV.GotoNextKey(false));
 	}
