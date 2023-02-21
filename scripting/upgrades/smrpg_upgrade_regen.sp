@@ -125,7 +125,7 @@ public Action Timer_IncreaseHealth(Handle timer, any userid)
 	if(!SMRPG_RunUpgradeEffect(client, UPGRADE_SHORTNAME))
 		return Plugin_Continue; // Some other plugin doesn't want this effect to run
 	
-	int iIncrease = g_hCVAmount.IntValue + g_hCVAmountIncrease.IntValue * (iLevel - 1);
+	int iIncrease = RoundToFloor(g_hCVAmount.FloatValue) + RoundToFloor(g_hCVAmountIncrease.FloatValue * (iLevel - 1));
 	int iNewHealth = iOldHealth + iIncrease;
 	// Limit the regeneration to the maxhealth.
 	if(iNewHealth > iMaxHealth)
