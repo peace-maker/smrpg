@@ -117,7 +117,7 @@ public void Hook_TraceAttackPost(int victim, int attacker, int inflictor, float 
     }
     	return; 
 }		
-		public Action RemoveTurtleMode(Handle timer, int victim)
+public Action RemoveTurtleMode(Handle timer, int victim)
 {
     // Deactivate "turtlemode" for the player
     	SetTurtlemode(victim, false);
@@ -171,14 +171,14 @@ public Action Hook_OnTakeDamage(int victim, int &attacker, int &inflictor, float
 public void SetTurtlemode(int victim, bool bool)
 {
 	g_turtleMode[victim] = bool;
-
+	
 	if(g_turtleMode[victim] == true)
 	{
-		PrintToChat(victim, "You are now in turtlemode!");
+		PrintToConsole(victim, "You are now in turtlemode, taking %d%% reduced damage.", RoundToNearest(100*g_hCVPercent.FloatValue * float(SMRPG_GetClientUpgradeLevel(victim, UPGRADE_SHORTNAME))));
 	}
 	else
 	{
-		PrintToChat(victim, "You are no longer in turtlemode!");
+		PrintToConsole(victim, "You are no longer in turtlemode, taking normal damage.");
 	}
 	return;
 }

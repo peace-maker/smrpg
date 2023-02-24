@@ -76,12 +76,6 @@ public void OnClientPutInServer(int client)
  * SM:RPG Upgrade callbacks
  */
 
-public void SMRPG_BuySell(int client, UpgradeQueryType type)
-{
-	// Inform the player that he is now a thief
-	PrintToChat(client, "You can now steal money by knifing people.");
-}
-
 public void SMRPG_TranslateUpgrade(int client, const char[] shortname, TranslationType type, char[] translation, int maxlen)
 {
 	if(type == TranslationType_Name)
