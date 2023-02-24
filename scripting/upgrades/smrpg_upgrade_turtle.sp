@@ -14,7 +14,9 @@
 
 ConVar g_hCVPercent;
 ConVar g_hCVDuration;
-bool turtlemode;
+
+Handle g_turtleTimers[65];
+bool g_turtleMode[65];
 
 public Plugin myinfo = 
 {
@@ -97,7 +99,7 @@ public void SMRPG_TranslateUpgrade(int client, const char[] shortname, Translati
 public void Hook_TraceAttackPost(int victim, int attacker, int inflictor, float damage, int damagetype, int ammotype, int hitbox, int hitgroup)
 {
 	// Check if the victim is a player and if the last hit was a headshot.
-    	if (IsClientInGame(victim) && hitgroup == 1 && hitbox == 12 && turtlemode == false) 
+    	if (IsClientInGame(victim) && hitgroup == 1 && hitbox == 12) 
 	{
     // Check if the victim has the "turtle" skill.
     	int iLevel = SMRPG_GetClientUpgradeLevel(victim, "turtle");
@@ -105,9 +107,12 @@ public void Hook_TraceAttackPost(int victim, int attacker, int inflictor, float 
 		{
         // Activate "turtlemode" for the player
 		SetTurtlemode(victim, true); 
-        // Schedule a timer to deactivate "turtlemode" after x seconds 
+		// Find out how long the player will be protected
 		float turtleDuration = float(iLevel) * g_hCVDuration.FloatValue;
-		CreateTimer(turtleDuration, RemoveTurtleMode, victim, TIMER_FLAG_NO_MAPCHANGE);
+		if (g_turtleTimers[victim] != INVALID_HANDLE)
+			return;
+        // Schedule a timer to deactivate "turtlemode" after x seconds 
+		g_turtleTimers[victim] = CreateTimer(turtleDuration, RemoveTurtleMode, victim, TIMER_FLAG_NO_MAPCHANGE);
 		}
     }
     	return; 
@@ -115,8 +120,9 @@ public void Hook_TraceAttackPost(int victim, int attacker, int inflictor, float 
 		public Action RemoveTurtleMode(Handle timer, int victim)
 {
     // Deactivate "turtlemode" for the player
-    SetTurtlemode(victim, false);
-    return Plugin_Handled;
+    	SetTurtlemode(victim, false);
+	g_turtleTimers[victim] = INVALID_HANDLE;
+    	return Plugin_Handled;
 }
 
 
@@ -124,7 +130,7 @@ public Action Hook_OnTakeDamage(int victim, int &attacker, int &inflictor, float
 									float damageForce[3], float damagePosition[3], int damagecustom)
 {
 	// We need to check if we are in damage reduction mode.
-	if(turtlemode == false)
+	if(g_turtleMode[victim] == false)
 		return Plugin_Continue;
 
 	// SM:RPG is disabled?
@@ -160,17 +166,19 @@ public Action Hook_OnTakeDamage(int victim, int &attacker, int &inflictor, float
 	return Plugin_Changed;
 }
 
+
 // Turns the Turtlemode on or off.
-public void SetTurtlemode(int client, bool bool)
+public void SetTurtlemode(int victim, bool bool)
 {
-	turtlemode = bool;
-	if(turtlemode == true)
+	g_turtleMode[victim] = bool;
+
+	if(g_turtleMode[victim] == true)
 	{
-		PrintToConsole(client, "You are now in turtlemode!");
+		PrintToChat(victim, "You are now in turtlemode!");
 	}
 	else
 	{
-		PrintToConsole(client, "You are no longer in turtlemode!");
+		PrintToChat(victim, "You are no longer in turtlemode!");
 	}
 	return;
 }
