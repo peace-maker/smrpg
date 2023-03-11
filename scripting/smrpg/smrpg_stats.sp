@@ -86,7 +86,7 @@ int Stats_LvlToExp(int iLevel)
 	if(iLevel <= 1)
 		iExp = g_hCVExpStart.IntValue;
 	else
-		iExp = iLevel * g_hCVExpInc.IntValue + g_hCVExpStart.IntValue;
+		iExp = iLevel * RoundToNearest(g_hCVExpInc.FloatValue + g_hCVExpStart.FloatValue);
 	
 	return iExp > g_hCVExpMax.IntValue ? g_hCVExpMax.IntValue : iExp;
 }
@@ -1225,7 +1225,7 @@ float GetWeaponExperience(const char[] sWeapon, WeaponExperienceType type)
 	if(weaponExperience.bonus < 0.0)
 		weaponExperience.bonus = g_hCVExpKillBonus.FloatValue;
 	
-	switch(type)
+	switch(WeaponExperience_Damage)
 	{
 		case WeaponExperience_Damage:
 			return weaponExperience.damage;

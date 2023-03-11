@@ -329,4 +329,34 @@
 	{
 		"en"			"Gives you the chance to swap positions with your attacker."
 	}
+
+	"conversion"
+	{
+		"en"			"Conversion"
+	}
+	
+	"conversion description"
+	{
+		"en"			"Allows you to turn excess money into experience."
+	}
+
+	"turtle"
+	{
+		"en"			"Turtle"
+	}
+	
+	"turtle description"
+	{
+		"en"			"Reduces the damage you take after receiving a headshot."
+	}
+
+	"pickpocket"
+	{
+		"en"			"Pickpocket"
+	}
+	
+	"pickpocket description"
+	{
+		"en"			"Steals some money with every hit."
+	}
 }
