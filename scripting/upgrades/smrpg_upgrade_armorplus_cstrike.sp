@@ -132,7 +132,7 @@ public void SMRPG_BuySell(int client, UpgradeQueryType type)
 			// Client currently had his old maxarmor or more?
 			// Set him to his new higher maxarmor immediately.
 			// Don't touch his armor, if he were already damaged.
-			if(iArmor >= (iMaxArmor - g_hCVMaxIncrease.IntValue))
+			if(iArmor >= (iMaxArmor - RoundToFloor(g_hCVMaxIncrease.FloatValue)))
 				SetClientArmor(client, iMaxArmor);
 		}
 		case UpgradeQueryType_Sell:
@@ -176,7 +176,7 @@ int GetClientMaxArmor(int client)
 	if(iLevel <= 0)
 		return iDefaultMaxArmor;
 	
-	int iNewMaxArmor = iDefaultMaxArmor + g_hCVMaxIncrease.IntValue * iLevel;
+	int iNewMaxArmor = iDefaultMaxArmor + RoundToFloor(g_hCVMaxIncrease.FloatValue * iLevel);
 	int iGameMaxArmor = CSS_MAX_ARMOR;
 	if (g_bIsCSGO)
 		iGameMaxArmor = CSGO_MAX_ARMOR;
