@@ -143,7 +143,7 @@ public Action Timer_IncreaseArmor(Handle timer, any userid)
 		return Plugin_Continue;
 	}
 	
-	int iIncrease = g_hCVAmount.IntValue + g_hCVAmountIncrease.IntValue * (iLevel - 1);
+	int iIncrease = RoundToFloor(g_hCVAmount.FloatValue + g_hCVAmountIncrease.FloatValue * (iLevel - 1));
 	int iNewArmor = iCurrentArmor + iIncrease;
 	if(iNewArmor > iMaxArmor)
 		iNewArmor = iMaxArmor;
