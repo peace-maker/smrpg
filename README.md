@@ -3,7 +3,7 @@ SM:RPG
 
 A modular generic RPG plugin for SourceMod 1.10+.
 
-[![Build Status](https://travis-ci.org/peace-maker/smrpg.svg?branch=master)](https://travis-ci.org/peace-maker/smrpg)
+![Build Status](https://github.com/peace-maker/smrpg/actions/workflows/main.yml/badge.svg)
 
 Based on [CSS:RPG](http://forums.alliedmods.net/showthread.php?t=51039) v1.0.5 by SeLfkiLL.
 
