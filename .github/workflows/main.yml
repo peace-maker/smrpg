@@ -25,41 +25,41 @@ jobs:
     continue-on-error: ${{ matrix.experimental }}
     name: SM version ${{ matrix.sm-version }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           path: smrpg
 
       - name: Setup SP
-        uses: rumblefrog/setup-sp@v1.0.1
+        uses: rumblefrog/setup-sp@v1.2.4
         with:
           version: ${{ matrix.sm-version }}
 
       # Checkout all dependencies
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           repository: bcserv/smlib
           ref: transitional_syntax
           path: smlib
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           repository: Impact123/AutoExecConfig
           path: AutoExecConfig
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           repository: Drifter321/DHooks2
           path: DHooks2
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           repository: Drixevel/Chat-Processor
           path: Chat-Processor
       - run: git clone https://bitbucket.org/minimoney1/simple-chat-processor.git
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           repository: peace-maker/ColorVariables
           ref: sm111
           path: ColorVariables
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           repository: peace-maker/mapzonelib
           path: mapzonelib
@@ -133,7 +133,7 @@ jobs:
             curl -F "sm=$SMVERSION" -F "key=$UPLOADKEY" -F "drop=@$ARCHIVE" $DROPURL
           fi
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         with:
           name: smrpg-rev${{ env.GITREVCOUNT }}-sm${{ matrix.sm-main-version }}
           path: package
