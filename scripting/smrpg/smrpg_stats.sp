@@ -1115,7 +1115,12 @@ public void SQL_GetNext10(Database db, DBResultSet results, const char[] error, 
 		nextCache[i].credits = GetClientCredits(iLocalPlayer);
 	}
 	
-	SortCustom2D(nextCache, iCount, Sort2D_NextPlayers);
+	int nextCacheWorkaround[sizeof(nextCache)][sizeof(nextCache[])];
+	for (int i = 0; i < iCount; i++)
+		Array_Copy(nextCache[i], nextCacheWorkaround[i], sizeof(nextCache[]));
+	SortCustom2D(nextCacheWorkaround, iCount, Sort2D_NextPlayers);
+	for (int i = 0; i < iCount; i++)
+		Array_Copy(nextCacheWorkaround[i], nextCache[i], sizeof(nextCache[]));
 	
 	// Save the next rank as reference if the list is reordered with current data below
 	int iLastRank = nextCache[0].rank;

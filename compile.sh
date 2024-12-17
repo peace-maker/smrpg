@@ -44,8 +44,6 @@ fi
 
 # setup the auto version file to have the git revision in the version convar.
 # get the correct revision count
-# https://github.com/travis-ci/travis-ci/issues/3412
-git fetch --unshallow
 GITREVCOUNT=$(git rev-list --count HEAD)
 
 echo -e "#if defined _smrpg_version_included\n#endinput\n#endif\n#define _smrpg_version_included\n\n" > build/addons/sourcemod/scripting/include/smrpg/smrpg_autoversion.inc
@@ -74,16 +72,16 @@ do
 	if [ "$f" != "smrpg_chattags.sp" ]; then
 		echo -e "\nCompiling $f..."
 		smxfile="`echo $f | sed -e 's/\.sp$/\.smx/'`"
-		./spcomp $f -o$PACKAGEDIR/plugins/$smxfile -E
+		./spcomp $f -o$PACKAGEDIR/plugins/$smxfile
 	fi
 done
 
 # compile both versions of chattags for both chat processors..
 echo -e "\nCompiling smrpg_chattags.sp for Chat Processor..."
-./spcomp smrpg_chattags.sp -o$PACKAGEDIR/plugins/smrpg_chattags_cp.smx -E
+./spcomp smrpg_chattags.sp -o$PACKAGEDIR/plugins/smrpg_chattags_cp.smx
 
 echo -e "\nCompiling smrpg_chattags.sp for Simple Chat Processor..."
-./spcomp smrpg_chattags.sp -o$PACKAGEDIR/plugins/smrpg_chattags_scp.smx -E USE_SIMPLE_PROCESSOR=
+./spcomp smrpg_chattags.sp -o$PACKAGEDIR/plugins/smrpg_chattags_scp.smx USE_SIMPLE_PROCESSOR=
 
 # compile all upgrades
 for f in upgrades/*.sp
@@ -92,7 +90,7 @@ do
 	if [ "$f" != "upgrades/smrpg_upgrade_example.sp" ]; then
 		echo -e "\nCompiling upgrade $f..."
 		smxfile="`echo $f | sed -e 's/\.sp$/\.smx/'`"
-		./spcomp $f -o$PACKAGEDIR/plugins/$smxfile -E
+		./spcomp $f -o$PACKAGEDIR/plugins/$smxfile
 	fi
 done
 
