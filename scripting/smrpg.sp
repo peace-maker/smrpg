@@ -1,4 +1,5 @@
 #pragma semicolon 1
+#pragma dynamic 1048576
 #include <sourcemod>
 #include <sdktools>
 #include <sdkhooks>
