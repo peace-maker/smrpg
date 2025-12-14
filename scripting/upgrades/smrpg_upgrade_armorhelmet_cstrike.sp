@@ -104,7 +104,13 @@ public void Event_OnPlayerSpawn(Event event, const char[] name, bool dontBroadca
 	
 	float fChance = float(iLevel) * g_hCVChance.FloatValue;
 	if (GetURandomFloat() < fChance)
+	{
+		// Give the player at least one armor to be able to wear the helmet
+		int iArmor = GetEntProp(client, Prop_Send, "m_ArmorValue");
+		if (iArmor == 0)
+			SetEntProp(client, Prop_Send, "m_ArmorValue", 1);
 		SetEntProp(client, Prop_Send, "m_bHasHelmet", 1);
+	}
 }
  
 /**
