@@ -285,7 +285,7 @@ enum struct UpgradeInfo
  * @param size           The size of the buffer array.
  * @error Unkown upgrade shortname.
  */
-native void SMRPG_GetUpgradeInfo(const char[] shortname, any upgrade[sizeof(UpgradeInfo)], int size=sizeof(UpgradeInfo));
+native void SMRPG_GetUpgradeInfo(const char[] shortname, any[] upgrade, int size=sizeof(UpgradeInfo));
 
 /**
  * Returns if an upgrade is enabled or disabled.

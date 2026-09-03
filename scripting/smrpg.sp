@@ -885,6 +885,10 @@ stock void DebugMsg(char[] format, any ...)
 	
 	char sBuffer[192];
 	SetGlobalTransTarget(LANG_SERVER);
+#if defined __sourcepawn2
+	FormatEx(sBuffer, sizeof(sBuffer), format, ...);
+#else
 	VFormat(sBuffer, sizeof(sBuffer), format, 2);
+#endif
 	PrintToServer(sBuffer);
 }

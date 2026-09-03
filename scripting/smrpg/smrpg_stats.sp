@@ -1115,7 +1115,7 @@ public void SQL_GetNext10(Database db, DBResultSet results, const char[] error, 
 		nextCache[i].credits = GetClientCredits(iLocalPlayer);
 	}
 	
-	int nextCacheWorkaround[sizeof(nextCache)][sizeof(nextCache[])];
+	int[][] nextCacheWorkaround = new int[sizeof(nextCache)][sizeof(nextCache[])];
 	for (int i = 0; i < iCount; i++)
 		Array_Copy(nextCache[i], nextCacheWorkaround[i], sizeof(nextCache[]));
 	SortCustom2D(nextCacheWorkaround, iCount, Sort2D_NextPlayers);

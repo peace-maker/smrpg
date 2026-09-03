@@ -8,6 +8,9 @@
 #if defined USE_SIMPLE_PROCESSOR
 // https://forums.alliedmods.net/showthread.php?t=198501
 #include <scp>
+#if !defined VFormat
+#define VFormat(%1,%2,%3,%4) Format(%1, %2, %3, ...)
+#endif
 #include <colorvariables>
 #define PROCESSOR_TYPE "(Simple Chat Processor)"
 #else

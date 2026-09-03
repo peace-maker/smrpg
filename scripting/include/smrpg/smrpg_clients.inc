@@ -169,7 +169,11 @@ typedef SMRPG_ExpTranslationCb = function void (int client, const char[] reason,
  * @return               True if the experience was added, false otherwise.
  * @error Invalid client index
  */
+#if defined __sourcepawn2
+native bool SMRPG_AddClientExperience(int client, int &exp, const char[] reason, bool bHideNotice, int other=-1, SMRPG_ExpTranslationCb callback=INVALID_FUNCTION);
+#else
 native bool SMRPG_AddClientExperience(int client, int &exp, const char[] reason, bool bHideNotice, int other=-1, SMRPG_ExpTranslationCb callback=view_as<SMRPG_ExpTranslationCb>(INVALID_FUNCTION));
+#endif
 
 /**
  * Calculate the amount of experience needed to reach the next level.
